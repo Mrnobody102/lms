@@ -396,6 +396,12 @@ importers:
       "@testing-library/react":
         specifier: ^16.3.1
         version: 16.3.1(@testing-library/dom@10.4.1)(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      "@types/react":
+        specifier: ^18
+        version: 18.3.27
+      "@types/react-dom":
+        specifier: ^18
+        version: 18.3.7(@types/react@18.3.27)
       "@vitejs/plugin-react":
         specifier: ^5.1.2
         version: 5.1.2(vite@5.4.21(@types/node@20.19.30)(terser@5.46.0))
