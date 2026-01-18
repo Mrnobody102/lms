@@ -6,10 +6,12 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "dev": "tsc -w"
+    "dev": "tsc -w",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
-    "typescript": "latest"
+    "typescript": "latest",
+    "vitest": "^4.0.17"
   }
 }

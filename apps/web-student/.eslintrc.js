@@ -6,4 +6,9 @@ module.exports = {
   parserOptions: {
     project: true,
   },
+  settings: {
+    next: {
+      rootDir: ["apps/web-student/src/"],
+    },
+  },
 };

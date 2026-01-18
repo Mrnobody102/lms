@@ -41,11 +41,79 @@ Hệ thống bao gồm 4 ứng dụng chính trong Monorepo:
 - [Danh sách Tính năng (Features)](./docs/FEATURES.md)
 - [Kế hoạch Phát triển (Plan)](./docs/PLAN.md)
 
-## 🏁 Cài đặt
+## 🚀 Hướng Dẫn Cài Đặt & Chạy Ứng Dụng
 
-1.  **Cài đặt Dependencies**: `pnpm install`
-2.  **Khởi tạo Infrastructure** (DB & Redis): `docker-compose up -d`
-3.  **Đồng bộ Database**: `pnpm db:push`
-4.  **Chạy Dev**: `pnpm dev`
-    - Super Portal: `http://localhost:3002`
-    - Web Admin/Student: `http://localhost:3000` (Truy cập qua subdomain ảo, vd: `tenant1.localhost:3000`)
+### 1. Yêu Cầu Tiên Quyết
+
+- **Node.js**: Phiên bản 18+
+- **pnpm**: Cài đặt bằng `npm install -g pnpm`
+- **Docker**: Cần để chạy Database (PostgreSQL) và Redis.
+
+### 2. Cài Đặt
+
+```bash
+# Cài đặt toàn bộ dependencies trong monorepo
+pnpm install
+```
+
+### 3. Cấu Hình Môi Trường
+
+- Khởi động hạ tầng (Database & Redis) bằng Docker:
+  ```bash
+  docker-compose up -d
+  ```
+- Đồng bộ Schema Database:
+  ```bash
+  pnpm db:push
+  ```
+
+### 4. Chạy Development
+
+Khởi động toàn bộ hệ thống (Frontend + Backend):
+
+```bash
+pnpm dev
+```
+
+Truy cập các ứng dụng:
+
+- **Landing (Học viên)**: `http://localhost:3000`
+- **Admin Trung Tâm**: `http://tenant1.localhost:3000` (Giả lập Subdomain)
+- **Super Portal**: `http://localhost:3002`
+- **API Server**: `http://localhost:4000`
+
+### 5. Phát Triển UI (Storybook)
+
+Để phát triển các components UI trong `packages/ui` một cách độc lập:
+
+```bash
+pnpm --filter @repo/ui storybook
+```
+
+Truy cập: `http://localhost:6006`
+
+### 6. Testing
+
+Hệ thống hỗ trợ 2 loại testing:
+
+**Unit Test** (Vitest) cho Packages:
+
+```bash
+pnpm test --filter @repo/shared # Test logic
+pnpm test --filter @repo/ui     # Test components
+```
+
+**End-to-End Test** (Playwright) cho Apps:
+
+```bash
+# Cài đặt browsers cho lần đầu
+pnpm exec playwright install
+
+# Chạy E2E test cho Web Student
+pnpm test:e2e --filter web-student
+```
+
+### ℹ️ Tài liệu Liên Quan
+
+- [Hướng dẫn Triển khai (Deployment Guide)](./docs/DEPLOYMENT.md)
+- [Hướng dẫn Kiểm thử (Testing Guide)](./docs/TESTING.md)
