@@ -1,0 +1,43 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN    // Quản trị toàn hệ thống (là bạn)
+  ADMIN          // Chủ trung tâm
+  INSTRUCTOR     // Giảng viên
+  STUDENT        // Học sinh
+}
+
+model Tenant {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique // Ví dụ: "trung-tam-a"
+  domain      String?  @unique // Custom domain sau này
+  settings    Json     // Lưu logo, màu sắc, config
+  users       User[]
+  courses     Course[]
+  createdAt   DateTime @default(now())
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      Role     @default(STUDENT)
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Course {
+  id        String   @id @default(uuid())
+  title     String
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+}
