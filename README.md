@@ -1,10 +1,11 @@
 # LMS Platform - Nền Tảng Giáo Dục Đa Người Thuê (Multi-tenant SaaS)
 
-Chào mừng bạn đến với **LMS Platform**, một giải pháp **SaaS (Software-as-a-Service)** cho phép triển khai hàng loạt các website đào tạo trực tuyến. 
+Chào mừng bạn đến với **LMS Platform**, một giải pháp **SaaS (Software-as-a-Service)** cho phép triển khai hàng loạt các website đào tạo trực tuyến.
 
 Dự án được thiết kế để phục vụ **đa dạng mô hình giáo dục**, từ trung tâm ngoại ngữ (Tiếng Anh, Trung, Nhật...), trung tâm kỹ năng mềm, đến các trường học online.
 
 ## Mục Lục
+
 - [Tầm Nhìn Sản Phẩm](#-tầm-nhìn-sản-phẩm)
 - [Các Ứng Dụng (Apps)](#-các-ứng-dụng-apps)
 - [Tính Năng Nổi Bật](#-tính-năng-nổi-bật)
@@ -42,8 +43,9 @@ Hệ thống bao gồm 4 ứng dụng chính trong Monorepo:
 
 ## 🏁 Cài đặt
 
-1.  **Cài đặt**: `pnpm install`
-2.  **Database**: `pnpm db:push`
-3.  **Chạy Dev**: `pnpm dev`
+1.  **Cài đặt Dependencies**: `pnpm install`
+2.  **Khởi tạo Infrastructure** (DB & Redis): `docker-compose up -d`
+3.  **Đồng bộ Database**: `pnpm db:push`
+4.  **Chạy Dev**: `pnpm dev`
     - Super Portal: `http://localhost:3002`
     - Web Admin/Student: `http://localhost:3000` (Truy cập qua subdomain ảo, vd: `tenant1.localhost:3000`)

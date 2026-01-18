@@ -2,7 +2,8 @@
   "extends": "@repo/typescript-config/base.json",
   "compilerOptions": {
     "outDir": "dist",
-    "jsx": "react-jsx"
+    "rootDir": "."
   },
-  "include": ["src/**/*", ".storybook/**/*", ".eslintrc.js"]
+  "include": ["index.ts", ".eslintrc.js"],
+  "exclude": ["node_modules"]
 }

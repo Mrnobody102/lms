@@ -1,0 +1,83 @@
+version: "3.8"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api-server/Dockerfile
+    ports:
+      - "4000:4000"
+    environment:
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/lms_platform
+      REDIS_URL: redis://redis:6379
+      PORT: 4000
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - lms_network
+
+  web-student:
+    build:
+      context: .
+      dockerfile: apps/web-student/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+    depends_on:
+      - api
+    networks:
+      - lms_network
+
+  web-admin:
+    build:
+      context: .
+      dockerfile: apps/web-admin/Dockerfile
+    ports:
+      - "3001:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+    depends_on:
+      - api
+    networks:
+      - lms_network
+
+  super-portal:
+    build:
+      context: .
+      dockerfile: apps/super-portal/Dockerfile
+    ports:
+      - "3002:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+    depends_on:
+      - api
+    networks:
+      - lms_network
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: lms_platform
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - lms_network
+
+  redis:
+    image: redis:alpine
+    volumes:
+      - redis_data:/data
+    networks:
+      - lms_network
+
+networks:
+  lms_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
