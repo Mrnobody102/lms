@@ -3,7 +3,7 @@ version: "3.8"
 services:
   api:
     build:
-      context: .
+      context: ../../
       dockerfile: apps/api-server/Dockerfile
     ports:
       - "4000:4000"
@@ -19,7 +19,7 @@ services:
 
   web-student:
     build:
-      context: .
+      context: ../../
       dockerfile: apps/web-student/Dockerfile
     ports:
       - "3000:3000"
@@ -32,7 +32,7 @@ services:
 
   web-admin:
     build:
-      context: .
+      context: ../../
       dockerfile: apps/web-admin/Dockerfile
     ports:
       - "3001:3000"
@@ -45,7 +45,7 @@ services:
 
   super-portal:
     build:
-      context: .
+      context: ../../
       dockerfile: apps/super-portal/Dockerfile
     ports:
       - "3002:3000"

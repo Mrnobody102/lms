@@ -6,15 +6,19 @@
   "scripts": {
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
-    "generate": "prisma generate"
-  },
-  "dependencies": {
-    "@prisma/client": "latest"
+    "generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:reset": "prisma migrate reset"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
-    "prisma": "latest",
     "@types/node": "latest",
+    "dotenv-cli": "^11.0.0",
+    "prisma": "5.22.0",
     "typescript": "latest"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0"
   }
 }

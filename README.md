@@ -38,8 +38,11 @@ Hệ thống bao gồm 4 ứng dụng chính trong Monorepo:
 ## � Tài liệu Dự án
 
 - [Tổng quan Kiến trúc (Architecture)](./docs/ARCHITECTURE.md)
-- [Danh sách Tính năng (Features)](./docs/FEATURES.md)
-- [Kế hoạch Phát triển (Plan)](./docs/PLAN.md)
+- [Công nghệ Sử dụng (Tech Stack)](./docs/TECH_STACK.md)
+- [Phân tích Chuyên sâu (Tech Analysis)](./docs/TECH_ANALYSIS.md)
+- [Hướng dẫn Database & Migrations](./docs/guides/DATABASE_GUIDE.md)
+- [Danh sách Tính năng (Features)](./docs/product/FEATURES.md)
+- [Kế hoạch Phát triển (Plan)](./docs/product/PLAN.md)
 
 ## 🚀 Hướng Dẫn Cài Đặt & Chạy Ứng Dụng
 
@@ -60,11 +63,11 @@ pnpm install
 
 - Khởi động hạ tầng (Database & Redis) bằng Docker:
   ```bash
-  docker-compose up -d
+  pnpm db:up
   ```
 - Đồng bộ Schema Database:
   ```bash
-  pnpm db:push
+  pnpm db:migrate
   ```
 
 ### 4. Chạy Development
@@ -115,5 +118,5 @@ pnpm test:e2e --filter web-student
 
 ### ℹ️ Tài liệu Liên Quan
 
-- [Hướng dẫn Triển khai (Deployment Guide)](./docs/DEPLOYMENT.md)
-- [Hướng dẫn Kiểm thử (Testing Guide)](./docs/TESTING.md)
+- [Hướng dẫn Triển khai (Deployment Guide)](./docs/ops/DEPLOYMENT.md)
+- [Hướng dẫn Kiểm thử (Testing Guide)](./docs/guides/TESTING.md)

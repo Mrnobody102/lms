@@ -20,12 +20,12 @@ Tài liệu này hướng dẫn chi tiết cách triển khai hệ thống LMS P
     - Đảm bảo Docker Desktop đã bật.
     - Chạy lệnh:
       ```bash
-      docker-compose up -d
+      pnpm db:up
       ```
-    - _Lỗi thường gặp_: Nếu gặp lỗi `pipe/dockerDesktopLinuxEngine`, hãy kiểm tra xem Docker Desktop đã được bật chưa.
+    - _Lỗi thường gặp_: Nếu gặp lỗi connection (P1001), hãy kiểm tra Docker Desktop đã được bật chưa.
 3.  **Tạo Schema Database**:
     ```bash
-    pnpm db:push
+    pnpm db:migrate
     ```
 4.  **Chạy ứng dụng**:
     ```bash
@@ -57,7 +57,10 @@ Chúng ta sử dụng chiến lược triển khai lai (Hybrid):
 3.  **Setup Database**:
     Nên sử dụng Managed Database (như AWS RDS hoặc Supabase) để an toàn dữ liệu, thay vì tự host DB trên VPS nếu không có kinh nghiệm quản trị.
 4.  **Chạy Backend**:
-    Sử dụng `docker-compose.prod.yml` để chạy container API Server.
+    Sử dụng file cấu hình trong `deployment/production/docker-compose.prod.yml` để chạy container API Server.
+    ```bash
+    docker-compose -f deployment/production/docker-compose.prod.yml up -d
+    ```
 
 ## 3. Environment Variables (Checklist)
 
