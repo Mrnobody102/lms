@@ -1,0 +1,132 @@
+### Variables
+@baseUrl = http://localhost:4000/api
+@tenantId = 550e8400-e29b-41d4-a716-446655440000
+@studentEmail = qa@example.com
+@studentPassword = Test12345
+@adminEmail = admin@example.com
+@adminPassword = Admin12345
+
+###############################################
+# AUTHENTICATION
+###############################################
+
+### Register Student User
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+x-tenant-id: {{tenantId}}
+
+{
+  "email": "student2@example.com",
+  "password": "Student123",
+  "fullName": "Student Two",
+  "phoneNumber": "+84909999999",
+  "tenantId": "{{tenantId}}"
+}
+
+### Login as Student
+# @name loginStudent
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+x-tenant-id: {{tenantId}}
+
+{
+  "email": "{{studentEmail}}",
+  "password": "{{studentPassword}}"
+}
+
+### Login as Admin
+# @name loginAdmin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+x-tenant-id: {{tenantId}}
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{adminPassword}}"
+}
+
+###############################################
+# USER PROFILE (Authenticated)
+###############################################
+
+@studentToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+@adminToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+### Get My Profile
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{studentToken}}
+x-tenant-id: {{tenantId}}
+
+### Update My Profile
+PUT {{baseUrl}}/users/me
+Authorization: Bearer {{studentToken}}
+x-tenant-id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "fullName": "QA Test User Updated",
+  "phoneNumber": "+84999888777",
+  "avatarUrl": "https://i.pravatar.cc/150?img=1"
+}
+
+### Change Password
+PUT {{baseUrl}}/users/change-password
+Authorization: Bearer {{studentToken}}
+x-tenant-id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "oldPassword": "Test12345",
+  "newPassword": "NewPassword123"
+}
+
+###############################################
+# ADMIN ENDPOINTS (Admin only)
+###############################################
+
+### Get All Users (Admin)
+GET {{baseUrl}}/admin/users?page=1&limit=10
+Authorization: Bearer {{adminToken}}
+x-tenant-id: {{tenantId}}
+
+### Get All Users with Filters
+GET {{baseUrl}}/admin/users?page=1&limit=10&role=STUDENT&isActive=true
+Authorization: Bearer {{adminToken}}
+x-tenant-id: {{tenantId}}
+
+### Get User by ID
+GET {{baseUrl}}/admin/users/USER_ID_HERE
+Authorization: Bearer {{adminToken}}
+x-tenant-id: {{tenantId}}
+
+### Lock/Unlock User
+PATCH {{baseUrl}}/admin/users/USER_ID_HERE/status
+Authorization: Bearer {{adminToken}}
+x-tenant-id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "isActive": false
+}
+
+###############################################
+# ERROR CASES
+###############################################
+
+### No Token (Should return 401)
+GET {{baseUrl}}/users/me
+x-tenant-id: {{tenantId}}
+
+### Invalid Token (Should return 401)
+GET {{baseUrl}}/users/me
+Authorization: Bearer invalid_token_here
+x-tenant-id: {{tenantId}}
+
+### Student accessing Admin endpoint (Should return 403)
+GET {{baseUrl}}/admin/users
+Authorization: Bearer {{studentToken}}
+x-tenant-id: {{tenantId}}
+
+### No Tenant ID (Should return 400)
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{studentToken}}
