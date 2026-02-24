@@ -20,7 +20,21 @@ pnpm db:migrate
 
 When prompted, enter migration name: `add_user_profile_fields`
 
-### 3. Start API Server
+### 3. Seed Sample Data (Optional but Recommended)
+
+```bash
+# Generate Prisma Client and seed demo tenant & accounts
+pnpm --filter @repo/database run generate
+pnpm --filter @repo/database run seed
+```
+
+_Sample accounts created:_
+
+- `admin@lms.com` / `admin123`
+- `student@lms.com` / `admin123`
+- _Tenant ID for testing can be retrieved via Prisma Studio._
+
+### 4. Start API Server
 
 ```bash
 # From project root
@@ -28,6 +42,14 @@ pnpm dev
 ```
 
 The API server will be available at: `http://localhost:4000/api`
+
+### 5. Swagger UI Documentation
+
+You can view the interactive API documentation and test endpoints directly from your browser by visiting:
+
+👉 **[http://localhost:4000/api/docs](http://localhost:4000/api/docs)**
+
+_(Make sure the API Server is running before accessing the link)_
 
 ---
 

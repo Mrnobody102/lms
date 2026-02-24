@@ -4,6 +4,6 @@
     "outDir": "dist",
     "rootDir": "."
   },
-  "include": ["index.ts", ".eslintrc.js"],
+  "include": ["index.ts", ".eslintrc.js", "prisma/**/*.ts"],
   "exclude": ["node_modules"]
 }

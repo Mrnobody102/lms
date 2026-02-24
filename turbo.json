@@ -1,6 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalEnv": ["CI"],
+  "globalEnv": ["CI", "PORT"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
@@ -8,6 +8,16 @@
     },
     "lint": {},
     "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "db:push": {
+      "cache": false
+    },
+    "db:migrate": {
+      "cache": false
+    },
+    "db:studio": {
       "cache": false,
       "persistent": true
     }

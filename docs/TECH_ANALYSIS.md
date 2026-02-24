@@ -74,6 +74,14 @@ Học tiếng Trung đòi hỏi các xử lý đặc thù về âm thanh, hình 
 - **Tiết kiệm chi phí**: Chỉ cần maintain một hạ tầng (Infrastructure) duy nhất cho N khách hàng.
 - **Deploy nhanh**: Turborepo cache lại các phần không thay đổi, giúp việc build và deploy diễn ra trong vài phút.
 
+### Security & API Documentation (Ready for Production)
+
+- **Swagger UI**: Tự động sinh tài liệu API (`/api/docs`), giúp Frontend dev dễ dàng tích hợp và test API trực tiếp mà không cần Postman.
+- **Bảo mật & Tối ưu (NestJS)**:
+  - `helmet`: Tự động cấu hình các HTTP Header bảo mật để phòng chống các lỗ hổng web phổ biến (XSS, Clickjacking...).
+  - `compression`: Nén Gzip/Deflate payload API trả về để tiết kiệm băng thông mạng và tăng tốc độ load cho Frontend.
+  - `@nestjs/throttler`: Áp dụng Rate Limiting bảo vệ các endpoint khỏi các cuộc tấn công Brute-force hay DDoS nhỏ (ví dụ: spam Endpoint đăng nhập).
+
 ## 5. Chiến Lược Scale Lên Triệu Users
 
 Khi hệ thống đạt mốc "Triệu Users", kiến trúc hiện tại vẫn đáp ứng tốt nhờ các phương án dự phòng sau:

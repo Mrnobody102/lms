@@ -16,7 +16,22 @@ pnpm db:migrate
 
 When prompted for migration name, enter: **`add_user_profile_fields`**
 
-### 3️⃣ Start Development Server
+### 3️⃣ Seed Sample Data (Required for First Time)
+
+To populate the database with a default tenant and sample users, run:
+
+```bash
+pnpm --filter @repo/database run generate
+pnpm --filter @repo/database run seed
+```
+
+**🔑 Built-in Sample Accounts:**
+
+- **Tenant:** Trung Tâm Tiếng Trung Demo (`trung-tam-demo`)
+- **Super Admin:** `admin@lms.com` (Pass: `admin123`)
+- **Student User:** `student@lms.com` (Pass: `admin123`)
+
+### 4️⃣ Start Development Server
 
 ```bash
 pnpm dev
@@ -26,7 +41,10 @@ pnpm dev
 
 The API should be running at: **http://localhost:4000/api**
 
-Test with:
+**Recommended:** Open the interactive **Swagger UI** in your browser to explore and test APIs easily:
+👉 **[http://localhost:4000/api/docs](http://localhost:4000/api/docs)**
+
+Alternatively, test with curl:
 
 ```bash
 curl http://localhost:4000/api
@@ -34,19 +52,21 @@ curl http://localhost:4000/api
 
 ## 📖 Full Documentation
 
-See [API_DOCUMENTATION.md](./API_DOCUMENTATION.md) for complete API reference.
+See [API_DOCUMENTATION.md](./API_DOCUMENTATION.md) for complete API reference and logic.
 
 ## 🎯 Quick Test
 
-### 1. Create a Tenant (if needed)
+### 1. Create or Find a Tenant
 
-First, you need a tenant. You can create one directly in the database or via Prisma Studio:
+If you haven't seeded data, you need a tenant. You can create one via Prisma Studio:
 
 ```bash
-pnpm --filter @repo/database db:studio
+pnpm db:studio
 ```
 
-### 2. Register a User
+_(If you ran the seed script, you can use the tenant `trung-tam-demo` ID)_
+
+### 2. Login or Register a User
 
 ```bash
 curl -X POST http://localhost:4000/api/auth/register \
