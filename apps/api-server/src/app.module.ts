@@ -29,6 +29,10 @@ export class AppModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(TenantMiddleware)
+      .exclude(
+        { path: "admin/tenants", method: RequestMethod.ALL },
+        { path: "admin/tenants/(.*)", method: RequestMethod.ALL },
+      )
       .forRoutes({ path: "*", method: RequestMethod.ALL });
   }
 }

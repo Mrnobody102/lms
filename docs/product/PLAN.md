@@ -15,9 +15,9 @@ Mục tiêu dài hạn: Xây dựng nền tảng SaaS cho phép tạo hàng ngà
   - Cấu trúc thư mục chuẩn.
   - Tenant Middleware định tuyến theo subdomain.
   - Database Isolation (Shared Schema, Tenant Discriminator).
-- [ ] **Tenant Management (Super Portal)**:
-  - Flow tạo Tenant mới.
-  - Cấu hình Branding cơ bản (Logo, Brand Color).
+- [x] **Tenant Management (Super Portal)**: ✅ **COMPLETED** (Feb 26, 2026)
+  - ✅ Flow tạo Tenant mới.
+  - ✅ Cấu hình Branding cơ bản (Logo, Brand Color).
 - [x] **Auth System**: ✅ **COMPLETED** (Jan 21, 2026)
   - ✅ JWT-based authentication với Passport
   - ✅ Register endpoint với validation
@@ -105,13 +105,27 @@ Tại giai đoạn này, ta phát triển các tính năng sâu cho từng ngác
 - `GET /api/admin/users` - Admin quản lý users
 - `PATCH /api/admin/users/:id/status` - Khóa/mở tài khoản
 
+### ✅ Giai Đoạn 1.5 - Hoàn Thành (Feb 26, 2026)
+
+**Tenant Management (Super Portal)** đã được thiết lập:
+
+📁 **Code Structure:**
+
+- `apps/api-server/src/admin/admin-tenant.controller.ts` - Controller quản lý Tenant
+- `apps/api-server/src/admin/admin.service.ts` - Logic tạo và cập nhật Tenant
+- `apps/api-server/src/common/middleware/tenant.middleware.ts` - Trích xuất Token ngầm
+
+**Endpoints Deployed:**
+
+- `POST /api/admin/tenants` - Tạo trung tâm mới (Tenant)
+- `GET /api/admin/tenants` - Danh sách các Tenant
+- `GET /api/admin/tenants/:id` - Xem thông tin chi tiết một Tenant
+- `PUT /api/admin/tenants/:id` - Cập nhật cấu hình & Branding cho Tenant
+
 **Technical Stack:**
 
-- NestJS + Prisma ORM
-- PostgreSQL + Redis
-- JWT Authentication
-- Role-Based Access Control
-- Multi-tenant Architecture
+- NestJS Middleware Exclude (Bỏ chặn CORS/Tenant ID)
+- JWT Token Parsing (Cơ chế Token Fallback)
 
 ---
 

@@ -16,6 +16,9 @@ import { CurrentUser } from "../auth/decorators/current-user.decorator";
 import { AdminUserQueryDto } from "./dto/admin-user-query.dto";
 import { UpdateUserStatusDto } from "./dto/update-user-status.dto";
 
+import { ApiBearerAuth } from "@nestjs/swagger";
+
+@ApiBearerAuth()
 @Controller("admin/users")
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN, Role.SUPER_ADMIN)

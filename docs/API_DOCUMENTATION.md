@@ -338,6 +338,75 @@ Content-Type: application/json
 
 ---
 
+### Super Admin Tenant Management (SUPER_ADMIN Only)
+
+#### Create New Tenant
+
+```http
+POST /api/admin/tenants
+Authorization: Bearer {super_admin_token}
+Content-Type: application/json
+
+{
+  "name": "Trung tâm Lập trình C",
+  "slug": "trung-tam-c",
+  "domain": "learn.c-programming.com",
+  "settings": {
+    "logoUrl": "https://example.com/logo.png",
+    "primaryColor": "#000000"
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "name": "Trung tâm Lập trình C",
+    "slug": "trung-tam-c",
+    "domain": "learn.c-programming.com",
+    "settings": {
+      "logoUrl": "https://example.com/logo.png",
+      "primaryColor": "#000000"
+    },
+    "createdAt": "2026-02-26T00:00:00.000Z"
+  }
+}
+```
+
+#### Update Tenant Configuration
+
+```http
+PUT /api/admin/tenants/{tenantId}
+Authorization: Bearer {super_admin_token}
+Content-Type: application/json
+
+{
+  "name": "Trung tâm Mới update"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "name": "Trung tâm Mới update",
+    "slug": "trung-tam-c",
+    "domain": "learn.c-programming.com",
+    "settings": { ... },
+    "createdAt": "..."
+  }
+}
+```
+
+---
+
 ## 🔒 Security Features
 
 ### Password Requirements
@@ -439,8 +508,11 @@ apps/api-server/src/
 ├── admin/
 │   ├── dto/
 │   │   ├── admin-user-query.dto.ts
-│   │   └── update-user-status.dto.ts
+│   │   ├── update-user-status.dto.ts
+│   │   ├── create-tenant.dto.ts
+│   │   └── update-tenant.dto.ts
 │   ├── admin.controller.ts
+│   ├── admin-tenant.controller.ts
 │   ├── admin.module.ts
 │   └── admin.service.ts
 ├── common/

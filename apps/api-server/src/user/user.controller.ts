@@ -5,6 +5,9 @@ import { CurrentUser } from "../auth/decorators/current-user.decorator";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
 import { ChangePasswordDto } from "./dto/change-password.dto";
 
+import { ApiBearerAuth } from "@nestjs/swagger";
+
+@ApiBearerAuth()
 @Controller("users")
 @UseGuards(JwtAuthGuard)
 export class UserController {

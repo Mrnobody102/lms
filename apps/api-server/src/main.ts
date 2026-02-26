@@ -35,7 +35,6 @@ async function bootstrap() {
   // Apply global response interceptor
   app.useGlobalInterceptors(new ResponseInterceptor());
 
-  // Swagger Documentation Setup
   const config = new DocumentBuilder()
     .setTitle("LMS Platform API")
     .setDescription("LMS Platform REST API Document")
