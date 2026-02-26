@@ -121,20 +121,32 @@ Tại giai đoạn này, ta phát triển các tính năng sâu cho từng ngác
 - `GET /api/admin/tenants` - Danh sách các Tenant
 - `GET /api/admin/tenants/:id` - Xem thông tin chi tiết một Tenant
 - `PUT /api/admin/tenants/:id` - Cập nhật cấu hình & Branding cho Tenant
+- `DELETE /api/admin/tenants/:id` - Xóa trung tâm/Tenant
 
-**Technical Stack:**
+**Frontend Implementation (`apps/super-portal`):**
+
+- Dashboard thống kê hệ thống (Global Stats)
+- Auth Store (Global state quản lý JWT và Session với Zustand)
+- Màn hình chi tiết Tenant (`/tenants/[id]`) sẵn sàng mở rộng module (Config/Settings)
+- Quản lý danh sách Tenant hiện đại với `TanStack Table` (Tự động Phân trang, Tìm kiếm Global Text)
+- Tenant Form Modal (Popup xử lý Create/Update Tenant)
+- Hệ thống Mocks Data Độc Lập (`tenant.mock.ts`) hỗ trợ test UI dễ dàng
+- Tenant Actions Inline (Actions xem, sửa, xóa hiển thị trực quan thay vì dropdown)
 
 - NestJS Middleware Exclude (Bỏ chặn CORS/Tenant ID)
 - JWT Token Parsing (Cơ chế Token Fallback)
+- Axios & Interceptors (Tự động bắt lỗi 401 xoá token)
+- Tailwind CSS & `lucide-react` (Thiết kế giao diện hiện đại Glassmorphism)
+- React Server Control (Next.js 15+ App Router, `React.use()` unwrapping)
 
 ---
 
 ## 🎯 Tiếp Theo
 
-### Priority 1: Tenant Management (Super Portal)
+### Priority 1: Course Builder
 
-Xây dựng portal để tạo và quản lý các tenant mới.
+Hệ thống tạo và quản lý khóa học đa năng (Tạo bài giảng, Video, Quiz).
 
-### Priority 2: Course Builder
+### Priority 2: Student Learning Space
 
-Hệ thống tạo và quản lý khóa học đa năng.
+LMS Player Sidebar, giao diện học viên.

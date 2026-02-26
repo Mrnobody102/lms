@@ -32,6 +32,7 @@ export class AppModule {
       .exclude(
         { path: "admin/tenants", method: RequestMethod.ALL },
         { path: "admin/tenants/(.*)", method: RequestMethod.ALL },
+        { path: "auth/(.*)", method: RequestMethod.ALL },
       )
       .forRoutes({ path: "*", method: RequestMethod.ALL });
   }

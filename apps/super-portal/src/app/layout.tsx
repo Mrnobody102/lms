@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   description: "LMS Super Admin Portal",
 };
 
+import { Toaster } from "react-hot-toast";
+
 export default function RootLayout({
   children,
 }: {
@@ -16,7 +18,10 @@ export default function RootLayout({
 }): JSX.Element {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <Toaster position="top-right" />
+        {children}
+      </body>
     </html>
   );
 }

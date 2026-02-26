@@ -22,7 +22,11 @@ model Tenant {
   settings    Json     // Lưu logo, màu sắc, config
   users       User[]
   courses     Course[]
+  isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  @@index([isActive])
 }
 
 model User {

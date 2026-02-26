@@ -3,6 +3,8 @@ import {
   Get,
   Post,
   Put,
+  Delete,
+  Patch,
   Param,
   Body,
   UseGuards,
@@ -44,5 +46,15 @@ export class AdminTenantController {
     @Body() updateTenantDto: UpdateTenantDto,
   ) {
     return this.adminService.updateTenant(id, updateTenantDto);
+  }
+
+  @Delete(":id")
+  async deleteTenant(@Param("id") id: string) {
+    return this.adminService.deleteTenant(id);
+  }
+
+  @Patch(":id/restore")
+  async restoreTenant(@Param("id") id: string) {
+    return this.adminService.restoreTenant(id);
   }
 }

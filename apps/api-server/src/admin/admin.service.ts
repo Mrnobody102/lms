@@ -261,4 +261,48 @@ export class AdminService {
 
     return updatedTenant;
   }
+
+  async deleteTenant(tenantId: string): Promise<any> {
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+    });
+
+    if (!tenant) {
+      throw new NotFoundException("Tenant not found");
+    }
+
+    try {
+      // Soft Delete: update isActive to false
+      await this.prisma.tenant.update({
+        where: { id: tenantId },
+        data: { isActive: false },
+      });
+      return {
+        success: true,
+        message: "Tenant suspended (soft deleted) successfully",
+      };
+    } catch (error) {
+      throw new BadRequestException("Cannot suspend tenant.");
+    }
+  }
+
+  async restoreTenant(tenantId: string): Promise<any> {
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+    });
+
+    if (!tenant) {
+      throw new NotFoundException("Tenant not found");
+    }
+
+    try {
+      await this.prisma.tenant.update({
+        where: { id: tenantId },
+        data: { isActive: true },
+      });
+      return { success: true, message: "Tenant activated successfully" };
+    } catch (error) {
+      throw new BadRequestException("Cannot activate tenant.");
+    }
+  }
 }

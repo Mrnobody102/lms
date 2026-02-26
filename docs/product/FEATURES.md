@@ -53,11 +53,11 @@ _Ví dụ áp dụng: Một trung tâm tiếng Trung (site mẫu) có thể sử
 **Mục tiêu**: Kinh doanh nền tảng (SaaS).
 **App**: `apps/super-portal`
 
-| Tính năng                 | Chi tiết                                                                                  |
-| :------------------------ | :---------------------------------------------------------------------------------------- |
-| **Tenant Management**     | Tạo site mới cho khách hàng (vd: `trungtam-a.lms.com`), thiết lập tên miền riêng.         |
-| **Gói dịch vụ (Billing)** | Quản lý các gói thuê bao (Basic, Pro, Enterprise) giới hạn số lượng học viên/dung lượng.  |
-| **Module Marketplace**    | Bật/tắt các module tính năng (vd: Module Tiếng Trung, Module E-commerce) cho từng tenant. |
+| Tính năng                 | Chi tiết                                                                                                                                                                                                    |
+| :------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Tenant Management**     | Tạo site mới cho khách hàng (vd: `trungtam-a.lms.com`), thiết lập tên miền riêng.<br>Quản lý danh sách, filter, phân trang, khóa/mở khóa trung tâm.<br>Xem chi tiết cấu hình riêng biệt của từng trung tâm. |
+| **Gói dịch vụ (Billing)** | Quản lý các gói thuê bao (Basic, Pro, Enterprise) giới hạn số lượng học viên/dung lượng.                                                                                                                    |
+| **Module Marketplace**    | Bật/tắt các module tính năng (vd: Module Tiếng Trung, Module E-commerce) cho từng tenant.                                                                                                                   |
 
 ---
 
