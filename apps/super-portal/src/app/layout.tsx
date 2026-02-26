@@ -1,5 +1,6 @@
 import "@repo/ui/styles.css";
 import type { Metadata } from "next";
+import { ThemeProvider } from "@repo/ui";
 import { Inter } from "next/font/google";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -17,10 +18,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }): JSX.Element {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <Toaster position="top-right" />
-        {children}
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <Toaster position="top-right" />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

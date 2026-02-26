@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "exports": {
+    ".": "./src/index.tsx",
     "./styles.css": "./src/styles.css",
     "./*": "./src/*.tsx"
   },
@@ -11,7 +12,8 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
-    "lucide-react": "^0.330.0"
+    "lucide-react": "^0.330.0",
+    "next-themes": "^0.4.6"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",

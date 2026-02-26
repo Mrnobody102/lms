@@ -33,15 +33,13 @@ export function TenantList({ tenants, loading }: TenantListProps) {
     () => [
       columnHelper.accessor("name", {
         header: "Tên trung tâm",
-        cell: (info) => (
-          <span className="font-medium text-white">{info.getValue()}</span>
-        ),
+        cell: (info) => <span className="font-medium">{info.getValue()}</span>,
       }),
       columnHelper.accessor((row) => row.domain || `${row.slug}.lms.com`, {
         id: "domain",
         header: "Domain / Slug",
         cell: (info) => (
-          <span className="text-slate-400 font-mono text-xs">
+          <span className="text-muted-foreground font-mono text-xs">
             {info.getValue()}
           </span>
         ),
@@ -50,21 +48,21 @@ export function TenantList({ tenants, loading }: TenantListProps) {
         header: "Trạng thái",
         cell: (info) =>
           info.getValue() ? (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
-              <span className="w-1.5 h-1.5 rounded-full mr-1.5 bg-emerald-400"></span>
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-success/10 text-success border border-success/20">
+              <span className="w-1.5 h-1.5 rounded-full mr-1.5 bg-success"></span>
               Hoạt động
             </span>
           ) : (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border bg-red-500/10 text-red-400 border-red-500/20">
-              <span className="w-1.5 h-1.5 rounded-full mr-1.5 bg-red-400"></span>
-              Đã khoá
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-destructive/10 text-destructive border border-destructive/20">
+              <span className="w-1.5 h-1.5 rounded-full mr-1.5 bg-destructive"></span>
+              Đã khóa
             </span>
           ),
       }),
       columnHelper.accessor("createdAt", {
         header: "Ngày tạo",
         cell: (info) => (
-          <span className="text-slate-400">
+          <span className="text-muted-foreground">
             {format(new Date(info.getValue()), "dd/MM/yyyy")}
           </span>
         ),
@@ -108,24 +106,24 @@ export function TenantList({ tenants, loading }: TenantListProps) {
   });
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-sm flex flex-col">
-      <div className="p-6 border-b border-slate-800 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center bg-slate-900/50">
-        <h3 className="font-semibold text-white">Danh sách Trung tâm</h3>
+    <div className="bg-card border rounded-2xl overflow-hidden shadow-sm flex flex-col">
+      <div className="p-6 border-b flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center bg-card/50">
+        <h3 className="font-semibold">Danh sách Trung tâm</h3>
         <div className="relative">
-          <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Tìm kiếm theo tên, slug..."
             value={globalFilter ?? ""}
             onChange={(e) => setGlobalFilter(e.target.value)}
-            className="bg-slate-950 border border-slate-800 text-sm rounded-lg pl-9 pr-4 py-2 text-slate-200 placeholder-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 w-full sm:w-72 transition-all"
+            className="bg-background border text-sm rounded-lg pl-9 pr-4 py-2 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 w-full sm:w-72 transition-all"
           />
         </div>
       </div>
 
       <div className="overflow-x-auto flex-1">
         <table className="w-full text-sm text-left">
-          <thead className="bg-slate-950 text-slate-400 uppercase text-xs font-semibold tracking-wider">
+          <thead className="bg-muted/50 text-muted-foreground uppercase text-xs font-semibold tracking-wider">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
@@ -141,15 +139,15 @@ export function TenantList({ tenants, loading }: TenantListProps) {
               </tr>
             ))}
           </thead>
-          <tbody className="divide-y divide-slate-800">
+          <tbody className="divide-y">
             {loading ? (
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-6 py-10 text-center text-slate-500"
+                  className="px-6 py-10 text-center text-muted-foreground"
                 >
                   <div className="flex items-center justify-center gap-2">
-                    <div className="w-4 h-4 rounded-full border-2 border-slate-500 border-t-transparent animate-spin"></div>
+                    <div className="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
                     Đang tải dữ liệu...
                   </div>
                 </td>
@@ -158,7 +156,7 @@ export function TenantList({ tenants, loading }: TenantListProps) {
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-6 py-10 text-center text-slate-500"
+                  className="px-6 py-10 text-center text-muted-foreground"
                 >
                   Không tìm thấy trung tâm nào.
                 </td>
@@ -167,7 +165,7 @@ export function TenantList({ tenants, loading }: TenantListProps) {
               table.getRowModel().rows.map((row) => (
                 <tr
                   key={row.id}
-                  className="hover:bg-slate-800/50 transition-colors"
+                  className="hover:bg-muted/50 transition-colors"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id} className="px-6 py-4">
@@ -185,14 +183,14 @@ export function TenantList({ tenants, loading }: TenantListProps) {
       </div>
 
       {table.getPageCount() > 1 && (
-        <div className="px-6 py-4 border-t border-slate-800 flex items-center justify-between bg-slate-900/50">
-          <div className="text-sm text-slate-400">
+        <div className="px-6 py-4 border-t flex items-center justify-between bg-card/50">
+          <div className="text-sm text-muted-foreground">
             Hiển thị{" "}
-            <span className="text-white font-medium">
+            <span className="text-foreground font-medium">
               {table.getRowModel().rows.length}
             </span>{" "}
             /{" "}
-            <span className="text-white font-medium">
+            <span className="text-foreground font-medium">
               {table.getFilteredRowModel().rows.length}
             </span>{" "}
             trung tâm
@@ -201,20 +199,20 @@ export function TenantList({ tenants, loading }: TenantListProps) {
             <button
               onClick={() => table.setPageIndex(0)}
               disabled={!table.getCanPreviousPage()}
-              className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-50 disabled:hover:bg-transparent transition-colors"
+              className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-50 disabled:hover:bg-transparent transition-colors"
             >
               <ChevronsLeft className="w-5 h-5" />
             </button>
             <button
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
-              className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-50 disabled:hover:bg-transparent transition-colors"
+              className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-50 disabled:hover:bg-transparent transition-colors"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <span className="text-slate-500 text-sm px-2">
+            <span className="text-muted-foreground text-sm px-2">
               Trang{" "}
-              <span className="text-slate-200 font-medium">
+              <span className="text-foreground font-medium">
                 {table.getState().pagination.pageIndex + 1}
               </span>{" "}
               / {table.getPageCount()}
@@ -222,14 +220,14 @@ export function TenantList({ tenants, loading }: TenantListProps) {
             <button
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
-              className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-50 disabled:hover:bg-transparent transition-colors"
+              className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-50 disabled:hover:bg-transparent transition-colors"
             >
               <ChevronRight className="w-5 h-5" />
             </button>
             <button
               onClick={() => table.setPageIndex(table.getPageCount() - 1)}
               disabled={!table.getCanNextPage()}
-              className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-50 disabled:hover:bg-transparent transition-colors"
+              className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-50 disabled:hover:bg-transparent transition-colors"
             >
               <ChevronsRight className="w-5 h-5" />
             </button>

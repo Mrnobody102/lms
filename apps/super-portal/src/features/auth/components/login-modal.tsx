@@ -5,12 +5,10 @@ import { useAuthStore } from "../auth.store";
 import toast from "react-hot-toast";
 import { Loader2, KeyRound } from "lucide-react";
 
-export function LoginModal({ isOpen }: { isOpen: boolean }) {
+export function LoginModal() {
   const { login, loading } = useAuthStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
-  if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,24 +22,26 @@ export function LoginModal({ isOpen }: { isOpen: boolean }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md">
-      <div className="w-full max-w-sm bg-slate-900 border border-slate-700 rounded-3xl shadow-2xl overflow-hidden p-8">
-        <div className="mb-8 text-center">
-          <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center font-bold text-white shadow-lg shadow-cyan-500/30 mx-auto mb-4">
+      <div className="w-full max-w-sm bg-card border rounded-3xl shadow-2xl overflow-hidden p-8">
+        <div className="mb-8 text-center text-foreground">
+          <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center font-bold text-primary-foreground shadow-lg shadow-primary/30 mx-auto mb-4">
             <KeyRound className="w-6 h-6" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-1">Super Portal</h2>
-          <p className="text-sm text-slate-400">Đăng nhập tài khoản hệ thống</p>
+          <h2 className="text-2xl font-extrabold mb-1">Super Portal</h2>
+          <p className="text-sm text-muted-foreground font-medium">
+            Đăng nhập tài khoản hệ thống
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">
+            <label className="block text-sm font-bold text-foreground mb-1">
               Email
             </label>
             <input
               type="email"
               required
-              className="w-full px-4 py-3 bg-slate-950 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-colors"
+              className="w-full px-4 py-3 bg-background border rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium"
               placeholder="admin@lms.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -49,13 +49,13 @@ export function LoginModal({ isOpen }: { isOpen: boolean }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">
+            <label className="block text-sm font-bold text-foreground mb-1">
               Mật khẩu
             </label>
             <input
               type="password"
               required
-              className="w-full px-4 py-3 bg-slate-950 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-colors"
+              className="w-full px-4 py-3 bg-background border rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -65,7 +65,7 @@ export function LoginModal({ isOpen }: { isOpen: boolean }) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold rounded-xl flex items-center justify-center gap-2 transition-all mt-6"
+            className="w-full py-4 bg-primary hover:opacity-90 disabled:opacity-50 text-primary-foreground font-bold rounded-xl flex items-center justify-center gap-2 transition-all mt-6 shadow-lg shadow-primary/20 active:scale-95"
           >
             {loading ? (
               <Loader2 className="w-5 h-5 animate-spin" />

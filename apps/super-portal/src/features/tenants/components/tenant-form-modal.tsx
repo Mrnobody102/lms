@@ -64,23 +64,23 @@ export function TenantFormModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl shadow-xl overflow-hidden">
-        <div className="p-6 border-b border-slate-700">
-          <h2 className="text-xl font-semibold text-white">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-md">
+      <div className="w-full max-w-md bg-card border rounded-2xl shadow-2xl overflow-hidden">
+        <div className="p-6 border-b">
+          <h2 className="text-xl font-bold">
             {tenant ? "Chỉnh Sửa Trung Tâm" : "Thêm Trung Tâm Mới"}
           </h2>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">
+            <label className="block text-sm font-bold mb-1">
               Tên Trung Tâm *
             </label>
             <input
               type="text"
               required
-              className="w-full px-4 py-2 bg-slate-950 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
+              className="w-full px-4 py-2 bg-background border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
               placeholder="Ví dụ: Trung tâm Tiếng Trung ABC"
               value={formData.name}
               onChange={(e) =>
@@ -90,31 +90,31 @@ export function TenantFormModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">
+            <label className="block text-sm font-bold mb-1">
               Slug (Đường dẫn) *
             </label>
             <input
               type="text"
               required
-              className="w-full px-4 py-2 bg-slate-950 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
+              className="w-full px-4 py-2 bg-background border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
               placeholder="vi-du: abc-center"
               value={formData.slug}
               onChange={(e) =>
                 setFormData({ ...formData, slug: e.target.value })
               }
             />
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-muted-foreground mt-1 font-medium">
               Dùng cho URL: abc-center.lms.com
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">
+            <label className="block text-sm font-bold mb-1">
               Tên miền riêng (Tùy chọn)
             </label>
             <input
               type="text"
-              className="w-full px-4 py-2 bg-slate-950 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
+              className="w-full px-4 py-2 bg-background border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
               placeholder="ví dụ: abc-center.vn"
               value={formData.domain}
               onChange={(e) =>
@@ -127,14 +127,14 @@ export function TenantFormModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white transition-colors"
+              className="px-4 py-2 text-sm font-bold text-muted-foreground hover:text-foreground transition-all"
             >
               Hủy
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg flex items-center gap-2 transition-all"
+              className="px-5 py-2.5 bg-primary hover:opacity-90 disabled:opacity-50 text-primary-foreground text-sm font-bold rounded-lg flex items-center gap-2 transition-all shadow-md active:scale-95"
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

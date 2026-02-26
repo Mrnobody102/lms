@@ -29,32 +29,32 @@ export default function SuperAdminHome() {
 
   if (!isInitialized) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center">
-        <Server className="w-10 h-10 text-blue-500 animate-pulse mb-4" />
-        <p className="text-slate-400">Loading Super Portal...</p>
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <Server className="w-10 h-10 text-primary animate-pulse mb-4" />
+        <p className="text-muted-foreground font-medium">
+          Loading Super Portal...
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 font-sans text-slate-200">
+    <div className="min-h-screen font-sans">
       {/* Topbar */}
       <Header />
 
-      <div className="p-8 max-w-7xl mx-auto">
+      <div className="p-8 max-w-7xl mx-auto text-foreground">
         <div className="flex justify-between items-end mb-10">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">
-              Systems & Tenants
-            </h1>
-            <p className="text-slate-500 flex items-center gap-2">
+            <h1 className="text-3xl font-extrabold mb-2">Systems & Tenants</h1>
+            <p className="text-muted-foreground flex items-center gap-2">
               <Calendar className="w-4 h-4" />
               Monitoring status of {format(new Date(), "MMMM d, yyyy")}
             </p>
           </div>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg flex items-center gap-2 transition-all shadow-lg shadow-blue-900/20"
+            className="px-5 py-2.5 bg-primary hover:opacity-90 text-primary-foreground text-sm font-semibold rounded-lg flex items-center gap-2 transition-all shadow-md active:scale-95"
           >
             <PlusCircle className="w-4 h-4" />
             New Tenant
@@ -72,7 +72,7 @@ export default function SuperAdminHome() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
       />
-      <LoginModal isOpen={!isAuthenticated} />
+      {!isAuthenticated && <LoginModal />}
 
       <Footer />
     </div>

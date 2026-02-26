@@ -11,7 +11,7 @@ export function Card({
 }): JSX.Element {
   return (
     <a
-      className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
+      className="group rounded-xl border bg-card px-5 py-4 transition-all hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 active:scale-[0.98]"
       href={href}
       rel="noopener noreferrer"
       target="_blank"
@@ -22,9 +22,7 @@ export function Card({
           -&gt;
         </span>
       </h2>
-      <p className="m-0 max-w-[30ch] text-sm opacity-50">
-        {children}
-      </p>
+      <p className="m-0 max-w-[30ch] text-sm opacity-50">{children}</p>
     </a>
   );
 }
