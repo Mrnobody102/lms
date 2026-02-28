@@ -5,7 +5,7 @@ import { Edit2, Trash2, ShieldAlert, RefreshCcw, Eye } from "lucide-react";
 import { useTenantStore } from "../tenant.store";
 import toast from "react-hot-toast";
 import { TenantFormModal } from "./tenant-form-modal";
-import { useRouter } from "next/navigation";
+import { useRouter } from "../../../navigation";
 
 export function TenantActions({ tenant }: { tenant: any }) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);

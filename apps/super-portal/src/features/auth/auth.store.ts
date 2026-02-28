@@ -32,7 +32,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   login: async (email, password) => {
     set({ loading: true, error: null });
     try {
+      console.log("Login attempt:", { email, password });
       const response = await api.post("/auth/login", { email, password });
+      console.log("Login response:", response.data);
       const { token } = response.data.data;
 
       if (typeof window !== "undefined") {
@@ -42,6 +44,11 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ token, isAuthenticated: true, loading: false });
       return true;
     } catch (error: any) {
+      console.error("Login error details:", {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message,
+      });
       set({
         error: error.response?.data?.message || "Login failed",
         loading: false,

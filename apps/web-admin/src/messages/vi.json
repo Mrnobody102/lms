@@ -1,0 +1,21 @@
+{
+  "Admin": {
+    "dashboard": "Bảng điều khiển",
+    "students": "Học viên",
+    "courses": "Khóa học",
+    "finance": "Tài chính",
+    "schedule": "Lịch học",
+    "settings": "Cài đặt",
+    "revenue": "Tổng doanh thu",
+    "newStudents": "Học viên mới",
+    "activeCourses": "Khóa học Active",
+    "completionRate": "Tỷ lệ hoàn thành",
+    "welcome": "Chào mừng quay trở lại, đây là tình hình trung tâm hôm nay.",
+    "createCourse": "+ Tạo khóa học mới"
+  },
+  "Common": {
+    "search": "Tìm kiếm...",
+    "notifications": "Thông báo",
+    "profile": "Hồ sơ"
+  }
+}

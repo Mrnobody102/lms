@@ -1,3 +1,5 @@
+"use client";
+
 import {
   LayoutDashboard,
   Users,
@@ -7,9 +9,12 @@ import {
   DollarSign,
   Calendar,
 } from "lucide-react";
-import { ThemeToggle } from "@repo/ui";
+import { ThemeToggle, LanguageToggle } from "@repo/ui";
+import { useTranslations } from "next-intl";
 
 export default function AdminHome() {
+  const t = useTranslations("Admin");
+
   return (
     <div className="min-h-screen font-sans flex transition-colors duration-300">
       {/* Sidebar */}
@@ -26,12 +31,12 @@ export default function AdminHome() {
         </div>
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {[
-            { name: "Tổng quan", icon: LayoutDashboard, active: true },
-            { name: "Học viên", icon: Users },
-            { name: "Khóa học", icon: BookOpen },
-            { name: "Tài chính", icon: DollarSign },
-            { name: "Lịch học", icon: Calendar },
-            { name: "Cài đặt", icon: Settings },
+            { name: t("dashboard"), icon: LayoutDashboard, active: true },
+            { name: t("students"), icon: Users },
+            { name: t("courses"), icon: BookOpen },
+            { name: t("finance"), icon: DollarSign },
+            { name: t("schedule"), icon: Calendar },
+            { name: t("settings"), icon: Settings },
           ].map((item) => (
             <a
               key={item.name}
@@ -62,15 +67,14 @@ export default function AdminHome() {
       <main className="flex-1 md:ml-64 p-8 bg-background">
         <header className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-2xl font-bold">Dashboard</h1>
-            <p className="text-muted-foreground mt-1">
-              Chào mừng quay trở lại, đây là tình hình trung tâm hôm nay.
-            </p>
+            <h1 className="text-2xl font-bold">{t("dashboard")}</h1>
+            <p className="text-muted-foreground mt-1">{t("welcome")}</p>
           </div>
           <div className="flex items-center gap-4">
             <ThemeToggle />
+            <LanguageToggle />
             <button className="px-4 py-2 bg-primary text-primary-foreground text-sm font-semibold rounded-lg hover:opacity-90 shadow-md active:scale-95 transition-all">
-              + Tạo khóa học mới
+              {t("createCourse")}
             </button>
           </div>
         </header>
@@ -79,7 +83,7 @@ export default function AdminHome() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           {[
             {
-              label: "Tổng doanh thu",
+              label: t("revenue"),
               value: "128.5M ₫",
               trend: "+12.5%",
               icon: DollarSign,
@@ -87,7 +91,7 @@ export default function AdminHome() {
               bg: "bg-emerald-500/10",
             },
             {
-              label: "Học viên mới",
+              label: t("newStudents"),
               value: "24",
               trend: "+4.3%",
               icon: Users,
@@ -95,7 +99,7 @@ export default function AdminHome() {
               bg: "bg-blue-500/10",
             },
             {
-              label: "Khóa học Active",
+              label: t("activeCourses"),
               value: "12",
               trend: "0%",
               icon: BookOpen,
@@ -103,7 +107,7 @@ export default function AdminHome() {
               bg: "bg-primary/10",
             },
             {
-              label: "Tỷ lệ hoàn thành",
+              label: t("completionRate"),
               value: "86%",
               trend: "+2.1%",
               icon: TrendingUp,

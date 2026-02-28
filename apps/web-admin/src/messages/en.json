@@ -1,0 +1,21 @@
+{
+  "Admin": {
+    "dashboard": "Dashboard",
+    "students": "Students",
+    "courses": "Courses",
+    "finance": "Finance",
+    "schedule": "Schedule",
+    "settings": "Settings",
+    "revenue": "Total Revenue",
+    "newStudents": "New Students",
+    "activeCourses": "Active Courses",
+    "completionRate": "Completion Rate",
+    "welcome": "Welcome back, here is the center status today.",
+    "createCourse": "+ Create New Course"
+  },
+  "Common": {
+    "search": "Search...",
+    "notifications": "Notifications",
+    "profile": "Profile"
+  }
+}

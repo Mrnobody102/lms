@@ -1,0 +1,42 @@
+{
+  "Student": {
+    "nav": {
+      "courses": "Khóa học",
+      "hsk": "Lộ trình HSK",
+      "vocab": "Từ vựng",
+      "blog": "Blog"
+    },
+    "hero": {
+      "badge": "Học tiếng Trung chuẩn HSK",
+      "title": "Chinh Phục",
+      "titleAlt": "Tiếng Trung",
+      "titleEnd": "Dễ Dàng.",
+      "desc": "Nền tảng học trực tuyến toàn diện với lộ trình HSK 1-6. Luyện phát âm AI, Flashcard thông minh, và Video bài giảng chất lượng cao.",
+      "trial": "Học Thử Miễn Phí",
+      "roadmap": "Xem Lộ Trình",
+      "watchVideo": "Xem Video Giới Thiệu"
+    },
+    "features": {
+      "whyUs": "Tại sao chọn chúng tôi?",
+      "whyUsDesc": "Phương pháp học hiện đại kết hợp công nghệ AI giúp bạn nhớ từ vựng lâu hơn 300% so với cách học truyền thống.",
+      "items": {
+        "hsk": {
+          "title": "Lộ Trình HSK Chuẩn",
+          "desc": "Bài học được thiết kế bám sát giáo trình HSK mới nhất từ HSK 1 đến HSK 6."
+        },
+        "library": {
+          "title": "Thư Viện Khổng Lồ",
+          "desc": "Hơn 5000 video bài giảng, 10.000 từ vựng flashcard và kho đề thi thử phong phú."
+        },
+        "community": {
+          "title": "Cộng Đồng Sôi Nổi",
+          "desc": "Kết nối với hàng ngàn học viên khác, cùng thi đua bảng xếp hạng hàng tuần."
+        }
+      }
+    },
+    "cta": {
+      "login": "Đăng nhập",
+      "register": "Đăng ký ngay"
+    }
+  }
+}

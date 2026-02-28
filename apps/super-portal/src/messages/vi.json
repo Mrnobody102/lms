@@ -1,0 +1,36 @@
+{
+  "SuperPortal": {
+    "title": "Hệ thống & Đối tác",
+    "subtitle": "Giám sát trạng thái hệ thống ngày {date}",
+    "newTenant": "Thêm Đối tác",
+    "loading": "Đang tải Super Portal...",
+    "footer": {
+      "rights": "© 2024 LMS Platform. Bảo lưu mọi quyền."
+    },
+    "stats": {
+      "totalTenants": "Tổng số đối tác",
+      "active": "Đang hoạt động"
+    },
+    "tenants": {
+      "list": "Danh sách Đối tác",
+      "name": "Tên đối tác",
+      "domain": "Tên miền",
+      "status": "Trạng thái",
+      "actions": "Thao tác",
+      "active": "Hoạt động",
+      "inactive": "Đã khóa"
+    },
+    "nav": {
+      "docs": "Tài liệu",
+      "logout": "Đăng xuất"
+    }
+  },
+  "Auth": {
+    "login": "Đăng nhập",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "submitting": "Đang đăng nhập...",
+    "welcome": "Chào mừng quay lại",
+    "desc": "Vui lòng đăng nhập để quản trị hệ thống"
+  }
+}

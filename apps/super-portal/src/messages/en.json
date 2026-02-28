@@ -1,0 +1,36 @@
+{
+  "SuperPortal": {
+    "title": "Systems & Tenants",
+    "subtitle": "Monitoring status of {date}",
+    "newTenant": "New Tenant",
+    "loading": "Loading Super Portal...",
+    "footer": {
+      "rights": "© 2024 LMS Platform. All rights reserved."
+    },
+    "stats": {
+      "totalTenants": "Total Active Tenants",
+      "active": "Active"
+    },
+    "tenants": {
+      "list": "Tenant List",
+      "name": "Tenant Name",
+      "domain": "Domain",
+      "status": "Status",
+      "actions": "Actions",
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "nav": {
+      "docs": "Documentation",
+      "logout": "Logout"
+    }
+  },
+  "Auth": {
+    "login": "Login",
+    "email": "Email",
+    "password": "Password",
+    "submitting": "Logging in...",
+    "welcome": "Welcome back",
+    "desc": "Please login to manage the platform"
+  }
+}

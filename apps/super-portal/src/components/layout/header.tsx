@@ -2,9 +2,12 @@
 
 import Image from "next/image";
 import { useAuthStore } from "@/features/auth/auth.store";
-import { ThemeToggle } from "@repo/ui";
+import { ThemeToggle, LanguageToggle } from "@repo/ui";
+
+import { useTranslations } from "next-intl";
 
 export function Header() {
+  const t = useTranslations("SuperPortal");
   const { isAuthenticated, logout } = useAuthStore();
 
   return (
@@ -19,16 +22,17 @@ export function Header() {
         </span>
       </div>
       <div className="flex items-center gap-4">
-        <button className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-          Documentation
+        <button className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors hidden md:block">
+          {t("nav.docs")}
         </button>
         <ThemeToggle />
+        <LanguageToggle />
         {isAuthenticated && (
           <button
             onClick={logout}
             className="text-sm font-medium text-destructive hover:opacity-80 transition-colors mr-2"
           >
-            Logout
+            {t("nav.logout")}
           </button>
         )}
         <div className="w-8 h-8 rounded-full bg-muted border overflow-hidden relative">

@@ -1,0 +1,42 @@
+{
+  "Student": {
+    "nav": {
+      "courses": "Courses",
+      "hsk": "HSK Roadmap",
+      "vocab": "Vocabulary",
+      "blog": "Blog"
+    },
+    "hero": {
+      "badge": "Learn Chinese with HSK Standards",
+      "title": "Master",
+      "titleAlt": "Chinese",
+      "titleEnd": "Easily.",
+      "desc": "Comprehensive online learning platform with HSK 1-6 roadmaps. AI pronunciation practice, smart Flashcards, and high-quality video lectures.",
+      "trial": "Free Trial",
+      "roadmap": "View Roadmap",
+      "watchVideo": "Watch Intro Video"
+    },
+    "features": {
+      "whyUs": "Why Choose Us?",
+      "whyUsDesc": "Modern learning methods combined with AI technology help you remember vocabulary 300% longer than traditional methods.",
+      "items": {
+        "hsk": {
+          "title": "Standard HSK Roadmap",
+          "desc": "Lessons are designed closely following the latest HSK curricula from HSK 1 to HSK 6."
+        },
+        "library": {
+          "title": "Massive Library",
+          "desc": "Over 5000 video lectures, 10,000 flashcards, and a rich repository of practice exams."
+        },
+        "community": {
+          "title": "Vibrant Community",
+          "desc": "Connect with thousands of other students and compete in weekly rankings."
+        }
+      }
+    },
+    "cta": {
+      "login": "Login",
+      "register": "Register Now"
+    }
+  }
+}

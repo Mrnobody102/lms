@@ -1,8 +1,12 @@
-import Link from "next/link";
-import { BookOpen, PlayCircle, Trophy, User } from "lucide-react";
-import { ThemeToggle } from "@repo/ui";
+"use client";
 
+import { Link } from "../../navigation";
+import { BookOpen, PlayCircle, Trophy, User } from "lucide-react";
+import { ThemeToggle, LanguageToggle } from "@repo/ui";
+import { useTranslations } from "next-intl";
 export default function Home() {
+  const t = useTranslations("Student");
+
   return (
     <div className="min-h-screen font-sans">
       {/* Navbar */}
@@ -15,25 +19,26 @@ export default function Home() {
         </div>
         <div className="flex gap-6 text-sm font-medium text-muted-foreground">
           <Link href="#" className="hover:text-primary transition-colors">
-            Khóa học
+            {t("nav.courses")}
           </Link>
           <Link href="#" className="hover:text-primary transition-colors">
-            Lộ trình HSK
+            {t("nav.hsk")}
           </Link>
           <Link href="#" className="hover:text-primary transition-colors">
-            Từ vựng
+            {t("nav.vocab")}
           </Link>
           <Link href="#" className="hover:text-primary transition-colors">
-            Blog
+            {t("nav.blog")}
           </Link>
         </div>
         <div className="flex items-center gap-3">
           <ThemeToggle />
+          <LanguageToggle />
           <button className="px-4 py-2 text-sm font-medium hover:bg-muted rounded-md transition-all active:scale-95">
-            Đăng nhập
+            {t("cta.login")}
           </button>
           <button className="px-4 py-2 text-sm font-bold bg-primary text-primary-foreground rounded-md hover:opacity-90 shadow-md active:scale-95 transition-all">
-            Đăng ký ngay
+            {t("cta.register")}
           </button>
         </div>
       </nav>
@@ -43,26 +48,25 @@ export default function Home() {
         <div>
           <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-bold mb-6">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-            Học tiếng Trung chuẩn HSK
+            {t("hero.badge")}
           </div>
           <h1 className="text-5xl lg:text-7xl font-extrabold leading-tight mb-6">
-            Chinh Phục{" "}
+            {t("hero.title")}{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-orange-500">
-              Tiếng Trung
+              {t("hero.titleAlt")}
             </span>{" "}
-            Dễ Dàng.
+            {t("hero.titleEnd")}
           </h1>
           <p className="text-xl text-muted-foreground mb-8 leading-relaxed max-w-lg">
-            Nền tảng học trực tuyến toàn diện với lộ trình HSK 1-6. Luyện phát
-            âm AI, Flashcard thông minh, và Video bài giảng chất lượng cao.
+            {t("hero.desc")}
           </p>
           <div className="flex gap-4">
             <button className="px-8 py-4 bg-primary text-primary-foreground text-lg font-bold rounded-xl hover:opacity-90 transition-all shadow-lg shadow-primary/20 hover:-translate-y-1 flex items-center gap-2 active:scale-95">
               <PlayCircle className="w-5 h-5" />
-              Học Thử Miễn Phí
+              {t("hero.trial")}
             </button>
             <button className="px-8 py-4 bg-card text-foreground border text-lg font-bold rounded-xl hover:bg-muted transition-all active:scale-95">
-              Xem Lộ Trình
+              {t("hero.roadmap")}
             </button>
           </div>
         </div>
@@ -71,7 +75,7 @@ export default function Home() {
           <div className="relative aspect-video bg-slate-950 rounded-2xl shadow-2xl overflow-hidden border flex items-center justify-center group cursor-pointer">
             <div className="text-center">
               <PlayCircle className="w-20 h-20 text-white/80 group-hover:text-primary group-hover:scale-110 transition-all duration-300 mx-auto mb-4" />
-              <p className="text-slate-300 font-bold">Xem Video Giới Thiệu</p>
+              <p className="text-slate-300 font-bold">{t("hero.watchVideo")}</p>
             </div>
           </div>
         </div>
@@ -82,30 +86,29 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-extrabold mb-4">
-              Tại sao chọn chúng tôi?
+              {t("features.whyUs")}
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto font-medium">
-              Phương pháp học hiện đại kết hợp công nghệ AI giúp bạn nhớ từ vựng
-              lâu hơn 300% so với cách học truyền thống.
+              {t("features.whyUsDesc")}
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               {
-                title: "Lộ Trình HSK Chuẩn",
+                title: t("features.items.hsk.title"),
                 icon: Trophy,
-                desc: "Bài học được thiết kế bám sát giáo trình HSK mới nhất từ HSK 1 đến HSK 6.",
+                desc: t("features.items.hsk.desc"),
               },
               {
-                title: "Thư Viện Khổng Lồ",
+                title: t("features.items.library.title"),
                 icon: BookOpen,
-                desc: "Hơn 5000 video bài giảng, 10.000 từ vựng flashcard và kho đề thi thử phong phú.",
+                desc: t("features.items.library.desc"),
               },
               {
-                title: "Cộng Đồng Sôi Nổi",
+                title: t("features.items.community.title"),
                 icon: User,
-                desc: "Kết nối với hàng ngàn học viên khác, cùng thi đua bảng xếp hạng hàng tuần.",
+                desc: t("features.items.community.desc"),
               },
             ].map((item, i) => (
               <div

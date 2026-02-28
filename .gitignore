@@ -4,3 +4,4 @@ dist
 .next
 .turbo
 .env
+*.log

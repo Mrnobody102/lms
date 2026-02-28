@@ -5,7 +5,10 @@ import { useAuthStore } from "../auth.store";
 import toast from "react-hot-toast";
 import { Loader2, KeyRound } from "lucide-react";
 
+import { useTranslations } from "next-intl";
+
 export function LoginModal() {
+  const t = useTranslations("Auth");
   const { login, loading } = useAuthStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -14,9 +17,9 @@ export function LoginModal() {
     e.preventDefault();
     const success = await login(email, password);
     if (success) {
-      toast.success("Welcome, Super Admin!");
+      toast.success(t("welcome"));
     } else {
-      toast.error("Đăng nhập thất bại. Vui lòng kiểm tra lại tài khoản.");
+      toast.error("Login failed. Please check your credentials.");
     }
   };
 
@@ -36,7 +39,7 @@ export function LoginModal() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-bold text-foreground mb-1">
-              Email
+              {t("email")}
             </label>
             <input
               type="email"
@@ -50,7 +53,7 @@ export function LoginModal() {
 
           <div>
             <label className="block text-sm font-bold text-foreground mb-1">
-              Mật khẩu
+              {t("password")}
             </label>
             <input
               type="password"
@@ -70,7 +73,7 @@ export function LoginModal() {
             {loading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
-              "Đăng Nhập"
+              t("login")
             )}
           </button>
         </form>
