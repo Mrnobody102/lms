@@ -5,6 +5,7 @@ import { TenantMiddleware } from "./common/middleware/tenant.middleware";
 import { AuthModule } from "./auth/auth.module";
 import { UserModule } from "./user/user.module";
 import { AdminModule } from "./admin/admin.module";
+import { McpModule } from "./mcp/mcp.module";
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { AdminModule } from "./admin/admin.module";
     AuthModule,
     UserModule,
     AdminModule,
+    McpModule,
   ],
   controllers: [],
   providers: [],

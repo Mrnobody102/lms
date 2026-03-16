@@ -17,7 +17,7 @@ lms/
 ├── docs/                    # 📚 Documentation
 │   ├── API_DOCUMENTATION.md
 │   ├── QUICK_START.md
-│   └── SETUP_TROUBLESHOOTING.md
+│   └── TROUBLESHOOTING.md
 │
 ├── scripts/                 # 🛠️ Setup & utility scripts
 │   ├── test-api.ps1         # PowerShell API testing
@@ -39,7 +39,7 @@ lms/
 
 - [API Documentation](./docs/API_DOCUMENTATION.md) - Complete API reference
 - [Quick Start Guide](./docs/QUICK_START.md) - Setup instructions
-- [Troubleshooting](./docs/SETUP_TROUBLESHOOTING.md) - Common issues
+- [Troubleshooting](./docs/TROUBLESHOOTING.md) - Common issues
 
 ### Testing
 
