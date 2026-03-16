@@ -1,8 +1,10 @@
-import { Controller, Get, Post, Res, Req } from "@nestjs/common";
+import { Controller, Get, Post, Res, Req, UseGuards } from "@nestjs/common";
 import { Response, Request } from "express";
 import { McpService } from "./mcp.service";
+import { McpAuthGuard } from "./guards/mcp-auth.guard";
 
 @Controller("mcp")
+@UseGuards(McpAuthGuard)
 export class McpController {
   private transport: any = null;
 
