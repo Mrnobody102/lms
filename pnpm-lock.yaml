@@ -95,9 +95,6 @@ importers:
       '@nestjs/throttler':
         specifier: ^6.5.0
         version: 6.5.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@10.4.22(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/platform-express@10.4.22)(reflect-metadata@0.1.14)(rxjs@7.8.2))(reflect-metadata@0.1.14)
-      '@prisma/client':
-        specifier: latest
-        version: 7.2.0(prisma@5.22.0)(typescript@5.9.3)
       '@repo/database':
         specifier: workspace:*
         version: link:../../packages/database
@@ -1882,9 +1879,6 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
-  '@prisma/client-runtime-utils@7.2.0':
-    resolution: {integrity: sha512-dn7oB53v0tqkB0wBdMuTNFNPdEbfICEUe82Tn9FoKAhJCUkDH+fmyEp0ClciGh+9Hp2Tuu2K52kth2MTLstvmA==}
-
   '@prisma/client@5.22.0':
     resolution: {integrity: sha512-M0SVXfyHnQREBKxCgyo7sffrKttwE6R8PMq330MIUF0pTwjUhLbW84pFDlf06B27XyCR++VtjugEnIHdr07SVA==}
     engines: {node: '>=16.13'}
@@ -1892,18 +1886,6 @@ packages:
       prisma: '*'
     peerDependenciesMeta:
       prisma:
-        optional: true
-
-  '@prisma/client@7.2.0':
-    resolution: {integrity: sha512-JdLF8lWZ+LjKGKpBqyAlenxd/kXjd1Abf/xK+6vUA7R7L2Suo6AFTHFRpPSdAKCan9wzdFApsUpSa/F6+t1AtA==}
-    engines: {node: ^20.19 || ^22.12 || >=24.0}
-    peerDependencies:
-      prisma: '*'
-      typescript: '>=5.4.0'
-    peerDependenciesMeta:
-      prisma:
-        optional: true
-      typescript:
         optional: true
 
   '@prisma/debug@5.22.0':
@@ -8700,18 +8682,9 @@ snapshots:
     dependencies:
       playwright: 1.57.0
 
-  '@prisma/client-runtime-utils@7.2.0': {}
-
   '@prisma/client@5.22.0(prisma@5.22.0)':
     optionalDependencies:
       prisma: 5.22.0
-
-  '@prisma/client@7.2.0(prisma@5.22.0)(typescript@5.9.3)':
-    dependencies:
-      '@prisma/client-runtime-utils': 7.2.0
-    optionalDependencies:
-      prisma: 5.22.0
-      typescript: 5.9.3
 
   '@prisma/debug@5.22.0': {}
 

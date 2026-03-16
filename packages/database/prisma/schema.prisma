@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../generated/client"
 }
 
 datasource db {
@@ -52,4 +53,19 @@ model Course {
   title     String
   tenantId  String
   tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  lessons   Lesson[]
+}
+
+model Lesson {
+  id        String   @id @default(uuid())
+  title     String
+  content   String?  // Nội dung bài học (HTML/Markdown)
+  videoUrl  String?  // Link video bài giảng
+  order     Int      @default(0) // Thứ tự bài học trong khóa học
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([courseId])
 }

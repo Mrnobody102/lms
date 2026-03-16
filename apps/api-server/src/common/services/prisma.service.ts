@@ -28,4 +28,8 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   get course(): PrismaClient["course"] {
     return this.prisma.course;
   }
+
+  get lesson(): PrismaClient["lesson"] {
+    return this.prisma.lesson;
+  }
 }

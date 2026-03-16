@@ -18,7 +18,6 @@
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/swagger": "^7.0.0",
     "@nestjs/throttler": "^6.5.0",
-    "@prisma/client": "latest",
     "@repo/database": "workspace:*",
     "@repo/shared": "workspace:*",
     "@swc/helpers": "^0.5.19",

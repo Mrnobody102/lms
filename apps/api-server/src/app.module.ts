@@ -2,10 +2,12 @@ import { Module, MiddlewareConsumer, RequestMethod } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { ThrottlerModule } from "@nestjs/throttler";
 import { TenantMiddleware } from "./common/middleware/tenant.middleware";
+import { PrismaModule } from "./common/prisma.module";
 import { AuthModule } from "./auth/auth.module";
 import { UserModule } from "./user/user.module";
 import { AdminModule } from "./admin/admin.module";
 import { McpModule } from "./mcp/mcp.module";
+import { LessonModule } from "./lesson.module";
 
 @Module({
   imports: [
@@ -19,10 +21,12 @@ import { McpModule } from "./mcp/mcp.module";
         limit: 100,
       },
     ]),
+    PrismaModule,
     AuthModule,
     UserModule,
     AdminModule,
     McpModule,
+    LessonModule,
   ],
   controllers: [],
   providers: [],

@@ -5,7 +5,6 @@ import { McpController } from "./mcp.controller";
 import { McpRegistryService } from "./mcp-registry.service";
 import { McpCoreSkillsService } from "./mcp-core-skills.service";
 import { McpDbSkillsService } from "./mcp-db-skills.service";
-import { PrismaService } from "../common/services/prisma.service";
 
 @Module({
   imports: [DiscoveryModule],
@@ -14,7 +13,6 @@ import { PrismaService } from "../common/services/prisma.service";
     McpRegistryService,
     McpCoreSkillsService,
     McpDbSkillsService,
-    PrismaService,
   ],
   controllers: [McpController],
   exports: [McpService],
