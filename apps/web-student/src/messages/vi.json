@@ -37,6 +37,30 @@
     "cta": {
       "login": "Đăng nhập",
       "register": "Đăng ký ngay"
+    },
+    "lesson": {
+      "title": "Bài học",
+      "complete": "Hoàn thành bài học",
+      "completed": "Đã hoàn thành",
+      "next": "Bài tiếp theo",
+      "prev": "Bài trước đó",
+      "curriculum": "Nội dung khóa học",
+      "backToCourse": "Quay lại khóa học",
+      "totalLessons": "{count} bài học",
+      "duration": "{minutes} phút",
+      "goals": "Mục tiêu bài học",
+      "requirements": "Yêu cầu đạt được",
+      "sampleDesc": "Trong bài học này, chúng ta sẽ bắt đầu những bước đầu tiên trên hành trình chinh phục tiếng Trung. Bạn sẽ được học cách phát âm các vận mẫu, thanh mẫu cơ bản và cách chào hỏi người khác một cách lịch sự nhất.",
+      "goalItems": [
+        "Nắm vững bảng chữ cái Pinyin cơ bản",
+        "Biết cách chào hỏi xã giao",
+        "Tự giới thiệu tên của mình"
+      ],
+      "reqItems": [
+        "Hoàn thành video bài giảng",
+        "Đạt 80% điểm bài Quiz ngắn",
+        "Luyện tập phát âm từ mới"
+      ]
     }
   }
 }

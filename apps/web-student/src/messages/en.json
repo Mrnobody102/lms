@@ -37,6 +37,30 @@
     "cta": {
       "login": "Login",
       "register": "Register Now"
+    },
+    "lesson": {
+      "title": "Lesson",
+      "complete": "Mark as Complete",
+      "completed": "Completed",
+      "next": "Next Lesson",
+      "prev": "Previous Lesson",
+      "curriculum": "Course Curriculum",
+      "backToCourse": "Back to Course",
+      "totalLessons": "{count} lessons",
+      "duration": "{minutes} mins",
+      "goals": "Lesson Goals",
+      "requirements": "Requirements",
+      "sampleDesc": "In this lesson, we will take the first steps on the journey to master Chinese. You will learn how to pronounce basic initials and finals, and how to greet others politely.",
+      "goalItems": [
+        "Master the basic Pinyin alphabet",
+        "Know how to greet people socially",
+        "Introduce yourself by name"
+      ],
+      "reqItems": [
+        "Complete the video lecture",
+        "Score 80% on the short quiz",
+        "Practice new vocabulary pronunciation"
+      ]
     }
   }
 }
