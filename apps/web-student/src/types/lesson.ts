@@ -10,10 +10,12 @@ export interface Lesson {
   courseId: string;
   order: number;
   quiz?: any;
+  completed?: boolean;
 }
 
 export interface Course {
   id: string;
   title: string;
   lessons: Lesson[];
+  totalDuration?: number;
 }

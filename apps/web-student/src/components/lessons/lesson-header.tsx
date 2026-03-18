@@ -37,7 +37,7 @@ export function LessonHeader({
           </h1>
           <p className="text-[10px] sm:text-xs text-muted-foreground font-medium hidden sm:block">
             {t("lesson.totalLessons", { count: course.lessons.length })} •{" "}
-            {t("lesson.duration", { minutes: course.totalDuration })}
+            {t("lesson.duration", { minutes: course.totalDuration ?? 0 })}
           </p>
         </div>
       </div>

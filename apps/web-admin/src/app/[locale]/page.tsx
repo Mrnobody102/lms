@@ -5,8 +5,32 @@ import { useTranslations } from "next-intl";
 import { AdminHeader } from "@/components/layout/admin-header";
 import { AdminSidebar } from "@/components/layout/admin-sidebar";
 
+import { useAuthStore } from "@/features/auth/auth.store";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
 export default function AdminHome() {
   const t = useTranslations("Admin");
+  const { isAuthenticated, checkAuth, isInitialized } = useAuthStore();
+  const router = useRouter();
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  useEffect(() => {
+    if (isInitialized && !isAuthenticated) {
+      router.push("/login");
+    }
+  }, [isInitialized, isAuthenticated, router]);
+
+  if (!isInitialized || !isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0b] flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen font-sans flex transition-colors duration-300 bg-background/50">

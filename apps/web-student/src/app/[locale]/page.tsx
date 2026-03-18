@@ -1,6 +1,6 @@
 "use client";
 
-import { Link, useRouter } from "../../navigation";
+import { Link } from "../../navigation";
 import {
   BookOpen,
   PlayCircle,
@@ -16,7 +16,6 @@ import { useAuthStore } from "../../features/auth/auth.store";
 
 export default function Home() {
   const t = useTranslations("Student");
-  const router = useRouter();
   const [authModal, setAuthModal] = useState<{
     open: boolean;
     tab: "login" | "register";
@@ -62,38 +61,38 @@ export default function Home() {
           {isAuthenticated ? (
             <div className="flex items-center gap-4 ml-2">
               <div className="flex items-center gap-2 group cursor-pointer">
-                <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
+                <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all shadow-inner">
                   <UserIcon className="w-5 h-5" />
                 </div>
                 <div className="hidden md:block">
-                  <p className="text-sm font-black truncate max-w-[120px]">
+                  <p className="text-sm font-black truncate max-w-[120px] tracking-tight">
                     {user?.name}
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => logout()}
-                className="p-2 text-muted-foreground hover:text-destructive transition-colors rounded-xl hover:bg-destructive/10"
+                className="w-10 h-10 flex items-center justify-center text-muted-foreground hover:text-destructive transition-all rounded-2xl hover:bg-destructive/10"
                 title={t("cta.logout") || "Logout"}
               >
                 <LogOut className="w-5 h-5" />
               </button>
             </div>
           ) : (
-            <>
-              <button
-                onClick={() => setAuthModal({ open: true, tab: "login" })}
-                className="px-4 py-2 text-sm font-medium hover:bg-muted rounded-md transition-all active:scale-95"
+            <div className="flex items-center gap-2">
+              <Link
+                href="/login"
+                className="px-6 py-2.5 text-sm font-black uppercase tracking-widest hover:bg-muted rounded-2xl transition-all active:scale-95"
               >
                 {t("cta.login")}
-              </button>
-              <button
-                onClick={() => setAuthModal({ open: true, tab: "register" })}
-                className="px-4 py-2 text-sm font-bold bg-primary text-primary-foreground rounded-md hover:opacity-90 shadow-md active:scale-95 transition-all"
+              </Link>
+              <Link
+                href="/register"
+                className="px-6 py-2.5 text-sm font-black uppercase tracking-widest bg-primary text-primary-foreground rounded-2xl hover:shadow-lg hover:shadow-primary/20 active:scale-95 transition-all"
               >
                 {t("cta.register")}
-              </button>
-            </>
+              </Link>
+            </div>
           )}
         </div>
       </nav>
@@ -115,33 +114,20 @@ export default function Home() {
           <p className="text-xl text-muted-foreground mb-8 leading-relaxed max-w-lg">
             {t("hero.desc")}
           </p>
-          <div className="flex gap-4">
-            <button
-              onClick={() => {
-                if (isAuthenticated) {
-                  // Navigate to courses if already logged in
-                  router.push("/courses");
-                } else {
-                  setAuthModal({ open: true, tab: "register" });
-                }
-              }}
-              className="px-8 py-4 bg-primary text-primary-foreground text-lg font-bold rounded-xl hover:opacity-90 transition-all shadow-lg shadow-primary/20 hover:-translate-y-1 flex items-center gap-2 active:scale-95"
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Link
+              href={isAuthenticated ? "/courses" : "/register"}
+              className="px-10 py-5 bg-primary text-primary-foreground text-lg font-black rounded-2xl hover:shadow-2xl hover:shadow-primary/30 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 active:scale-95"
             >
-              <PlayCircle className="w-5 h-5" />
+              <PlayCircle className="w-6 h-6" />
               {t("hero.trial")}
-            </button>
-            <button
-              onClick={() => {
-                if (!isAuthenticated) {
-                  setAuthModal({ open: true, tab: "login" });
-                } else {
-                  router.push("/courses");
-                }
-              }}
-              className="px-8 py-4 bg-card text-foreground border text-lg font-bold rounded-xl hover:bg-muted transition-all active:scale-95"
+            </Link>
+            <Link
+              href={isAuthenticated ? "/courses" : "/login"}
+              className="px-10 py-5 bg-card text-foreground border border-border/50 text-lg font-black rounded-2xl hover:bg-muted hover:shadow-xl transition-all flex items-center justify-center active:scale-95"
             >
               {t("hero.roadmap")}
-            </button>
+            </Link>
           </div>
         </div>
         <div className="relative">

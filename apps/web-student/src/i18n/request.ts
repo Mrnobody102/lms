@@ -6,9 +6,13 @@ export default getRequestConfig(async ({ requestLocale }) => {
   const baseLocale = locale || defaultLocale;
   // Validate that the incoming `locale` parameter is valid
   if (!locales.includes(baseLocale as any)) {
+    // Fallback to default locale instead of empty messages to prevent crashing
+    const fallbackLocale = defaultLocale;
+    const messages = (await import(`../messages/${fallbackLocale}.json`))
+      .default;
     return {
-      locale: baseLocale,
-      messages: {},
+      locale: fallbackLocale,
+      messages,
     };
   }
 

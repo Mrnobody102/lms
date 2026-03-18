@@ -19,9 +19,9 @@ export class McpRegistryService implements OnModuleInit {
     private readonly mcpService: McpService,
   ) {}
 
-  onModuleInit() {
+  async onModuleInit() {
     this.explore();
-    this.registerWithMcp();
+    await this.registerWithMcp();
   }
 
   private explore() {
@@ -53,6 +53,10 @@ export class McpRegistryService implements OnModuleInit {
     const { CallToolRequestSchema } =
       await import("@modelcontextprotocol/sdk/types.js");
     const server = this.mcpService.server;
+    if (!server) {
+      this.logger.warn("MCP Server not initialized yet, skipping registration");
+      return;
+    }
 
     // Override list tools
     server.setRequestHandler({ method: "tools/list" } as any, async () => ({

@@ -25,20 +25,22 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5">
       {error && (
-        <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-3 text-destructive animate-in fade-in slide-in-from-top-2">
+        <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-2xl flex items-start gap-3 text-destructive animate-in fade-in slide-in-from-top-2">
           <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-          <p className="text-sm font-medium">{error}</p>
+          <p className="text-sm font-semibold">{error}</p>
         </div>
       )}
 
-      <div className="space-y-1">
-        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">
+      <div className="space-y-2">
+        <label className="text-[11px] font-black uppercase tracking-[0.15em] text-muted-foreground/70 ml-1">
           {t("auth.name")}
         </label>
         <div className="relative group">
-          <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-muted-foreground group-focus-within:text-primary transition-colors duration-300">
+            <User className="w-full h-full" />
+          </div>
           <input
             type="text"
             required
@@ -48,17 +50,19 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
               if (error) clearError();
             }}
             placeholder="Nguyễn Văn A"
-            className="w-full bg-muted/50 border border-border/50 rounded-2xl pl-12 pr-6 py-4 font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-background transition-all"
+            className="w-full bg-muted/30 border border-border/50 rounded-2xl pl-12 pr-6 py-4 font-bold text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:bg-background focus:border-primary/30 transition-all duration-300"
           />
         </div>
       </div>
 
-      <div className="space-y-1">
-        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">
+      <div className="space-y-2">
+        <label className="text-[11px] font-black uppercase tracking-[0.15em] text-muted-foreground/70 ml-1">
           {t("auth.email")}
         </label>
         <div className="relative group">
-          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-muted-foreground group-focus-within:text-primary transition-colors duration-300">
+            <Mail className="w-full h-full" />
+          </div>
           <input
             type="email"
             required
@@ -68,17 +72,19 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
               if (error) clearError();
             }}
             placeholder="example@email.com"
-            className="w-full bg-muted/50 border border-border/50 rounded-2xl pl-12 pr-6 py-4 font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-background transition-all"
+            className="w-full bg-muted/30 border border-border/50 rounded-2xl pl-12 pr-6 py-4 font-bold text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:bg-background focus:border-primary/30 transition-all duration-300"
           />
         </div>
       </div>
 
-      <div className="space-y-1">
-        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">
+      <div className="space-y-2">
+        <label className="text-[11px] font-black uppercase tracking-[0.15em] text-muted-foreground/70 ml-1">
           {t("auth.password")}
         </label>
         <div className="relative group">
-          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-muted-foreground group-focus-within:text-primary transition-colors duration-300">
+            <Lock className="w-full h-full" />
+          </div>
           <input
             type="password"
             required
@@ -89,7 +95,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
               if (error) clearError();
             }}
             placeholder="••••••••"
-            className="w-full bg-muted/50 border border-border/50 rounded-2xl pl-12 pr-6 py-4 font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-background transition-all"
+            className="w-full bg-muted/30 border border-border/50 rounded-2xl pl-12 pr-6 py-4 font-bold text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:bg-background focus:border-primary/30 transition-all duration-300"
           />
         </div>
       </div>
@@ -97,16 +103,19 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-primary text-primary-foreground font-black py-4 rounded-2xl shadow-xl shadow-primary/20 hover:opacity-90 active:scale-[0.98] disabled:opacity-50 transition-all flex items-center justify-center gap-2 mt-4"
+        className="w-full bg-primary text-primary-foreground font-black py-4 rounded-2xl shadow-2xl shadow-primary/30 hover:shadow-primary/40 hover:-translate-y-1 active:scale-[0.98] disabled:opacity-50 disabled:translate-y-0 transition-all duration-300 flex items-center justify-center gap-3 mt-4 relative overflow-hidden group"
       >
+        <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
         {loading ? (
           <Loader2 className="w-5 h-5 animate-spin" />
         ) : (
-          t("auth.registerButton")
+          <>
+            <span className="relative z-10">{t("auth.registerButton")}</span>
+          </>
         )}
       </button>
 
-      <p className="text-[10px] text-center text-muted-foreground font-bold leading-relaxed px-4 opacity-70">
+      <p className="text-[10px] text-center text-muted-foreground font-bold leading-relaxed px-4 opacity-70 italic">
         {t("auth.terms")}
       </p>
     </form>

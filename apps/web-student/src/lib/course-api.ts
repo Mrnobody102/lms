@@ -8,12 +8,15 @@ export interface Lesson {
   videoUrl?: string;
   duration: number;
   order: number;
+  courseId: string;
+  completed?: boolean;
 }
 
 export interface Course {
   id: string;
   title: string;
   lessons: Lesson[];
+  totalDuration?: number;
 }
 
 export const courseApi = {
@@ -24,6 +27,11 @@ export const courseApi = {
 
   getCourse: async (id: string) => {
     const response = await api.get(`/courses/${id}`);
+    return response.data.data;
+  },
+
+  getLesson: async (id: string) => {
+    const response = await api.get(`/lessons/${id}`);
     return response.data.data;
   },
 };

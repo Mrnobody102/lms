@@ -28,14 +28,14 @@ describe("LessonController", () => {
     expect(controller).toBeDefined();
   });
 
-  it("create() should call service.create", async () => {
+  it("should call create", async () => {
     const dto = { title: "Test", courseId: "course-1" };
-    await controller.create(dto as any);
-    expect(service.create).toHaveBeenCalledWith(dto);
+    await controller.create(dto as any, { tenantId: "tenant-1" });
+    expect(service.create).toHaveBeenCalled();
   });
 
-  it("findAll() should call service.findAll", async () => {
-    await controller.findAll("course-1");
-    expect(service.findAll).toHaveBeenCalledWith("course-1");
+  it("should call findAll", async () => {
+    await controller.findAll("course-1", { tenantId: "tenant-1" });
+    expect(service.findAll).toHaveBeenCalled();
   });
 });

@@ -56,6 +56,7 @@ async function main() {
     data: {
       title: "Khóa học Nhập môn Tiếng Trung (HSK 1 - Demo)",
       tenantId: tenant.id,
+      totalDuration: 30,
       lessons: {
         create: [
           {
@@ -64,6 +65,7 @@ async function main() {
             videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", // Placeholder
             duration: 15,
             order: 1,
+            tenantId: tenant.id,
           },
           {
             title: "Bài 2: Từ vựng cơ bản (Chào hỏi)",
@@ -72,12 +74,14 @@ async function main() {
               "<h2>Chào hỏi trong tiếng Trung</h2><p>Nǐ hǎo (你好) - Chào bạn</p><p>Zàijiàn (再见) - Tạm biệt</p>",
             duration: 10,
             order: 2,
+            tenantId: tenant.id,
           },
           {
             title: "Bài 3: Bài tập ôn tập Bài 1 & 2",
             type: "quiz" as any,
             duration: 5,
             order: 3,
+            tenantId: tenant.id,
             quiz: {
               questions: [
                 {

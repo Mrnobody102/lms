@@ -9,9 +9,12 @@ const api = axios.create({
 
 // Interceptor to add Tenant ID and Auth token
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  // In a real app, we'd get this from a context, cookie, or localStorage
-  // For now, we'll use a placeholder or detect from domain
-  const tenantId = "trung-tam-demo";
+  // Get tenant ID from localStorage or from the context/subdomain
+  const tenantId =
+    typeof window !== "undefined"
+      ? localStorage.getItem("tenantId") || "trung-tam-demo"
+      : "trung-tam-demo";
+
   if (tenantId) {
     config.headers["x-tenant-id"] = tenantId;
   }

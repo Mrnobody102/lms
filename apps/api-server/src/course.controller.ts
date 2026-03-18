@@ -42,19 +42,23 @@ export class CourseController {
 
   @Get(":id")
   @ApiOperation({ summary: "Lấy chi tiết khóa học kèm bài học" })
-  findOne(@Param("id") id: string) {
-    return this.courseService.findOne(id);
+  findOne(@Param("id") id: string, @Request() req: any) {
+    return this.courseService.findOne(id, req.tenantId);
   }
 
   @Patch(":id")
   @ApiOperation({ summary: "Cập nhật khóa học" })
-  update(@Param("id") id: string, @Body() updateCourseDto: CreateCourseDto) {
-    return this.courseService.update(id, updateCourseDto);
+  update(
+    @Param("id") id: string,
+    @Body() updateCourseDto: CreateCourseDto,
+    @Request() req: any,
+  ) {
+    return this.courseService.update(id, req.tenantId, updateCourseDto);
   }
 
   @Delete(":id")
   @ApiOperation({ summary: "Xóa khóa học" })
-  remove(@Param("id") id: string) {
-    return this.courseService.remove(id);
+  remove(@Param("id") id: string, @Request() req: any) {
+    return this.courseService.remove(id, req.tenantId);
   }
 }

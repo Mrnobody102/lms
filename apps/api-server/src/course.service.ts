@@ -25,27 +25,36 @@ export class CourseService {
     });
   }
 
-  async findOne(id: string) {
-    const course = await this.prisma.course.findUnique({
-      where: { id },
+  async findOne(id: string, tenantId: string) {
+    const course = await this.prisma.course.findFirst({
+      where: { id, tenantId },
       include: {
         lessons: {
           orderBy: { order: "asc" },
         },
       },
     });
-    if (!course) throw new NotFoundException(`Course with ID ${id} not found`);
+    if (!course)
+      throw new NotFoundException(
+        `Course with ID ${id} not found in this tenant`,
+      );
     return course;
   }
 
-  async update(id: string, data: { title?: string }) {
+  async update(id: string, tenantId: string, data: { title?: string }) {
+    // Ensure course exists and belongs to tenant
+    await this.findOne(id, tenantId);
+
     return this.prisma.course.update({
       where: { id },
       data,
     });
   }
 
-  async remove(id: string) {
+  async remove(id: string, tenantId: string) {
+    // Ensure course exists and belongs to tenant
+    await this.findOne(id, tenantId);
+
     return this.prisma.course.delete({ where: { id } });
   }
 }

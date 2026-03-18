@@ -52,6 +52,7 @@ export class ProgressController {
       req.user.id,
       data.lessonId,
       data.status,
+      req.user.tenantId,
     );
   }
 
@@ -61,7 +62,11 @@ export class ProgressController {
     @Request() req: AuthenticatedRequest,
     @Param("courseId") courseId: string,
   ) {
-    return this.progressService.getProgress(req.user.id, courseId);
+    return this.progressService.getProgress(
+      req.user.id,
+      courseId,
+      req.user.tenantId,
+    );
   }
 
   @Get("lesson/:lessonId")
@@ -70,6 +75,10 @@ export class ProgressController {
     @Request() req: AuthenticatedRequest,
     @Param("lessonId") lessonId: string,
   ) {
-    return this.progressService.getLessonProgress(req.user.id, lessonId);
+    return this.progressService.getLessonProgress(
+      req.user.id,
+      lessonId,
+      req.user.tenantId,
+    );
   }
 }

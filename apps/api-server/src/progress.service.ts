@@ -1,20 +1,28 @@
-import { Injectable } from "@nestjs/common";
-import { PrismaClient, ProgressStatus } from "@repo/database";
-
-const prisma = new PrismaClient();
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { ProgressStatus } from "@repo/database";
+import { PrismaService } from "./common/services/prisma.service";
 
 @Injectable()
 export class ProgressService {
+  constructor(private readonly prisma: PrismaService) {}
+
   /**
    * Update or create a progress record for a user and lesson.
-   * Prisma will automatically validate that the user and lesson exist due to foreign key constraints.
+   * Ensures the lesson belongs to the user's tenant.
    */
   async updateProgress(
     userId: string,
     lessonId: string,
     status: ProgressStatus,
+    tenantId: string,
   ) {
-    return prisma.userLessonProgress.upsert({
+    // Verify lesson ownership
+    const lesson = await this.prisma.lesson.findFirst({
+      where: { id: lessonId, tenantId },
+    });
+    if (!lesson) throw new NotFoundException(`Lesson not found in this tenant`);
+
+    return this.prisma.userLessonProgress.upsert({
       where: {
         userId_lessonId: {
           userId,
@@ -35,12 +43,13 @@ export class ProgressService {
   /**
    * Get all progress records for a user within a specific course.
    */
-  async getProgress(userId: string, courseId: string) {
-    return prisma.userLessonProgress.findMany({
+  async getProgress(userId: string, courseId: string, tenantId: string) {
+    return this.prisma.userLessonProgress.findMany({
       where: {
         userId,
         lesson: {
           courseId,
+          tenantId,
         },
       },
       orderBy: {
@@ -52,12 +61,13 @@ export class ProgressService {
   /**
    * Get a single progress record for a user and lesson.
    */
-  async getLessonProgress(userId: string, lessonId: string) {
-    return prisma.userLessonProgress.findUnique({
+  async getLessonProgress(userId: string, lessonId: string, tenantId: string) {
+    return this.prisma.userLessonProgress.findFirst({
       where: {
-        userId_lessonId: {
-          userId,
-          lessonId,
+        userId,
+        lessonId,
+        lesson: {
+          tenantId,
         },
       },
     });

@@ -26,6 +26,6 @@ export class RegisterDto {
   phoneNumber?: string;
 
   @IsUUID()
-  @IsOptional()
-  tenantId?: string;
+  @IsNotEmpty()
+  tenantId: string;
 }

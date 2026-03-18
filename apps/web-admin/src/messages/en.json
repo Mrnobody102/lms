@@ -11,7 +11,15 @@
     "activeCourses": "Active Courses",
     "completionRate": "Completion Rate",
     "welcome": "Welcome back, here is the center status today.",
-    "createCourse": "+ Create New Course"
+    "createCourse": "+ Create New Course",
+    "auth": {
+      "loginTitle": "ADMINISTRATOR",
+      "loginDesc": "Sign in to manage your training center.",
+      "email": "Admin Email",
+      "password": "Password",
+      "loginButton": "Enter System",
+      "forgotPassword": "Forgot password?"
+    }
   },
   "Common": {
     "search": "Search...",

@@ -11,7 +11,15 @@
     "activeCourses": "Khóa học Active",
     "completionRate": "Tỷ lệ hoàn thành",
     "welcome": "Chào mừng quay trở lại, đây là tình hình trung tâm hôm nay.",
-    "createCourse": "+ Tạo khóa học mới"
+    "createCourse": "+ Tạo khóa học mới",
+    "auth": {
+      "loginTitle": "QUẢN TRỊ VIÊN",
+      "loginDesc": "Đăng nhập để quản lý trung tâm đào tạo của bạn.",
+      "email": "Email quản trị",
+      "password": "Mật khẩu",
+      "loginButton": "Vào hệ thống",
+      "forgotPassword": "Quên mật khẩu?"
+    }
   },
   "Common": {
     "search": "Tìm kiếm...",
