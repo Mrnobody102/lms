@@ -36,9 +36,11 @@
     },
     "cta": {
       "login": "Đăng nhập",
-      "register": "Đăng ký ngay"
+      "register": "Đăng ký ngay",
+      "logout": "Đăng xuất"
     },
     "lesson": {
+      "lesson": "Bài học",
       "title": "Bài học",
       "complete": "Hoàn thành bài học",
       "completed": "Đã hoàn thành",
@@ -60,7 +62,50 @@
         "Hoàn thành video bài giảng",
         "Đạt 80% điểm bài Quiz ngắn",
         "Luyện tập phát âm từ mới"
-      ]
+      ],
+      "part": "Phần",
+      "readingMaterial": "Tài liệu đọc",
+      "endOfContent": "Kết thúc nội dung",
+      "videoComingSoon": "Video sẽ sớm ra mắt",
+      "notFound": "Không tìm thấy bài học",
+      "notFoundDesc": "Bài học bạn đang tìm kiếm không tồn tại hoặc đã bị gỡ bỏ."
+    },
+    "quiz": {
+      "finalAssessment": "Đánh giá cuối bài",
+      "testKnowledge": "Kiểm tra kiến thức của bạn về chủ đề này.",
+      "checkAnswers": "Kiểm tra đáp án",
+      "greatEffort": "Nỗ lực tuyệt vời!",
+      "yourScore": "Điểm của bạn: {score} / {total}",
+      "tryAgain": "Làm lại bài",
+      "noQuestions": "Không có câu hỏi nào cho bài học này."
+    },
+    "auth": {
+      "loginTitle": "Chào mừng trở lại!",
+      "loginDesc": "Tiếp tục chinh phục tiếng Trung cùng chúng tôi.",
+      "registerTitle": "Bắt đầu hành trình",
+      "registerDesc": "Học tập cùng cộng đồng 10.000+ học viên sôi động.",
+      "email": "Email",
+      "password": "Mật khẩu",
+      "name": "Họ và Tên",
+      "forgotPassword": "Quên mật khẩu?",
+      "loginButton": "Đăng nhập ngay",
+      "registerButton": "Tạo tài khoản học tập",
+      "footerLogin": "Chưa có tài khoản?",
+      "footerRegister": "Đã là thành viên?",
+      "signUpLink": "Đăng ký ngay",
+      "signInLink": "Đăng nhập tại đây",
+      "terms": "Bằng cách đăng ký, bạn đồng ý với Điều khoản dịch vụ và Chính sách bảo mật của chúng tôi.",
+      "loginTab": "Đăng nhập",
+      "registerTab": "Tham gia ngay"
+    },
+    "courses": {
+      "title": "Tất cả khóa học",
+      "subtitle": "Bắt đầu hành trình chinh phục tiếng Trung của bạn ngay hôm nay.",
+      "viewDetail": "Xem chi tiết",
+      "startNow": "Học ngay",
+      "noLessons": "Chưa có bài học",
+      "duration": "{minutes} phút",
+      "lessonsCount": "{count} bài học"
     }
   }
 }

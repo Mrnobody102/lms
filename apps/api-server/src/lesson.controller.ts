@@ -41,6 +41,20 @@ class CreateLessonDto {
   @ApiProperty({ example: "uuid-of-course" })
   @IsUUID()
   courseId: string;
+
+  @ApiPropertyOptional({ example: "video", enum: ["video", "text", "quiz"] })
+  @IsString()
+  @IsOptional()
+  type?: string;
+
+  @ApiPropertyOptional({ example: 10 })
+  @IsInt()
+  @IsOptional()
+  duration?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  quiz?: any;
 }
 
 class UpdateLessonDto {
@@ -63,6 +77,20 @@ class UpdateLessonDto {
   @IsInt()
   @IsOptional()
   order?: number;
+
+  @ApiPropertyOptional({ enum: ["video", "text", "quiz"] })
+  @IsString()
+  @IsOptional()
+  type?: string;
+
+  @ApiPropertyOptional()
+  @IsInt()
+  @IsOptional()
+  duration?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  quiz?: any;
 }
 
 @ApiTags("lessons")

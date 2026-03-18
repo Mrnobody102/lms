@@ -8,6 +8,8 @@ import { UserModule } from "./user/user.module";
 import { AdminModule } from "./admin/admin.module";
 import { McpModule } from "./mcp/mcp.module";
 import { LessonModule } from "./lesson.module";
+import { CourseModule } from "./course.module";
+import { ProgressModule } from "./progress.module";
 
 @Module({
   imports: [
@@ -27,6 +29,8 @@ import { LessonModule } from "./lesson.module";
     AdminModule,
     McpModule,
     LessonModule,
+    CourseModule,
+    ProgressModule,
   ],
   controllers: [],
   providers: [],

@@ -1,86 +1,27 @@
 "use client";
 
-import {
-  LayoutDashboard,
-  Users,
-  BookOpen,
-  Settings,
-  TrendingUp,
-  DollarSign,
-  Calendar,
-} from "lucide-react";
-import { ThemeToggle, LanguageToggle } from "@repo/ui";
+import { Users, BookOpen, TrendingUp, DollarSign } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { AdminHeader } from "@/components/layout/admin-header";
+import { AdminSidebar } from "@/components/layout/admin-sidebar";
 
 export default function AdminHome() {
   const t = useTranslations("Admin");
 
   return (
-    <div className="min-h-screen font-sans flex transition-colors duration-300">
-      {/* Sidebar */}
-      <aside className="w-64 bg-sidebar text-sidebar-foreground border-r fixed h-full hidden md:flex flex-col z-10 shadow-sm">
-        <div className="p-6 border-sidebar-border border-b">
-          <div className="flex items-center gap-2 text-sidebar-primary">
-            <div className="h-8 w-8 bg-sidebar-primary rounded-lg flex items-center justify-center text-sidebar-primary-foreground font-bold shadow-lg shadow-sidebar-primary/20">
-              C
-            </div>
-            <span className="font-bold text-lg tracking-tight">
-              Center Admin
-            </span>
-          </div>
-        </div>
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {[
-            { name: t("dashboard"), icon: LayoutDashboard, active: true },
-            { name: t("students"), icon: Users },
-            { name: t("courses"), icon: BookOpen },
-            { name: t("finance"), icon: DollarSign },
-            { name: t("schedule"), icon: Calendar },
-            { name: t("settings"), icon: Settings },
-          ].map((item) => (
-            <a
-              key={item.name}
-              href="#"
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                item.active
-                  ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md shadow-sidebar-primary/20"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-              }`}
-            >
-              <item.icon className="w-5 h-5" />
-              {item.name}
-            </a>
-          ))}
-        </nav>
-        <div className="p-4 border-t">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-muted border"></div>
-            <div>
-              <p className="text-sm font-semibold">Admin User</p>
-              <p className="text-xs text-muted-foreground">Trung Tâm A</p>
-            </div>
-          </div>
-        </div>
-      </aside>
+    <div className="min-h-screen font-sans flex transition-colors duration-300 bg-background/50">
+      <AdminSidebar />
 
       {/* Main Content */}
-      <main className="flex-1 md:ml-64 p-8 bg-background">
-        <header className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-2xl font-bold">{t("dashboard")}</h1>
-            <p className="text-muted-foreground mt-1">{t("welcome")}</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-            <LanguageToggle />
-            <button className="px-4 py-2 bg-primary text-primary-foreground text-sm font-semibold rounded-lg hover:opacity-90 shadow-md active:scale-95 transition-all">
-              {t("createCourse")}
-            </button>
-          </div>
-        </header>
+      <main className="flex-1 md:ml-64 p-6 md:p-10 lg:p-16">
+        <AdminHeader
+          title={t("dashboard")}
+          description={t("welcome")}
+          showCreateCourse={true}
+        />
 
         {/* Stats Row */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           {[
             {
               label: t("revenue"),
@@ -117,26 +58,26 @@ export default function AdminHome() {
           ].map((stat, i) => (
             <div
               key={i}
-              className="bg-card p-6 rounded-xl border border-transparent dark:border-border shadow-sm hover:shadow-md transition-all group"
+              className="bg-card/40 backdrop-blur-md p-8 rounded-[2rem] border border-border shadow-2xl shadow-foreground/5 hover:shadow-primary/10 hover:-translate-y-1 transition-all duration-500 group"
             >
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-8">
                 <div
-                  className={`p-2 rounded-lg ${stat.bg} ${stat.color} group-hover:scale-110 transition-transform`}
+                  className={`p-3 rounded-2xl ${stat.bg} ${stat.color} group-hover:rotate-12 transition-transform shadow-inner`}
                 >
-                  <stat.icon className="w-5 h-5" />
+                  <stat.icon className="w-6 h-6" />
                 </div>
                 <span
-                  className={`text-xs font-bold px-2 py-1 rounded-full ${
+                  className={`text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest ${
                     stat.trend.startsWith("+")
-                      ? "bg-success/10 text-success"
-                      : "bg-muted text-muted-foreground"
+                      ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                      : "bg-muted text-muted-foreground border"
                   }`}
                 >
                   {stat.trend}
                 </span>
               </div>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <div className="text-sm text-muted-foreground mt-1 font-medium">
+              <div className="text-3xl font-black mb-1">{stat.value}</div>
+              <div className="text-xs text-muted-foreground font-bold uppercase tracking-widest opacity-60">
                 {stat.label}
               </div>
             </div>
@@ -144,34 +85,36 @@ export default function AdminHome() {
         </div>
 
         {/* Recent Activity Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 bg-card rounded-xl border dark:border-border shadow-sm p-6">
-            <h2 className="text-lg font-bold mb-6">Đăng ký mới gần đây</h2>
-            <div className="space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+          <div className="lg:col-span-2 bg-card/40 backdrop-blur-sm rounded-[2.5rem] border border-border/50 shadow-2xl p-10">
+            <h2 className="text-xl font-black mb-8 tracking-tight">
+              Đăng ký mới gần đây
+            </h2>
+            <div className="space-y-6">
               {[1, 2, 3, 4, 5].map((i) => (
                 <div
                   key={i}
-                  className="flex items-center justify-between py-3 border-b border-muted last:border-0 hover:bg-muted/30 px-2 -mx-2 rounded-lg transition-colors cursor-pointer"
+                  className="flex items-center justify-between py-5 border-b border-muted/50 last:border-0 hover:bg-muted/30 px-4 -mx-4 rounded-3xl transition-all duration-300 cursor-pointer group"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground font-bold text-sm">
-                      HV
+                  <div className="flex items-center gap-5">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/10 to-transparent flex items-center justify-center text-primary font-black text-sm border border-primary/20 group-hover:scale-110 transition-transform">
+                      {String.fromCharCode(64 + i)}
                     </div>
                     <div>
-                      <p className="text-sm font-semibold">
+                      <p className="font-black text-foreground/90">
                         Nguyễn Văn {String.fromCharCode(64 + i)}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground font-bold opacity-60">
                         nguyenvan{i}@gmail.com
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-bold text-primary">
+                    <p className="text-sm font-black text-primary uppercase tracking-wider">
                       HSK 3 - Basic
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      2 phút trước
+                    <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest opacity-40">
+                      {i * 2} phút trước
                     </p>
                   </div>
                 </div>
@@ -179,21 +122,40 @@ export default function AdminHome() {
             </div>
           </div>
 
-          <div className="bg-card rounded-xl border dark:border-border shadow-sm p-6">
-            <h2 className="text-lg font-bold mb-6">Thao tác nhanh</h2>
-            <div className="space-y-3">
-              <button className="w-full text-left px-4 py-3 rounded-lg border hover:bg-muted/50 transition-all text-sm font-semibold flex items-center justify-between group">
-                <span>Duyệt học viên chờ (3)</span>
-                <div className="w-6 h-6 rounded-full bg-destructive/10 text-destructive flex items-center justify-center text-xs font-bold">
+          <div className="bg-card/40 backdrop-blur-sm rounded-[2.5rem] border border-border/50 shadow-2xl p-10 flex flex-col gap-6">
+            <h2 className="text-xl font-black mb-2 tracking-tight">
+              Thao tác nhanh
+            </h2>
+            <div className="space-y-4">
+              <button className="w-full text-left px-6 py-5 rounded-2xl bg-white dark:bg-muted/20 border border-border/50 hover:bg-muted/50 transition-all text-sm font-black flex items-center justify-between group shadow-lg shadow-foreground/5">
+                <span className="uppercase tracking-widest text-[11px] opacity-70 group-hover:opacity-100 transition-opacity">
+                  Duyệt học viên chờ
+                </span>
+                <div className="w-8 h-8 rounded-xl bg-destructive/10 text-destructive flex items-center justify-center text-xs font-black border border-destructive/20 shadow-inner">
                   3
                 </div>
               </button>
-              <button className="w-full text-left px-4 py-3 rounded-lg border hover:bg-muted/50 transition-all text-sm font-semibold">
+              <button className="w-full text-left px-6 py-5 rounded-2xl bg-white dark:bg-muted/20 border border-border/50 hover:bg-muted/50 transition-all text-[11px] font-black uppercase tracking-widest opacity-70 hover:opacity-100 shadow-lg shadow-foreground/5">
                 Gửi thông báo lớp học
               </button>
-              <button className="w-full text-left px-4 py-3 rounded-lg border hover:bg-muted/50 transition-all text-sm font-semibold">
+              <button className="w-full text-left px-6 py-5 rounded-2xl bg-white dark:bg-muted/20 border border-border/50 hover:bg-muted/50 transition-all text-[11px] font-black uppercase tracking-widest opacity-70 hover:opacity-100 shadow-lg shadow-foreground/5">
                 Xuất báo cáo doanh thu
               </button>
+            </div>
+
+            <div className="mt-auto p-6 rounded-3xl bg-primary/10 border border-primary/20 relative overflow-hidden group">
+              <div className="relative z-10 text-primary">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-2">
+                  Hết dung lượng
+                </p>
+                <div className="h-2 w-full bg-primary/20 rounded-full mb-3 overflow-hidden p-0.5">
+                  <div className="h-full w-4/5 bg-primary rounded-full animate-pulse transition-all"></div>
+                </div>
+                <p className="text-xs font-bold italic opacity-70">
+                  Sử dụng 1.2GB / 1.5GB
+                </p>
+              </div>
+              <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-primary/20 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-1000"></div>
             </div>
           </div>
         </div>

@@ -7,8 +7,11 @@ export class LessonService {
 
   async create(data: {
     title: string;
+    type?: string;
     content?: string;
     videoUrl?: string;
+    duration?: number;
+    quiz?: any;
     order?: number;
     courseId: string;
   }) {
@@ -18,8 +21,11 @@ export class LessonService {
         lessons: {
           create: {
             title: data.title,
+            type: (data.type as any) || "text",
             content: data.content,
             videoUrl: data.videoUrl,
+            duration: data.duration || 10,
+            quiz: data.quiz ? data.quiz : undefined,
             order: data.order || 0,
           },
         },
@@ -45,14 +51,23 @@ export class LessonService {
     id: string,
     data: {
       title?: string;
+      type?: string;
       content?: string;
       videoUrl?: string;
+      duration?: number;
+      quiz?: any;
       order?: number;
     },
   ) {
+    // Convert type string to enum if present
+    const updateData: any = { ...data };
+    if (updateData.quiz === null) {
+      updateData.quiz = undefined; // Prisma requires Prisma.JsonNull for explicit null, keeping undefined skips update
+    }
+
     return this.prisma.lesson.update({
       where: { id },
-      data,
+      data: updateData,
     });
   }
 

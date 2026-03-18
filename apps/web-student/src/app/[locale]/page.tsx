@@ -1,11 +1,35 @@
 "use client";
 
-import { Link } from "../../navigation";
-import { BookOpen, PlayCircle, Trophy, User } from "lucide-react";
+import { Link, useRouter } from "../../navigation";
+import {
+  BookOpen,
+  PlayCircle,
+  Trophy,
+  User as UserIcon,
+  LogOut,
+} from "lucide-react";
 import { ThemeToggle, LanguageToggle } from "@repo/ui";
 import { useTranslations } from "next-intl";
+import { useState, useEffect } from "react";
+import { AuthModal } from "../../features/auth/components/auth-modal";
+import { useAuthStore } from "../../features/auth/auth.store";
+
 export default function Home() {
   const t = useTranslations("Student");
+  const router = useRouter();
+  const [authModal, setAuthModal] = useState<{
+    open: boolean;
+    tab: "login" | "register";
+  }>({
+    open: false,
+    tab: "login",
+  });
+
+  const { isAuthenticated, user, logout, checkAuth } = useAuthStore();
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   return (
     <div className="min-h-screen font-sans">
@@ -34,12 +58,43 @@ export default function Home() {
         <div className="flex items-center gap-3">
           <ThemeToggle />
           <LanguageToggle />
-          <button className="px-4 py-2 text-sm font-medium hover:bg-muted rounded-md transition-all active:scale-95">
-            {t("cta.login")}
-          </button>
-          <button className="px-4 py-2 text-sm font-bold bg-primary text-primary-foreground rounded-md hover:opacity-90 shadow-md active:scale-95 transition-all">
-            {t("cta.register")}
-          </button>
+
+          {isAuthenticated ? (
+            <div className="flex items-center gap-4 ml-2">
+              <div className="flex items-center gap-2 group cursor-pointer">
+                <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
+                  <UserIcon className="w-5 h-5" />
+                </div>
+                <div className="hidden md:block">
+                  <p className="text-sm font-black truncate max-w-[120px]">
+                    {user?.name}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => logout()}
+                className="p-2 text-muted-foreground hover:text-destructive transition-colors rounded-xl hover:bg-destructive/10"
+                title={t("cta.logout") || "Logout"}
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+            </div>
+          ) : (
+            <>
+              <button
+                onClick={() => setAuthModal({ open: true, tab: "login" })}
+                className="px-4 py-2 text-sm font-medium hover:bg-muted rounded-md transition-all active:scale-95"
+              >
+                {t("cta.login")}
+              </button>
+              <button
+                onClick={() => setAuthModal({ open: true, tab: "register" })}
+                className="px-4 py-2 text-sm font-bold bg-primary text-primary-foreground rounded-md hover:opacity-90 shadow-md active:scale-95 transition-all"
+              >
+                {t("cta.register")}
+              </button>
+            </>
+          )}
         </div>
       </nav>
 
@@ -61,11 +116,30 @@ export default function Home() {
             {t("hero.desc")}
           </p>
           <div className="flex gap-4">
-            <button className="px-8 py-4 bg-primary text-primary-foreground text-lg font-bold rounded-xl hover:opacity-90 transition-all shadow-lg shadow-primary/20 hover:-translate-y-1 flex items-center gap-2 active:scale-95">
+            <button
+              onClick={() => {
+                if (isAuthenticated) {
+                  // Navigate to courses if already logged in
+                  router.push("/courses");
+                } else {
+                  setAuthModal({ open: true, tab: "register" });
+                }
+              }}
+              className="px-8 py-4 bg-primary text-primary-foreground text-lg font-bold rounded-xl hover:opacity-90 transition-all shadow-lg shadow-primary/20 hover:-translate-y-1 flex items-center gap-2 active:scale-95"
+            >
               <PlayCircle className="w-5 h-5" />
               {t("hero.trial")}
             </button>
-            <button className="px-8 py-4 bg-card text-foreground border text-lg font-bold rounded-xl hover:bg-muted transition-all active:scale-95">
+            <button
+              onClick={() => {
+                if (!isAuthenticated) {
+                  setAuthModal({ open: true, tab: "login" });
+                } else {
+                  router.push("/courses");
+                }
+              }}
+              className="px-8 py-4 bg-card text-foreground border text-lg font-bold rounded-xl hover:bg-muted transition-all active:scale-95"
+            >
               {t("hero.roadmap")}
             </button>
           </div>
@@ -107,7 +181,7 @@ export default function Home() {
               },
               {
                 title: t("features.items.community.title"),
-                icon: User,
+                icon: UserIcon,
                 desc: t("features.items.community.desc"),
               },
             ].map((item, i) => (
@@ -136,6 +210,12 @@ export default function Home() {
           </p>
         </div>
       </footer>
+
+      <AuthModal
+        isOpen={authModal.open}
+        onClose={() => setAuthModal({ ...authModal, open: false })}
+        defaultTab={authModal.tab}
+      />
     </div>
   );
 }

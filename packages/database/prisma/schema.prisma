@@ -15,6 +15,17 @@ enum Role {
   STUDENT        // Học sinh
 }
 
+enum LessonType {
+  video
+  text
+  quiz
+}
+
+enum ProgressStatus {
+  IN_PROGRESS
+  COMPLETED
+}
+
 model Tenant {
   id          String   @id @default(uuid())
   name        String
@@ -41,6 +52,7 @@ model User {
   isActive    Boolean  @default(true)
   tenantId    String
   tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  progress    UserLessonProgress[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -57,15 +69,33 @@ model Course {
 }
 
 model Lesson {
-  id        String   @id @default(uuid())
+  id        String     @id @default(uuid())
   title     String
-  content   String?  // Nội dung bài học (HTML/Markdown)
-  videoUrl  String?  // Link video bài giảng
-  order     Int      @default(0) // Thứ tự bài học trong khóa học
+  type      LessonType @default(text)
+  content   String?    // Nội dung bài học (HTML/Markdown)
+  videoUrl  String?    // Link video bài giảng
+  duration  Int        @default(10) // Thời lượng dự kiến (phút)
+  quiz      Json?      // Nội dung quiz (nếu type là quiz)
+  order     Int        @default(0) // Thứ tự bài học trong khóa học
   courseId  String
-  course    Course   @relation(fields: [courseId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  course    Course     @relation(fields: [courseId], references: [id])
+  progress  UserLessonProgress[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 
   @@index([courseId])
+}
+
+model UserLessonProgress {
+  id        String         @id @default(uuid())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id])
+  lessonId  String
+  lesson    Lesson         @relation(fields: [lessonId], references: [id])
+  status    ProgressStatus @default(IN_PROGRESS)
+  updatedAt DateTime       @updatedAt
+
+  @@unique([userId, lessonId])
+  @@index([userId])
+  @@index([lessonId])
 }

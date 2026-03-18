@@ -1,4 +1,4 @@
-import { PrismaClient, Role } from "@prisma/client";
+import { PrismaClient, Role } from "../generated/client";
 import * as bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
@@ -50,6 +50,49 @@ async function main() {
     },
   });
   console.log(`Created/Updated Student User: ${student.email}`);
+
+  // Create a sample Course
+  const course = await prisma.course.create({
+    data: {
+      title: "Khóa học Nhập môn Tiếng Trung (HSK 1 - Demo)",
+      tenantId: tenant.id,
+      lessons: {
+        create: [
+          {
+            title: "Bài 1: Giới thiệu Pinyin (Thanh mẫu, Vận mẫu)",
+            type: "video" as any,
+            videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", // Placeholder
+            duration: 15,
+            order: 1,
+          },
+          {
+            title: "Bài 2: Từ vựng cơ bản (Chào hỏi)",
+            type: "text" as any,
+            content:
+              "<h2>Chào hỏi trong tiếng Trung</h2><p>Nǐ hǎo (你好) - Chào bạn</p><p>Zàijiàn (再见) - Tạm biệt</p>",
+            duration: 10,
+            order: 2,
+          },
+          {
+            title: "Bài 3: Bài tập ôn tập Bài 1 & 2",
+            type: "quiz" as any,
+            duration: 5,
+            order: 3,
+            quiz: {
+              questions: [
+                {
+                  question: "Từ 'Xin chào' trong tiếng Trung là gì?",
+                  options: ["Zàijiàn", "Nǐ hǎo", "Xièxiè", "Bù kèqì"],
+                  correctAnswer: 1,
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  });
+  console.log(`Created Course: ${course.title} with 3 lessons`);
 
   console.log("Seeding finished.");
 }

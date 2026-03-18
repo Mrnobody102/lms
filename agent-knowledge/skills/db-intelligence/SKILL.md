@@ -8,38 +8,38 @@
 
 ## Overview
 
-Bộ kỹ năng này giúp AI Agent hiểu sâu về cấu trúc dữ liệu của dự án LMS, thực hiện review schema và lập kế hoạch thay đổi cơ sở dữ liệu một cách an toàn, tránh mất mát dữ liệu (data loss).
+This skill enables the AI Agent to have a deep understanding of the LMS project's data structure, perform schema reviews, and plan database changes safely to avoid data loss.
 
 ## Core Capabilities
 
-- **db_schema_review**: Đọc và phân tích toàn bộ file `schema.prisma`.
-- **generate_migration_plan**: Đề xuất các thay đổi model và câu lệnh migration dựa trên yêu cầu mới.
-- **check_data_safety**: Cảnh báo các thay đổi nguy hiểm (ví dụ: xóa cột có dữ liệu, đổi kiểu dữ liệu gây lỗi).
+- **db_schema_review**: Read and analyze the entire `schema.prisma` file.
+- **generate_migration_plan**: Propose model changes and migration commands based on new requirements.
+- **check_data_safety**: Warn against dangerous changes (e.g., dropping columns with data, incompatible type changes).
 
-## Hướng dẫn sử dụng
+## Usage Guidelines
 
-1. Trước khi thực hiện bất kỳ thay đổi nào liên quan đến Database, bạn **PHẢI** chạy `db_schema_review`.
-2. Luôn sử dụng `generate_migration_plan` để xem trước các thay đổi và thảo luận với User.
-3. Không bao giờ chạy trực tiếp lệnh `prisma migrate dev --force` mà không cảnh báo User nếu có nguy cơ mất dữ liệu.
+1. Before performing any database-related changes, you **MUST** run `db_schema_review`.
+2. Always use `generate_migration_plan` to preview changes and discuss them with the User.
+3. Never directly execute commands like `prisma migrate dev --force` without warning the User if there is a risk of data loss.
 
 ## Key Workflows
 
-### 1. Thêm trường/bảng mới
+### 1. Adding New Fields/Tables
 
-1. Chạy `db_schema_review` để hiểu quan hệ hiện tại.
-2. Đề xuất đoạn code `model` mới.
-3. Cung cấp câu lệnh `pnpm db:push` (cho dev) hoặc `pnpm db:migrate` (cho staging).
+1. Run `db_schema_review` to understand current relationships.
+2. Propose the new `model` code.
+3. Provide the `pnpm db:push` command (for dev) or `pnpm db:migrate` (for staging).
 
-### 2. Sửa đổi/Xóa trường (Phải cẩn thận)
+### 2. Modifying/Deleting Fields (High Caution)
 
-1. Kiểm tra xem trường đó có đang được dùng trong code không (sử dụng `grep_search`).
-2. Nếu xóa, hãy đề xuất tạo một migration xóa cột sau khi đã đảm bảo code không còn gọi tới nó.
+1. Check if the field is being used in the code (use `grep_search`).
+2. If deleting, propose a migration that drops the column only after ensuring the code no longer references it.
 
 ---
 
 ## Best Practices
 
-- Ưu tiên dùng `UUID` cho các khóa chính.
-- Luôn thêm `createdAt` và `updatedAt` cho các model quan trọng.
-- Sử dụng `@@index` cho các trường hay dùng để lọc (filter) hoặc join.
-- Quan hệ 1-nhiều (1-N) phải được định nghĩa rõ ràng ở cả hai phía model.
+- Prioritize using `UUID` for primary keys.
+- Always add `createdAt` and `updatedAt` to important models.
+- Use `@@index` for fields frequently used for filtering or joining.
+- 1-to-Many (1-N) relationships must be clearly defined on both sides of the models.

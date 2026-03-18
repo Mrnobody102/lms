@@ -14,29 +14,29 @@ The API Design Reviewer skill provides comprehensive analysis and review of API 
 
 ### 1. API Linting and Convention Analysis
 
-- **Resource Naming Conventions**: Enforces kebab-case for resources, camelCase for fields
-- **HTTP Method Usage**: Validates proper use of GET, POST, PUT, PATCH, DELETE
-- **URL Structure**: Analyzes endpoint patterns for consistency and RESTful design
-- **Status Code Compliance**: Ensures appropriate HTTP status codes are used
-- **Error Response Formats**: Validates consistent error response structures
-- **Documentation Coverage**: Checks for missing descriptions and documentation gaps
+- **Resource Naming Conventions**: Enforces kebab-case for resources, camelCase for fields.
+- **HTTP Method Usage**: Validates proper use of GET, POST, PUT, PATCH, DELETE.
+- **URL Structure**: Analyzes endpoint patterns for consistency and RESTful design.
+- **Status Code Compliance**: Ensures appropriate HTTP status codes are used.
+- **Error Response Formats**: Validates consistent error response structures.
+- **Documentation Coverage**: Checks for missing descriptions and documentation gaps.
 
 ### 2. Breaking Change Detection
 
-- **Endpoint Removal**: Detects removed or deprecated endpoints
-- **Response Shape Changes**: Identifies modifications to response structures
-- **Field Removal**: Tracks removed or renamed fields in API responses
-- **Type Changes**: Catches field type modifications that could break clients
-- **Required Field Additions**: Flags new required fields that could break existing integrations
-- **Status Code Changes**: Detects changes to expected status codes
+- **Endpoint Removal**: Detects removed or deprecated endpoints.
+- **Response Shape Changes**: Identifies modifications to response structures.
+- **Field Removal**: Tracks removed or renamed fields in API responses.
+- **Type Changes**: Catches field type modifications that could break clients.
+- **Required Field Additions**: Flags new required fields that could break existing integrations.
+- **Status Code Changes**: Detects changes to expected status codes.
 
 ### 3. API Design Scoring and Assessment
 
-- **Consistency Analysis** (30%): Evaluates naming conventions, response patterns, and structural consistency
-- **Documentation Quality** (20%): Assesses completeness and clarity of API documentation
-- **Security Implementation** (20%): Reviews authentication, authorization, and security headers
-- **Usability Design** (15%): Analyzes ease of use, discoverability, and developer experience
-- **Performance Patterns** (15%): Evaluates caching, pagination, and efficiency patterns
+- **Consistency Analysis** (30%): Evaluates naming conventions, response patterns, and structural consistency.
+- **Documentation Quality** (20%): Assesses completeness and clarity of API documentation.
+- **Security Implementation** (20%): Reviews authentication, authorization, and security headers.
+- **Usability Design** (15%): Analyzes ease of use, discoverability, and developer experience.
+- **Performance Patterns** (15%): Evaluates caching, pagination, and efficiency patterns.
 
 ## REST Design Principles
 
@@ -56,13 +56,13 @@ The API Design Reviewer skill provides comprehensive analysis and review of API 
 
 ### HTTP Method Usage
 
-- **GET**: Retrieve resources (safe, idempotent)
-- **POST**: Create new resources (not idempotent)
-- **PUT**: Replace entire resources (idempotent)
-- **PATCH**: Partial resource updates (not necessarily idempotent)
-- **DELETE**: Remove resources (idempotent)
+- **GET**: Retrieve resources (safe, idempotent).
+- **POST**: Create new resources (not idempotent).
+- **PUT**: Replace entire resources (idempotent).
+- **PATCH**: Partial resource updates (not necessarily idempotent).
+- **DELETE**: Remove resources (idempotent).
 
-### url_structure_best_practices
+### URL Structure Best Practices
 
 ```
 Collection Resources: /api/v1/users
@@ -72,21 +72,21 @@ Actions: /api/v1/users/123/activate (POST)
 Filtering: /api/v1/users?status=active&role=admin
 ```
 
-## NestJS Specific Guidelines (Tùy chỉnh cho Dự án)
+## NestJS Specific Guidelines (Project Customization)
 
-Khi review hoặc thiết kế API trong dự án LMS (NestJS), hãy tuân thủ thêm các quy tắc sau:
+When reviewing or designing APIs for this LMS project (NestJS), adhere to these rules:
 
 1. **Swagger Documentation**:
-   - Mọi Controller/Method phải có `@ApiOperation`, `@ApiResponse`.
-   - Mọi DTO field phải có `@ApiProperty` hoặc `@ApiPropertyOptional`.
+   - Every Controller/Method must have `@ApiOperation` and `@ApiResponse`.
+   - Every DTO field must have `@ApiProperty` or `@ApiPropertyOptional`.
 2. **Validation**:
-   - Sử dụng `class-validator` decorators trong DTO (ví dụ: `@IsString`, `@IsEmail`, `@MinLength`).
-   - Luôn sử dụng `ValidationPipe` toàn cục.
+   - Use `class-validator` decorators in DTOs (e.g., `@IsString`, `@IsEmail`, `@MinLength`).
+   - Always use a global `ValidationPipe`.
 3. **Dependency Injection**:
-   - Đảm bảo các logic nghiệp vụ nằm trong Service, không để trong Controller.
+   - Ensure business logic resides in Services, not Controllers.
 4. **Error Handling**:
-   - Sử dụng các `HttpException` có sẵn của NestJS (ví dụ: `new NotFoundException()`).
-   - Tránh trả về lỗi thô (raw error) cho client.
+   - Use NestJS's built-in `HttpException` (e.g., `new NotFoundException()`).
+   - Avoid returning raw errors to the client.
 
 ## Versioning Strategies
 
@@ -97,8 +97,8 @@ Khi review hoặc thiết kế API trong dự án LMS (NestJS), hãy tuân thủ
 /api/v2/users
 ```
 
-**Pros**: Clear, explicit, easy to route  
-**Cons**: URL proliferation, caching complexity
+**Pros**: Clear, explicit, easy to route.  
+**Cons**: URL proliferation, caching complexity.
 
 ### 2. Header Versioning
 
@@ -107,27 +107,8 @@ GET /api/users
 Accept: application/vnd.api+json;version=1
 ```
 
-**Pros**: Clean URLs, content negotiation  
-**Cons**: Less visible, harder to test manually
-
-### 3. Media Type Versioning
-
-```
-GET /api/users
-Accept: application/vnd.myapi.v1+json
-```
-
-**Pros**: RESTful, supports multiple representations  
-**Cons**: Complex, harder to implement
-
-### 4. Query Parameter Versioning
-
-```
-/api/users?version=1
-```
-
-**Pros**: Simple to implement  
-**Cons**: Not RESTful, can be ignored
+**Pros**: Clean URLs, content negotiation.  
+**Cons**: Less visible, harder to test manually.
 
 ## Pagination Patterns
 
@@ -157,20 +138,6 @@ Accept: application/vnd.myapi.v1+json
 }
 ```
 
-### Page-Based Pagination
-
-```json
-{
-  "data": [...],
-  "pagination": {
-    "page": 3,
-    "pageSize": 10,
-    "totalPages": 15,
-    "totalItems": 150
-  }
-}
-```
-
 ## Error Response Formats
 
 ### Standard Error Structure
@@ -193,248 +160,11 @@ Accept: application/vnd.myapi.v1+json
 }
 ```
 
-### HTTP Status Code Usage
-
-- **400 Bad Request**: Invalid request syntax or parameters
-- **401 Unauthorized**: Authentication required
-- **403 Forbidden**: Access denied (authenticated but not authorized)
-- **404 Not Found**: Resource not found
-- **409 Conflict**: Resource conflict (duplicate, version mismatch)
-- **422 Unprocessable Entity**: Valid syntax but semantic errors
-- **429 Too Many Requests**: Rate limit exceeded
-- **500 Internal Server Error**: Unexpected server error
-
-## Authentication and Authorization Patterns
-
-### Bearer Token Authentication
-
-```
-Authorization: Bearer <token>
-```
-
-### API Key Authentication
-
-```
-X-API-Key: <api-key>
-Authorization: Api-Key <api-key>
-```
-
-### OAuth 2.0 Flow
-
-```
-Authorization: Bearer <oauth-access-token>
-```
-
-### Role-Based Access Control (RBAC)
-
-```json
-{
-  "user": {
-    "id": "123",
-    "roles": ["admin", "editor"],
-    "permissions": ["read:users", "write:orders"]
-  }
-}
-```
-
-## Rate Limiting Implementation
-
-### Headers
-
-```
-X-RateLimit-Limit: 1000
-X-RateLimit-Remaining: 999
-X-RateLimit-Reset: 1640995200
-```
-
-### Response on Limit Exceeded
-
-```json
-{
-  "error": {
-    "code": "RATE_LIMIT_EXCEEDED",
-    "message": "Too many requests",
-    "retryAfter": 3600
-  }
-}
-```
-
-## HATEOAS (Hypermedia as the Engine of Application State)
-
-```json
-{
-  "id": "123",
-  "name": "John Doe",
-  "email": "john@example.com",
-  "_links": {
-    "self": { "href": "/api/v1/users/123" },
-    "orders": { "href": "/api/v1/users/123/orders" },
-    "profile": { "href": "/api/v1/users/123/profile" },
-    "deactivate": {
-      "href": "/api/v1/users/123/deactivate",
-      "method": "POST"
-    }
-  }
-}
-```
-
-## Idempotency
-
-### Idempotent Methods
-
-- **GET**: Always safe and idempotent
-- **PUT**: Should be idempotent (replace entire resource)
-- **DELETE**: Should be idempotent (same result)
-- **PATCH**: May or may not be idempotent
-
-### Idempotency Keys
-
-```
-POST /api/v1/payments
-Idempotency-Key: 123e4567-e89b-12d3-a456-426614174000
-```
-
-## Backward Compatibility Guidelines
-
-### Safe Changes (Non-Breaking)
-
-- Adding optional fields to requests
-- Adding fields to responses
-- Adding new endpoints
-- Making required fields optional
-- Adding new enum values (with graceful handling)
-
-### Breaking Changes (Require Version Bump)
-
-- Removing fields from responses
-- Making optional fields required
-- Changing field types
-- Removing endpoints
-- Changing URL structures
-- Modifying error response formats
-
-## OpenAPI/Swagger Validation
-
-### Required Components
-
-- **API Information**: Title, description, version
-- **Server Information**: Base URLs and descriptions
-- **Path Definitions**: All endpoints with methods
-- **Parameter Definitions**: Query, path, header parameters
-- **Request/Response Schemas**: Complete data models
-- **Security Definitions**: Authentication schemes
-- **Error Responses**: Standard error formats
-
-### Best Practices
-
-- Use consistent naming conventions
-- Provide detailed descriptions for all components
-- Include examples for complex objects
-- Define reusable components and schemas
-- Validate against OpenAPI specification
-
-## Performance Considerations
-
-### Caching Strategies
-
-```
-Cache-Control: public, max-age=3600
-ETag: "123456789"
-Last-Modified: Wed, 21 Oct 2015 07:28:00 GMT
-```
-
-### Efficient Data Transfer
-
-- Use appropriate HTTP methods
-- Implement field selection (`?fields=id,name,email`)
-- Support compression (gzip)
-- Implement efficient pagination
-- Use ETags for conditional requests
-
-### Resource Optimization
-
-- Avoid N+1 queries
-- Implement batch operations
-- Use async processing for heavy operations
-- Support partial updates (PATCH)
-
 ## Security Best Practices
 
-### Input Validation
-
-- Validate all input parameters
-- Sanitize user data
-- Use parameterized queries
-- Implement request size limits
-
-### Authentication Security
-
-- Use HTTPS everywhere
-- Implement secure token storage
-- Support token expiration and refresh
-- Use strong authentication mechanisms
-
-### Authorization Controls
-
-- Implement principle of least privilege
-- Use resource-based permissions
-- Support fine-grained access control
-- Audit access patterns
-
-## Tools and Scripts
-
-### api_linter.py
-
-Analyzes API specifications for compliance with REST conventions and best practices.
-
-### breaking_change_detector.py
-
-Compares API specification versions to identify breaking changes.
-
-### api_scorecard.py
-
-Provides comprehensive scoring of API design quality.
-
-## Integration Examples
-
-### CI/CD Integration
-
-```yaml
-- name: "api-linting"
-  run: python scripts/api_linter.py openapi.json
-
-- name: "breaking-change-detection"
-  run: python scripts/breaking_change_detector.py openapi-v1.json openapi-v2.json
-
-- name: "api-scorecard"
-  run: python scripts/api_scorecard.py openapi.json
-```
-
-## Best Practices Summary
-
-1. **Consistency First**: Maintain consistent naming, response formats, and patterns
-2. **Documentation**: Provide comprehensive, up-to-date API documentation
-3. **Versioning**: Plan for evolution with clear versioning strategies
-4. **Error Handling**: Implement consistent, informative error responses
-5. **Security**: Build security into every layer of the API
-6. **Performance**: Design for scale and efficiency from the start
-7. **Backward Compatibility**: Minimize breaking changes and provide migration paths
-8. **Testing**: Implement comprehensive testing including contract testing
-9. **Monitoring**: Add observability for API usage and performance
-10. **Developer Experience**: Prioritize ease of use and clear documentation
-
-## Common Anti-Patterns to Avoid
-
-1. **Verb-based URLs**: Use nouns for resources, not actions
-2. **Inconsistent Response Formats**: Maintain standard response structures
-3. **Over-nesting**: Avoid deeply nested resource hierarchies
-4. **Ignoring HTTP Status Codes**: Use appropriate status codes for different scenarios
-5. **Poor Error Messages**: Provide actionable, specific error information
-6. **Missing Pagination**: Always paginate list endpoints
-7. **No Versioning Strategy**: Plan for API evolution from day one
-8. **Exposing Internal Structure**: Design APIs for external consumption, not internal convenience
-9. **Missing Rate Limiting**: Protect your API from abuse and overload
-10. **Inadequate Testing**: Test all aspects including error cases and edge conditions
+- **Authentication**: Use JWT with Bearer tokens.
+- **Input Validation**: Never trust client input; always validate against DTOs.
+- **Principle of Least Privilege**: Ensure endpoints are guarded by the appropriate guards (e.g., `RolesGuard`).
 
 ## Conclusion
 
