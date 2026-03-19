@@ -3,7 +3,8 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "dev": "turbo run dev",
+    "dev": "turbo run dev --filter=!@repo/eslint-config --filter=!@repo/shared --filter=!@repo/typescript-config --filter=!@repo/ui",
+    "dev:all": "turbo run dev",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "prepare": "husky",
@@ -34,7 +35,7 @@
     "unplugin-swc": "^1.5.9",
     "vitest": "^4.0.17"
   },
-  "packageManager": "pnpm@9.0.0",
+  "packageManager": "bun@1.3.11",
   "engines": {
     "node": ">=18"
   },
