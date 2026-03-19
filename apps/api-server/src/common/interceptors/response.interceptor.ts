@@ -12,16 +12,11 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, any> {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     return next.handle().pipe(
       map((data) => {
-        // If response already has success field, return as is
-        if (data && typeof data === "object" && "success" in data) {
+        // Don't wrap if already wrapped or if it's a paginated response
+        if (data && typeof data === "object" && ("success" in data || "meta" in data)) {
           return data;
         }
-
-        // Wrap response in standard format
-        return {
-          success: true,
-          data,
-        };
+        return { success: true, data };
       }),
     );
   }

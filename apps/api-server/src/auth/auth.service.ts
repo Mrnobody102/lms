@@ -12,13 +12,13 @@ import { RegisterDto } from "./dto/register.dto";
 @Injectable()
 export class AuthService {
   constructor(
-    private prisma: PrismaService,
-    private jwtService: JwtService,
+    private readonly _prisma: PrismaService,
+    private readonly _jwtService: JwtService,
   ) {}
 
   async register(registerDto: RegisterDto): Promise<any> {
     // Check if user already exists
-    const existingUser = await this.prisma.user.findUnique({
+    const existingUser = await this._prisma.user.findUnique({
       where: { email: registerDto.email },
     });
 
@@ -27,7 +27,7 @@ export class AuthService {
     }
 
     // Check if tenant exists
-    const tenant = await this.prisma.tenant.findUnique({
+    const tenant = await this._prisma.tenant.findUnique({
       where: { id: registerDto.tenantId },
     });
 
@@ -39,7 +39,7 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
 
     // Create user
-    const user = await this.prisma.user.create({
+    const user = await this._prisma.user.create({
       data: {
         email: registerDto.email,
         password: hashedPassword,
@@ -72,7 +72,7 @@ export class AuthService {
 
   async login(loginDto: LoginDto): Promise<any> {
     // Find user by email
-    const user = await this.prisma.user.findUnique({
+    const user = await this._prisma.user.findUnique({
       where: { email: loginDto.email },
     });
 
@@ -114,6 +114,6 @@ export class AuthService {
       tenantId: user.tenantId,
     };
 
-    return this.jwtService.sign(payload);
+    return this._jwtService.sign(payload);
   }
 }

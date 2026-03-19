@@ -9,7 +9,7 @@ import { PrismaService } from "../common/services/prisma.service";
 export class McpCoreSkillsService {
   private readonly logger = new Logger(McpCoreSkillsService.name);
 
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(private readonly _prismaService: PrismaService) {}
 
   @McpTool({
     name: "inspect_project",
@@ -49,7 +49,7 @@ export class McpCoreSkillsService {
   })
   async searchCourses(args: { keyword: string }) {
     try {
-      const courses = await this.prismaService.course.findMany({
+      const courses = await this._prismaService.course.findMany({
         where: {
           title: {
             contains: args.keyword,

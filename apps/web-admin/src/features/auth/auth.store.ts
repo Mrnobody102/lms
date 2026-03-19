@@ -19,6 +19,8 @@ interface AuthState {
   logout: () => void;
   checkAuth: () => void;
   clearError: () => void;
+  setAuth: (token: string, user: User) => void;
+  validateToken: (token: string) => boolean;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -39,6 +41,18 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     if (token && userStr) {
       try {
+        // Decode JWT to check expiry
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        const now = Math.floor(Date.now() / 1000);
+
+        // Check if token is expired (exp is in seconds)
+        if (payload.exp && payload.exp < now) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          set({ token: null, user: null, isAuthenticated: false, isInitialized: true });
+          return;
+        }
+
         const user = JSON.parse(userStr);
         set({ token, user, isAuthenticated: true, isInitialized: true });
       } catch (e) {
@@ -81,5 +95,33 @@ export const useAuthStore = create<AuthState>((set) => ({
       localStorage.removeItem("user");
     }
     set({ token: null, user: null, isAuthenticated: false });
+  },
+
+  validateToken: (token: string): boolean => {
+    if (!token) return false;
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      const now = Math.floor(Date.now() / 1000);
+      return !payload.exp || payload.exp >= now;
+    } catch {
+      return false;
+    }
+  },
+
+  setAuth: (token: string, user: User) => {
+    if (!token || !user) return;
+    // Validate token expiration
+    if (!useAuthStore.getState().validateToken(token)) {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+      }
+      return;
+    }
+    if (typeof window !== "undefined") {
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+    }
+    set({ token, user, isAuthenticated: true });
   },
 }));

@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/client"
+  output   = "../.prisma/client"
 }
 
 datasource db {
@@ -52,7 +52,7 @@ model User {
   role        Role     @default(STUDENT)
   isActive    Boolean  @default(true)
   tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   progress    UserLessonProgress[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -67,7 +67,7 @@ model Course {
   slug      String?  // SEO-friendly slug
   isActive  Boolean  @default(true)
   tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   lessons   Lesson[]
   totalDuration Int      @default(0)
   createdAt     DateTime @default(now())
@@ -87,9 +87,9 @@ model Lesson {
   quiz      Json?      // Nội dung quiz (nếu type là quiz)
   order     Int        @default(0) // Thứ tự bài học trong khóa học
   tenantId  String
-  tenant    Tenant     @relation(fields: [tenantId], references: [id])
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   courseId  String
-  course    Course     @relation(fields: [courseId], references: [id])
+  course    Course     @relation(fields: [courseId], references: [id], onDelete: Cascade)
   progress  UserLessonProgress[]
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
@@ -101,13 +101,16 @@ model Lesson {
 model UserLessonProgress {
   id        String         @id @default(uuid())
   userId    String
-  user      User           @relation(fields: [userId], references: [id])
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   lessonId  String
-  lesson    Lesson         @relation(fields: [lessonId], references: [id])
+  lesson    Lesson         @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  tenantId  String         // Denormalized tenantId for row-level isolation
   status    ProgressStatus @default(IN_PROGRESS)
+  createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
 
   @@unique([userId, lessonId])
   @@index([userId])
   @@index([lessonId])
+  @@index([tenantId])
 }

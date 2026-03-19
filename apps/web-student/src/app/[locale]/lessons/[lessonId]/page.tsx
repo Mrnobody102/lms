@@ -53,7 +53,9 @@ export default function LessonPage({ params }: LessonPageProps) {
         setProgress(progressData);
         setError(null);
       } catch (err: any) {
-        console.error("Failed to fetch lesson data:", err);
+        if (process.env.NODE_ENV === "development") {
+          console.error("Failed to fetch lesson data:", err);
+        }
         setError(err.response?.data?.message || err.message || "Unknown error");
       } finally {
         setLoading(false);
@@ -116,7 +118,9 @@ export default function LessonPage({ params }: LessonPageProps) {
       // Show success feedback - simple alert for now
       // toast.success("Bài học đã hoàn thành!");
     } catch (err) {
-      console.error("Failed to update progress:", err);
+      if (process.env.NODE_ENV === "development") {
+        console.error("Failed to update progress:", err);
+      }
     }
   };
 

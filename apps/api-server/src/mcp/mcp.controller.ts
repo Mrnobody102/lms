@@ -8,14 +8,14 @@ import { McpAuthGuard } from "./guards/mcp-auth.guard";
 export class McpController {
   private transport: any = null;
 
-  constructor(private readonly mcpService: McpService) {}
+  constructor(private readonly _mcpService: McpService) {}
 
   @Get("sse")
   async handleSse(@Res() res: Response) {
     const { SSEServerTransport } =
       await import("@modelcontextprotocol/sdk/server/sse.js");
     this.transport = new SSEServerTransport("/mcp/messages", res);
-    await this.mcpService.server.connect(this.transport);
+    await this._mcpService.server.connect(this.transport);
 
     res.on("close", () => {
       this.transport = null;

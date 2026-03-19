@@ -24,7 +24,9 @@ export default function CoursesPage() {
         const data = await courseApi.getCourses();
         setCourses(data || []);
       } catch (err) {
-        console.error("Failed to fetch courses:", err);
+        if (process.env.NODE_ENV === "development") {
+          console.error("Failed to fetch courses:", err);
+        }
       } finally {
         setLoading(false);
       }

@@ -11,10 +11,12 @@ import {
 import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { useAuthStore } from "@/features/auth/auth.store";
 
 export function AdminSidebar() {
   const t = useTranslations("Admin");
   const pathname = usePathname();
+  const { user } = useAuthStore();
 
   const menuItems = [
     { name: t("dashboard"), icon: LayoutDashboard, href: "/" },
@@ -68,12 +70,12 @@ export function AdminSidebar() {
       <div className="p-6 border-t border-sidebar-border/50 bg-sidebar-accent/5">
         <div className="flex items-center gap-4 group cursor-pointer">
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center font-bold text-primary group-hover:rotate-12 transition-transform">
-            AD
+            {user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "A"}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold truncate">Admin User</p>
+            <p className="text-sm font-bold truncate">{user?.name || user?.email || "Admin"}</p>
             <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest opacity-60">
-              Trung Tâm Demo
+              {user?.role || "Admin"}
             </p>
           </div>
         </div>

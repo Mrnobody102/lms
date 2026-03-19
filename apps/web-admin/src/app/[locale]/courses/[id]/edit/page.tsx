@@ -55,7 +55,9 @@ export default function CourseEditorPage() {
         const data = await courseApi.getCourse(courseId);
         setCourse(data);
       } catch (err) {
-        console.error("Failed to fetch course:", err);
+        if (process.env.NODE_ENV === "development") {
+          console.error("Failed to fetch course:", err);
+        }
       } finally {
         setLoading(false);
       }
@@ -68,10 +70,10 @@ export default function CourseEditorPage() {
     try {
       setSaving(true);
       await courseApi.updateCourse(courseId, { title: course.title });
-      setMessage({ type: "success", text: "Đã lưu thay đổi khóa học!" });
+      setMessage({ type: "success", text: t("Admin.courseSaved") });
       setTimeout(() => setMessage(null), 3000);
     } catch (err) {
-      setMessage({ type: "error", text: "Lỗi khi lưu khóa học." });
+      setMessage({ type: "error", text: t("Admin.courseSaveError") });
     } finally {
       setSaving(false);
     }
@@ -90,10 +92,10 @@ export default function CourseEditorPage() {
       );
       setShowAddLesson(false);
       setNewLesson({ title: "", type: "video", duration: 10 });
-      setMessage({ type: "success", text: "Đã thêm bài học mới!" });
+      setMessage({ type: "success", text: t("Admin.lessonAdded") });
       setTimeout(() => setMessage(null), 3000);
     } catch (err) {
-      setMessage({ type: "error", text: "Lỗi khi thêm bài học." });
+      setMessage({ type: "error", text: t("Admin.lessonAddError") });
     } finally {
       setSaving(false);
     }
@@ -123,17 +125,17 @@ export default function CourseEditorPage() {
           : null,
       );
       setEditingLesson(null);
-      setMessage({ type: "success", text: "Đã cập nhật bài học!" });
+      setMessage({ type: "success", text: t("Admin.lessonUpdated") });
       setTimeout(() => setMessage(null), 3000);
     } catch (err) {
-      setMessage({ type: "error", text: "Lỗi khi cập nhật bài học." });
+      setMessage({ type: "error", text: t("Admin.lessonUpdateError") });
     } finally {
       setSaving(false);
     }
   };
 
   const handleDeleteLesson = async (lessonId: string) => {
-    if (!confirm("Bạn có chắc chắn muốn xóa bài học này?")) return;
+    if (!confirm(t("Admin.confirmDeleteLesson"))) return;
     try {
       setSaving(true);
       await courseApi.deleteLesson(lessonId);
@@ -142,10 +144,10 @@ export default function CourseEditorPage() {
           ? { ...prev, lessons: prev.lessons.filter((l) => l.id !== lessonId) }
           : null,
       );
-      setMessage({ type: "success", text: "Đã xóa bài học thành công!" });
+      setMessage({ type: "success", text: t("Admin.lessonDeleted") });
       setTimeout(() => setMessage(null), 3000);
     } catch (err) {
-      setMessage({ type: "error", text: "Lỗi khi xóa bài học." });
+      setMessage({ type: "error", text: t("Admin.lessonDeleteError") });
     } finally {
       setSaving(false);
     }
@@ -156,7 +158,7 @@ export default function CourseEditorPage() {
       <div className="min-h-screen bg-background flex flex-col items-center justify-center space-y-4">
         <Loader2 className="w-12 h-12 animate-spin text-primary" />
         <p className="font-black text-sm uppercase tracking-widest opacity-50">
-          Đang tải trình chỉnh sửa...
+          {t("Admin.loadEditor")}
         </p>
       </div>
     );
@@ -185,11 +187,11 @@ export default function CourseEditorPage() {
               description={`ID: ${course.id}`}
             />
             <Link
-              href={`http://localhost:3000/vi/lessons/${course.lessons?.[0]?.id || ""}`}
+              href={`${process.env.NEXT_PUBLIC_WEB_STUDENT_URL || "http://localhost:3000"}/vi/lessons/${course.lessons?.[0]?.id || ""}`}
               target="_blank"
               className="px-6 py-3 bg-white border border-border rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-muted transition-all active:scale-95 flex items-center gap-2 shadow-sm shrink-0"
             >
-              Xem trước bài học đầu tiên
+              {t("Admin.previewFirstLesson")}
               <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
@@ -215,11 +217,11 @@ export default function CourseEditorPage() {
             {/* Left side: Course info */}
             <div className="lg:col-span-2 space-y-12">
               <section className="bg-card/40 backdrop-blur-md rounded-[2.5rem] border border-border/50 shadow-2xl p-10">
-                <h3 className="text-xl font-black mb-8">Thông tin cơ bản</h3>
+                <h3 className="text-xl font-black mb-8">{t("Admin.basicInfo")}</h3>
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-50 ml-2">
-                      Tên khóa học
+                      {t("Admin.courseName")}
                     </label>
                     <input
                       type="text"
@@ -228,7 +230,7 @@ export default function CourseEditorPage() {
                         setCourse({ ...course!, title: e.target.value })
                       }
                       className="w-full bg-muted/30 border border-border/50 rounded-2xl px-6 py-4 font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-lg"
-                      placeholder="Ví dụ: Tiếng Trung Giao Tiếp HSK 1"
+                      placeholder={t("Admin.courseNamePlaceholder")}
                     />
                   </div>
                   <button
@@ -241,7 +243,7 @@ export default function CourseEditorPage() {
                     ) : (
                       <Save className="w-5 h-5" />
                     )}
-                    Lưu tiêu đề khóa học
+                    {t("Admin.save")}
                   </button>
                 </div>
               </section>
@@ -249,7 +251,7 @@ export default function CourseEditorPage() {
               <section className="bg-card/40 backdrop-blur-md rounded-[2.5rem] border border-border/50 shadow-2xl p-10">
                 <div className="flex items-center justify-between mb-10">
                   <h3 className="text-xl font-black italic">
-                    Giáo trình bài học ({course.lessons?.length || 0})
+                    {t("Admin.curriculum")} ({course.lessons?.length || 0})
                   </h3>
                   <button
                     onClick={() => setShowAddLesson(true)}
@@ -284,7 +286,7 @@ export default function CourseEditorPage() {
                             {lesson.title}
                           </h4>
                           <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-60">
-                            {lesson.type} • {lesson.duration} phút
+                            {lesson.type} • {lesson.duration} {t("Admin.minutes")}
                           </p>
                         </div>
                         <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -313,12 +315,12 @@ export default function CourseEditorPage() {
                 <div className="bg-card/60 backdrop-blur-xl rounded-[2.5rem] border border-primary/20 shadow-2xl p-8 sticky top-10 border-t-4 border-t-primary animate-in slide-in-from-right duration-500">
                   <h3 className="text-lg font-black mb-6 flex items-center gap-3">
                     <Plus className="w-5 h-5 text-primary" />
-                    Bài học mới
+                    {t("Admin.newLesson")}
                   </h3>
                   <div className="space-y-6">
                     <input
                       type="text"
-                      placeholder="Tiêu đề bài học..."
+                      placeholder={t("Admin.lessonTitle")}
                       value={newLesson.title}
                       onChange={(e) =>
                         setNewLesson({ ...newLesson, title: e.target.value })
@@ -366,14 +368,14 @@ export default function CourseEditorPage() {
                         onClick={() => setShowAddLesson(false)}
                         className="flex-1 py-4 font-black text-xs uppercase tracking-widest opacity-50 hover:opacity-100"
                       >
-                        Hủy
+                        {t("Admin.cancel")}
                       </button>
                       <button
                         onClick={handleAddLesson}
                         disabled={saving || !newLesson.title}
                         className="flex-1 py-4 bg-primary text-primary-foreground font-black rounded-2xl text-xs uppercase tracking-[0.2em] shadow-lg shadow-primary/20 disabled:opacity-30"
                       >
-                        Thêm
+                        {t("Admin.add")}
                       </button>
                     </div>
                   </div>
@@ -384,12 +386,12 @@ export default function CourseEditorPage() {
                 <div className="bg-card/60 backdrop-blur-xl rounded-[2.5rem] border border-orange-500/20 shadow-2xl p-8 sticky top-10 border-t-4 border-t-orange-500 animate-in slide-in-from-right duration-500">
                   <h3 className="text-lg font-black mb-6 flex items-center gap-3">
                     <Edit2 className="w-5 h-5 text-orange-500" />
-                    Chỉnh sửa bài học
+                    {t("Admin.editLesson")}
                   </h3>
                   <div className="space-y-6">
                     <div className="space-y-1">
                       <label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 ml-2">
-                        Tiêu đề
+                        {t("Admin.lessonTitleLabel")}
                       </label>
                       <input
                         type="text"
@@ -406,7 +408,7 @@ export default function CourseEditorPage() {
 
                     <div className="space-y-1">
                       <label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 ml-2">
-                        Loại nội dung
+                        {t("Admin.contentType")}
                       </label>
                       <div className="flex gap-2">
                         {["video", "text", "quiz"].map((type) => (
@@ -432,7 +434,7 @@ export default function CourseEditorPage() {
 
                     <div className="flex items-center gap-4">
                       <span className="text-xs font-black uppercase tracking-widest opacity-40">
-                        Thời lượng (phút)
+                        {t("Admin.durationMinutes")}
                       </span>
                       <input
                         type="number"
@@ -452,14 +454,14 @@ export default function CourseEditorPage() {
                         onClick={() => setEditingLesson(null)}
                         className="flex-1 py-4 font-black text-xs uppercase tracking-widest opacity-50 hover:opacity-100"
                       >
-                        Hủy
+                        {t("Admin.cancel")}
                       </button>
                       <button
                         onClick={handleUpdateLesson}
                         disabled={saving || !editingLesson.title}
                         className="flex-1 py-4 bg-orange-500 text-white font-black rounded-2xl text-xs uppercase tracking-[0.2em] shadow-lg shadow-orange-500/20 disabled:opacity-30"
                       >
-                        Lưu
+                        {t("Admin.save")}
                       </button>
                     </div>
                   </div>
@@ -470,21 +472,21 @@ export default function CourseEditorPage() {
                 <div className="relative z-10">
                   <h4 className="text-xl font-black mb-4 flex items-center gap-3 italic">
                     <TrendingUp className="w-5 h-5" />
-                    Thống kê nội dung
+                    {t("Admin.contentStats")}
                   </h4>
                   <div className="space-y-4">
                     <div className="flex justify-between items-center text-sm font-bold opacity-80">
-                      <span>Tổng bài giảng</span>
+                      <span>{t("Admin.totalLectures")}</span>
                       <span>{course.lessons?.length || 0}</span>
                     </div>
                     <div className="flex justify-between items-center text-sm font-bold opacity-80">
-                      <span>Dung lượng dự kiến</span>
+                      <span>{t("Admin.expectedSize")}</span>
                       <span>
                         {course.lessons?.reduce(
                           (acc, l) => acc + (l.duration || 0),
                           0,
                         ) || 0}{" "}
-                        phút
+                        {t("Admin.minutes")}
                       </span>
                     </div>
                   </div>

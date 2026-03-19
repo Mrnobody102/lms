@@ -112,7 +112,7 @@ export default function AdminHome() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           <div className="lg:col-span-2 bg-card/40 backdrop-blur-sm rounded-[2.5rem] border border-border/50 shadow-2xl p-10">
             <h2 className="text-xl font-black mb-8 tracking-tight">
-              Đăng ký mới gần đây
+              {t("Admin.recentRegistrations")}
             </h2>
             <div className="space-y-6">
               {[1, 2, 3, 4, 5].map((i) => (
@@ -138,7 +138,7 @@ export default function AdminHome() {
                       HSK 3 - Basic
                     </p>
                     <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest opacity-40">
-                      {i * 2} phút trước
+                      {i * 2} {t("Admin.minutesAgo")}
                     </p>
                   </div>
                 </div>
@@ -148,35 +148,35 @@ export default function AdminHome() {
 
           <div className="bg-card/40 backdrop-blur-sm rounded-[2.5rem] border border-border/50 shadow-2xl p-10 flex flex-col gap-6">
             <h2 className="text-xl font-black mb-2 tracking-tight">
-              Thao tác nhanh
+              {t("Admin.quickActions")}
             </h2>
             <div className="space-y-4">
               <button className="w-full text-left px-6 py-5 rounded-2xl bg-white dark:bg-muted/20 border border-border/50 hover:bg-muted/50 transition-all text-sm font-black flex items-center justify-between group shadow-lg shadow-foreground/5">
                 <span className="uppercase tracking-widest text-[11px] opacity-70 group-hover:opacity-100 transition-opacity">
-                  Duyệt học viên chờ
+                  {t("Admin.approveStudents")}
                 </span>
                 <div className="w-8 h-8 rounded-xl bg-destructive/10 text-destructive flex items-center justify-center text-xs font-black border border-destructive/20 shadow-inner">
                   3
                 </div>
               </button>
               <button className="w-full text-left px-6 py-5 rounded-2xl bg-white dark:bg-muted/20 border border-border/50 hover:bg-muted/50 transition-all text-[11px] font-black uppercase tracking-widest opacity-70 hover:opacity-100 shadow-lg shadow-foreground/5">
-                Gửi thông báo lớp học
+                {t("Admin.sendNotification")}
               </button>
               <button className="w-full text-left px-6 py-5 rounded-2xl bg-white dark:bg-muted/20 border border-border/50 hover:bg-muted/50 transition-all text-[11px] font-black uppercase tracking-widest opacity-70 hover:opacity-100 shadow-lg shadow-foreground/5">
-                Xuất báo cáo doanh thu
+                {t("Admin.exportRevenue")}
               </button>
             </div>
 
             <div className="mt-auto p-6 rounded-3xl bg-primary/10 border border-primary/20 relative overflow-hidden group">
               <div className="relative z-10 text-primary">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-2">
-                  Hết dung lượng
+{t("Admin.storageExceeded")}
                 </p>
                 <div className="h-2 w-full bg-primary/20 rounded-full mb-3 overflow-hidden p-0.5">
                   <div className="h-full w-4/5 bg-primary rounded-full animate-pulse transition-all"></div>
                 </div>
                 <p className="text-xs font-bold italic opacity-70">
-                  Sử dụng 1.2GB / 1.5GB
+{t("Admin.storageUsed")}
                 </p>
               </div>
               <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-primary/20 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-1000"></div>

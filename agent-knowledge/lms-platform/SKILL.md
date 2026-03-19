@@ -1,41 +1,149 @@
+# LMS Platform
+
+**Tier:** OVERVIEW
+**Category:** Project Context
+**Maintainer:** LMS Agent Team
+
 ---
-name: lms_platform_skills
-description: Tập hợp các kỹ năng để tương tác với hệ thống LMS thông qua MCP Server.
+
+## Overview
+
+LMS Platform is a multi-tenant Learning Management System built as a TypeScript monorepo using pnpm workspaces, Turborepo, NestJS, and Next.js 15. This overview skill provides context about the project structure, conventions, and cross-cutting concerns that all other skills should reference.
+
 ---
 
-# LMS Platform Skills
+## Project Architecture
 
-Kỹ năng này cho phép AI Agent tương tác với hệ thống LMS (Learning Management System).
-Nó cung cấp các khả năng như:
+### Monorepo Structure
 
-- Tìm kiếm khóa học và bài học.
-- Quản lý ghi danh và báo cáo người dùng.
-- Kiểm tra cấu trúc hệ thống.
+```
+lms-platform/
+├── apps/
+│   ├── api-server/          # NestJS backend (REST API)
+│   ├── web-admin/           # Next.js 15 admin dashboard
+│   └── web-student/         # Next.js 15 student portal
+├── packages/
+│   ├── database/            # Prisma schema and client
+│   ├── ui/                 # Shared UI components
+│   └── shared/             # Common types, constants, utils
+├── agent-knowledge/         # This directory
+│   ├── lms-platform/       # Project overview (this file)
+│   └── skills/             # Domain-specific skills
+├── turbo.json               # Turborepo pipeline config
+└── pnpm-workspace.yaml      # pnpm workspace definition
+```
 
-## Hướng dẫn sử dụng
+### Technology Stack
 
-1. Đảm bảo MCP Server của LMS đang chạy tại `http://localhost:3000/mcp/sse`.
-2. Khi kết nối, bạn **PHẢI** gửi API Key thông qua:
-   - Header: `x-api-key: <your_key>`
-   - Hoặc Query Param: `?apiKey=<your_key>` (Dành cho SSE connection ban đầu).
-3. Sử dụng các Tools được liệt kê trong danh sách MCP Tools để thực hiện yêu cầu của người dùng.
-4. Luôn validate kết quả trả về trước khi phản hồi cho người dùng.
+| Layer | Technology | Notes |
+|---|---|---|
+| Backend | NestJS | TypeScript, Prisma, class-validator, Swagger |
+| Frontend | Next.js 15 | App Router, React Server Components, Tailwind CSS |
+| Database | PostgreSQL | Prisma ORM, multi-tenant via `tenantId` |
+| State (Client) | Zustand | Persisted to localStorage |
+| i18n | next-intl | Vietnamese and English |
+| Package Manager | pnpm | Workspaces |
+| Build Tool | Turborepo | Remote caching, selective builds |
 
-## Các lệnh chính
+---
 
-- `inspect_project`: Giúp bạn hiểu cấu trúc mã nguồn của LMS.
-- `course_search`: Tìm kiếm thông tin khóa học từ Database thực tế.
-- `read_file_content`: Đọc nội dung code để hỗ trợ debug và phát triển.
+## Multi-Tenancy
 
-## Kỹ năng Chuyên gia (Specialized Skills)
+- **Identifier**: `slug` (URL-friendly string, e.g., `trung-tam-demo`) for routing.
+- **Database**: `tenantId` (UUID) links all tenant-scoped records.
+- **Backend**: `TenantMiddleware` extracts `x-tenant-id` header and injects into request context.
+- **Frontend**: Always include `x-tenant-id` in Axios request headers.
 
-Khi thực hiện các tác vụ chuyên sâu, bạn **PHẢI** tham khảo các bộ quy chuẩn bổ sung sau:
+---
 
-1. **API Design Reviewer**: [agent-knowledge/skills/api-design-reviewer/SKILL.md](../skills/api-design-reviewer/SKILL.md)
-   - Dùng khi thiết kế endpoint mới hoặc review code Controller.
-2. **MCP Server Builder**: [agent-knowledge/skills/mcp-server-builder/SKILL.md](../skills/mcp-server-builder/SKILL.md)
-   - Dùng khi cần mở rộng thêm các kỹ năng MCP mới cho hệ thống.
-3. **API Test Suite Builder**: [agent-knowledge/skills/test-suite-builder/SKILL.md](../skills/test-suite-builder/SKILL.md)
-   - Dùng để tự động tạo Unit/Integration Test cho API Server.
-4. **Database Intelligence**: [agent-knowledge/skills/db-intelligence/SKILL.md](../skills/db-intelligence/SKILL.md)
-   - Dùng khi cần review schema, lập kế hoạch migration hoặc thay đổi Database.
+## Naming Conventions
+
+| Entity | Convention | Example |
+|---|---|---|
+| User name field | `fullName` | `{ "fullName": "Nguyen Van A" }` |
+| File naming | kebab-case | `auth-store.ts`, `course-card.tsx` |
+| Component naming | PascalCase | `CourseCard`, `LessonSidebar` |
+| API route naming | kebab-case | `/api/v1/user-profiles` |
+| DTO property | camelCase | `{ "createdAt": "..." }` |
+
+---
+
+## Coding Standards
+
+- **Backend logic** lives in Services, not Controllers.
+- **Validation** via `class-validator` decorators. Global `ValidationPipe` with `whitelist: true`.
+- **Swagger docs** on every endpoint: `@ApiOperation` + `@ApiResponse` decorators.
+- **Styling**: Vanilla CSS for component-level styles; Tailwind for layout and page-level.
+- **Icons**: `lucide-react` exclusively.
+- **Images**: `next/image` for all images (auto-optimization).
+- **Server vs Client**: Prefer React Server Components. Add `'use client'` only when needed.
+
+---
+
+## Shared Patterns
+
+### Axios Configuration
+
+```typescript
+// apps/web-admin/src/lib/api.ts
+import axios from 'axios';
+
+const api = axios.create({ baseURL: process.env.NEXT_PUBLIC_API_URL });
+
+api.interceptors.request.use((config) => {
+  const token = authStore.getState().token;
+  const tenantId = localStorage.getItem('tenantId');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (tenantId) config.headers['x-tenant-id'] = tenantId;
+  return config;
+});
+```
+
+### i18n (next-intl)
+
+```typescript
+// Client component
+import { useTranslations } from 'next-intl';
+const t = useTranslations('Course');
+
+// Server component
+import { getMessages } from '@/lib/i18n';
+const t = await getMessages();
+```
+
+---
+
+## Environment Variables
+
+| Variable | Where | Description |
+|---|---|---|
+| `DATABASE_URL` | api-server, database package | PostgreSQL connection string |
+| `JWT_SECRET` | api-server | JWT signing secret |
+| `NEXT_PUBLIC_API_URL` | web-admin, web-student | Backend API base URL |
+| `NEXT_PUBLIC_APP_URL` | web-admin, web-student | Frontend base URL |
+
+---
+
+## Related Skills
+
+| Skill | Use When |
+|---|---|
+| architecture-core | Understanding app boundaries and monorepo layout |
+| auth-standards | Implementing login, registration, JWT flow |
+| database-operations | Running migrations, seeding, Prisma changes |
+| db-intelligence | Planning schema changes safely |
+| nestjs-standards | Building API endpoints with NestJS |
+| nextjs-standards | Building frontend pages and components |
+| i18n-workflow | Adding or updating translations |
+| testing-strategy | Writing unit and integration tests |
+| test-suite-builder | Generating API test scaffolds |
+| engineering-planning | Planning new features or refactors |
+| deployment-ops | Dockerizing or setting up CI/CD |
+| api-design-reviewer | Designing or reviewing API endpoints |
+| mcp-server-builder | Building MCP tools from API contracts |
+
+---
+
+## Reference Documentation
+
+→ See `skills/*/references/` for domain-specific deep-dive documentation.

@@ -10,10 +10,10 @@ import { ChangePasswordDto } from "./dto/change-password.dto";
 
 @Injectable()
 export class UserService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private _prisma: PrismaService) {}
 
   async getProfile(userId: string): Promise<any> {
-    const user = await this.prisma.user.findUnique({
+    const user = await this._prisma.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
@@ -47,7 +47,7 @@ export class UserService {
     userId: string,
     updateProfileDto: UpdateProfileDto,
   ): Promise<any> {
-    const user = await this.prisma.user.update({
+    const user = await this._prisma.user.update({
       where: { id: userId },
       data: updateProfileDto,
       select: {
@@ -69,7 +69,7 @@ export class UserService {
 
   async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {
     // Get current user with password
-    const user = await this.prisma.user.findUnique({
+    const user = await this._prisma.user.findUnique({
       where: { id: userId },
     });
 
@@ -77,13 +77,13 @@ export class UserService {
       throw new NotFoundException("User not found");
     }
 
-    // Verify old password
-    const isOldPasswordValid = await bcrypt.compare(
-      changePasswordDto.oldPassword,
+    // Verify current password
+    const isCurrentPasswordValid = await bcrypt.compare(
+      changePasswordDto.currentPassword,
       user.password,
     );
 
-    if (!isOldPasswordValid) {
+    if (!isCurrentPasswordValid) {
       throw new UnauthorizedException("Current password is incorrect");
     }
 
@@ -91,7 +91,7 @@ export class UserService {
     const hashedPassword = await bcrypt.hash(changePasswordDto.newPassword, 10);
 
     // Update password
-    await this.prisma.user.update({
+    await this._prisma.user.update({
       where: { id: userId },
       data: { password: hashedPassword },
     });

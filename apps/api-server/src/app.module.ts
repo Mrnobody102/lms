@@ -1,7 +1,9 @@
 import { Module, MiddlewareConsumer, RequestMethod } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { ThrottlerModule } from "@nestjs/throttler";
+import { APP_GUARD } from "@nestjs/core";
 import { TenantMiddleware } from "./common/middleware/tenant.middleware";
+import { AppThrottlerGuard } from "./common/guards/throttler.guard";
 import { PrismaModule } from "./common/prisma.module";
 import { AuthModule } from "./auth/auth.module";
 import { UserModule } from "./user/user.module";
@@ -19,8 +21,14 @@ import { ProgressModule } from "./progress.module";
     }),
     ThrottlerModule.forRoot([
       {
+        name: "default",
         ttl: 60000,
         limit: 100,
+      },
+      {
+        name: "auth",
+        ttl: 60000,
+        limit: 10,
       },
     ]),
     PrismaModule,
@@ -33,7 +41,12 @@ import { ProgressModule } from "./progress.module";
     ProgressModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: AppThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {

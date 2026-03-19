@@ -1,12 +1,17 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalEnv": ["CI", "PORT"],
+  "globalDependencies": [".env", ".env.example"],
+  "globalEnv": ["CI", "PORT", "DATABASE_URL", "NODE_ENV", "CORS_ORIGINS", "JWT_SECRET"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+      "inputs": ["src/**", "next.config.*", "tsconfig.json"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**", ".turbo/**"]
     },
-    "lint": {},
+    "lint": {
+      "inputs": ["**/*.ts", "**/*.tsx", "**/*.js", "**/.eslintrc*"],
+      "outputs": []
+    },
     "dev": {
       "cache": false,
       "persistent": true
@@ -20,6 +25,16 @@
     "db:studio": {
       "cache": false,
       "persistent": true
+    },
+    "test": {
+      "dependsOn": ["build"],
+      "inputs": ["**/*.ts", "**/*.tsx"],
+      "outputs": ["coverage/**"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "inputs": ["src/**", "next.config.*", "tsconfig.json"],
+      "outputs": []
     }
   }
 }

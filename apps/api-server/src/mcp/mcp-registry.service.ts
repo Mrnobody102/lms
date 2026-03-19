@@ -13,10 +13,10 @@ export class McpRegistryService implements OnModuleInit {
   >();
 
   constructor(
-    private readonly discoveryService: DiscoveryService,
-    private readonly metadataScanner: MetadataScanner,
-    private readonly reflector: Reflector,
-    private readonly mcpService: McpService,
+    private readonly _discoveryService: DiscoveryService,
+    private readonly _metadataScanner: MetadataScanner,
+    private readonly _reflector: Reflector,
+    private readonly _mcpService: McpService,
   ) {}
 
   async onModuleInit() {
@@ -25,15 +25,15 @@ export class McpRegistryService implements OnModuleInit {
   }
 
   private explore() {
-    const providers = this.discoveryService.getProviders();
+    const providers = this._discoveryService.getProviders();
 
-    providers.forEach((wrapper) => {
+    providers.forEach((wrapper: any) => {
       const { instance } = wrapper;
       if (!instance || !Object.getPrototypeOf(instance)) return;
 
-      this.metadataScanner.getAllMethodNames(instance).forEach((methodName) => {
+      this._metadataScanner.getAllMethodNames(instance).forEach((methodName: string) => {
         const method = instance[methodName];
-        const metadata = this.reflector.get<McpToolOptions>(
+        const metadata = this._reflector.get<McpToolOptions>(
           MCP_TOOL_METADATA,
           method,
         );
@@ -52,7 +52,7 @@ export class McpRegistryService implements OnModuleInit {
   private async registerWithMcp() {
     const { CallToolRequestSchema } =
       await import("@modelcontextprotocol/sdk/types.js");
-    const server = this.mcpService.server;
+    const server = this._mcpService.server;
     if (!server) {
       this.logger.warn("MCP Server not initialized yet, skipping registration");
       return;

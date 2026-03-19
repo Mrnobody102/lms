@@ -33,8 +33,10 @@ export default function NewCoursePage() {
       const newCourse = await courseApi.createCourse({ title });
       router.push(`/courses/${newCourse.id}/edit`);
     } catch (err: any) {
-      console.error("Failed to create course:", err);
-      setError("Không thể tạo khóa học. Vui lòng kiểm tra lại kết nối API.");
+      if (process.env.NODE_ENV === "development") {
+        console.error("Failed to create course:", err);
+      }
+      setError(t("Admin.cannotCreateCourse"));
     } finally {
       setLoading(false);
     }
@@ -51,12 +53,12 @@ export default function NewCoursePage() {
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8 font-bold text-sm group"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-            Quay lại danh sách
+{t("Admin.backToList")}
           </Link>
 
           <AdminHeader
-            title="Tạo khóa học mới"
-            description="Bắt đầu hành trình chia sẻ kiến thức của bạn."
+            title={t("Admin.createNewCourse")}
+            description={t("Admin.createNewCourseDesc")}
           />
 
           {error && (
@@ -70,7 +72,7 @@ export default function NewCoursePage() {
             <form onSubmit={handleCreateCourse} className="space-y-8">
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-50 ml-2">
-                  Tên khóa học
+                  {t("Admin.courseName")}
                 </label>
                 <input
                   type="text"
@@ -78,7 +80,7 @@ export default function NewCoursePage() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   className="w-full bg-muted/30 border border-border/50 rounded-2xl px-6 py-5 font-black focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-xl"
-                  placeholder="Ví dụ: Lập trình Next.js từ cơ bản đến nâng cao"
+                  placeholder={t("Admin.courseNamePlaceholder")}
                 />
               </div>
 
@@ -93,10 +95,10 @@ export default function NewCoursePage() {
                   ) : (
                     <Plus className="w-6 h-6" />
                   )}
-                  Bắt đầu xây dựng khóa học
+                  {t("Admin.startBuilding")}
                 </button>
                 <p className="text-center text-xs text-muted-foreground font-bold italic opacity-60">
-                  Sau khi tạo, bạn sẽ có thể thêm các bài học vào giáo trình.
+                  {t("Admin.startBuildingDesc")}
                 </p>
               </div>
             </form>

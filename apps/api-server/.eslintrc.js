@@ -10,4 +10,12 @@ module.exports = {
     node: true,
     jest: true,
   },
+  rules: {
+    "@typescript-eslint/no-unused-vars": ["warn", {
+      argsIgnorePattern: "^_",
+      varsIgnorePattern: "^_",
+      caughtErrorsIgnorePattern: "^_",
+    }],
+    "no-unused-vars": "off",
+  },
 };

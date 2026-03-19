@@ -3,52 +3,32 @@ import {
   Post,
   Body,
   Get,
-  Query,
   Param,
   UseGuards,
   Request,
 } from "@nestjs/common";
-import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from "@nestjs/swagger";
 import { ProgressService } from "./progress.service";
-import { ProgressStatus } from "@repo/database";
 import { JwtAuthGuard } from "./auth/guards/jwt-auth.guard";
-
-export interface AuthenticatedRequest extends Request {
-  user: {
-    id: string;
-    email: string;
-    role: string;
-    tenantId: string;
-  };
-}
-
-import { IsEnum, IsUUID } from "class-validator";
-import { ApiProperty } from "@nestjs/swagger";
-
-export class UpdateProgressDto {
-  @ApiProperty()
-  @IsUUID()
-  lessonId: string;
-
-  @ApiProperty({ enum: ProgressStatus })
-  @IsEnum(ProgressStatus)
-  status: ProgressStatus;
-}
+import { UpdateProgressDto } from "./progress/dto/update-progress.dto";
+import { AuthenticatedRequest } from "./progress/dto/authenticated-request.interface";
 
 @ApiTags("Progress")
 @Controller("progress")
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 export class ProgressController {
-  constructor(private readonly progressService: ProgressService) {}
+  constructor(private readonly _progressService: ProgressService) {}
 
   @Post("update")
   @ApiOperation({ summary: "Update lesson progress" })
+  @ApiResponse({ status: 200, description: "Progress updated successfully" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
   async updateProgress(
     @Request() req: AuthenticatedRequest,
     @Body() data: UpdateProgressDto,
   ) {
-    return this.progressService.updateProgress(
+    return this._progressService.updateProgress(
       req.user.id,
       data.lessonId,
       data.status,
@@ -58,11 +38,13 @@ export class ProgressController {
 
   @Get("course/:courseId")
   @ApiOperation({ summary: "Get user progress for a specific course" })
+  @ApiResponse({ status: 200, description: "Progress retrieved successfully" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
   async getCourseProgress(
     @Request() req: AuthenticatedRequest,
     @Param("courseId") courseId: string,
   ) {
-    return this.progressService.getProgress(
+    return this._progressService.getProgress(
       req.user.id,
       courseId,
       req.user.tenantId,
@@ -71,11 +53,13 @@ export class ProgressController {
 
   @Get("lesson/:lessonId")
   @ApiOperation({ summary: "Get user progress for a specific lesson" })
+  @ApiResponse({ status: 200, description: "Progress retrieved successfully" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
   async getLessonProgress(
     @Request() req: AuthenticatedRequest,
     @Param("lessonId") lessonId: string,
   ) {
-    return this.progressService.getLessonProgress(
+    return this._progressService.getLessonProgress(
       req.user.id,
       lessonId,
       req.user.tenantId,

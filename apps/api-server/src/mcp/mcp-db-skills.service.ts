@@ -60,7 +60,7 @@ export class McpDbSkillsService {
       targetModel: z.string().optional().describe("Tên model cần thay đổi"),
     }),
   })
-  async generateMigrationPlan(args: { intent: string; targetModel?: string }) {
+  async generateMigrationPlan(_args: { intent: string; targetModel?: string }) {
     // Công cụ này chủ yếu trả về hướng dẫn để AI Agent tự suy luận và đề xuất code cho User
     return {
       instructions: "Dựa trên intent của bạn, hãy thực hiện các bước sau:",

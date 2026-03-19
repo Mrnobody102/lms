@@ -15,7 +15,16 @@ async function bootstrap() {
   app.use(compression());
 
   // Enable CORS
-  app.enableCors();
+  const corsOrigins = process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(",").map((s) => s.trim())
+    : ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"];
+
+  app.enableCors({
+    origin: corsOrigins,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-tenant-id"],
+  });
 
   // Set global prefix
   app.setGlobalPrefix("api");
@@ -23,9 +32,10 @@ async function bootstrap() {
   // Apply global validation pipe
   app.useGlobalPipes(
     new ValidationPipe({
-      transform: true,
       whitelist: true,
       forbidNonWhitelisted: true,
+      transform: true,
+      transformOptions: { enableImplicitConversion: true },
     }),
   );
 
@@ -42,7 +52,9 @@ async function bootstrap() {
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup("api/docs", app, document);
+  if (process.env.NODE_ENV !== "production") {
+    SwaggerModule.setup("api/docs", app, document);
+  }
 
   await app.listen(process.env.PORT || 4000);
   console.log(

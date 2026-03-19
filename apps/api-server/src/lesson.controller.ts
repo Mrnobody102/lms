@@ -8,92 +8,16 @@ import {
   Delete,
   Query,
   Request,
+  UseGuards,
 } from "@nestjs/common";
 import { LessonService } from "./lesson.service";
-import {
-  ApiTags,
-  ApiOperation,
-  ApiQuery,
-  ApiProperty,
-  ApiPropertyOptional,
-} from "@nestjs/swagger";
-import { IsString, IsOptional, IsInt, IsUUID } from "class-validator";
+import { JwtAuthGuard } from "./auth/guards/jwt-auth.guard";
+import { ApiTags, ApiOperation, ApiQuery, ApiBearerAuth } from "@nestjs/swagger";
+import { CreateLessonDto } from "./lesson/dto/create-lesson.dto";
+import { UpdateLessonDto } from "./lesson/dto/update-lesson.dto";
 
-class CreateLessonDto {
-  @ApiProperty({ example: "Introduction to NestJS" })
-  @IsString()
-  title: string;
-
-  @ApiPropertyOptional({ example: "Lesson content here..." })
-  @IsString()
-  @IsOptional()
-  content?: string;
-
-  @ApiPropertyOptional({ example: "https://youtube.com/..." })
-  @IsString()
-  @IsOptional()
-  videoUrl?: string;
-
-  @ApiPropertyOptional({ example: 1 })
-  @IsInt()
-  @IsOptional()
-  order?: number;
-
-  @ApiProperty({ example: "uuid-of-course" })
-  @IsUUID()
-  courseId: string;
-
-  @ApiPropertyOptional({ example: "video", enum: ["video", "text", "quiz"] })
-  @IsString()
-  @IsOptional()
-  type?: string;
-
-  @ApiPropertyOptional({ example: 10 })
-  @IsInt()
-  @IsOptional()
-  duration?: number;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  quiz?: any;
-}
-
-class UpdateLessonDto {
-  @ApiPropertyOptional()
-  @IsString()
-  @IsOptional()
-  title?: string;
-
-  @ApiPropertyOptional()
-  @IsString()
-  @IsOptional()
-  content?: string;
-
-  @ApiPropertyOptional()
-  @IsString()
-  @IsOptional()
-  videoUrl?: string;
-
-  @ApiPropertyOptional()
-  @IsInt()
-  @IsOptional()
-  order?: number;
-
-  @ApiPropertyOptional({ enum: ["video", "text", "quiz"] })
-  @IsString()
-  @IsOptional()
-  type?: string;
-
-  @ApiPropertyOptional()
-  @IsInt()
-  @IsOptional()
-  duration?: number;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  quiz?: any;
-}
-
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 @ApiTags("lessons")
 @Controller("lessons")
 export class LessonController {

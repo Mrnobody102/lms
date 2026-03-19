@@ -6,19 +6,17 @@ import {
   Patch,
   Param,
   Delete,
-  Query,
   Request,
+  UseGuards,
 } from "@nestjs/common";
 import { CourseService } from "./course.service";
-import { ApiTags, ApiOperation, ApiQuery, ApiProperty } from "@nestjs/swagger";
-import { IsString, IsUUID } from "class-validator";
+import { JwtAuthGuard } from "./auth/guards/jwt-auth.guard";
+import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
+import { CreateCourseDto } from "./course/dto/create-course.dto";
+import { UpdateCourseDto } from "./course/dto/update-course.dto";
 
-class CreateCourseDto {
-  @ApiProperty({ example: "Lập trình Next.js cơ bản" })
-  @IsString()
-  title: string;
-}
-
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 @ApiTags("courses")
 @Controller("courses")
 export class CourseController {
@@ -50,7 +48,7 @@ export class CourseController {
   @ApiOperation({ summary: "Cập nhật khóa học" })
   update(
     @Param("id") id: string,
-    @Body() updateCourseDto: CreateCourseDto,
+    @Body() updateCourseDto: UpdateCourseDto,
     @Request() req: any,
   ) {
     return this.courseService.update(id, req.tenantId, updateCourseDto);

@@ -1,171 +1,92 @@
 # API Design Reviewer
 
-**Tier:** POWERFUL  
-**Category:** Engineering / Architecture  
-**Maintainer:** Claude Skills Team
+**Tier:** POWERFUL
+**Category:** Engineering / Architecture
+**Domain:** API Design & Review
+**Maintainer:** LMS Agent Team
 
 ---
 
 ## Overview
 
-The API Design Reviewer skill provides comprehensive analysis and review of API designs, focusing on REST conventions, best practices, and industry standards. This skill helps engineering teams build consistent, maintainable, and well-designed APIs through automated linting, breaking change detection, and design scorecards.
+The API Design Reviewer skill provides comprehensive analysis and review of API designs for the LMS NestJS backend. It enforces REST conventions, best practices, breaking change detection, and design quality standards aligned with NestJS + Prisma patterns.
 
 ## Core Capabilities
 
-### 1. API Linting and Convention Analysis
+- **api_linting**: Validates resource naming (kebab-case), HTTP methods, URL structure, status codes, and error response formats.
+- **breaking_change_detection**: Detects removed endpoints, response shape changes, field removals, type changes, and status code modifications.
+- **api_design_scoring**: Evaluates consistency (30%), documentation (20%), security (20%), usability (15%), and performance (15%).
+- **nestjs_compliance**: Ensures Swagger decorators, class-validator DTOs, proper DI separation, and consistent error handling.
+- **schema_validation**: Enforces Prisma-integrated DTO patterns with IsString, IsEmail, IsUUID, and other decorators.
 
-- **Resource Naming Conventions**: Enforces kebab-case for resources, camelCase for fields.
-- **HTTP Method Usage**: Validates proper use of GET, POST, PUT, PATCH, DELETE.
-- **URL Structure**: Analyzes endpoint patterns for consistency and RESTful design.
-- **Status Code Compliance**: Ensures appropriate HTTP status codes are used.
-- **Error Response Formats**: Validates consistent error response structures.
-- **Documentation Coverage**: Checks for missing descriptions and documentation gaps.
+## When to Use
 
-### 2. Breaking Change Detection
+Use when:
+- Designing new REST endpoints for the LMS API server
+- Reviewing pull requests that add or modify API endpoints
+- Auditing existing endpoints for consistency and best practices
+- Adding or changing DTOs and response shapes
+- Planning API versioning for new feature releases
 
-- **Endpoint Removal**: Detects removed or deprecated endpoints.
-- **Response Shape Changes**: Identifies modifications to response structures.
-- **Field Removal**: Tracks removed or renamed fields in API responses.
-- **Type Changes**: Catches field type modifications that could break clients.
-- **Required Field Additions**: Flags new required fields that could break existing integrations.
-- **Status Code Changes**: Detects changes to expected status codes.
+Skip when:
+- Single-app project with no shared packages
+- Working exclusively on UI components with no backend changes
+- Making cosmetic UI changes with no API impact
 
-### 3. API Design Scoring and Assessment
+## Key Workflows
 
-- **Consistency Analysis** (30%): Evaluates naming conventions, response patterns, and structural consistency.
-- **Documentation Quality** (20%): Assesses completeness and clarity of API documentation.
-- **Security Implementation** (20%): Reviews authentication, authorization, and security headers.
-- **Usability Design** (15%): Analyzes ease of use, discoverability, and developer experience.
-- **Performance Patterns** (15%): Evaluates caching, pagination, and efficiency patterns.
+### Design New Endpoint
 
-## REST Design Principles
+1. Define the resource path with kebab-case and version prefix `/api/v1/`
+2. Choose the correct HTTP method (GET/POST/PUT/PATCH/DELETE)
+3. Create the DTO with class-validator decorators and Swagger @ApiProperty
+4. Add @ApiOperation and @ApiResponse decorators to the controller method
+5. Implement business logic in the service layer (never in controllers)
+6. Register the route and verify the Swagger docs render correctly
 
-### Resource Naming Conventions
+### Review API PR
 
-```
-✅ Good Examples:
-- /api/v1/users
-- /api/v1/user-profiles
-- /api/v1/orders/123/line-items
+1. Run through the API Design Scoring rubric (consistency, docs, security, usability, performance)
+2. Check NestJS compliance: Swagger decorators, ValidationPipe, DI separation, HttpException usage
+3. Scan for breaking changes against the existing OpenAPI spec
+4. Verify error response structure matches the standard LMS format
+5. Flag pagination patterns for list endpoints and cursor/offset consistency
 
-❌ Bad Examples:
-- /api/v1/getUsers
-- /api/v1/user_profiles
-- /api/v1/orders/123/lineItems
-```
+### Add Pagination
 
-### HTTP Method Usage
+1. For stable, filterable lists: use offset-based `{ offset, limit, total, hasMore }`
+2. For infinite scroll / time-ordered feeds: use cursor-based `{ nextCursor, hasMore }`
+3. Apply the same pattern consistently across all list endpoints in the same resource
 
-- **GET**: Retrieve resources (safe, idempotent).
-- **POST**: Create new resources (not idempotent).
-- **PUT**: Replace entire resources (idempotent).
-- **PATCH**: Partial resource updates (not necessarily idempotent).
-- **DELETE**: Remove resources (idempotent).
+## Common Pitfalls
 
-### URL Structure Best Practices
+| Pitfall | Fix |
+|---|---|
+| Missing @ApiOperation/@ApiResponse decorators | Add Swagger decorators to every controller method |
+| Using raw errors or throwing plain strings | Wrap in HttpException (e.g., NotFoundException, BadRequestException) |
+| Business logic in controllers | Move all logic to service methods; controllers only handle HTTP |
+| Missing ValidationPipe | Ensure app bootstrap uses `app.useGlobalPipes(new ValidationPipe())` |
+| Inconsistent resource naming (snake vs kebab) | Enforce kebab-case: `/user-profiles`, not `/user_profiles` |
+| Returning different error shapes per endpoint | Standardize on `{ error: { code, message, details, requestId, timestamp } }` |
+| Adding required fields to existing DTOs | Mark new fields optional; add them as additive only |
 
-```
-Collection Resources: /api/v1/users
-Individual Resources: /api/v1/users/123
-Nested Resources: /api/v1/users/123/orders
-Actions: /api/v1/users/123/activate (POST)
-Filtering: /api/v1/users?status=active&role=admin
-```
+## Best Practices
 
-## NestJS Specific Guidelines (Project Customization)
+1. Always prefix endpoints with version: `/api/v1/`, `/api/v2/`
+2. Use kebab-case for multi-word resources: `/user-profiles`, not `/userProfiles`
+3. Keep DTOs focused: separate Request DTOs from Response DTOs
+4. Validate all input with class-validator at the DTO layer, never manually
+5. Return structured errors with machine-readable codes, never raw messages
+6. Document every endpoint with @ApiOperation summary and @ApiResponse decorators
+7. Use cursor-based pagination for large or time-ordered datasets; offset for small, filterable lists
 
-When reviewing or designing APIs for this LMS project (NestJS), adhere to these rules:
+## Related Skills
 
-1. **Swagger Documentation**:
-   - Every Controller/Method must have `@ApiOperation` and `@ApiResponse`.
-   - Every DTO field must have `@ApiProperty` or `@ApiPropertyOptional`.
-2. **Validation**:
-   - Use `class-validator` decorators in DTOs (e.g., `@IsString`, `@IsEmail`, `@MinLength`).
-   - Always use a global `ValidationPipe`.
-3. **Dependency Injection**:
-   - Ensure business logic resides in Services, not Controllers.
-4. **Error Handling**:
-   - Use NestJS's built-in `HttpException` (e.g., `new NotFoundException()`).
-   - Avoid returning raw errors to the client.
+| Skill | Use When |
+|---|---|
+| architecture-core | Understanding project structure before designing APIs |
+| code-architecture | Designing service layer patterns and module boundaries |
 
-## Versioning Strategies
+## Reference Documentation
 
-### 1. URL Versioning (Recommended)
-
-```
-/api/v1/users
-/api/v2/users
-```
-
-**Pros**: Clear, explicit, easy to route.  
-**Cons**: URL proliferation, caching complexity.
-
-### 2. Header Versioning
-
-```
-GET /api/users
-Accept: application/vnd.api+json;version=1
-```
-
-**Pros**: Clean URLs, content negotiation.  
-**Cons**: Less visible, harder to test manually.
-
-## Pagination Patterns
-
-### Offset-Based Pagination
-
-```json
-{
-  "data": [...],
-  "pagination": {
-    "offset": 20,
-    "limit": 10,
-    "total": 150,
-    "hasMore": true
-  }
-}
-```
-
-### Cursor-Based Pagination
-
-```json
-{
-  "data": [...],
-  "pagination": {
-    "nextCursor": "eyJpZCI6MTIzfQ==",
-    "hasMore": true
-  }
-}
-```
-
-## Error Response Formats
-
-### Standard Error Structure
-
-```json
-{
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "The request contains invalid parameters",
-    "details": [
-      {
-        "field": "email",
-        "code": "INVALID_FORMAT",
-        "message": "Email address is not valid"
-      }
-    ],
-    "requestId": "req-123456",
-    "timestamp": "2024-02-16T13:00:00Z"
-  }
-}
-```
-
-## Security Best Practices
-
-- **Authentication**: Use JWT with Bearer tokens.
-- **Input Validation**: Never trust client input; always validate against DTOs.
-- **Principle of Least Privilege**: Ensure endpoints are guarded by the appropriate guards (e.g., `RolesGuard`).
-
-## Conclusion
-
-The API Design Reviewer skill provides a comprehensive framework for building, reviewing, and maintaining high-quality REST APIs. By following these guidelines and using the provided tools, development teams can create APIs that are consistent, well-documented, secure, and maintainable.
+-> See `references/` directory for deep-dive documentation.

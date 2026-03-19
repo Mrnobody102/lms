@@ -1,20 +1,22 @@
-import axios, { InternalAxiosRequestConfig, AxiosResponse } from "axios";
+import axios from "axios";
+
+const TIMEOUT_MS = 15000; // 15 second request timeout
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api",
-  headers: {
-    "Content-Type": "application/json",
-  },
+  baseURL: process.env.NEXT_PUBLIC_API_URL
+    ? `${process.env.NEXT_PUBLIC_API_URL}/api`
+    : (console.warn("[DEV] Using localhost fallback for API URL"),
+      "http://localhost:4000/api"),
+  timeout: TIMEOUT_MS,
+  withCredentials: true,
 });
 
-// Interceptor to add Tenant ID and Auth token
-api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  // Get tenant ID from localStorage or from the context/subdomain
+// Interceptor to attach token
+api.interceptors.request.use((config) => {
   const tenantId =
     typeof window !== "undefined"
-      ? localStorage.getItem("tenantId") || "trung-tam-demo"
-      : "trung-tam-demo";
-
+      ? localStorage.getItem("tenantId")
+      : null;
   if (tenantId) {
     config.headers["x-tenant-id"] = tenantId;
   }
@@ -24,16 +26,23 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-
   return config;
 });
 
 api.interceptors.response.use(
-  (response: AxiosResponse) => response,
+  (response) => response,
   (error: any) => {
+    if (error.code === "ECONNABORTED" || error.message?.includes("timeout")) {
+      error.message = "Request timed out. Please try again.";
+    }
     if (error.response?.status === 401) {
-      // Handle unauthorized (redirect to login)
-      console.error("Unauthorized access");
+      if (typeof window !== "undefined") {
+        // Clear auth state
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        // Redirect to login
+        window.location.href = "/vi/login";
+      }
     }
     return Promise.reject(error);
   },

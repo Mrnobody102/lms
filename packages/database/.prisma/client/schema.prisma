@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN // Quản trị toàn hệ thống (là bạn)
+  ADMIN // Chủ trung tâm
+  INSTRUCTOR // Giảng viên
+  STUDENT // Học sinh
+}
+
+enum LessonType {
+  video
+  text
+  quiz
+}
+
+enum ProgressStatus {
+  IN_PROGRESS
+  COMPLETED
+}
+
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique // Ví dụ: "trung-tam-a"
+  domain    String?  @unique // Custom domain sau này
+  settings  Json // Lưu logo, màu sắc, config
+  users     User[]
+  courses   Course[]
+  lessons   Lesson[]
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([isActive])
+}
+
+model User {
+  id          String               @id @default(uuid())
+  email       String               @unique
+  password    String
+  fullName    String
+  phoneNumber String?
+  avatarUrl   String?
+  role        Role                 @default(STUDENT)
+  isActive    Boolean              @default(true)
+  tenantId    String
+  tenant      Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  progress    UserLessonProgress[]
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@index([tenantId, role])
+  @@index([tenantId, isActive])
+}
+
+model Course {
+  id            String   @id @default(uuid())
+  title         String
+  slug          String? // SEO-friendly slug
+  isActive      Boolean  @default(true)
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  lessons       Lesson[]
+  totalDuration Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, isActive])
+}
+
+model Lesson {
+  id        String               @id @default(uuid())
+  title     String
+  type      LessonType           @default(text)
+  content   String? // Nội dung bài học (HTML/Markdown)
+  videoUrl  String? // Link video bài giảng
+  duration  Int                  @default(10) // Thời lượng dự kiến (phút)
+  quiz      Json? // Nội dung quiz (nếu type là quiz)
+  order     Int                  @default(0) // Thứ tự bài học trong khóa học
+  tenantId  String
+  tenant    Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  courseId  String
+  course    Course               @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  progress  UserLessonProgress[]
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+
+  @@index([courseId])
+  @@index([tenantId, type])
+}
+
+model UserLessonProgress {
+  id        String         @id @default(uuid())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId  String
+  lesson    Lesson         @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  tenantId  String // Denormalized tenantId for row-level isolation
+  status    ProgressStatus @default(IN_PROGRESS)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@unique([userId, lessonId])
+  @@index([userId])
+  @@index([lessonId])
+  @@index([tenantId])
+}

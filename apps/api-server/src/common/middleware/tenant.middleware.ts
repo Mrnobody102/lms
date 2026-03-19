@@ -14,29 +14,10 @@ export class TenantMiddleware implements NestMiddleware {
 
     const tenantId =
       req.headers["x-tenant-id"] ||
-      this.getTenantFromToken(req) ||
       this.getTenantFromDomain(req);
     if (!tenantId) throw new BadRequestException("Tenant ID is missing");
     (req as any).tenantId = tenantId;
     next();
-  }
-
-  private getTenantFromToken(req: Request): string | undefined {
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith("Bearer ")) {
-      const token = authHeader.substring(7);
-      try {
-        const payloadBase64 = token.split(".")[1];
-        if (payloadBase64) {
-          const payloadJson = Buffer.from(payloadBase64, "base64").toString();
-          const payload = JSON.parse(payloadJson);
-          return payload.tenantId;
-        }
-      } catch (e) {
-        // Ignore token parse errors, fall back to other methods
-      }
-    }
-    return undefined;
   }
 
   private getTenantFromDomain(req: Request): string | undefined {

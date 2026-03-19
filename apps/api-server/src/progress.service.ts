@@ -4,7 +4,7 @@ import { PrismaService } from "./common/services/prisma.service";
 
 @Injectable()
 export class ProgressService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly _prisma: PrismaService) {}
 
   /**
    * Update or create a progress record for a user and lesson.
@@ -17,12 +17,12 @@ export class ProgressService {
     tenantId: string,
   ) {
     // Verify lesson ownership
-    const lesson = await this.prisma.lesson.findFirst({
+    const lesson = await this._prisma.lesson.findFirst({
       where: { id: lessonId, tenantId },
     });
     if (!lesson) throw new NotFoundException(`Lesson not found in this tenant`);
 
-    return this.prisma.userLessonProgress.upsert({
+    return this._prisma.userLessonProgress.upsert({
       where: {
         userId_lessonId: {
           userId,
@@ -35,6 +35,7 @@ export class ProgressService {
       create: {
         userId,
         lessonId,
+        tenantId,
         status,
       },
     });
@@ -44,7 +45,7 @@ export class ProgressService {
    * Get all progress records for a user within a specific course.
    */
   async getProgress(userId: string, courseId: string, tenantId: string) {
-    return this.prisma.userLessonProgress.findMany({
+    return this._prisma.userLessonProgress.findMany({
       where: {
         userId,
         lesson: {
@@ -62,7 +63,7 @@ export class ProgressService {
    * Get a single progress record for a user and lesson.
    */
   async getLessonProgress(userId: string, lessonId: string, tenantId: string) {
-    return this.prisma.userLessonProgress.findFirst({
+    return this._prisma.userLessonProgress.findFirst({
       where: {
         userId,
         lessonId,

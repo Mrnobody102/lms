@@ -49,3 +49,8 @@ temp
 .agent
 .agents
 .cursor
+
+# Next.js build artifacts
+apps/super-portal/next-env.d.ts
+apps/web-admin/next-env.d.ts
+apps/web-student/next-env.d.ts

@@ -3,7 +3,11 @@
   "compilerOptions": {
     "outDir": "./dist",
     "baseUrl": "./src",
-    "strictPropertyInitialization": false
+    "strictPropertyInitialization": false,
+    "paths": {
+      "@repo/database": ["../packages/database/.prisma/client"],
+      "@repo/database/*": ["../packages/database/.prisma/client/*"]
+    }
   },
   "include": ["src/**/*", ".eslintrc.js"]
 }

@@ -28,8 +28,10 @@ export default function CoursesPage() {
         const data = await courseApi.getCourses();
         setCourses(data);
       } catch (err: any) {
-        console.error("Failed to fetch courses:", err);
-        setError("Không thể tải danh sách khóa học. Vui lòng thử lại sau.");
+        if (process.env.NODE_ENV === "development") {
+          console.error("Failed to fetch courses:", err);
+        }
+        setError(t("Admin.cannotLoadCourses"));
       } finally {
         setLoading(false);
       }
@@ -46,7 +48,7 @@ export default function CoursesPage() {
       <main className="flex-1 md:ml-64 p-6 md:p-10 lg:p-16">
         <AdminHeader
           title={t("courses")}
-          description="Quản lý các khóa học trong trung tâm của bạn."
+          description={t("Admin.courseManagement")}
           showCreateCourse={true}
         />
 
@@ -54,7 +56,7 @@ export default function CoursesPage() {
           <div className="flex flex-col items-center justify-center py-32 space-y-4 opacity-50">
             <Loader2 className="w-10 h-10 animate-spin text-primary" />
             <p className="font-bold text-sm uppercase tracking-[0.2em]">
-              {t("loading", { defaultValue: "Đang tải dữ liệu..." })}
+              {t("Admin.loading")}
             </p>
           </div>
         ) : error ? (
@@ -64,7 +66,7 @@ export default function CoursesPage() {
               onClick={() => window.location.reload()}
               className="px-6 py-2 bg-destructive text-white rounded-xl font-bold text-sm"
             >
-              Thử lại
+              {t("Admin.retry")}
             </button>
           </div>
         ) : courses.length === 0 ? (
@@ -73,17 +75,16 @@ export default function CoursesPage() {
               <BookOpen className="w-10 h-10" />
             </div>
             <div className="space-y-2">
-              <h3 className="text-xl font-black">Chưa có khóa học nào</h3>
+              <h3 className="text-xl font-black">{t("Admin.noCourses")}</h3>
               <p className="text-muted-foreground font-medium max-w-xs">
-                Hãy bắt đầu bằng cách tạo khóa học đầu tiên cho trung tâm của
-                bạn.
+                {t("Admin.noCoursesDesc")}
               </p>
             </div>
             <Link
               href="/courses/new"
               className="px-8 py-3 bg-primary text-primary-foreground font-black rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95"
             >
-              + Tạo khóa học ngay
+              {t("Admin.createCourseNow")}
             </Link>
           </div>
         ) : (
@@ -108,12 +109,12 @@ export default function CoursesPage() {
                   </h3>
 
                   <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest opacity-60 mb-8">
-                    {course.lessons?.length || 0} bài học •{" "}
+                    {course.lessons?.length || 0} {t("Admin.lessons")} •{" "}
                     {course.lessons?.reduce(
                       (acc, l) => acc + (l.duration || 0),
                       0,
                     ) || 0}{" "}
-                    phút
+                    {t("Admin.minutes")}
                   </p>
                 </div>
 
@@ -123,7 +124,7 @@ export default function CoursesPage() {
                     className="flex-1 flex items-center justify-center gap-2 py-3 bg-card border border-border rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-muted transition-all active:scale-95 group/btn"
                   >
                     <Edit2 className="w-3.5 h-3.5 group-hover/btn:-rotate-12 transition-transform" />
-                    Chỉnh sửa
+                    {t("Admin.edit")}
                   </Link>
                   <Link
                     href={`/courses/${course.id}`} // Preview or specific view
