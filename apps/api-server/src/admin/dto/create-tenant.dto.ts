@@ -1,5 +1,6 @@
 import { IsString, IsNotEmpty, IsOptional, IsObject } from "class-validator";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { Prisma } from "@repo/database";
 
 export class CreateTenantDto {
   @ApiProperty({ example: "Trung tâm Tiếng Anh ABC" })
@@ -25,5 +26,5 @@ export class CreateTenantDto {
   })
   @IsObject()
   @IsOptional()
-  settings?: any;
+  settings?: Prisma.InputJsonValue;
 }

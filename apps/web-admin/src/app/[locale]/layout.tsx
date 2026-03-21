@@ -2,6 +2,7 @@ import "@repo/ui/styles.css";
 import type { Metadata } from "next";
 import { ThemeProvider } from "@repo/ui";
 import { Inter } from "next/font/google";
+import { QueryProvider } from "@/components/providers";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -30,7 +31,9 @@ export default async function RootLayout(props: {
       <body className={inter.className}>
         <NextIntlClientProvider messages={messages} locale={locale}>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            {children}
+            <QueryProvider>
+              {children}
+            </QueryProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>

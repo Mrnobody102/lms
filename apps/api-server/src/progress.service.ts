@@ -63,7 +63,7 @@ export class ProgressService {
    * Get a single progress record for a user and lesson.
    */
   async getLessonProgress(userId: string, lessonId: string, tenantId: string) {
-    return this._prisma.userLessonProgress.findFirst({
+    const progress = await this._prisma.userLessonProgress.findFirst({
       where: {
         userId,
         lessonId,
@@ -72,5 +72,13 @@ export class ProgressService {
         },
       },
     });
+
+    if (!progress) {
+      throw new NotFoundException(
+        `Progress not found for lesson ${lessonId} and user ${userId}`,
+      );
+    }
+
+    return progress;
   }
 }

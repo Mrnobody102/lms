@@ -9,6 +9,10 @@
     "dev": "tsc -w",
     "test": "vitest run"
   },
+  "peerDependencies": {
+    "axios": "^1.7.9",
+    "zustand": "^4.5.0"
+  },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
     "typescript": "latest",

@@ -2,33 +2,27 @@
 
 import { useEffect, useState } from "react";
 import { Server, PlusCircle, Calendar } from "lucide-react";
-import { useTenantStore } from "@/features/tenants/tenant.store";
+import { useAuthStore } from "@/features/auth/auth.store";
 import { TenantStats } from "@/features/tenants/components/tenant-stats";
 import { TenantFormModal } from "@/features/tenants/components/tenant-form-modal";
 import { TenantList } from "@/features/tenants/components/tenant-list";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
-import { useAuthStore } from "@/features/auth/auth.store";
 import { LoginModal } from "@/features/auth/components/login-modal";
+import { useTenants } from "@/hooks/use-tenants";
 import { format } from "date-fns";
 
 import { useTranslations } from "next-intl";
 
 export default function SuperAdminHome() {
   const t = useTranslations("SuperPortal");
-  const { tenants, loading, fetchTenants } = useTenantStore();
   const { isAuthenticated, checkAuth, isInitialized } = useAuthStore();
+  const { data: tenants = [], isLoading } = useTenants({ enabled: isAuthenticated });
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchTenants();
-    }
-  }, [isAuthenticated, fetchTenants]);
 
   if (!isInitialized) {
     return (
@@ -41,7 +35,6 @@ export default function SuperAdminHome() {
 
   return (
     <div className="min-h-screen font-sans">
-      {/* Topbar */}
       <Header />
 
       <div className="p-8 max-w-7xl mx-auto text-foreground">
@@ -62,11 +55,8 @@ export default function SuperAdminHome() {
           </button>
         </div>
 
-        {/* Global Stats */}
         <TenantStats totalActiveTenants={tenants.length} />
-
-        {/* Tenant List Component */}
-        <TenantList tenants={tenants} loading={loading} />
+        <TenantList tenants={tenants} loading={isLoading} />
       </div>
 
       <TenantFormModal

@@ -1,30 +1,5 @@
-import axios from "axios";
+import { createApiClient } from "@repo/api-client";
 
-const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api",
+export default createApiClient({
+  tenantId: "ed8ae489-ab40-4ff7-95a3-3ce35e769e5d",
 });
-
-// Thêm interceptor để đính kèm token vào request
-api.interceptors.request.use((config) => {
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("token") : null;
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("token");
-        window.location.reload();
-      }
-    }
-    return Promise.reject(error);
-  },
-);
-
-export default api;

@@ -30,12 +30,12 @@ describe("LessonController", () => {
 
   it("should call create", async () => {
     const dto = { title: "Test", courseId: "course-1" };
-    await controller.create(dto as any, { tenantId: "tenant-1" });
+    await controller.create(dto as any, { tenantId: "tenant-1" } as any);
     expect(service.create).toHaveBeenCalled();
   });
 
   it("should call findAll", async () => {
-    await controller.findAll("course-1", { tenantId: "tenant-1" });
+    await controller.findAll("course-1", {} as any, { tenantId: "tenant-1" } as any);
     expect(service.findAll).toHaveBeenCalled();
   });
 });

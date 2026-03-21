@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { TenantActions } from "./tenant-actions";
+import { Tenant } from "@/hooks/use-tenants";
 import {
   useReactTable,
   getCoreRowModel,
@@ -20,14 +21,14 @@ import {
 } from "@tanstack/react-table";
 
 interface TenantListProps {
-  tenants: any[];
+  tenants: Tenant[];
   loading: boolean;
 }
 
 export function TenantList({ tenants, loading }: TenantListProps) {
   const [globalFilter, setGlobalFilter] = useState("");
 
-  const columnHelper = createColumnHelper<any>();
+  const columnHelper = createColumnHelper<Tenant>();
 
   const columns = useMemo(
     () => [
@@ -77,7 +78,7 @@ export function TenantList({ tenants, loading }: TenantListProps) {
         ),
       }),
     ],
-    [],
+    [columnHelper],
   );
 
   const table = useReactTable({

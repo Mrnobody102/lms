@@ -22,7 +22,7 @@ export default function middleware(request: NextRequest) {
     "Referrer-Policy": "strict-origin-when-cross-origin",
     "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
     "Content-Security-Policy":
-      "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;",
+      "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self';",
   };
 
   Object.entries(securityHeaders).forEach(([key, value]) => {
@@ -44,15 +44,16 @@ export default function middleware(request: NextRequest) {
     return i18nResponse;
   }
 
-  // Check for auth token in cookie or Authorization header
+  // Check for auth token in cookie (access_token from NestJS httpOnly cookie) or Authorization header
   const token =
-    request.cookies.get("auth_token")?.value ||
+    request.cookies.get("access_token")?.value ||
     request.headers.get("authorization")?.replace("Bearer ", "");
 
   if (!token) {
-    // Redirect to login
+    // Redirect to login preserving locale from current path
     const url = request.nextUrl.clone();
-    url.pathname = `/${defaultLocale}/login`;
+    const currentLocale = locales.find((l) => pathname.startsWith(`/${l}`)) || defaultLocale;
+    url.pathname = `/${currentLocale}/login`;
     url.searchParams.set("returnUrl", pathname);
     return NextResponse.redirect(url);
   }
@@ -61,7 +62,8 @@ export default function middleware(request: NextRequest) {
   const parts = token.split(".");
   if (parts.length !== 3) {
     const url = request.nextUrl.clone();
-    url.pathname = `/${defaultLocale}/login`;
+    const currentLocale = locales.find((l) => pathname.startsWith(`/${l}`)) || defaultLocale;
+    url.pathname = `/${currentLocale}/login`;
     return NextResponse.redirect(url);
   }
 

@@ -91,6 +91,7 @@
       "forgotPassword": "Forgot password?",
       "loginButton": "Login Now",
       "registerButton": "Create Learning Account",
+      "loggingIn": "Logging in...",
       "footerLogin": "Don't have an account?",
       "footerRegister": "Already a member?",
       "signUpLink": "Sign up now",

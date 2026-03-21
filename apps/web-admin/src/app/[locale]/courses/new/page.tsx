@@ -5,12 +5,11 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { AdminHeader } from "@/components/layout/admin-header";
 import { AdminSidebar } from "@/components/layout/admin-sidebar";
-import { courseApi } from "@/lib/course-api";
+import { useCreateCourse } from "@/hooks/use-courses";
 import {
   Plus,
   ArrowLeft,
   Loader2,
-  CheckCircle,
   AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
@@ -20,27 +19,28 @@ export default function NewCoursePage() {
   const router = useRouter();
 
   const [title, setTitle] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { mutate: createCourse, isPending: loading, error: createError } = useCreateCourse();
+  const [localError, setLocalError] = useState<string | null>(null);
 
-  const handleCreateCourse = async (e: React.FormEvent) => {
+  const handleCreateCourse = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
 
-    try {
-      setLoading(true);
-      setError(null);
-      const newCourse = await courseApi.createCourse({ title });
-      router.push(`/courses/${newCourse.id}/edit`);
-    } catch (err: any) {
-      if (process.env.NODE_ENV === "development") {
-        console.error("Failed to create course:", err);
-      }
-      setError(t("Admin.cannotCreateCourse"));
-    } finally {
-      setLoading(false);
-    }
+    setLocalError(null);
+    createCourse(
+      { title },
+      {
+        onSuccess: (newCourse) => {
+          router.push(`/courses/${newCourse.id}/edit`);
+        },
+        onError: () => {
+          setLocalError(t("Admin.cannotCreateCourse"));
+        },
+      },
+    );
   };
+
+  const error = createError?.message ?? localError;
 
   return (
     <div className="min-h-screen font-sans flex bg-background/50">

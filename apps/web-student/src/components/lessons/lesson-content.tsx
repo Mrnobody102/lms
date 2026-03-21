@@ -1,11 +1,19 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Clock, BookOpen, Trophy } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { Lesson } from "../../types/lesson";
+import { Lesson } from "../../lib/course-api";
 import { VideoPlayer } from "./video-player";
 import { TextContent } from "./text-content";
-import { QuizContent } from "./quiz-content";
+
+const QuizContent = dynamic(() => import("./quiz-content").then((m) => ({ default: m.QuizContent })), {
+  loading: () => (
+    <div className="p-12 rounded-[2rem] bg-card/30 flex flex-col items-center justify-center">
+      <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+    </div>
+  ),
+});
 
 interface LessonContentProps {
   lesson: Lesson;

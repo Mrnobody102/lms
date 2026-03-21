@@ -2,6 +2,7 @@ import { Controller, Get, Put, Body, UseGuards } from "@nestjs/common";
 import { UserService } from "./user.service";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
+import { AuthenticatedUser } from "../progress/dto/authenticated-request.interface";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
 import { ChangePasswordDto } from "./dto/change-password.dto";
 
@@ -18,7 +19,7 @@ export class UserController {
   @ApiOperation({ summary: "Get current user's profile" })
   @ApiResponse({ status: 200, description: "Profile retrieved successfully" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
-  async getProfile(@CurrentUser() user: any): Promise<any> {
+  async getProfile(@CurrentUser() user: AuthenticatedUser) {
     return this._userService.getProfile(user.id);
   }
 
@@ -27,9 +28,9 @@ export class UserController {
   @ApiResponse({ status: 200, description: "Profile updated successfully" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
   async updateProfile(
-    @CurrentUser() user: any,
+    @CurrentUser() user: AuthenticatedUser,
     @Body() updateProfileDto: UpdateProfileDto,
-  ): Promise<any> {
+  ) {
     return this._userService.updateProfile(user.id, updateProfileDto);
   }
 
@@ -39,7 +40,7 @@ export class UserController {
   @ApiResponse({ status: 401, description: "Unauthorized" })
   @ApiResponse({ status: 400, description: "Invalid current password" })
   async changePassword(
-    @CurrentUser() user: any,
+    @CurrentUser() user: AuthenticatedUser,
     @Body() changePasswordDto: ChangePasswordDto,
   ) {
     return this._userService.changePassword(user.id, changePasswordDto);

@@ -2,58 +2,44 @@
 
 import { RegisterForm } from "../../../features/auth/components/register-form";
 import { Link } from "../../../navigation";
-import { Sparkles, ChevronLeft } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 export default function RegisterPage() {
   const t = useTranslations("Student");
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 relative overflow-hidden">
-      {/* Background Decor */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
-        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px] animate-pulse"></div>
-        <div className="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] bg-orange-500/5 rounded-full blur-[120px] animate-pulse delay-1000"></div>
-      </div>
-
-      <div className="w-full max-w-md">
-        {/* Back Button */}
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-primary transition-colors mb-10 group"
-        >
-          <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-          {t("nav.home") || "Quay lại trang chủ"}
-        </Link>
-
-        {/* Card */}
-        <div className="bg-card/40 backdrop-blur-2xl border border-border/50 rounded-[2.5rem] shadow-2xl p-10 md:p-12">
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-secondary/10 text-secondary mb-6 shadow-inner">
-              <Sparkles className="w-10 h-10" />
-            </div>
-            <h1 className="text-4xl font-black tracking-tighter mb-3">
-              {t("auth.registerTitle")}
-            </h1>
-            <p className="text-sm font-bold text-muted-foreground/60 max-w-[280px] mx-auto">
-              {t("auth.registerDesc")}
-            </p>
+    <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-6">
+      <div className="w-full max-w-sm">
+        {/* Logo / Brand */}
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary text-white mb-6 shadow-lg shadow-primary/25">
+            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+            </svg>
           </div>
-
-          <RegisterForm />
-
-          <div className="mt-10 text-center border-t border-border/20 pt-8">
-            <p className="text-xs font-bold text-muted-foreground/50">
-              {t("auth.footerRegister")}
-              <Link
-                href="/login"
-                className="ml-2 text-primary hover:text-primary/80 font-black transition-colors border-b-2 border-primary/20 hover:border-primary pb-0.5"
-              >
-                {t("auth.signInLink")}
-              </Link>
-            </p>
-          </div>
+          <h1 className="text-2xl font-bold text-white tracking-tight">
+            {t("auth.registerTitle")}
+          </h1>
+          <p className="text-sm text-zinc-500 mt-1">
+            {t("auth.registerDesc")}
+          </p>
         </div>
+
+        {/* Register Card */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 shadow-2xl">
+          <RegisterForm />
+        </div>
+
+        {/* Login Link */}
+        <p className="text-center text-sm text-zinc-500 mt-6">
+          {t("auth.footerRegister")}{" "}
+          <Link
+            href="/login"
+            className="text-primary hover:text-primary/80 font-semibold transition-colors"
+          >
+            {t("auth.signInLink")}
+          </Link>
+        </p>
       </div>
     </div>
   );

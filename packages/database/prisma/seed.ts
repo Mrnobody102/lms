@@ -1,4 +1,4 @@
-import { PrismaClient, Role } from "../generated/client";
+import { PrismaClient, Role, LessonType } from "../.prisma/client";
 import * as bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
@@ -61,7 +61,7 @@ async function main() {
         create: [
           {
             title: "Bài 1: Giới thiệu Pinyin (Thanh mẫu, Vận mẫu)",
-            type: "video" as any,
+            type: LessonType.VIDEO,
             videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", // Placeholder
             duration: 15,
             order: 1,
@@ -69,7 +69,7 @@ async function main() {
           },
           {
             title: "Bài 2: Từ vựng cơ bản (Chào hỏi)",
-            type: "text" as any,
+            type: LessonType.TEXT,
             content:
               "<h2>Chào hỏi trong tiếng Trung</h2><p>Nǐ hǎo (你好) - Chào bạn</p><p>Zàijiàn (再见) - Tạm biệt</p>",
             duration: 10,
@@ -78,7 +78,7 @@ async function main() {
           },
           {
             title: "Bài 3: Bài tập ôn tập Bài 1 & 2",
-            type: "quiz" as any,
+            type: LessonType.QUIZ,
             duration: 5,
             order: 3,
             tenantId: tenant.id,

@@ -12,6 +12,7 @@ import { McpModule } from "./mcp/mcp.module";
 import { LessonModule } from "./lesson.module";
 import { CourseModule } from "./course.module";
 import { ProgressModule } from "./progress.module";
+import { HealthModule } from "./common/health/health.module";
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { ProgressModule } from "./progress.module";
     LessonModule,
     CourseModule,
     ProgressModule,
+    HealthModule,
   ],
   controllers: [],
   providers: [
@@ -53,8 +55,6 @@ export class AppModule {
     consumer
       .apply(TenantMiddleware)
       .exclude(
-        { path: "admin/tenants", method: RequestMethod.ALL },
-        { path: "admin/tenants/(.*)", method: RequestMethod.ALL },
         { path: "auth/(.*)", method: RequestMethod.ALL },
       )
       .forRoutes({ path: "*", method: RequestMethod.ALL });

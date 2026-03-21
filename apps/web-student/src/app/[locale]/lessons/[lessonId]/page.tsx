@@ -1,18 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { LessonHeader } from "../../../../components/lessons/lesson-header";
 import { LessonSidebar } from "../../../../components/lessons/lesson-sidebar";
 import { LessonContent } from "../../../../components/lessons/lesson-content";
 import { LessonNavigation } from "../../../../components/lessons/lesson-navigation";
-import { courseApi } from "../../../../lib/course-api";
-import { Course, Lesson } from "../../../../types/lesson";
-import {
-  progressApi,
-  ProgressStatus,
-  UserLessonProgress,
-} from "../../../../lib/progress-api";
+import { useLesson, useCourse } from "../../../../hooks/use-courses";
+import { useCourseProgress, useUpdateProgress } from "../../../../hooks/use-progress";
+import { ProgressStatus } from "../../../../lib/progress-api";
 
 interface LessonPageProps {
   params: {
@@ -24,46 +20,18 @@ interface LessonPageProps {
 export default function LessonPage({ params }: LessonPageProps) {
   const t = useTranslations("Student");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [course, setCourse] = useState<Course | null>(null);
-  const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
-  const [progress, setProgress] = useState<UserLessonProgress[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  // Resolve lessonId from params
   const lessonId = Array.isArray(params.lessonId)
     ? params.lessonId[0]
     : params.lessonId;
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        // Find the lesson first to get the courseId
-        const lesson = await courseApi.getLesson(lessonId);
-        setCurrentLesson(lesson);
+  const { data: currentLesson, isLoading: lessonLoading, error: lessonError } = useLesson(lessonId);
+  const { data: course, isLoading: courseLoading } = useCourse(currentLesson?.courseId ?? "");
+  const { data: progress = [] } = useCourseProgress(currentLesson?.courseId ?? "");
+  const updateProgress = useUpdateProgress();
 
-        // Then find the course to get siblings for sidebar/nav
-        const [courseData, progressData] = await Promise.all([
-          courseApi.getCourse(lesson.courseId),
-          progressApi.getCourseProgress(lesson.courseId),
-        ]);
-
-        setCourse(courseData);
-        setProgress(progressData);
-        setError(null);
-      } catch (err: any) {
-        if (process.env.NODE_ENV === "development") {
-          console.error("Failed to fetch lesson data:", err);
-        }
-        setError(err.response?.data?.message || err.message || "Unknown error");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [lessonId]);
+  const loading = lessonLoading || courseLoading;
+  const error = lessonError?.message ?? null;
 
   if (loading) {
     return (
@@ -97,31 +65,11 @@ export default function LessonPage({ params }: LessonPageProps) {
       ? course.lessons[currentIndex + 1]
       : null;
 
-  const handleComplete = async () => {
-    if (!currentLesson) return;
-    try {
-      const updated = await progressApi.updateProgress(
-        currentLesson.id,
-        ProgressStatus.COMPLETED,
-      );
-      // Update local progress state
-      setProgress((prev) => {
-        const index = prev.findIndex((p) => p.lessonId === currentLesson.id);
-        if (index !== -1) {
-          const newProgress = [...prev];
-          newProgress[index] = updated;
-          return newProgress;
-        }
-        return [...prev, updated];
-      });
-
-      // Show success feedback - simple alert for now
-      // toast.success("Bài học đã hoàn thành!");
-    } catch (err) {
-      if (process.env.NODE_ENV === "development") {
-        console.error("Failed to update progress:", err);
-      }
-    }
+  const handleComplete = () => {
+    updateProgress.mutate({
+      lessonId: currentLesson.id,
+      status: ProgressStatus.COMPLETED,
+    });
   };
 
   return (

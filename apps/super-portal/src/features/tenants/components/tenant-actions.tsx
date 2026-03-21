@@ -2,34 +2,42 @@
 
 import { useState } from "react";
 import { Edit2, Trash2, ShieldAlert, RefreshCcw, Eye } from "lucide-react";
-import { useTenantStore } from "../tenant.store";
+import { useDeleteTenant, useRestoreTenant, Tenant } from "@/hooks/use-tenants";
 import toast from "react-hot-toast";
 import { TenantFormModal } from "./tenant-form-modal";
 import { useRouter } from "../../../navigation";
 
-export function TenantActions({ tenant }: { tenant: any }) {
+export function TenantActions({ tenant }: { tenant: Tenant }) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const router = useRouter();
-  const { deleteTenant, restoreTenant, fetchTenants, loading } =
-    useTenantStore();
+  const deleteTenant = useDeleteTenant();
+  const restoreTenant = useRestoreTenant();
 
-  const handleDelete = async () => {
-    const success = await deleteTenant(tenant.id);
-    if (success) {
-      toast.success("Đã ngưng hoạt động trung tâm!");
-      fetchTenants();
-      setIsDeleteModalOpen(false);
-    }
+  const handleDelete = () => {
+    deleteTenant.mutate(tenant.id, {
+      onSuccess: () => {
+        toast.success("Đã ngưng hoạt động trung tâm!");
+        setIsDeleteModalOpen(false);
+      },
+      onError: () => {
+        toast.error("Không thể ngưng hoạt động trung tâm");
+      },
+    });
   };
 
-  const handleRestore = async () => {
-    const success = await restoreTenant(tenant.id);
-    if (success) {
-      toast.success("Đã khôi phục trung tâm!");
-      fetchTenants();
-    }
+  const handleRestore = () => {
+    restoreTenant.mutate(tenant.id, {
+      onSuccess: () => {
+        toast.success("Đã khôi phục trung tâm!");
+      },
+      onError: () => {
+        toast.error("Không thể khôi phục trung tâm");
+      },
+    });
   };
+
+  const loading = deleteTenant.isPending || restoreTenant.isPending;
 
   return (
     <div className="flex items-center justify-end gap-2">

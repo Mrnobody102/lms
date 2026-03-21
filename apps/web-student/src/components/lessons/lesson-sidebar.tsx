@@ -3,7 +3,7 @@
 import { CheckCircle2, PlayCircle, Circle, X } from "lucide-react";
 import { Link } from "../../navigation";
 import { useTranslations } from "next-intl";
-import { Course, Lesson } from "../../types/lesson";
+import { Course, Lesson } from "../../lib/course-api";
 import { UserLessonProgress, ProgressStatus } from "../../lib/progress-api";
 
 interface LessonSidebarProps {

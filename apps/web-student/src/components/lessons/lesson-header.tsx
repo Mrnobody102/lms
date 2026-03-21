@@ -4,7 +4,7 @@ import { ArrowLeft, Menu, X } from "lucide-react";
 import { Link } from "../../navigation";
 import { ThemeToggle, LanguageToggle } from "@repo/ui";
 import { useTranslations } from "next-intl";
-import { Course } from "../../types/lesson";
+import { Course } from "../../lib/course-api";
 
 interface LessonHeaderProps {
   course: Course;

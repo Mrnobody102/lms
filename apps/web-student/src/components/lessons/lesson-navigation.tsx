@@ -3,7 +3,7 @@
 import { ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react";
 import { Link } from "../../navigation";
 import { useTranslations } from "next-intl";
-import { Lesson } from "../../types/lesson";
+import { Lesson } from "../../lib/course-api";
 
 interface LessonNavigationProps {
   prevLesson: Lesson | null;

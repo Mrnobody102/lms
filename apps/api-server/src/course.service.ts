@@ -5,24 +5,53 @@ import { PrismaService } from "./common/services/prisma.service";
 export class CourseService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(data: { title: string; tenantId: string }) {
+  async create(data: { title: string; tenantId: string; slug?: string; totalDuration?: number }) {
     return this.prisma.course.create({
       data: {
         title: data.title,
+        slug: data.slug,
+        totalDuration: data.totalDuration,
         tenantId: data.tenantId,
       },
     });
   }
 
-  async findAll(tenantId: string) {
-    return this.prisma.course.findMany({
-      where: { tenantId },
-      include: {
-        _count: {
-          select: { lessons: true },
+  async findAll(
+    tenantId: string,
+    options: { page?: number; limit?: number; search?: string } = {},
+  ) {
+    const { page = 1, limit = 10, search } = options;
+    const skip = (page - 1) * limit;
+
+    const where = { tenantId };
+    if (search) {
+      Object.assign(where, { title: { contains: search, mode: "insensitive" as const } });
+    }
+
+    const [courses, total] = await Promise.all([
+      this.prisma.course.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          _count: {
+            select: { lessons: true },
+          },
         },
+        orderBy: { createdAt: "desc" },
+      }),
+      this.prisma.course.count({ where }),
+    ]);
+
+    return {
+      data: courses,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
       },
-    });
+    };
   }
 
   async findOne(id: string, tenantId: string) {
@@ -41,7 +70,7 @@ export class CourseService {
     return course;
   }
 
-  async update(id: string, tenantId: string, data: { title?: string }) {
+  async update(id: string, tenantId: string, data: { title?: string; slug?: string; totalDuration?: number }) {
     // Ensure course exists and belongs to tenant
     await this.findOne(id, tenantId);
 

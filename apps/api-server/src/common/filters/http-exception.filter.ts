@@ -7,6 +7,12 @@ import {
 } from "@nestjs/common";
 import { Response } from "express";
 
+type HttpExceptionResponse = {
+  message?: string | string[];
+  error?: string;
+  statusCode?: number;
+};
+
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
@@ -14,27 +20,27 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let message = "Internal server error";
+    let message: string | string[] = "Internal server error";
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
-      const exceptionResponse = exception.getResponse();
+      const exceptionResponse = exception.getResponse() as HttpExceptionResponse;
 
       if (typeof exceptionResponse === "string") {
         message = exceptionResponse;
-      } else if (
-        typeof exceptionResponse === "object" &&
-        exceptionResponse !== null
-      ) {
-        message = (exceptionResponse as any).message || message;
+      } else if (exceptionResponse?.message !== undefined) {
+        message = exceptionResponse.message;
       }
     } else if (exception instanceof Error) {
       message = exception.message;
     }
 
+    const responseMessage =
+      Array.isArray(message) && message.length === 1 ? message[0] : message;
+
     response.status(status).json({
       success: false,
-      message,
+      message: responseMessage,
       statusCode: status,
       timestamp: new Date().toISOString(),
     });

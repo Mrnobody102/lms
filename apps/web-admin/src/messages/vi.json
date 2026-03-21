@@ -6,6 +6,14 @@
     "finance": "Tài chính",
     "schedule": "Lịch học",
     "settings": "Cài đặt",
+    "auth": {
+      "email": "Email",
+      "password": "Mật khẩu",
+      "loginButton": "Đăng nhập",
+      "forgotPassword": "Quên mật khẩu?",
+      "loginError": "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.",
+      "loggingIn": "Đang đăng nhập..."
+    },
     "revenue": "Tổng doanh thu",
     "newStudents": "Học viên mới",
     "activeCourses": "Khóa học Active",

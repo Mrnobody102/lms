@@ -13,6 +13,7 @@ import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
 import { Roles } from "../auth/decorators/roles.decorator";
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
+import { AuthenticatedUser } from "../progress/dto/authenticated-request.interface";
 import { AdminUserQueryDto } from "./dto/admin-user-query.dto";
 import { UpdateUserStatusDto } from "./dto/update-user-status.dto";
 
@@ -32,9 +33,9 @@ export class AdminController {
   @ApiResponse({ status: 401, description: "Unauthorized" })
   @ApiResponse({ status: 403, description: "Forbidden" })
   async getUserList(
-    @CurrentUser() user: any,
+    @CurrentUser() user: AuthenticatedUser,
     @Query() query: AdminUserQueryDto,
-  ): Promise<any> {
+  ) {
     return this.adminService.getUserList(user, query);
   }
 
@@ -45,9 +46,9 @@ export class AdminController {
   @ApiResponse({ status: 403, description: "Forbidden" })
   @ApiResponse({ status: 404, description: "User not found" })
   async getUserById(
-    @CurrentUser() user: any,
+    @CurrentUser() user: AuthenticatedUser,
     @Param("id") userId: string,
-  ): Promise<any> {
+  ) {
     return this.adminService.getUserById(user, userId);
   }
 
@@ -58,10 +59,10 @@ export class AdminController {
   @ApiResponse({ status: 403, description: "Forbidden" })
   @ApiResponse({ status: 404, description: "User not found" })
   async updateUserStatus(
-    @CurrentUser() user: any,
+    @CurrentUser() user: AuthenticatedUser,
     @Param("id") userId: string,
     @Body() updateUserStatusDto: UpdateUserStatusDto,
-  ): Promise<any> {
+  ) {
     return this.adminService.updateUserStatus(
       user,
       userId,

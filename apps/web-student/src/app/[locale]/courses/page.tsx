@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   BookOpen,
@@ -10,29 +9,12 @@ import {
   Loader2,
 } from "lucide-react";
 import { ThemeToggle, LanguageToggle } from "@repo/ui";
-import { Link, useRouter } from "../../../navigation";
-import { courseApi, Course } from "../../../lib/course-api";
+import { Link } from "../../../navigation";
+import { useCourses } from "../../../hooks/use-courses";
 
 export default function CoursesPage() {
   const t = useTranslations("Student");
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchCourses = async () => {
-      try {
-        const data = await courseApi.getCourses();
-        setCourses(data || []);
-      } catch (err) {
-        if (process.env.NODE_ENV === "development") {
-          console.error("Failed to fetch courses:", err);
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchCourses();
-  }, []);
+  const { data: courses = [], isLoading } = useCourses();
 
   return (
     <div className="min-h-screen font-sans bg-background selection:bg-primary/20">
@@ -62,7 +44,7 @@ export default function CoursesPage() {
           </p>
         </header>
 
-        {loading ? (
+        {isLoading ? (
           <div className="flex flex-col items-center justify-center py-32 space-y-4 opacity-50">
             <Loader2 className="w-12 h-12 animate-spin text-primary" />
             <p className="font-black text-xs uppercase tracking-[0.2em]">
@@ -97,7 +79,7 @@ export default function CoursesPage() {
                       {t("courses.duration", {
                         minutes:
                           course.lessons?.reduce(
-                            (acc: number, l: any) => acc + (l.duration || 0),
+                            (acc: number, l) => acc + (l.duration || 0),
                             0,
                           ) || 0,
                       })}

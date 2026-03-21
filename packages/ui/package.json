@@ -11,12 +11,16 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
+  "peerDependencies": {
+    "@repo/shared": "workspace:*",
+    "next": "latest",
+    "react": "^18",
+    "react-dom": "^18"
+  },
   "dependencies": {
     "lucide-react": "^0.330.0",
-    "next": "latest",
     "next-intl": "^4.8.3",
-    "next-themes": "^0.4.6",
-    "@repo/shared": "workspace:*"
+    "next-themes": "^0.4.6"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",

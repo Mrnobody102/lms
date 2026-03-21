@@ -1,7 +1,6 @@
 import api from "./api";
 
 export enum ProgressStatus {
-  IN_PROGRESS = "IN_PROGRESS",
   COMPLETED = "COMPLETED",
 }
 

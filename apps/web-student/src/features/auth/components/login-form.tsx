@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAuthStore } from "../auth.store";
-import { Loader2, Mail, Lock, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 interface LoginFormProps {
@@ -14,6 +14,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   const { login, loading, error, clearError } = useAuthStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,54 +25,48 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-5">
       {error && (
-        <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-2xl flex items-start gap-3 text-destructive animate-in fade-in slide-in-from-top-2">
-          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-          <p className="text-sm font-semibold">{error}</p>
+        <div className="flex items-center gap-2.5 p-3 bg-destructive/10 border border-destructive/20 rounded-xl text-destructive text-sm">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span>{error}</span>
         </div>
       )}
 
-      <div className="space-y-2.5">
-        <label className="text-[11px] font-black uppercase tracking-[0.15em] text-muted-foreground/70 ml-1">
+      {/* Email */}
+      <div className="space-y-1.5">
+        <label className="text-xs font-semibold text-zinc-400">
           {t("auth.email")}
         </label>
-        <div className="relative group">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-muted-foreground group-focus-within:text-primary transition-colors duration-300">
-            <Mail className="w-full h-full" />
-          </div>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              if (error) clearError();
-            }}
-            placeholder="example@email.com"
-            className="w-full bg-muted/30 border border-border/50 rounded-2xl pl-12 pr-6 py-4 font-bold text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:bg-background focus:border-primary/30 transition-all duration-300"
-          />
-        </div>
+        <input
+          type="email"
+          required
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            if (error) clearError();
+          }}
+          placeholder="student@lms.com"
+          className="w-full bg-zinc-800/50 border border-zinc-700/50 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all"
+        />
       </div>
 
-      <div className="space-y-2.5">
-        <div className="flex justify-between items-center ml-1">
-          <label className="text-[11px] font-black uppercase tracking-[0.15em] text-muted-foreground/70">
+      {/* Password */}
+      <div className="space-y-1.5">
+        <div className="flex justify-between items-center">
+          <label className="text-xs font-semibold text-zinc-400">
             {t("auth.password")}
           </label>
           <button
             type="button"
-            className="text-[10px] font-black uppercase tracking-widest text-primary hover:opacity-70 transition-opacity"
+            className="text-[11px] text-zinc-500 hover:text-zinc-300 transition-colors"
           >
             {t("auth.forgotPassword")}
           </button>
         </div>
-        <div className="relative group">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-muted-foreground group-focus-within:text-primary transition-colors duration-300">
-            <Lock className="w-full h-full" />
-          </div>
+        <div className="relative">
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             required
             value={password}
             onChange={(e) => {
@@ -79,23 +74,31 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
               if (error) clearError();
             }}
             placeholder="••••••••"
-            className="w-full bg-muted/30 border border-border/50 rounded-2xl pl-12 pr-6 py-4 font-bold text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:bg-background focus:border-primary/30 transition-all duration-300"
+            className="w-full bg-zinc-800/50 border border-zinc-700/50 rounded-xl px-4 py-3 pr-11 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all"
           />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors p-1"
+          >
+            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
         </div>
       </div>
 
+      {/* Submit */}
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-primary text-primary-foreground font-black py-4 rounded-2xl shadow-2xl shadow-primary/30 hover:shadow-primary/40 hover:-translate-y-1 active:scale-[0.98] disabled:opacity-50 disabled:translate-y-0 transition-all duration-300 flex items-center justify-center gap-3 mt-4 relative overflow-hidden group"
+        className="w-full bg-primary hover:bg-primary/90 disabled:bg-primary/50 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 mt-2"
       >
-        <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
         {loading ? (
-          <Loader2 className="w-5 h-5 animate-spin" />
-        ) : (
           <>
-            <span className="relative z-10">{t("auth.loginButton")}</span>
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span>{t("auth.loggingIn")}</span>
           </>
+        ) : (
+          <span>{t("auth.loginButton")}</span>
         )}
       </button>
     </form>

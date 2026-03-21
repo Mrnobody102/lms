@@ -1,15 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { AdminHeader } from "@/components/layout/admin-header";
 import { AdminSidebar } from "@/components/layout/admin-sidebar";
-import { courseApi, Course } from "@/lib/course-api";
+import { useCourses } from "@/hooks/use-courses";
 import {
   BookOpen,
   MoreVertical,
   Edit2,
-  Trash2,
   ExternalLink,
   Loader2,
 } from "lucide-react";
@@ -17,28 +15,9 @@ import Link from "next/link";
 
 export default function CoursesPage() {
   const t = useTranslations("Admin");
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchCourses = async () => {
-      try {
-        setLoading(true);
-        const data = await courseApi.getCourses();
-        setCourses(data);
-      } catch (err: any) {
-        if (process.env.NODE_ENV === "development") {
-          console.error("Failed to fetch courses:", err);
-        }
-        setError(t("Admin.cannotLoadCourses"));
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCourses();
-  }, []);
+  const { data: courseData, isLoading, error } = useCourses();
+  const courses = courseData?.data ?? [];
+  const errorMessage = error instanceof Error ? error.message : error ? String(error) : null;
 
   return (
     <div className="min-h-screen font-sans flex transition-colors duration-300 bg-background/50">
@@ -52,16 +31,16 @@ export default function CoursesPage() {
           showCreateCourse={true}
         />
 
-        {loading ? (
+        {isLoading ? (
           <div className="flex flex-col items-center justify-center py-32 space-y-4 opacity-50">
             <Loader2 className="w-10 h-10 animate-spin text-primary" />
             <p className="font-bold text-sm uppercase tracking-[0.2em]">
               {t("Admin.loading")}
             </p>
           </div>
-        ) : error ? (
+        ) : errorMessage ? (
           <div className="p-10 rounded-[2rem] bg-destructive/5 border border-destructive/20 text-destructive text-center space-y-4">
-            <p className="font-bold">{error}</p>
+            <p className="font-bold">{errorMessage}</p>
             <button
               onClick={() => window.location.reload()}
               className="px-6 py-2 bg-destructive text-white rounded-xl font-bold text-sm"
@@ -109,9 +88,9 @@ export default function CoursesPage() {
                   </h3>
 
                   <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest opacity-60 mb-8">
-                    {course.lessons?.length || 0} {t("Admin.lessons")} •{" "}
-                    {course.lessons?.reduce(
-                      (acc, l) => acc + (l.duration || 0),
+                    {course.lessons.length || 0} {t("Admin.lessons")} •{" "}
+                    {course.lessons.reduce(
+                      (acc: number, l) => acc + (l.duration || 0),
                       0,
                     ) || 0}{" "}
                     {t("Admin.minutes")}

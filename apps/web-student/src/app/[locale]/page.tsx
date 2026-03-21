@@ -66,7 +66,7 @@ export default function Home() {
                 </div>
                 <div className="hidden md:block">
                   <p className="text-sm font-black truncate max-w-[120px] tracking-tight">
-                    {user?.name}
+                    {user?.fullName}
                   </p>
                 </div>
               </div>

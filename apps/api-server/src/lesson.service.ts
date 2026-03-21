@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "./common/services/prisma.service";
+import { Prisma, LessonType } from "@repo/database";
 
 @Injectable()
 export class LessonService {
@@ -11,7 +12,7 @@ export class LessonService {
     content?: string;
     videoUrl?: string;
     duration?: number;
-    quiz?: any;
+    quiz?: Prisma.JsonValue;
     order?: number;
     courseId: string;
     tenantId: string;
@@ -28,7 +29,7 @@ export class LessonService {
     return this.prisma.lesson.create({
       data: {
         title: data.title,
-        type: (data.type as any) || "text",
+        type: (data.type as LessonType) || "text",
         content: data.content,
         videoUrl: data.videoUrl,
         duration: data.duration || 10,
@@ -40,11 +41,33 @@ export class LessonService {
     });
   }
 
-  async findAll(courseId: string, tenantId: string) {
-    return this.prisma.lesson.findMany({
-      where: { courseId, tenantId },
-      orderBy: { order: "asc" },
-    });
+  async findAll(
+    courseId: string,
+    tenantId: string,
+    options: { page?: number; limit?: number } = {},
+  ) {
+    const { page = 1, limit = 10 } = options;
+    const skip = (page - 1) * limit;
+
+    const [lessons, total] = await Promise.all([
+      this.prisma.lesson.findMany({
+        where: { courseId, tenantId },
+        skip,
+        take: limit,
+        orderBy: { order: "asc" },
+      }),
+      this.prisma.lesson.count({ where: { courseId, tenantId } }),
+    ]);
+
+    return {
+      data: lessons,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async findOne(id: string, tenantId: string) {
@@ -63,21 +86,20 @@ export class LessonService {
     tenantId: string,
     data: {
       title?: string;
-      type?: string;
+      type?: LessonType;
       content?: string;
       videoUrl?: string;
       duration?: number;
-      quiz?: any;
+      quiz?: Prisma.JsonValue | null;
       order?: number;
     },
   ) {
-    // Ensure lesson exists and belongs to tenant
     await this.findOne(id, tenantId);
 
-    const updateData: any = { ...data };
-    if (updateData.quiz === null) {
-      updateData.quiz = undefined;
-    }
+    const updateData: Prisma.LessonUpdateInput = {
+      ...data,
+      quiz: data.quiz === null ? undefined : data.quiz,
+    };
 
     return this.prisma.lesson.update({
       where: { id },

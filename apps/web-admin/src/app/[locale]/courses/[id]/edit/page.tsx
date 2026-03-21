@@ -1,25 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { AdminHeader } from "@/components/layout/admin-header";
 import { AdminSidebar } from "@/components/layout/admin-sidebar";
-import { courseApi, Course, Lesson } from "@/lib/course-api";
+import { useCourse, useUpdateCourse, useCreateLesson, useUpdateLesson, useDeleteLesson } from "@/hooks/use-courses";
+import { CourseForm } from "@/components/courses/course-form";
+import { LessonList } from "@/components/courses/lesson-list";
+import { AddLessonForm } from "@/components/courses/add-lesson-form";
+import { EditLessonForm } from "@/components/courses/edit-lesson-form";
+import { CourseStats } from "@/components/courses/course-stats";
+import { Lesson } from "@/lib/course-api";
 import {
-  Save,
-  Plus,
-  Trash2,
-  Video,
-  FileText,
-  HelpCircle,
   ArrowLeft,
   ChevronRight,
   Loader2,
   CheckCircle,
   AlertCircle,
-  Edit2,
-  TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -28,132 +26,104 @@ export default function CourseEditorPage() {
   const params = useParams();
   const courseId = params.id as string;
 
-  const [course, setCourse] = useState<Course | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
+  const { data: course, isLoading } = useCourse(courseId);
+  const updateCourse = useUpdateCourse();
+  const createLesson = useCreateLesson();
+  const updateLesson = useUpdateLesson();
+  const deleteLesson = useDeleteLesson();
 
-  // Form states for new lesson
   const [showAddLesson, setShowAddLesson] = useState(false);
-  const [newLesson, setNewLesson] = useState<Partial<Lesson>>({
-    title: "",
-    type: "video",
-    duration: 10,
-    order: 0,
-  });
-
-  // State for editing lesson
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  const [localTitle, setLocalTitle] = useState("");
 
   useEffect(() => {
-    const fetchCourse = async () => {
-      try {
-        setLoading(true);
-        const data = await courseApi.getCourse(courseId);
-        setCourse(data);
-      } catch (err) {
-        if (process.env.NODE_ENV === "development") {
-          console.error("Failed to fetch course:", err);
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchCourse();
-  }, [courseId]);
+    if (course?.title) {
+      setLocalTitle(course.title);
+    }
+  }, [course]);
 
-  const handleUpdateCourse = async () => {
+  const handleUpdateCourse = () => {
     if (!course) return;
-    try {
-      setSaving(true);
-      await courseApi.updateCourse(courseId, { title: course.title });
-      setMessage({ type: "success", text: t("Admin.courseSaved") });
-      setTimeout(() => setMessage(null), 3000);
-    } catch (err) {
-      setMessage({ type: "error", text: t("Admin.courseSaveError") });
-    } finally {
-      setSaving(false);
-    }
+    updateCourse.mutate(
+      { id: courseId, data: { title: localTitle } },
+      {
+        onSuccess: () => {
+          setMessage({ type: "success", text: t("Admin.courseSaved") });
+          setTimeout(() => setMessage(null), 3000);
+        },
+        onError: () => {
+          setMessage({ type: "error", text: t("Admin.courseSaveError") });
+          setTimeout(() => setMessage(null), 3000);
+        },
+      },
+    );
   };
 
-  const handleAddLesson = async () => {
-    if (!newLesson.title) return;
-    try {
-      setSaving(true);
-      const added = await courseApi.createLesson(courseId, {
-        ...newLesson,
-        order: (course?.lessons?.length || 0) + 1,
-      });
-      setCourse((prev) =>
-        prev ? { ...prev, lessons: [...(prev.lessons || []), added] } : null,
+  const handleAddLesson = (data: Partial<Lesson>): Promise<boolean> => {
+    return new Promise((resolve) => {
+      createLesson.mutate(
+        { courseId, data },
+        {
+          onSuccess: () => {
+            setShowAddLesson(false);
+            setMessage({ type: "success", text: t("Admin.lessonAdded") });
+            setTimeout(() => setMessage(null), 3000);
+            resolve(true);
+          },
+          onError: () => {
+            setMessage({ type: "error", text: t("Admin.lessonAddError") });
+            setTimeout(() => setMessage(null), 3000);
+            resolve(false);
+          },
+        },
       );
-      setShowAddLesson(false);
-      setNewLesson({ title: "", type: "video", duration: 10 });
-      setMessage({ type: "success", text: t("Admin.lessonAdded") });
-      setTimeout(() => setMessage(null), 3000);
-    } catch (err) {
-      setMessage({ type: "error", text: t("Admin.lessonAddError") });
-    } finally {
-      setSaving(false);
-    }
+    });
   };
 
-  const handleEditLesson = (lesson: Lesson) => {
-    setEditingLesson({ ...lesson });
-    setShowAddLesson(false);
-  };
-
-  const handleUpdateLesson = async () => {
-    if (!editingLesson) return;
-    try {
-      setSaving(true);
-      const updated = await courseApi.updateLesson(
-        editingLesson.id,
-        editingLesson,
+  const handleUpdateLesson = (data: Partial<Lesson>): Promise<boolean> => {
+    if (!editingLesson) return Promise.resolve(false);
+    return new Promise((resolve) => {
+      updateLesson.mutate(
+        { id: editingLesson.id, data, courseId },
+        {
+          onSuccess: () => {
+            setEditingLesson(null);
+            setMessage({ type: "success", text: t("Admin.lessonUpdated") });
+            setTimeout(() => setMessage(null), 3000);
+            resolve(true);
+          },
+          onError: () => {
+            setMessage({ type: "error", text: t("Admin.lessonUpdateError") });
+            setTimeout(() => setMessage(null), 3000);
+            resolve(false);
+          },
+        },
       );
-      setCourse((prev) =>
-        prev
-          ? {
-              ...prev,
-              lessons: prev.lessons.map((l) =>
-                l.id === updated.id ? updated : l,
-              ),
-            }
-          : null,
-      );
-      setEditingLesson(null);
-      setMessage({ type: "success", text: t("Admin.lessonUpdated") });
-      setTimeout(() => setMessage(null), 3000);
-    } catch (err) {
-      setMessage({ type: "error", text: t("Admin.lessonUpdateError") });
-    } finally {
-      setSaving(false);
-    }
+    });
   };
 
-  const handleDeleteLesson = async (lessonId: string) => {
+  const handleDeleteLesson = (lessonId: string) => {
     if (!confirm(t("Admin.confirmDeleteLesson"))) return;
-    try {
-      setSaving(true);
-      await courseApi.deleteLesson(lessonId);
-      setCourse((prev) =>
-        prev
-          ? { ...prev, lessons: prev.lessons.filter((l) => l.id !== lessonId) }
-          : null,
-      );
-      setMessage({ type: "success", text: t("Admin.lessonDeleted") });
-      setTimeout(() => setMessage(null), 3000);
-    } catch (err) {
-      setMessage({ type: "error", text: t("Admin.lessonDeleteError") });
-    } finally {
-      setSaving(false);
-    }
+    deleteLesson.mutate(
+      { id: lessonId, courseId },
+      {
+        onSuccess: () => {
+          setMessage({ type: "success", text: t("Admin.lessonDeleted") });
+          setTimeout(() => setMessage(null), 3000);
+        },
+        onError: () => {
+          setMessage({ type: "error", text: t("Admin.lessonDeleteError") });
+          setTimeout(() => setMessage(null), 3000);
+        },
+      },
+    );
   };
 
-  if (loading) {
+  const lessons = course?.lessons ?? [];
+
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center space-y-4">
         <Loader2 className="w-12 h-12 animate-spin text-primary" />
@@ -186,14 +156,20 @@ export default function CourseEditorPage() {
               title={course.title}
               description={`ID: ${course.id}`}
             />
-            <Link
-              href={`${process.env.NEXT_PUBLIC_WEB_STUDENT_URL || "http://localhost:3000"}/vi/lessons/${course.lessons?.[0]?.id || ""}`}
-              target="_blank"
-              className="px-6 py-3 bg-white border border-border rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-muted transition-all active:scale-95 flex items-center gap-2 shadow-sm shrink-0"
-            >
-              {t("Admin.previewFirstLesson")}
-              <ChevronRight className="w-4 h-4" />
-            </Link>
+            {lessons[0] ? (
+              <Link
+                href={`${process.env.NEXT_PUBLIC_WEB_STUDENT_URL || "http://localhost:3000"}/vi/lessons/${lessons[0].id}`}
+                target="_blank"
+                className="px-6 py-3 bg-white border border-border rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-muted transition-all active:scale-95 flex items-center gap-2 shadow-sm shrink-0"
+              >
+                {t("Admin.previewFirstLesson")}
+                <ChevronRight className="w-4 h-4" />
+              </Link>
+            ) : (
+              <span className="px-6 py-3 bg-muted border border-border/50 rounded-2xl font-black text-xs uppercase tracking-widest opacity-40 flex items-center gap-2 shadow-sm shrink-0 cursor-not-allowed">
+                {t("Admin.noLessons")}
+              </span>
+            )}
           </div>
 
           {message && (
@@ -214,285 +190,50 @@ export default function CourseEditorPage() {
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-            {/* Left side: Course info */}
+            {/* Left side: Course info + lessons */}
             <div className="lg:col-span-2 space-y-12">
-              <section className="bg-card/40 backdrop-blur-md rounded-[2.5rem] border border-border/50 shadow-2xl p-10">
-                <h3 className="text-xl font-black mb-8">{t("Admin.basicInfo")}</h3>
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-50 ml-2">
-                      {t("Admin.courseName")}
-                    </label>
-                    <input
-                      type="text"
-                      value={course.title}
-                      onChange={(e) =>
-                        setCourse({ ...course!, title: e.target.value })
-                      }
-                      className="w-full bg-muted/30 border border-border/50 rounded-2xl px-6 py-4 font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-lg"
-                      placeholder={t("Admin.courseNamePlaceholder")}
-                    />
-                  </div>
-                  <button
-                    onClick={handleUpdateCourse}
-                    disabled={saving}
-                    className="w-full flex items-center justify-center gap-2 py-4 bg-primary text-primary-foreground font-black rounded-2xl shadow-xl shadow-primary/20 hover:opacity-90 active:scale-95 disabled:opacity-50 transition-all"
-                  >
-                    {saving ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    ) : (
-                      <Save className="w-5 h-5" />
-                    )}
-                    {t("Admin.save")}
-                  </button>
-                </div>
-              </section>
+              <CourseForm
+                title={localTitle}
+                onTitleChange={setLocalTitle}
+                onSave={handleUpdateCourse}
+                saving={updateCourse.isPending}
+              />
 
-              <section className="bg-card/40 backdrop-blur-md rounded-[2.5rem] border border-border/50 shadow-2xl p-10">
-                <div className="flex items-center justify-between mb-10">
-                  <h3 className="text-xl font-black italic">
-                    {t("Admin.curriculum")} ({course.lessons?.length || 0})
-                  </h3>
-                  <button
-                    onClick={() => setShowAddLesson(true)}
-                    className="p-3 bg-primary/10 text-primary border border-primary/20 rounded-2xl hover:bg-primary hover:text-white transition-all shadow-inner"
-                  >
-                    <Plus className="w-6 h-6" />
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  {(course.lessons || [])
-                    .sort((a, b) => a.order - b.order)
-                    .map((lesson, idx) => (
-                      <div
-                        key={lesson.id}
-                        className="p-6 rounded-[2rem] bg-muted/10 border border-border/50 flex items-center gap-6 hover:bg-muted/30 transition-all group"
-                      >
-                        <div className="w-10 h-10 bg-card rounded-xl flex items-center justify-center text-xs font-black opacity-30 italic">
-                          {String(idx + 1).padStart(2, "0")}
-                        </div>
-                        <div className="w-12 h-12 rounded-2xl bg-white dark:bg-muted flex items-center justify-center text-primary shadow-sm group-hover:scale-110 transition-transform">
-                          {lesson.type === "video" ? (
-                            <Video className="w-6 h-6" />
-                          ) : lesson.type === "quiz" ? (
-                            <HelpCircle className="w-6 h-6" />
-                          ) : (
-                            <FileText className="w-6 h-6" />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-black truncate group-hover:text-primary transition-colors">
-                            {lesson.title}
-                          </h4>
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-60">
-                            {lesson.type} • {lesson.duration} {t("Admin.minutes")}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={() => handleEditLesson(lesson)}
-                            className="p-2 hover:bg-muted rounded-xl transition-colors"
-                          >
-                            <Edit2 className="w-4 h-4 text-muted-foreground" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteLesson(lesson.id)}
-                            className="p-2 hover:bg-destructive/10 rounded-xl transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4 text-destructive" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </section>
+              <LessonList
+                lessons={lessons}
+                onEdit={(lesson) => {
+                  setEditingLesson(lesson);
+                  setShowAddLesson(false);
+                }}
+                onDelete={handleDeleteLesson}
+                onAddClick={() => {
+                  setShowAddLesson(true);
+                  setEditingLesson(null);
+                }}
+              />
             </div>
 
-            {/* Right side: Add info or Sidebar */}
+            {/* Right side: Sidebar panels */}
             <div className="space-y-8">
               {showAddLesson && (
-                <div className="bg-card/60 backdrop-blur-xl rounded-[2.5rem] border border-primary/20 shadow-2xl p-8 sticky top-10 border-t-4 border-t-primary animate-in slide-in-from-right duration-500">
-                  <h3 className="text-lg font-black mb-6 flex items-center gap-3">
-                    <Plus className="w-5 h-5 text-primary" />
-                    {t("Admin.newLesson")}
-                  </h3>
-                  <div className="space-y-6">
-                    <input
-                      type="text"
-                      placeholder={t("Admin.lessonTitle")}
-                      value={newLesson.title}
-                      onChange={(e) =>
-                        setNewLesson({ ...newLesson, title: e.target.value })
-                      }
-                      className="w-full bg-muted/50 border-none rounded-2xl px-5 py-4 font-bold text-sm"
-                    />
-
-                    <div className="flex gap-2">
-                      {["video", "text", "quiz"].map((type) => (
-                        <button
-                          key={type}
-                          onClick={() =>
-                            setNewLesson({ ...newLesson, type: type as any })
-                          }
-                          className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                            newLesson.type === type
-                              ? "bg-primary text-white"
-                              : "bg-muted/50 opacity-50 hover:opacity-100"
-                          }`}
-                        >
-                          {type}
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                      <span className="text-xs font-black uppercase tracking-widest opacity-40">
-                        Thời lượng (phút)
-                      </span>
-                      <input
-                        type="number"
-                        value={newLesson.duration}
-                        onChange={(e) =>
-                          setNewLesson({
-                            ...newLesson,
-                            duration: parseInt(e.target.value),
-                          })
-                        }
-                        className="w-20 bg-muted/50 border-none rounded-xl px-4 py-2 font-bold text-center"
-                      />
-                    </div>
-
-                    <div className="flex gap-4 pt-4">
-                      <button
-                        onClick={() => setShowAddLesson(false)}
-                        className="flex-1 py-4 font-black text-xs uppercase tracking-widest opacity-50 hover:opacity-100"
-                      >
-                        {t("Admin.cancel")}
-                      </button>
-                      <button
-                        onClick={handleAddLesson}
-                        disabled={saving || !newLesson.title}
-                        className="flex-1 py-4 bg-primary text-primary-foreground font-black rounded-2xl text-xs uppercase tracking-[0.2em] shadow-lg shadow-primary/20 disabled:opacity-30"
-                      >
-                        {t("Admin.add")}
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                <AddLessonForm
+                  existingLessonsCount={lessons.length}
+                  onSubmit={handleAddLesson}
+                  onCancel={() => setShowAddLesson(false)}
+                  saving={createLesson.isPending}
+                />
               )}
 
               {editingLesson && (
-                <div className="bg-card/60 backdrop-blur-xl rounded-[2.5rem] border border-orange-500/20 shadow-2xl p-8 sticky top-10 border-t-4 border-t-orange-500 animate-in slide-in-from-right duration-500">
-                  <h3 className="text-lg font-black mb-6 flex items-center gap-3">
-                    <Edit2 className="w-5 h-5 text-orange-500" />
-                    {t("Admin.editLesson")}
-                  </h3>
-                  <div className="space-y-6">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 ml-2">
-                        {t("Admin.lessonTitleLabel")}
-                      </label>
-                      <input
-                        type="text"
-                        value={editingLesson.title}
-                        onChange={(e) =>
-                          setEditingLesson({
-                            ...editingLesson,
-                            title: e.target.value,
-                          })
-                        }
-                        className="w-full bg-muted/50 border-none rounded-2xl px-5 py-4 font-bold text-sm"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 ml-2">
-                        {t("Admin.contentType")}
-                      </label>
-                      <div className="flex gap-2">
-                        {["video", "text", "quiz"].map((type) => (
-                          <button
-                            key={type}
-                            onClick={() =>
-                              setEditingLesson({
-                                ...editingLesson,
-                                type: type as any,
-                              })
-                            }
-                            className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                              editingLesson.type === type
-                                ? "bg-orange-500 text-white"
-                                : "bg-muted/50 opacity-50 hover:opacity-100"
-                            }`}
-                          >
-                            {type}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                      <span className="text-xs font-black uppercase tracking-widest opacity-40">
-                        {t("Admin.durationMinutes")}
-                      </span>
-                      <input
-                        type="number"
-                        value={editingLesson.duration}
-                        onChange={(e) =>
-                          setEditingLesson({
-                            ...editingLesson,
-                            duration: parseInt(e.target.value),
-                          })
-                        }
-                        className="w-20 bg-muted/50 border-none rounded-xl px-4 py-2 font-bold text-center"
-                      />
-                    </div>
-
-                    <div className="flex gap-4 pt-4">
-                      <button
-                        onClick={() => setEditingLesson(null)}
-                        className="flex-1 py-4 font-black text-xs uppercase tracking-widest opacity-50 hover:opacity-100"
-                      >
-                        {t("Admin.cancel")}
-                      </button>
-                      <button
-                        onClick={handleUpdateLesson}
-                        disabled={saving || !editingLesson.title}
-                        className="flex-1 py-4 bg-orange-500 text-white font-black rounded-2xl text-xs uppercase tracking-[0.2em] shadow-lg shadow-orange-500/20 disabled:opacity-30"
-                      >
-                        {t("Admin.save")}
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                <EditLessonForm
+                  lesson={editingLesson}
+                  onSubmit={handleUpdateLesson}
+                  onCancel={() => setEditingLesson(null)}
+                  saving={updateLesson.isPending}
+                />
               )}
 
-              <div className="bg-gradient-to-br from-primary to-primary/80 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden group">
-                <div className="relative z-10">
-                  <h4 className="text-xl font-black mb-4 flex items-center gap-3 italic">
-                    <TrendingUp className="w-5 h-5" />
-                    {t("Admin.contentStats")}
-                  </h4>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center text-sm font-bold opacity-80">
-                      <span>{t("Admin.totalLectures")}</span>
-                      <span>{course.lessons?.length || 0}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm font-bold opacity-80">
-                      <span>{t("Admin.expectedSize")}</span>
-                      <span>
-                        {course.lessons?.reduce(
-                          (acc, l) => acc + (l.duration || 0),
-                          0,
-                        ) || 0}{" "}
-                        {t("Admin.minutes")}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000"></div>
-              </div>
+              <CourseStats lessons={lessons} />
             </div>
           </div>
         </div>

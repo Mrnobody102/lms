@@ -3,33 +3,37 @@
 ## Prerequisites
 
 - **Node.js** 18+
-- **Bun** (recommended) or pnpm
+- **pnpm** 9+
   ```bash
-  # Install bun
-  curl -fsSL https://bun.sh/install | bash
+  npm install -g pnpm
   ```
 
 ## ⚡ Start Here
 
-### 1️⃣ Start Docker Database
+### 1️⃣ Install Dependencies
 
 ```bash
-bun run db:up
+pnpm install
 ```
 
-### 2️⃣ Run Database Migration
+### 2️⃣ Start Docker Database
 
 ```bash
-bun run db:migrate
+pnpm run db:up
+```
+
+### 3️⃣ Run Database Migration (First Time)
+
+```bash
+pnpm run db:migrate
 ```
 
 When prompted for migration name, enter: **`add_user_profile_fields`**
 
-### 3️⃣ Generate Prisma Client & Seed Data (First Time)
+### 4️⃣ Generate Prisma Client & Seed Data (First Time)
 
 ```bash
-bun --filter @repo/database run generate
-bun --filter @repo/database run seed
+pnpm run db:seed
 ```
 
 **🔑 Built-in Sample Accounts:**
@@ -38,28 +42,22 @@ bun --filter @repo/database run seed
 - **Super Admin:** `admin@lms.com` (Pass: `admin123`)
 - **Student User:** `student@lms.com` (Pass: `admin123`)
 
-### 4️⃣ Start Development Servers
+### 5️⃣ Start Development Servers
 
 Open **4 terminal windows** and run each command:
 
 ```bash
 # Terminal 1 - API Server (port 4000)
-cd apps/api-server && bun run dev
+cd apps/api-server && pnpm run dev
 
 # Terminal 2 - Web Student (port 3000)
-cd apps/web-student && bun run dev
+cd apps/web-student && pnpm run dev
 
 # Terminal 3 - Web Admin (port 3001)
-cd apps/web-admin && bun run dev
+cd apps/web-admin && pnpm run dev
 
 # Terminal 4 - Super Portal (port 3002)
-cd apps/super-portal && bun run dev
-```
-
-Alternatively, use **turbo** (requires pnpm):
-
-```bash
-pnpm dev
+cd apps/super-portal && pnpm run dev
 ```
 
 ## ✅ Verify Setup
@@ -112,3 +110,17 @@ Configured in `.env`:
 - `NODE_ENV` - `development` or `production`
 - `CORS_ORIGINS` - Allowed CORS origins (comma-separated)
 - `MCP_API_KEY` - MCP server authentication key
+
+## 📦 Available Scripts
+
+| Command | Description |
+|---------|-------------|
+| `pnpm run build` | Build all apps |
+| `pnpm run lint` | Lint all apps |
+| `pnpm run format` | Format code with Prettier |
+| `pnpm run db:up` | Start Docker database |
+| `pnpm run db:down` | Stop Docker database |
+| `pnpm run db:push` | Push Prisma schema to database |
+| `pnpm run db:migrate` | Run Prisma migrations |
+| `pnpm run db:seed` | Seed database with sample data |
+| `pnpm run db:studio` | Open Prisma Studio |

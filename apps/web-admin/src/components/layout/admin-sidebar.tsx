@@ -70,10 +70,10 @@ export function AdminSidebar() {
       <div className="p-6 border-t border-sidebar-border/50 bg-sidebar-accent/5">
         <div className="flex items-center gap-4 group cursor-pointer">
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center font-bold text-primary group-hover:rotate-12 transition-transform">
-            {user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "A"}
+            {user?.fullName?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "A"}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold truncate">{user?.name || user?.email || "Admin"}</p>
+            <p className="text-sm font-bold truncate">{user?.fullName || user?.email || "Admin"}</p>
             <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest opacity-60">
               {user?.role || "Admin"}
             </p>

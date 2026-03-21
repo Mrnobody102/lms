@@ -12,7 +12,7 @@ import { ChangePasswordDto } from "./dto/change-password.dto";
 export class UserService {
   constructor(private _prisma: PrismaService) {}
 
-  async getProfile(userId: string): Promise<any> {
+  async getProfile(userId: string) {
     const user = await this._prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -46,7 +46,7 @@ export class UserService {
   async updateProfile(
     userId: string,
     updateProfileDto: UpdateProfileDto,
-  ): Promise<any> {
+  ) {
     const user = await this._prisma.user.update({
       where: { id: userId },
       data: updateProfileDto,
@@ -87,8 +87,8 @@ export class UserService {
       throw new UnauthorizedException("Current password is incorrect");
     }
 
-    // Hash new password
-    const hashedPassword = await bcrypt.hash(changePasswordDto.newPassword, 10);
+    // Hash new password (OWASP recommends cost factor >= 12)
+    const hashedPassword = await bcrypt.hash(changePasswordDto.newPassword, 12);
 
     // Update password
     await this._prisma.user.update({

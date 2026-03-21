@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, use } from "react";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
-import { useTenantStore } from "@/features/tenants/tenant.store";
+import { useTenant } from "@/hooks/use-tenants";
 import { ArrowLeft, Building2, Globe, Settings, Activity } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { useAuthStore } from "@/features/auth/auth.store";
 import { LoginModal } from "@/features/auth/components/login-modal";
+import { use, useEffect } from "react";
 
 export default function TenantDetailsPage({
   params,
@@ -16,18 +16,12 @@ export default function TenantDetailsPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const { currentTenant, loading, fetchTenantById } = useTenantStore();
+  const { data: currentTenant, isLoading: tenantLoading } = useTenant(id);
   const { isAuthenticated, checkAuth, isInitialized } = useAuthStore();
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
-
-  useEffect(() => {
-    if (isAuthenticated && id) {
-      fetchTenantById(id);
-    }
-  }, [isAuthenticated, id, fetchTenantById]);
 
   if (!isInitialized) {
     return (
@@ -40,7 +34,7 @@ export default function TenantDetailsPage({
     );
   }
 
-  if (loading || !currentTenant) {
+  if (tenantLoading) {
     return (
       <div className="min-h-screen flex flex-col text-foreground">
         <Header />
@@ -49,6 +43,24 @@ export default function TenantDetailsPage({
           <p className="text-muted-foreground font-medium">
             Đang tải thông tin chi tiết...
           </p>
+        </div>
+        <Footer />
+        {!isAuthenticated && <LoginModal />}
+      </div>
+    );
+  }
+
+  if (!currentTenant) {
+    return (
+      <div className="min-h-screen flex flex-col text-foreground">
+        <Header />
+        <div className="flex-1 flex flex-col items-center justify-center">
+          <p className="text-muted-foreground font-medium">
+            Không tìm thấy trung tâm
+          </p>
+          <Link href="/" className="mt-4 text-primary underline">
+            Quay lại danh sách
+          </Link>
         </div>
         <Footer />
         {!isAuthenticated && <LoginModal />}

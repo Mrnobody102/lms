@@ -6,6 +6,14 @@
     "finance": "Finance",
     "schedule": "Schedule",
     "settings": "Settings",
+    "auth": {
+      "email": "Email",
+      "password": "Password",
+      "loginButton": "Login",
+      "forgotPassword": "Forgot password?",
+      "loginError": "Login failed. Please check your credentials.",
+      "loggingIn": "Logging in..."
+    },
     "revenue": "Total Revenue",
     "newStudents": "New Students",
     "activeCourses": "Active Courses",

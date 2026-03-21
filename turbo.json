@@ -5,7 +5,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "inputs": ["src/**", "next.config.*", "tsconfig.json"],
+      "inputs": ["src/**", "next.config.*", "tsconfig.json", "package.json"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**", ".turbo/**"]
     },
     "lint": {
@@ -27,7 +27,6 @@
       "persistent": true
     },
     "test": {
-      "dependsOn": ["build"],
       "inputs": ["**/*.ts", "**/*.tsx"],
       "outputs": ["coverage/**"]
     },

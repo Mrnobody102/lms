@@ -1,4 +1,5 @@
 import api from "./api";
+import { AxiosResponse } from "axios";
 
 export interface Lesson {
   id: string;
@@ -8,6 +9,7 @@ export interface Lesson {
   videoUrl?: string;
   duration: number;
   order: number;
+  courseId: string;
 }
 
 export interface Course {
@@ -16,45 +18,50 @@ export interface Course {
   lessons: Lesson[];
 }
 
+interface PaginatedCourses {
+  data: Course[];
+  meta: { page: number; limit: number; total: number; totalPages: number };
+}
+
+interface PaginatedLessons {
+  data: Lesson[];
+  meta?: Record<string, unknown>;
+}
+
 export const courseApi = {
-  getCourses: async () => {
-    const response = await api.get<Course[]>("/courses");
-    return response.data;
+  getCourses(params?: { page?: number; limit?: number; search?: string }): Promise<PaginatedCourses> {
+    return api.get("/courses", { params }).then((r: AxiosResponse<PaginatedCourses>) => r.data);
   },
 
-  getCourse: async (id: string) => {
-    const response = await api.get<Course>(`/courses/${id}`);
-    return response.data;
+  getCourse(id: string): Promise<Course> {
+    return api.get<Course>(`/courses/${id}`).then((r: AxiosResponse<Course>) => r.data);
   },
 
-  createCourse: async (data: { title: string }) => {
-    const response = await api.post<Course>("/courses", data);
-    return response.data;
+  createCourse(data: { title: string }): Promise<Course> {
+    return api.post<Course>("/courses", data).then((r: AxiosResponse<Course>) => r.data);
   },
 
-  updateCourse: async (id: string, data: Partial<Course>) => {
-    const response = await api.patch<Course>(`/courses/${id}`, data);
-    return response.data;
+  updateCourse(id: string, data: Partial<Course>): Promise<Course> {
+    return api.patch<Course>(`/courses/${id}`, data).then((r: AxiosResponse<Course>) => r.data);
   },
 
-  deleteCourse: async (id: string) => {
-    const response = await api.delete(`/courses/${id}`);
-    return response.data;
+  deleteCourse(id: string): Promise<void> {
+    return api.delete(`/courses/${id}`).then((r: AxiosResponse<void>) => r.data);
   },
 
-  // Lesson actions
-  createLesson: async (courseId: string, data: Partial<Lesson>) => {
-    const response = await api.post<Lesson>(`/lessons`, { ...data, courseId });
-    return response.data;
+  createLesson(courseId: string, data: Partial<Lesson>): Promise<Lesson> {
+    return api.post<Lesson>(`/lessons`, { ...data, courseId }).then((r: AxiosResponse<Lesson>) => r.data);
   },
 
-  updateLesson: async (id: string, data: Partial<Lesson>) => {
-    const response = await api.patch<Lesson>(`/lessons/${id}`, data);
-    return response.data;
+  updateLesson(id: string, data: Partial<Lesson>): Promise<Lesson> {
+    return api.patch<Lesson>(`/lessons/${id}`, data).then((r: AxiosResponse<Lesson>) => r.data);
   },
 
-  deleteLesson: async (id: string) => {
-    const response = await api.delete(`/lessons/${id}`);
-    return response.data;
+  deleteLesson(id: string): Promise<void> {
+    return api.delete(`/lessons/${id}`).then((r: AxiosResponse<void>) => r.data);
+  },
+
+  getLessons(courseId: string, params?: { page?: number; limit?: number }): Promise<PaginatedLessons> {
+    return api.get(`/lessons/course/${courseId}`, { params }).then((r: AxiosResponse<PaginatedLessons>) => r.data);
   },
 };

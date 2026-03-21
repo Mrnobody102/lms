@@ -9,7 +9,13 @@ export interface Lesson {
   duration: number;
   order: number;
   courseId: string;
-  completed?: boolean;
+  quiz?: {
+    questions: {
+      question: string;
+      options: string[];
+      correctAnswer: number;
+    }[];
+  };
 }
 
 export interface Course {
@@ -21,17 +27,17 @@ export interface Course {
 
 export const courseApi = {
   getCourses: async () => {
-    const response = await api.get("/courses");
-    return response.data.data; // Wrap in data due to ResponseInterceptor
+    const response = await api.get<Course[]>("/courses");
+    return response.data;
   },
 
   getCourse: async (id: string) => {
-    const response = await api.get(`/courses/${id}`);
-    return response.data.data;
+    const response = await api.get<Course>(`/courses/${id}`);
+    return response.data;
   },
 
   getLesson: async (id: string) => {
-    const response = await api.get(`/lessons/${id}`);
-    return response.data.data;
+    const response = await api.get<Lesson>(`/lessons/${id}`);
+    return response.data;
   },
 };

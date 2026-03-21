@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { PlusCircle, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
-import { useTenantStore } from "@/features/tenants/tenant.store";
+import { useCreateTenant, useUpdateTenant, Tenant } from "@/hooks/use-tenants";
 
 export function TenantFormModal({
   isOpen,
@@ -12,10 +12,10 @@ export function TenantFormModal({
 }: {
   isOpen: boolean;
   onClose: () => void;
-  tenant?: any | null;
+  tenant?: Tenant | null;
 }) {
-  const { createTenant, updateTenant, fetchTenants, loading } =
-    useTenantStore();
+  const createTenant = useCreateTenant();
+  const updateTenant = useUpdateTenant();
   const [formData, setFormData] = useState({
     name: tenant?.name || "",
     slug: tenant?.slug || "",
@@ -34,7 +34,9 @@ export function TenantFormModal({
 
   if (!isOpen) return null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const loading = createTenant.isPending || updateTenant.isPending;
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.slug) {
       toast.error("Tên trung tâm và slug là bắt buộc");
@@ -46,20 +48,30 @@ export function TenantFormModal({
       domain: formData.domain || undefined,
     };
 
-    let success;
     if (tenant) {
-      success = await updateTenant(tenant.id, payload);
-    } else {
-      success = await createTenant(payload);
-    }
-
-    if (success) {
-      toast.success(
-        tenant ? "Cập nhật trung tâm thành công!" : "Tạo trung tâm thành công!",
+      updateTenant.mutate(
+        { id: tenant.id, data: payload },
+        {
+          onSuccess: () => {
+            toast.success("Cập nhật trung tâm thành công!");
+            onClose();
+          },
+          onError: () => {
+            toast.error("Không thể cập nhật trung tâm");
+          },
+        },
       );
-      fetchTenants(); // Refresh data
-      onClose();
-      if (!tenant) setFormData({ name: "", slug: "", domain: "" });
+    } else {
+      createTenant.mutate(payload, {
+        onSuccess: () => {
+          toast.success("Tạo trung tâm thành công!");
+          onClose();
+          setFormData({ name: "", slug: "", domain: "" });
+        },
+        onError: () => {
+          toast.error("Không thể tạo trung tâm");
+        },
+      });
     }
   };
 

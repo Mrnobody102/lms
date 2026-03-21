@@ -19,6 +19,10 @@ module.exports = {
     browser: true,
   },
   plugins: ["only-warn"],
+  rules: {
+    // This project uses App Router, not Pages Router
+    "@next/next/no-html-link-for-pages": "off",
+  },
   settings: {
     "import/resolver": {
       typescript: {

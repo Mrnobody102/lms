@@ -1,19 +1,23 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsString, IsOptional, IsInt, IsUUID } from "class-validator";
+import { IsString, IsOptional, IsInt, IsUUID, MaxLength, IsEnum } from "class-validator";
+import { LessonType } from "@repo/database";
 
 export class CreateLessonDto {
   @ApiProperty({ example: "Introduction to NestJS", description: "Lesson title" })
   @IsString()
+  @MaxLength(255, { message: "Lesson title must be at most 255 characters" })
   title: string;
 
   @ApiPropertyOptional({ example: "Lesson content here...", description: "Lesson content" })
   @IsString()
   @IsOptional()
+  @MaxLength(50000, { message: "Lesson content must be at most 50000 characters" })
   content?: string;
 
   @ApiPropertyOptional({ example: "https://youtube.com/...", description: "Video URL" })
   @IsString()
   @IsOptional()
+  @MaxLength(2000, { message: "Video URL must be at most 2000 characters" })
   videoUrl?: string;
 
   @ApiPropertyOptional({ example: 1, description: "Lesson order" })
@@ -25,10 +29,10 @@ export class CreateLessonDto {
   @IsUUID()
   courseId: string;
 
-  @ApiPropertyOptional({ example: "video", enum: ["video", "text", "quiz"], description: "Lesson type" })
-  @IsString()
+  @ApiPropertyOptional({ example: "video", description: "Lesson type" })
+  @IsEnum(LessonType, { message: "Type must be one of: video, text, quiz" })
   @IsOptional()
-  type?: string;
+  type?: LessonType;
 
   @ApiPropertyOptional({ example: 10, description: "Duration in minutes" })
   @IsInt()
@@ -37,5 +41,5 @@ export class CreateLessonDto {
 
   @ApiPropertyOptional({ description: "Quiz data" })
   @IsOptional()
-  quiz?: any;
+  quiz?: object;
 }

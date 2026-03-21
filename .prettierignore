@@ -1,0 +1,9 @@
+node_modules
+dist
+.turbo
+coverage
+.next
+.tanstack
+storybook-static
+*.css
+*.svg

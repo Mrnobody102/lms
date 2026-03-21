@@ -4,6 +4,7 @@ import { IsEmail, IsNotEmpty, IsString, MinLength, MaxLength } from "class-valid
 export class LoginDto {
   @ApiProperty({ example: "user@example.com", description: "User email address" })
   @IsEmail({}, { message: "Invalid email format" })
+  @MaxLength(255, { message: "Email must be at most 255 characters" })
   @IsNotEmpty()
   email: string;
 
