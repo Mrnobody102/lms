@@ -44,6 +44,9 @@ temp
 .temp
 .tmp
 
+# Prisma engine temp files
+packages/database/.prisma/client/*.tmp
+
 # Agent / AI
 .gemini
 .agent

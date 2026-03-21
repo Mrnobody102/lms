@@ -21,12 +21,14 @@ Procedures for containerizing, automating, and deploying the LMS platform across
 ## When to Use
 
 Use when:
+
 - Building Docker images for any LMS service
 - Setting up CI/CD for new features or branches
 - Configuring environment variables for staging/production
 - Deploying to Railway, Vercel (frontend), or a custom container host
 
 Skip when:
+
 - Making UI or API code changes that do not affect deployment
 - Running local development with `pnpm dev` (no Docker needed)
 
@@ -37,7 +39,8 @@ Skip when:
 1. Copy environment files: `cp .env.example .env` and fill in values.
 2. Start infrastructure: `pnpm db:up`
 3. Run migrations: `pnpm db:push`
-4. Start services: `docker compose -f deployment/production/docker-compose.prod.yml up --build`
+4. Seed database: `pnpm db:seed`
+5. Start services: `pnpm dev` (or individual apps with `pnpm --filter web-student dev`)
 
 ### Building Production Docker Images
 
@@ -62,31 +65,31 @@ GitHub Actions workflows at `.github/workflows/` run on push/PR. Standard pipeli
 ## Docker Strategy
 
 - Base image: `node:18-alpine` for all services (reduced size).
-- Use `turbo prune --scan-imports <app> --docker` to create isolated build context per app.
-- NestJS (api-server): `output: 'standalone'` not needed. Run `node dist/main.js` directly.
+- Use `pnpm dlx turbo prune --scope=<app> --docker` to create isolated build context per app.
+- NestJS (api-server): Run `node dist/main.js` directly (no standalone output needed).
 - Next.js apps (web-student, web-admin, super-portal): Set `output: 'standalone'` in `next.config.js` for efficient production serving. Copy `.next/standalone`, `.next/static`, and `public/` directories.
 - Always create a non-root user (`adduser --system --uid 1001`) in the runner stage.
 
 ## Environment Variables
 
-| Variable | Description | Example |
-|---|---|---|
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql://user:pass@host:5432/lms_platform` |
-| `REDIS_URL` | Redis connection string | `redis://host:6379` |
-| `PORT` | API server port (default: 4000) | `4000` |
-| `NEXT_PUBLIC_API_URL` | API base URL for Next.js clients | `https://api.lms.example.com` |
+| Variable              | Description                      | Example                                         |
+| --------------------- | -------------------------------- | ----------------------------------------------- |
+| `DATABASE_URL`        | PostgreSQL connection string     | `postgresql://user:pass@host:5432/lms_platform` |
+| `REDIS_URL`           | Redis connection string          | `redis://host:6379`                             |
+| `PORT`                | API server port (default: 4000)  | `4000`                                          |
+| `NEXT_PUBLIC_API_URL` | API base URL for Next.js clients | `https://api.lms.example.com`                   |
 
 Environment file precedence: `.env.local` > `.env.production` > `.env`.
 
 ## Common Pitfalls
 
-| Pitfall | Fix |
-|---|---|
-| `turbo prune` produces empty `out/` | Ensure `--filter=<app>` matches the app name in `turbo.json` |
-| Next.js standalone output missing | Verify `output: 'standalone'` is set in `next.config.js` |
-| Non-root user cannot read static files | Use `--chown=nextjs:nodejs` on COPY for static dirs |
-| Frontend cannot reach API in Docker | Use Docker Compose service names (e.g., `http://api:4000`) not `localhost` |
-| Stale lockfile in Docker cache | Copy lockfile before `pnpm install` to leverage cache |
+| Pitfall                                | Fix                                                                        |
+| -------------------------------------- | -------------------------------------------------------------------------- |
+| `turbo prune` produces empty `out/`    | Ensure `--filter=<app>` matches the app name in `turbo.json`               |
+| Next.js standalone output missing      | Verify `output: 'standalone'` is set in `next.config.js`                   |
+| Non-root user cannot read static files | Use `--chown=nextjs:nodejs` on COPY for static dirs                        |
+| Frontend cannot reach API in Docker    | Use Docker Compose service names (e.g., `http://api:4000`) not `localhost` |
+| Stale lockfile in Docker cache         | Copy lockfile before `pnpm install` to leverage cache                      |
 
 ## Best Practices
 
@@ -98,10 +101,10 @@ Environment file precedence: `.env.local` > `.env.production` > `.env`.
 
 ## Related Skills
 
-| Skill | Use When |
-|---|---|
+| Skill                | Use When                                                |
+| -------------------- | ------------------------------------------------------- |
 | engineering-planning | Planning feature rollouts that require deployment steps |
-| i18n-workflow | Deploying i18n changes requires rebuild of Next.js apps |
+| i18n-workflow        | Deploying i18n changes requires rebuild of Next.js apps |
 
 ## Reference Documentation
 

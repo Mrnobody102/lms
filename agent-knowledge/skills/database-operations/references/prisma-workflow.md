@@ -20,7 +20,7 @@ packages/database/
 Run all Prisma commands from the package root or via pnpm filter:
 
 ```bash
-pnpm --filter @lms/database prisma <command>
+pnpm --filter @repo/database prisma <command>
 ```
 
 ---
@@ -30,6 +30,7 @@ pnpm --filter @lms/database prisma <command>
 ### Step 1: Understand the Current Schema
 
 Before making changes, review the existing schema at `packages/database/prisma/schema.prisma`. Identify:
+
 - All models and their fields
 - Relations between models (1:N, N:M, 1:1)
 - Existing indexes and unique constraints
@@ -53,7 +54,7 @@ model Course {
 ### Step 3: Generate Prisma Client
 
 ```bash
-pnpm --filter @lms/database prisma generate
+pnpm --filter @repo/database prisma generate
 ```
 
 This regenerates the TypeScript types in `node_modules/.prisma/client`. Always do this even if you plan to use `db push`.
@@ -61,17 +62,21 @@ This regenerates the TypeScript types in `node_modules/.prisma/client`. Always d
 ### Step 4: Choose Migration Strategy
 
 **For Development (fast iteration):**
+
 ```bash
-pnpm --filter @lms/database prisma db push
+pnpm --filter @repo/database prisma db push
 ```
+
 - No migration file created
 - Directly applies schema changes to the database
 - Good for: exploring ideas, rapid prototyping, resetting dev DB
 
 **For Tracked Changes (create migration file):**
+
 ```bash
-pnpm --filter @lms/database prisma migrate dev --name descriptive_name
+pnpm --filter @repo/database prisma migrate dev --name descriptive_name
 ```
+
 - Creates a timestamped migration file in `prisma/migrations/`
 - Migration is tracked in version control
 - Good for: feature branches, staging, production deployments
@@ -79,13 +84,15 @@ pnpm --filter @lms/database prisma migrate dev --name descriptive_name
 ### Step 5: Apply Migrations
 
 **Development:**
+
 ```bash
-pnpm --filter @lms/database prisma migrate dev
+pnpm --filter @repo/database prisma migrate dev
 ```
 
 **Staging/Production:**
+
 ```bash
-pnpm --filter @lms/database prisma migrate deploy
+pnpm --filter @repo/database prisma migrate deploy
 ```
 
 Never use `migrate dev` or `migrate reset` in staging/production.
@@ -113,13 +120,13 @@ Before running any migration in non-dev environments:
 
 ### Destructive Change Rules
 
-| Operation | Risk | Mitigation |
-|---|---|---|
-| Drop column | Data loss | Check all code references first |
-| Change column type | Data truncation | Use compatible types or create new column + migrate data |
-| Drop table | Data loss | Ensure no code references the table |
-| Remove index | Query performance impact | Verify the index is not critical |
-| Rename field | Code breakage | Use `@map()` to rename in DB without changing Prisma field name |
+| Operation          | Risk                     | Mitigation                                                      |
+| ------------------ | ------------------------ | --------------------------------------------------------------- |
+| Drop column        | Data loss                | Check all code references first                                 |
+| Change column type | Data truncation          | Use compatible types or create new column + migrate data        |
+| Drop table         | Data loss                | Ensure no code references the table                             |
+| Remove index       | Query performance impact | Verify the index is not critical                                |
+| Rename field       | Code breakage            | Use `@map()` to rename in DB without changing Prisma field name |
 
 ---
 
@@ -132,41 +139,41 @@ Before running any migration in non-dev environments:
 ### Basic Seed Structure
 
 ```typescript
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 async function main() {
   // 1. Create or find the demo tenant
   const tenant = await prisma.tenant.upsert({
-    where: { slug: "trung-tam-demo" },
+    where: { slug: 'trung-tam-demo' },
     update: {},
     create: {
-      id: "00000000-0000-0000-0000-000000000001",
-      name: "Trung tam Demo",
-      slug: "trung-tam-demo",
+      id: '00000000-0000-0000-0000-000000000001',
+      name: 'Trung tam Demo',
+      slug: 'trung-tam-demo',
       // ... other required fields
     },
   });
 
   // 2. Create sample user linked to tenant
   await prisma.user.upsert({
-    where: { email: "demo@example.com" },
+    where: { email: 'demo@example.com' },
     update: {},
     create: {
-      email: "demo@example.com",
-      fullName: "Demo User",
-      password: "hashed_password",
+      email: 'demo@example.com',
+      fullName: 'Demo User',
+      password: 'hashed_password',
       tenantId: tenant.id,
-      role: "STUDENT",
+      role: 'STUDENT',
     },
   });
 
   // 3. Create courses linked to tenant
   const course = await prisma.course.create({
     data: {
-      title: "Khoa hoc Demo",
-      description: "Day la khoa hoc mau",
+      title: 'Khoa hoc Demo',
+      description: 'Day la khoa hoc mau',
       tenantId: tenant.id,
     },
   });
@@ -174,8 +181,8 @@ async function main() {
   // 4. Create lessons linked to course
   await prisma.lesson.createMany({
     data: [
-      { title: "Bai 1", courseId: course.id, order: 1, tenantId: tenant.id },
-      { title: "Bai 2", courseId: course.id, order: 2, tenantId: tenant.id },
+      { title: 'Bai 1', courseId: course.id, order: 1, tenantId: tenant.id },
+      { title: 'Bai 2', courseId: course.id, order: 2, tenantId: tenant.id },
     ],
   });
 }
@@ -202,7 +209,7 @@ main()
 ### Running the Seed
 
 ```bash
-pnpm --filter @lms/database db:seed
+pnpm --filter @repo/database db:seed
 ```
 
 Add to `package.json` of the database package:
@@ -223,8 +230,8 @@ The Prisma Client generated in `packages/database` is used by `apps/api-server`:
 
 ```typescript
 // apps/api-server/src/prisma/prisma.service.ts
-import { Injectable, OnModuleInit, OnModuleDestroy } from "@nestjs/common";
-import { PrismaClient } from "@lms/database";
+import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { PrismaClient } from '@repo/database';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
@@ -239,6 +246,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 ```
 
 After any schema change:
+
 1. Run `prisma generate` in `packages/database`
 2. Restart the API server
 3. Verify the service imports the updated types correctly
@@ -249,10 +257,11 @@ After any schema change:
 
 ```bash
 # WARNING: This deletes all data in the development database
-pnpm --filter @lms/database prisma migrate reset
+pnpm --filter @repo/database prisma migrate reset
 ```
 
 This is equivalent to:
+
 1. Drop all tables
 2. Apply all migrations from scratch
 3. Run the seed file

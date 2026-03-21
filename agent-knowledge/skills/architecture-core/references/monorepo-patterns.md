@@ -17,9 +17,9 @@ pnpm --filter @lms/api-server build
 pnpm --filter @lms/api-server test
 
 # Run Prisma commands for the database package
-pnpm --filter @lms/database prisma:generate
-pnpm --filter @lms/database prisma:migrate
-pnpm --filter @lms/database prisma:studio
+pnpm --filter @repo/database prisma:generate
+pnpm --filter @repo/database prisma:migrate
+pnpm --filter @repo/database prisma:studio
 
 # Run across all affected apps (based on changed deps)
 turbo build
@@ -108,6 +108,7 @@ apps/web-admin/
 ### Tenant Identification
 
 Tenant is identified by:
+
 1. URL slug: `https://acme.lms.com` where `acme` is the tenant slug
 2. Header: `x-tenant-id: <uuid>` for programmatic access
 
@@ -155,21 +156,22 @@ apiClient.interceptors.request.use((config) => {
 
 ## Naming Conventions
 
-| Context | Convention | Example |
-|---|---|---|
-| NestJS modules | kebab-case | `lesson-management.module.ts` |
-| Prisma models | PascalCase | `UserProfile`, `CourseEnrollment` |
-| DTO properties | camelCase | `fullName`, `isActive` |
-| API routes | kebab-case | `/api/v1/user-profiles` |
-| React components | PascalCase | `LessonCard.tsx` |
-| CSS classes | kebab-case | `.lesson-card`, `.btn-primary` |
-| User name field | `fullName` | Always prefer `fullName` over `firstName`/`lastName` |
+| Context          | Convention | Example                                              |
+| ---------------- | ---------- | ---------------------------------------------------- |
+| NestJS modules   | kebab-case | `lesson-management.module.ts`                        |
+| Prisma models    | PascalCase | `UserProfile`, `CourseEnrollment`                    |
+| DTO properties   | camelCase  | `fullName`, `isActive`                               |
+| API routes       | kebab-case | `/api/v1/user-profiles`                              |
+| React components | PascalCase | `LessonCard.tsx`                                     |
+| CSS classes      | kebab-case | `.lesson-card`, `.btn-primary`                       |
+| User name field  | `fullName` | Always prefer `fullName` over `firstName`/`lastName` |
 
 ## Shared Package Usage
 
 ### packages/ui
 
 Import shared components:
+
 ```typescript
 import { Button } from '@lms/ui/components/Button';
 import { Card } from '@lms/ui/components/Card';
@@ -179,8 +181,9 @@ import { LanguageToggle } from '@lms/ui/components/LanguageToggle';
 ### packages/database
 
 Import Prisma client:
+
 ```typescript
-import { PrismaService } from '@lms/database';
+import { PrismaService } from '@repo/database';
 // or
 import { PrismaClient } from '@prisma/client';
 ```
@@ -188,6 +191,7 @@ import { PrismaClient } from '@prisma/client';
 ### packages/shared
 
 Import shared types:
+
 ```typescript
 import type { User, Course, Enrollment } from '@lms/shared/types';
 import { TENANT_ROLES } from '@lms/shared/constants';

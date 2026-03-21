@@ -21,12 +21,14 @@ Guidelines for safe database operations using Prisma in the LMS monorepo. All Pr
 ## When to Use
 
 Use when:
+
 - Running migrations locally or in CI/CD.
 - Seeding the database with initial or test data.
 - Generating the Prisma Client after schema changes.
 - Using `prisma db push` vs `prisma migrate dev` and understanding the trade-offs.
 
 Skip when:
+
 - Making read-only queries (use `db-intelligence` skill for schema analysis).
 - The API server is running and you need to add a new query endpoint (use `nestjs-standards`).
 
@@ -35,9 +37,9 @@ Skip when:
 ### Development Workflow
 
 1. Modify `packages/database/prisma/schema.prisma`.
-2. Run `pnpm --filter @lms/database prisma generate` to update types.
-3. Run `pnpm --filter @lms/database prisma db push` for fast iteration (no migration file created).
-4. Or run `pnpm --filter @lms/database prisma migrate dev` to create a named migration file.
+2. Run `pnpm --filter @repo/database prisma:generate` to update types.
+3. Run `pnpm --filter @repo/database prisma:db:push` for fast iteration (no migration file created).
+4. Or run `pnpm --filter @repo/database prisma:migrate` to create a named migration file.
 5. Restart the API server to pick up the new Prisma Client.
 
 ### Production Migration Workflow
@@ -52,17 +54,17 @@ Skip when:
 1. Edit `packages/database/prisma/seed.ts`.
 2. Always include `trung-tam-demo` (slug) as the standard test tenant.
 3. Link primary models (`User`, `Course`, `Lesson`) to a `tenantId` (UUID).
-4. Run seed with `pnpm --filter @lms/database db:seed`.
+4. Run seed with `pnpm --filter @repo/database db:seed`.
 
 ## Common Pitfalls
 
-| Pitfall | Fix |
-|---|---|
-| Using `--force` in production migrations | Never use `--force` or `--skip-generate` in production. Always run full migrations with backup. |
-| Forgetting to regenerate Prisma Client after schema changes | Always run `prisma generate` after any schema change, even if not running migrations. |
-| Mixing `db push` and `migrate dev` on the same schema | Use `db push` for dev iteration, `migrate dev` only when you want to create a migration file. |
-| Seeding without a tenantId | Always link seed data to a valid `tenantId` -- foreign key constraints will fail otherwise. |
-| Running migrations without reviewing the SQL first | Use `prisma migrate diff` or inspect the migration file before applying. |
+| Pitfall                                                     | Fix                                                                                             |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Using `--force` in production migrations                    | Never use `--force` or `--skip-generate` in production. Always run full migrations with backup. |
+| Forgetting to regenerate Prisma Client after schema changes | Always run `prisma generate` after any schema change, even if not running migrations.           |
+| Mixing `db push` and `migrate dev` on the same schema       | Use `db push` for dev iteration, `migrate dev` only when you want to create a migration file.   |
+| Seeding without a tenantId                                  | Always link seed data to a valid `tenantId` -- foreign key constraints will fail otherwise.     |
+| Running migrations without reviewing the SQL first          | Use `prisma migrate diff` or inspect the migration file before applying.                        |
 
 ## Best Practices
 
@@ -75,11 +77,11 @@ Skip when:
 
 ## Related Skills
 
-| Skill | Use When |
-|---|---|
-| db-intelligence | Analyzing schema structure, planning model changes, reviewing relationships |
-| nestjs-standards | Using Prisma in NestJS services, integrating with modules |
-| testing-strategy | Writing database integration tests with Prisma |
+| Skill            | Use When                                                                    |
+| ---------------- | --------------------------------------------------------------------------- |
+| db-intelligence  | Analyzing schema structure, planning model changes, reviewing relationships |
+| nestjs-standards | Using Prisma in NestJS services, integrating with modules                   |
+| testing-strategy | Writing database integration tests with Prisma                              |
 
 ## Reference Documentation
 

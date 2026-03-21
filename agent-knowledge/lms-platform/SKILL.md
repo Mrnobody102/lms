@@ -35,15 +35,15 @@ lms-platform/
 
 ### Technology Stack
 
-| Layer | Technology | Notes |
-|---|---|---|
-| Backend | NestJS | TypeScript, Prisma, class-validator, Swagger |
-| Frontend | Next.js 15 | App Router, React Server Components, Tailwind CSS |
-| Database | PostgreSQL | Prisma ORM, multi-tenant via `tenantId` |
-| State (Client) | Zustand | Persisted to localStorage |
-| i18n | next-intl | Vietnamese and English |
-| Package Manager | pnpm | Workspaces |
-| Build Tool | Turborepo | Remote caching, selective builds |
+| Layer           | Technology               | Notes                                             |
+| --------------- | ------------------------ | ------------------------------------------------- |
+| Backend         | NestJS                   | TypeScript, Prisma, class-validator, Swagger      |
+| Frontend        | Next.js 15               | App Router, React Server Components, Tailwind CSS |
+| Database        | PostgreSQL               | Prisma ORM, multi-tenant via `tenantId`           |
+| State (Client)  | Zustand + React Query v5 | Auth via Zustand, server state via TanStack Query |
+| i18n            | next-intl                | Vietnamese and English                            |
+| Package Manager | pnpm                     | Workspaces                                        |
+| Build Tool      | Turborepo                | Remote caching, selective builds                  |
 
 ---
 
@@ -58,13 +58,13 @@ lms-platform/
 
 ## Naming Conventions
 
-| Entity | Convention | Example |
-|---|---|---|
-| User name field | `fullName` | `{ "fullName": "Nguyen Van A" }` |
-| File naming | kebab-case | `auth-store.ts`, `course-card.tsx` |
-| Component naming | PascalCase | `CourseCard`, `LessonSidebar` |
-| API route naming | kebab-case | `/api/v1/user-profiles` |
-| DTO property | camelCase | `{ "createdAt": "..." }` |
+| Entity           | Convention | Example                            |
+| ---------------- | ---------- | ---------------------------------- |
+| User name field  | `fullName` | `{ "fullName": "Nguyen Van A" }`   |
+| File naming      | kebab-case | `auth-store.ts`, `course-card.tsx` |
+| Component naming | PascalCase | `CourseCard`, `LessonSidebar`      |
+| API route naming | kebab-case | `/api/v1/user-profiles`            |
+| DTO property     | camelCase  | `{ "createdAt": "..." }`           |
 
 ---
 
@@ -82,22 +82,21 @@ lms-platform/
 
 ## Shared Patterns
 
-### Axios Configuration
+### API Client Configuration
 
 ```typescript
 // apps/web-admin/src/lib/api.ts
-import axios from 'axios';
+import { createApiClient } from '@repo/api-client';
 
-const api = axios.create({ baseURL: process.env.NEXT_PUBLIC_API_URL });
-
-api.interceptors.request.use((config) => {
-  const token = authStore.getState().token;
-  const tenantId = localStorage.getItem('tenantId');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  if (tenantId) config.headers['x-tenant-id'] = tenantId;
-  return config;
+export default createApiClient({
+  tenantId: process.env.NEXT_PUBLIC_TENANT_ID,
+  onUnauthorized: () => {
+    /* redirect to login */
+  },
 });
 ```
+
+All apps use `createApiClient` from `@repo/api-client` which handles token injection, tenant headers, and 401 redirects automatically.
 
 ### i18n (next-intl)
 
@@ -115,32 +114,32 @@ const t = await getMessages();
 
 ## Environment Variables
 
-| Variable | Where | Description |
-|---|---|---|
-| `DATABASE_URL` | api-server, database package | PostgreSQL connection string |
-| `JWT_SECRET` | api-server | JWT signing secret |
-| `NEXT_PUBLIC_API_URL` | web-admin, web-student | Backend API base URL |
-| `NEXT_PUBLIC_APP_URL` | web-admin, web-student | Frontend base URL |
+| Variable              | Where                        | Description                  |
+| --------------------- | ---------------------------- | ---------------------------- |
+| `DATABASE_URL`        | api-server, database package | PostgreSQL connection string |
+| `JWT_SECRET`          | api-server                   | JWT signing secret           |
+| `NEXT_PUBLIC_API_URL` | web-admin, web-student       | Backend API base URL         |
+| `NEXT_PUBLIC_APP_URL` | web-admin, web-student       | Frontend base URL            |
 
 ---
 
 ## Related Skills
 
-| Skill | Use When |
-|---|---|
-| architecture-core | Understanding app boundaries and monorepo layout |
-| auth-standards | Implementing login, registration, JWT flow |
-| database-operations | Running migrations, seeding, Prisma changes |
-| db-intelligence | Planning schema changes safely |
-| nestjs-standards | Building API endpoints with NestJS |
-| nextjs-standards | Building frontend pages and components |
-| i18n-workflow | Adding or updating translations |
-| testing-strategy | Writing unit and integration tests |
-| test-suite-builder | Generating API test scaffolds |
-| engineering-planning | Planning new features or refactors |
-| deployment-ops | Dockerizing or setting up CI/CD |
-| api-design-reviewer | Designing or reviewing API endpoints |
-| mcp-server-builder | Building MCP tools from API contracts |
+| Skill                | Use When                                         |
+| -------------------- | ------------------------------------------------ |
+| architecture-core    | Understanding app boundaries and monorepo layout |
+| auth-standards       | Implementing login, registration, JWT flow       |
+| database-operations  | Running migrations, seeding, Prisma changes      |
+| db-intelligence      | Planning schema changes safely                   |
+| nestjs-standards     | Building API endpoints with NestJS               |
+| nextjs-standards     | Building frontend pages and components           |
+| i18n-workflow        | Adding or updating translations                  |
+| testing-strategy     | Writing unit and integration tests               |
+| test-suite-builder   | Generating API test scaffolds                    |
+| engineering-planning | Planning new features or refactors               |
+| deployment-ops       | Dockerizing or setting up CI/CD                  |
+| api-design-reviewer  | Designing or reviewing API endpoints             |
+| mcp-server-builder   | Building MCP tools from API contracts            |
 
 ---
 

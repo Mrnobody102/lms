@@ -21,6 +21,7 @@ This skill provides a comprehensive understanding of the LMS Platform monorepo s
 ## When to Use
 
 Use when:
+
 - Creating new NestJS modules, controllers, or services in the API server
 - Adding pages, components, or API routes in web-admin or web-student
 - Introducing shared utilities, types, or UI components
@@ -28,6 +29,7 @@ Use when:
 - Planning cross-cutting changes that affect multiple apps
 
 Skip when:
+
 - Working on a single isolated feature with no shared code impact
 - Editing only static assets (images, fonts) with no code involvement
 
@@ -35,19 +37,20 @@ Skip when:
 
 ### Navigate the Monorepo
 
-1. Identify the target app: `apps/api-server` (NestJS), `apps/web-admin`, or `apps/web-student`
+1. Identify the target app: `apps/api-server` (NestJS), `apps/web-admin`, `apps/web-student`, or `apps/super-portal`
 2. Check `packages/database` for Prisma schema changes
 3. Check `packages/ui` before creating new shared components
-4. Run affected apps with `pnpm --filter <app> dev`
+4. Check `packages/api-client` before creating API client utilities
+5. Run affected apps with `pnpm --filter <app> dev`
 
 ### Implement a New API Feature
 
-1. Create module directory under `apps/api-server/src/modules/<feature>/`
-2. Follow the existing module pattern: `module`, `controller`, `service`, `dto/`, `entities/`
+1. Create module directory under `apps/api-server/src/<feature>/` (flat structure, not nested under `modules/`)
+2. Follow the existing module pattern: `module`, `controller`, `service`, `dto/`
 3. Register the module in `apps/api-server/src/app.module.ts`
 4. Add Prisma schema fields in `packages/database/prisma/schema.prisma`
-5. Generate migration: `pnpm --filter @lms/database prisma:migrate`
-6. Regenerate client: `pnpm --filter @lms/database prisma:generate`
+5. Run: `pnpm --filter @repo/database prisma:generate`
+6. Run: `pnpm --filter @repo/database prisma:db:push` (dev) or `pnpm --filter @repo/database prisma:migrate` (create migration)
 
 ### Implement a New Frontend Feature
 
@@ -66,14 +69,14 @@ Skip when:
 
 ## Common Pitfalls
 
-| Pitfall | Fix |
-|---|---|
-| Hardcoding user names instead of using `fullName` | Always use the `fullName` field from the User model |
-| Creating duplicate components instead of reusing from `packages/ui` | Check `packages/ui/src` before creating new components |
-| Missing `tenantId` in Prisma create/update operations | Always set `tenantId` via middleware or service layer |
-| Using mixed icon libraries | Only use `lucide-react` throughout the project |
-| Putting business logic in Next.js route handlers or NestJS controllers | Keep services for logic; controllers/routes only handle HTTP |
-| Forgetting to regenerate Prisma client after schema changes | Run `pnpm --filter @lms/database prisma:generate` after every schema change |
+| Pitfall                                                                | Fix                                                                          |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Hardcoding user names instead of using `fullName`                      | Always use the `fullName` field from the User model                          |
+| Creating duplicate components instead of reusing from `packages/ui`    | Check `packages/ui/src` before creating new components                       |
+| Missing `tenantId` in Prisma create/update operations                  | Always set `tenantId` via middleware or service layer                        |
+| Using mixed icon libraries                                             | Only use `lucide-react` throughout the project                               |
+| Putting business logic in Next.js route handlers or NestJS controllers | Keep services for logic; controllers/routes only handle HTTP                 |
+| Forgetting to regenerate Prisma client after schema changes            | Run `pnpm --filter @repo/database prisma:generate` after every schema change |
 
 ## Best Practices
 
@@ -87,23 +90,23 @@ Skip when:
 
 ## Monorepo Structure
 
-| Path | Description |
-|---|---|
-| `apps/api-server` | NestJS backend with modular structure under `src/modules/` |
-| `apps/web-admin` | Next.js 15 admin dashboard |
-| `apps/web-student` | Next.js 15 student learning portal |
-| `apps/super-portal` | Next.js 15 public/marketing portal |
-| `packages/database` | Prisma schema and generated client |
-| `packages/ui` | Shared React components, theme, language toggles |
-| `packages/shared` | Shared types, constants, and utilities |
-| `packages/validation` | Shared Zod/class-validator schemas |
+| Path                  | Description                                                |
+| --------------------- | ---------------------------------------------------------- |
+| `apps/api-server`     | NestJS backend with modular structure under `src/modules/` |
+| `apps/web-admin`      | Next.js 15 admin dashboard                                 |
+| `apps/web-student`    | Next.js 15 student learning portal                         |
+| `apps/super-portal`   | Next.js 15 public/marketing portal                         |
+| `packages/database`   | Prisma schema and generated client                         |
+| `packages/ui`         | Shared React components, theme, language toggles           |
+| `packages/shared`     | Shared types, constants, and utilities                     |
+| `packages/api-client` | Shared Axios API client factory with interceptors          |
 
 ## Related Skills
 
-| Skill | Use When |
-|---|---|
+| Skill               | Use When                                                        |
+| ------------------- | --------------------------------------------------------------- |
 | api-design-reviewer | Designing new API endpoints within the correct module structure |
-| code-architecture | Deep-diving into service layer patterns and module design |
+| code-architecture   | Deep-diving into service layer patterns and module design       |
 
 ## Reference Documentation
 

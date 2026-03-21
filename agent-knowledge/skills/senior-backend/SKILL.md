@@ -27,6 +27,7 @@ Backend development skill for the LMS Platform. Covers NestJS REST API developme
 ## When to Use
 
 Use when:
+
 - Building or modifying API endpoints in `apps/api-server`
 - Creating or updating DTOs, Services, Controllers, Modules
 - Adding database models or running Prisma migrations
@@ -34,6 +35,7 @@ Use when:
 - Reviewing backend code quality or API design
 
 Skip when:
+
 - Working on the Next.js frontend (`apps/web-admin`, `apps/web-student`)
 - Writing React components or page layouts
 - Only modifying CSS or styling
@@ -45,20 +47,18 @@ Skip when:
 ### 1. Create a New Feature Module
 
 ```bash
-# Structure
-src/features/courses/
-├── courses.module.ts
-├── courses.controller.ts
-├── courses.service.ts
-├── dto/
-│   ├── create-course.dto.ts
-│   └── update-course.dto.ts
-└── entities/
-    └── course.entity.ts
+# Structure (flat under src/, not nested under features/)
+src/course/
+├── course.module.ts
+├── course.controller.ts
+├── course.service.ts
+└── dto/
+    ├── create-course.dto.ts
+    └── update-course.dto.ts
 ```
 
 1. Define Prisma model in `packages/database/prisma/schema.prisma`
-2. Run `npx prisma generate` in the database package
+2. Run `pnpm --filter @repo/database prisma:generate` to generate client
 3. Create DTOs with `class-validator` decorators and `@ApiProperty`
 4. Write Service with business logic (not in Controller)
 5. Write Controller with proper HTTP methods and Swagger decorators
@@ -78,22 +78,22 @@ src/features/courses/
 1. Identify slow queries via logs or `EXPLAIN ANALYZE`
 2. Check for missing indexes on filter/join columns
 3. Add `@@index` in `schema.prisma`
-4. Run `npx prisma migrate dev --name add_course_indexes`
+4. Run `pnpm --filter @repo/database prisma:migrate --name add_course_indexes`
 5. Verify with `EXPLAIN ANALYZE` again
 
 ---
 
 ## Common Pitfalls
 
-| Pitfall | Fix |
-|---|---|
-| Business logic in Controllers | Always move logic to Services; Controllers should only route |
-| Missing Swagger decorators | Every method needs `@ApiOperation`; every DTO field needs `@ApiProperty` |
-| No validation on DTOs | Use `ValidationPipe` globally with `whitelist: true, forbidNonWhitelisted: true` |
-| Missing `tenantId` on new queries | Every Prisma query on tenant-scoped models must include `where: { tenantId }` |
-| Returning raw error messages | Use `HttpException` subclasses; never expose stack traces |
-| Exposing internal IDs | Use UUIDs for all resource IDs; never expose sequential integers |
-| N+1 queries | Use `include` in Prisma to eager-load related data |
+| Pitfall                           | Fix                                                                              |
+| --------------------------------- | -------------------------------------------------------------------------------- |
+| Business logic in Controllers     | Always move logic to Services; Controllers should only route                     |
+| Missing Swagger decorators        | Every method needs `@ApiOperation`; every DTO field needs `@ApiProperty`         |
+| No validation on DTOs             | Use `ValidationPipe` globally with `whitelist: true, forbidNonWhitelisted: true` |
+| Missing `tenantId` on new queries | Every Prisma query on tenant-scoped models must include `where: { tenantId }`    |
+| Returning raw error messages      | Use `HttpException` subclasses; never expose stack traces                        |
+| Exposing internal IDs             | Use UUIDs for all resource IDs; never expose sequential integers                 |
+| N+1 queries                       | Use `include` in Prisma to eager-load related data                               |
 
 ---
 
@@ -112,14 +112,14 @@ src/features/courses/
 
 ## Related Skills
 
-| Skill | Use When |
-|---|---|
-| nestjs-standards | Detailed NestJS patterns and module structure |
-| database-operations | Running Prisma migrations and seeding |
-| db-intelligence | Planning schema changes and data safety |
-| auth-standards | JWT flow, guards, and role-based access |
-| api-design-reviewer | Reviewing API design before implementation |
-| testing-strategy | Writing unit and integration tests for the API |
+| Skill               | Use When                                       |
+| ------------------- | ---------------------------------------------- |
+| nestjs-standards    | Detailed NestJS patterns and module structure  |
+| database-operations | Running Prisma migrations and seeding          |
+| db-intelligence     | Planning schema changes and data safety        |
+| auth-standards      | JWT flow, guards, and role-based access        |
+| api-design-reviewer | Reviewing API design before implementation     |
+| testing-strategy    | Writing unit and integration tests for the API |
 
 ---
 

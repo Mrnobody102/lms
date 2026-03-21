@@ -56,8 +56,8 @@ export * from './types';
 
 ```typescript
 // apps/web-admin/src/lib/api.ts
-import { ApiResponse } from '@lms/shared';     // shared types
-import { Prisma } from '@lms/database';         // database types
+import { ApiResponse } from '@lms/shared'; // shared types
+import { Prisma } from '@repo/database'; // database types
 ```
 
 ## Build Isolation
@@ -92,6 +92,7 @@ Exclude non-source files from cache keys:
 ## tsconfig Patterns
 
 Root base config:
+
 ```json
 // tsconfig.base.json
 {
@@ -107,6 +108,7 @@ Root base config:
 ```
 
 Per-package override:
+
 ```json
 // packages/ui/tsconfig.json
 {

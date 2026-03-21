@@ -21,12 +21,14 @@ Systematic approach to breaking down LMS features into technical tasks, designin
 ## When to Use
 
 Use when:
+
 - Starting a new feature (e.g., Quiz System, Payment Integration, Progress Tracking)
 - Planning database schema changes that affect multiple apps
 - Designing new API endpoints or modifying existing ones
 - Adding a new role permission or access control rule
 
 Skip when:
+
 - Making a small, isolated bug fix that does not touch multiple components
 - Updating i18n strings or documentation
 
@@ -36,7 +38,7 @@ Skip when:
 
 1. **Understand the requirement**: Clarify the "why" and "what" with concrete acceptance criteria.
 2. **Audit existing patterns**: Review similar features for conventions (DTO structure, service patterns, page layouts).
-3. **Design the data model**: Add or modify Prisma schema in `apps/api-server/prisma/schema.prisma`.
+3. **Design the data model**: Add or modify Prisma schema in `packages/database/prisma/schema.prisma`.
 4. **Design the API contract**: Define endpoints, request/response DTOs, and HTTP methods.
 5. **Plan the frontend**: Identify which Next.js app(s) need changes (web-student, web-admin, super-portal).
 6. **Write the implementation plan**: Document tasks, dependencies, and verification steps.
@@ -62,13 +64,13 @@ When a feature is complete, document it in a `walkthrough.md` at the project roo
 
 ## Common Pitfalls
 
-| Pitfall | Fix |
-|---|---|
-| Designing API before checking existing endpoints | Always review existing controllers for conventions first |
-| Forgetting Prisma migrations | Run `prisma migrate dev` and commit the migration file |
-| Not updating i18n for new UI strings | Add keys to both `vi.json` and `en.json` before marking done |
-| Skipping tests for new API endpoints | Use Vitest with `supertest` for integration test coverage |
-| Modifying shared packages without checking dependents | Run `pnpm turbo build` to verify no breaking changes |
+| Pitfall                                               | Fix                                                          |
+| ----------------------------------------------------- | ------------------------------------------------------------ |
+| Designing API before checking existing endpoints      | Always review existing controllers for conventions first     |
+| Forgetting Prisma migrations                          | Run `prisma migrate dev` and commit the migration file       |
+| Not updating i18n for new UI strings                  | Add keys to both `vi.json` and `en.json` before marking done |
+| Skipping tests for new API endpoints                  | Use Vitest with `supertest` for integration test coverage    |
+| Modifying shared packages without checking dependents | Run `pnpm turbo build` to verify no breaking changes         |
 
 ## Best Practices
 
@@ -80,10 +82,10 @@ When a feature is complete, document it in a `walkthrough.md` at the project roo
 
 ## Related Skills
 
-| Skill | Use When |
-|---|---|
+| Skill          | Use When                                                 |
+| -------------- | -------------------------------------------------------- |
 | deployment-ops | Planning includes deployment steps or environment config |
-| i18n-workflow | Feature has user-facing strings requiring translation |
+| i18n-workflow  | Feature has user-facing strings requiring translation    |
 
 ## Reference Documentation
 

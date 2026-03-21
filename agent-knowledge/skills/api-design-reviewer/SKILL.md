@@ -22,6 +22,7 @@ The API Design Reviewer skill provides comprehensive analysis and review of API 
 ## When to Use
 
 Use when:
+
 - Designing new REST endpoints for the LMS API server
 - Reviewing pull requests that add or modify API endpoints
 - Auditing existing endpoints for consistency and best practices
@@ -29,6 +30,7 @@ Use when:
 - Planning API versioning for new feature releases
 
 Skip when:
+
 - Single-app project with no shared packages
 - Working exclusively on UI components with no backend changes
 - Making cosmetic UI changes with no API impact
@@ -37,7 +39,7 @@ Skip when:
 
 ### Design New Endpoint
 
-1. Define the resource path with kebab-case and version prefix `/api/v1/`
+1. Define the resource path with kebab-case (e.g., `lessons`, `user-profiles`). The LMS API does NOT use version prefixes — endpoints use `/api/<resource>` directly.
 2. Choose the correct HTTP method (GET/POST/PUT/PATCH/DELETE)
 3. Create the DTO with class-validator decorators and Swagger @ApiProperty
 4. Add @ApiOperation and @ApiResponse decorators to the controller method
@@ -54,25 +56,23 @@ Skip when:
 
 ### Add Pagination
 
-1. For stable, filterable lists: use offset-based `{ offset, limit, total, hasMore }`
-2. For infinite scroll / time-ordered feeds: use cursor-based `{ nextCursor, hasMore }`
-3. Apply the same pattern consistently across all list endpoints in the same resource
+The LMS API uses `{ data: T[], meta: { page, limit, total, totalPages } }` for all list endpoints. Use `{ page, limit }` as query params with defaults of `page: 1, limit: 10`. Apply this pattern consistently across all list endpoints.
 
 ## Common Pitfalls
 
-| Pitfall | Fix |
-|---|---|
-| Missing @ApiOperation/@ApiResponse decorators | Add Swagger decorators to every controller method |
-| Using raw errors or throwing plain strings | Wrap in HttpException (e.g., NotFoundException, BadRequestException) |
-| Business logic in controllers | Move all logic to service methods; controllers only handle HTTP |
-| Missing ValidationPipe | Ensure app bootstrap uses `app.useGlobalPipes(new ValidationPipe())` |
-| Inconsistent resource naming (snake vs kebab) | Enforce kebab-case: `/user-profiles`, not `/user_profiles` |
-| Returning different error shapes per endpoint | Standardize on `{ error: { code, message, details, requestId, timestamp } }` |
-| Adding required fields to existing DTOs | Mark new fields optional; add them as additive only |
+| Pitfall                                       | Fix                                                                                         |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Missing @ApiOperation/@ApiResponse decorators | Add Swagger decorators to every controller method                                           |
+| Using raw errors or throwing plain strings    | Wrap in HttpException (e.g., NotFoundException, BadRequestException)                        |
+| Business logic in controllers                 | Move all logic to service methods; controllers only handle HTTP                             |
+| Missing ValidationPipe                        | Ensure app bootstrap uses `app.useGlobalPipes(new ValidationPipe())`                        |
+| Inconsistent resource naming (snake vs kebab) | Enforce kebab-case: `/user-profiles`, not `/user_profiles`                                  |
+| Returning different error shapes per endpoint | Standardize on `{ success: false, message: string, statusCode: number, timestamp: string }` |
+| Adding required fields to existing DTOs       | Mark new fields optional; add them as additive only                                         |
 
 ## Best Practices
 
-1. Always prefix endpoints with version: `/api/v1/`, `/api/v2/`
+1. The LMS API does NOT use version prefixes. Endpoints use `/api/<resource>` (e.g., `/api/courses`, `/api/auth/login`). Only add versioning when a breaking change is truly necessary and unavoidable.
 2. Use kebab-case for multi-word resources: `/user-profiles`, not `/userProfiles`
 3. Keep DTOs focused: separate Request DTOs from Response DTOs
 4. Validate all input with class-validator at the DTO layer, never manually
@@ -82,9 +82,9 @@ Skip when:
 
 ## Related Skills
 
-| Skill | Use When |
-|---|---|
-| architecture-core | Understanding project structure before designing APIs |
+| Skill             | Use When                                               |
+| ----------------- | ------------------------------------------------------ |
+| architecture-core | Understanding project structure before designing APIs  |
 | code-architecture | Designing service layer patterns and module boundaries |
 
 ## Reference Documentation

@@ -9,13 +9,13 @@
 
 ## Overview
 
-Guidelines for developing the LMS `web-admin` (Next.js 15 admin dashboard) and `web-student` (Next.js 15 student portal) applications. Both apps use the App Router, React Server Components, Zustand for auth state, Tailwind CSS with CSS variables, and `next-intl` for i18n.
+Guidelines for developing the LMS `web-admin` (Next.js 15 admin dashboard), `web-student` (Next.js 15 student portal), and `super-portal` (Next.js 15 super admin portal) applications. All three apps use the App Router, React Server Components, Zustand for auth state, React Query v5 for server state, Tailwind CSS with CSS variables, and `next-intl` for i18n.
 
 ## Core Capabilities
 
 - **rsc_patterns**: Server Components for data fetching, Client Components only for interactivity.
 - **app_router_layouts**: `[locale]` dynamic segment for i18n, nested layouts for admin sidebar.
-- **zustand_auth**: `useAuthStore` in `features/auth/auth.store.ts` with localStorage persistence and JWT expiry checking.
+- **zustand_auth**: `useAuthStore` in `features/auth/auth.store.ts` with localStorage persistence and JWT expiry checking. Auth state managed via Zustand; server state managed via React Query v5 (`@tanstack/react-query`).
 - **tailwind_styling**: CSS variable-based design system (`hsl(var(--primary))`), rounded corners via `var(--radius)`, dark mode via `class` strategy.
 - **i18n_integration**: `next-intl` with `[locale]` routing, `useTranslations`, `getMessages`, `setRequestLocale`.
 - **lucide_icons**: All icons from `lucide-react` only.
@@ -46,76 +46,65 @@ packages/ui/src/               @repo/ui (shared ThemeProvider, styles.css)
 ## When to Use
 
 Use when:
+
 - Building new pages or components in `web-admin` or `web-student`.
 - Adding Zustand state management for auth or UI state.
 - Applying Tailwind classes or styling patterns.
 
 Skip when:
+
 - Working on the NestJS API server (use `nestjs-standards`).
 - Writing tests (use `test-suite-builder` or `testing-strategy`).
 
 ## Server vs Client Components
 
-| Use Server Component | Use Client Component ("use client") |
-|---|---|
-| Page-level data fetching | Forms with `useState` |
-| Layout rendering | Auth state (useAuthStore) |
-| Static content | Event handlers, onClick |
-| `generateMetadata()` | useEffect hooks |
-| | Interactivity (dropdowns, modals) |
+| Use Server Component     | Use Client Component ("use client") |
+| ------------------------ | ----------------------------------- |
+| Page-level data fetching | Forms with `useState`               |
+| Layout rendering         | Auth state (useAuthStore)           |
+| Static content           | Event handlers, onClick             |
+| `generateMetadata()`     | useEffect hooks                     |
+|                          | Interactivity (dropdowns, modals)   |
 
 Rule: Default to Server. Add `"use client"` only when you need hooks (`useState`, `useEffect`), browser APIs, or Zustand.
 
 ## Zustand Auth Store Pattern
 
+All apps use the shared auth store factory from `@repo/shared`:
+
 ```typescript
 // features/auth/auth.store.ts
-import { create } from "zustand";
-import api from "../../lib/api";
+import { createAuthStore } from '@repo/shared';
+import api from '../../lib/api';
 
-interface AuthState {
-  user: User | null;
-  token: string | null;
-  isAuthenticated: boolean;
-  isInitialized: boolean;
-  loading: boolean;
-  error: string | null;
-  login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
-  checkAuth: () => void;
-  clearError: () => void;
-}
-
-export const useAuthStore = create<AuthState>((set) => ({
-  // ... initial state
-  login: async (email, password) => {
-    set({ loading: true, error: null });
-    try {
-      const response = await api.post("/auth/login", { email, password });
-      const { token, user } = response.data.data;
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
-      set({ token, user, isAuthenticated: true, loading: false });
-      return true;
-    } catch (error: any) {
-      set({ error: error.response?.data?.message || "Login failed", loading: false });
-      return false;
-    }
+export const useAuthStore = createAuthStore({
+  api,
+  persistUser: true,
+  messages: {
+    loginError: 'Login failed. Please check your credentials.',
   },
-  logout: () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    set({ token: null, user: null, isAuthenticated: false });
-  },
-  checkAuth: () => {
-    // Decode JWT payload, check expiry, restore state from localStorage
-  },
-}));
+});
 ```
+
+The `createAuthStore` factory handles login, register, logout, checkAuth, and localStorage persistence. For server state, use React Query v5 hooks instead of Zustand.
 
 ## API Client Pattern
 
-Use the shared `api` instance from `lib/api.ts` which attaches `Authorization: Bearer <token>` header automatically via Axios interceptors. All API calls return `response.data` which is unwrapped to `{ success, data }`.
+All apps use the shared API client from `@repo/api-client`:
+
+```typescript
+// lib/api.ts
+import { createApiClient } from '@repo/api-client';
+
+export default createApiClient({
+  tenantId: process.env.NEXT_PUBLIC_TENANT_ID,
+  onUnauthorized: () => {
+    window.location.href = '/vi/login';
+  },
+});
+```
+
+The client automatically handles token injection, tenant headers, and 401 redirects. Use React Query v5 hooks for data fetching.
 
 ## Layout Patterns
 
@@ -158,7 +147,7 @@ Use CSS variable colors defined in `tailwind.config.ts`:
 Login form uses `"use client"` with controlled inputs, error display, and loading state:
 
 ```typescript
-"use client";
+'use client';
 export function LoginForm({ onSuccess }: LoginFormProps) {
   const { login, loading, error, clearError } = useAuthStore();
   // ... form with lucide-react icons
@@ -167,13 +156,13 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
 
 ## Common Pitfalls
 
-| Pitfall | Fix |
-|---|---|
-| Using client features in Server Components | Add `"use client"` at the top of the file |
-| Forgetting to `await params` in layouts | Next.js 15 requires `params: Promise<{ locale: string }>` |
-| Storing tokens in plain state (lost on refresh) | Use localStorage with `checkAuth()` on mount |
-| Missing `@repo/ui` in Tailwind content | Ensure `../../packages/ui/src/**/*.{js,ts,jsx,tsx}` is in content array |
-| Mixing `lucide-react` with other icon libraries | Use only `lucide-react` |
+| Pitfall                                         | Fix                                                                     |
+| ----------------------------------------------- | ----------------------------------------------------------------------- |
+| Using client features in Server Components      | Add `"use client"` at the top of the file                               |
+| Forgetting to `await params` in layouts         | Next.js 15 requires `params: Promise<{ locale: string }>`               |
+| Storing tokens in plain state (lost on refresh) | Use localStorage with `checkAuth()` on mount                            |
+| Missing `@repo/ui` in Tailwind content          | Ensure `../../packages/ui/src/**/*.{js,ts,jsx,tsx}` is in content array |
+| Mixing `lucide-react` with other icon libraries | Use only `lucide-react`                                                 |
 
 ## Best Practices
 
@@ -187,11 +176,11 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
 
 ## Related Skills
 
-| Skill | Use When |
-|---|---|
-| nestjs-standards | Understanding API endpoint contracts |
-| auth-standards | Auth flow between frontend and backend |
-| i18n-workflow | Managing translation messages |
+| Skill            | Use When                               |
+| ---------------- | -------------------------------------- |
+| nestjs-standards | Understanding API endpoint contracts   |
+| auth-standards   | Auth flow between frontend and backend |
+| i18n-workflow    | Managing translation messages          |
 
 ## Reference Documentation
 

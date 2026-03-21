@@ -34,11 +34,11 @@ python3 scripts/mcp_validator.py --input out/tool_manifest.json --strict --forma
 
 ## Architecture Decisions
 
-| Approach | Use When |
-|---|---|
-| Python runtime | Fast iteration, data pipelines, backend-heavy teams |
-| TypeScript runtime | Shared types with JS stack, frontend-heavy teams |
-| Single MCP server | Easiest operations, broader blast radius, fewer deployment targets |
+| Approach             | Use When                                                            |
+| -------------------- | ------------------------------------------------------------------- |
+| Python runtime       | Fast iteration, data pipelines, backend-heavy teams                 |
+| TypeScript runtime   | Shared types with JS stack, frontend-heavy teams                    |
+| Single MCP server    | Easiest operations, broader blast radius, fewer deployment targets  |
 | Split domain servers | Cleaner ownership, safer change boundaries, independent deployments |
 
 ## Contract Quality Gates
@@ -61,12 +61,12 @@ Bad:   get__v1__courses, list_courses, GetCourses, courseList
 
 ## Testing Strategy
 
-| Level | What | How |
-|---|---|---|
-| Unit | OpenAPI operation to MCP tool schema transformation | Jest/Pytest with fixture assertions |
-| Contract | Snapshot `tool_manifest.json` | PR diff review on schema changes |
-| Integration | Call generated tool handlers against staging API | E2E tests against test tenant |
-| Resilience | Simulate 4xx/5xx upstream errors | Verify structured error responses |
+| Level       | What                                                | How                                 |
+| ----------- | --------------------------------------------------- | ----------------------------------- |
+| Unit        | OpenAPI operation to MCP tool schema transformation | Jest/Pytest with fixture assertions |
+| Contract    | Snapshot `tool_manifest.json`                       | PR diff review on schema changes    |
+| Integration | Call generated tool handlers against staging API    | E2E tests against test tenant       |
+| Resilience  | Simulate 4xx/5xx upstream errors                    | Verify structured error responses   |
 
 ## Deployment Practices
 
@@ -78,13 +78,13 @@ Bad:   get__v1__courses, list_courses, GetCourses, courseList
 
 ## Security Controls
 
-| Control | Implementation |
-|---|---|
-| Host allowlisting | Explicit list of allowed outbound hosts in server config |
-| No arbitrary proxying | Never proxy user-provided URLs; validate against allowlist |
-| Secret redaction | Strip auth headers and secrets from all log output |
-| Rate limiting | Apply per-tool rate limits; add request timeouts per handler |
-| Input validation | Validate all MCP tool inputs before forwarding to backend |
+| Control               | Implementation                                               |
+| --------------------- | ------------------------------------------------------------ |
+| Host allowlisting     | Explicit list of allowed outbound hosts in server config     |
+| No arbitrary proxying | Never proxy user-provided URLs; validate against allowlist   |
+| Secret redaction      | Strip auth headers and secrets from all log output           |
+| Rate limiting         | Apply per-tool rate limits; add request timeouts per handler |
+| Input validation      | Validate all MCP tool inputs before forwarding to backend    |
 
 ## LMS-Specific Considerations
 
@@ -94,4 +94,4 @@ When building MCP servers for the LMS platform:
 - Apply `tenantId` filtering for all data-retrieval tools (use the authenticated user's tenant)
 - Scope tools to LMS domains: courses, lessons, enrollments, users, grades, analytics
 - Use the LMS OpenAPI spec auto-generated from NestJS Swagger decorators as the source of truth
-- Prisma types from `@lms/database` should be used as the canonical data types in tool schemas
+- Prisma types from `@repo/database` should be used as the canonical data types in tool schemas

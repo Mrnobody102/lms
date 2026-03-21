@@ -27,6 +27,7 @@ Production-grade Playwright testing toolkit for the LMS Platform. Use when writi
 ## When to Use
 
 Use when:
+
 - Writing end-to-end tests for student enrollment, course playback, or admin workflows
 - Debugging a failing browser-based user flow
 - Generating regression tests for a new feature
@@ -34,6 +35,7 @@ Use when:
 - Migrating from manual testing to automated E2E
 
 Skip when:
+
 - Writing unit tests (use Jest/Vitest) or API integration tests (use Supertest)
 - Testing pure backend logic without UI
 - Quick one-off browser checks (use manual testing instead)
@@ -83,18 +85,19 @@ import { faker } from '@faker-js/faker';
 
 test.describe('Student Login', () => {
   test('should login with valid credentials', async ({ page }) => {
-    await page.goto('/auth/login');
+    // Use /vi/ prefix since apps use localePrefix: "always"
+    await page.goto('/vi/login');
 
     await page.getByLabel('Email').fill('student@example.com');
     await page.getByLabel('Password').fill('password123');
     await page.getByRole('button', { name: /login|đăng nhập/i }).click();
 
-    await expect(page).toHaveURL(/\/dashboard|\/courses/);
+    await expect(page).toHaveURL(/\/vi\/(dashboard|courses)/);
     await expect(page.getByText(/welcome|chào mừng/i)).toBeVisible();
   });
 
   test('should show error with invalid credentials', async ({ page }) => {
-    await page.goto('/auth/login');
+    await page.goto('/vi/login');
 
     await page.getByLabel('Email').fill('wrong@example.com');
     await page.getByLabel('Password').fill('wrongpassword');
@@ -163,15 +166,15 @@ pnpm playwright test --list
 
 ## Common Pitfalls
 
-| Pitfall | Fix |
-|---|---|
-| `page.waitForTimeout(1000)` | Replace with `await expect(locator).toBeVisible()` |
-| CSS selectors like `.btn-primary` | Use `getByRole('button', { name: 'Submit' })` instead |
-| Shared test state causing flakiness | Use `test.beforeEach` to reset state per test |
-| Hardcoded `localhost:3000` | Use `baseURL` from config; access via `page.url()` |
+| Pitfall                             | Fix                                                     |
+| ----------------------------------- | ------------------------------------------------------- |
+| `page.waitForTimeout(1000)`         | Replace with `await expect(locator).toBeVisible()`      |
+| CSS selectors like `.btn-primary`   | Use `getByRole('button', { name: 'Submit' })` instead   |
+| Shared test state causing flakiness | Use `test.beforeEach` to reset state per test           |
+| Hardcoded `localhost:3000`          | Use `baseURL` from config; access via `page.url()`      |
 | Not handling multi-tenant isolation | Set `x-tenant-id` header in a project-level `beforeAll` |
-| Forgetting to wait for navigation | Use `await page.waitForURL()` after clicks |
-| Testing implementation details | Only test visible behavior and DOM state |
+| Forgetting to wait for navigation   | Use `await page.waitForURL()` after clicks              |
+| Testing implementation details      | Only test visible behavior and DOM state                |
 
 ---
 
@@ -189,18 +192,19 @@ pnpm playwright test --list
 
 ## Related Skills
 
-| Skill | Use When |
-|---|---|
-| testing-strategy | Overall testing pyramid and strategy |
-| test-suite-builder | API-level test generation (unit + integration) |
-| auth-standards | Understanding login flow for E2E test setup |
-| senior-frontend | Understanding frontend patterns to write better locators |
+| Skill              | Use When                                                 |
+| ------------------ | -------------------------------------------------------- |
+| testing-strategy   | Overall testing pyramid and strategy                     |
+| test-suite-builder | API-level test generation (unit + integration)           |
+| auth-standards     | Understanding login flow for E2E test setup              |
+| senior-frontend    | Understanding frontend patterns to write better locators |
 
 ---
 
 ## Reference Documentation
 
 See `reference/` directory for:
+
 - **golden-rules.md**: The 10 non-negotiable rules for Playwright tests
 - **locators.md**: Complete locator priority with cheat sheet
 - **assertions.md**: Web-first assertions reference
