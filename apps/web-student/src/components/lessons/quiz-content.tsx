@@ -1,13 +1,8 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import {
-  CheckCircle2,
-  Trophy,
-  HelpCircle,
-  ArrowRightCircle,
-} from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useState, useEffect } from 'react';
+import { CheckCircle2, Trophy, HelpCircle, ArrowRightCircle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface QuizContentProps {
   quiz?: {
@@ -20,17 +15,21 @@ interface QuizContentProps {
 }
 
 export function QuizContent({ quiz }: QuizContentProps) {
-  const t = useTranslations("Student");
-  const [selectedAnswers, setSelectedAnswers] = useState<
-    Record<number, number>
-  >({});
+  const t = useTranslations('Student');
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
   const [showResults, setShowResults] = useState(false);
+
+  // Reset state when quiz changes (e.g., navigating between lessons)
+  useEffect(() => {
+    setSelectedAnswers({});
+    setShowResults(false);
+  }, [quiz]);
 
   if (!quiz || !quiz.questions.length) {
     return (
       <div className="p-12 rounded-[2rem] bg-card/30 border border-dashed flex flex-col items-center justify-center text-muted-foreground">
         <HelpCircle className="w-12 h-12 mb-4 opacity-20" />
-        <p>{t("quiz.noQuestions")}</p>
+        <p>{t('quiz.noQuestions')}</p>
       </div>
     );
   }
@@ -52,11 +51,9 @@ export function QuizContent({ quiz }: QuizContentProps) {
     <div className="space-y-8 max-w-4xl mx-auto">
       <div className="p-8 rounded-[2rem] bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 flex items-center justify-between transition-all duration-700">
         <div>
-          <h3 className="text-xl font-black tracking-tight mb-2">
-            {t("quiz.finalAssessment")}
-          </h3>
+          <h3 className="text-xl font-black tracking-tight mb-2">{t('quiz.finalAssessment')}</h3>
           <p className="text-sm text-muted-foreground font-medium italic">
-            {t("quiz.testKnowledge")}
+            {t('quiz.testKnowledge')}
           </p>
         </div>
         <Trophy className="w-12 h-12 text-primary opacity-20" />
@@ -71,7 +68,7 @@ export function QuizContent({ quiz }: QuizContentProps) {
           >
             <h4 className="text-lg font-black flex gap-4">
               <span className="text-primary opacity-30 italic">
-                {String(qIdx + 1).padStart(2, "0")}
+                {String(qIdx + 1).padStart(2, '0')}
               </span>
               {q.question}
             </h4>
@@ -82,28 +79,24 @@ export function QuizContent({ quiz }: QuizContentProps) {
                 const isCorrect = q.correctAnswer === oIdx;
 
                 let containerClass =
-                  "p-5 rounded-2xl border-2 transition-all duration-300 font-bold text-sm flex items-center justify-between relative overflow-hidden group/item ";
+                  'p-5 rounded-2xl border-2 transition-all duration-300 font-bold text-sm flex items-center justify-between relative overflow-hidden group/item ';
 
                 if (showResults) {
                   if (isSelected && isCorrect)
                     containerClass +=
-                      "bg-emerald-500/10 border-emerald-500 text-emerald-600 shadow-lg shadow-emerald-500/10";
+                      'bg-emerald-500/10 border-emerald-500 text-emerald-600 shadow-lg shadow-emerald-500/10';
                   else if (isSelected && !isCorrect)
-                    containerClass +=
-                      "bg-red-500/10 border-red-500 text-red-600";
+                    containerClass += 'bg-red-500/10 border-red-500 text-red-600';
                   else if (isCorrect)
-                    containerClass +=
-                      "bg-emerald-500/5 border-emerald-500/30 text-emerald-600/80";
-                  else
-                    containerClass +=
-                      "bg-muted/50 border-transparent opacity-50";
+                    containerClass += 'bg-emerald-500/5 border-emerald-500/30 text-emerald-600/80';
+                  else containerClass += 'bg-muted/50 border-transparent opacity-50';
                 } else {
                   if (isSelected)
                     containerClass +=
-                      "bg-primary/10 border-primary text-primary shadow-xl shadow-primary/10 scale-[1.02]";
+                      'bg-primary/10 border-primary text-primary shadow-xl shadow-primary/10 scale-[1.02]';
                   else
                     containerClass +=
-                      "bg-card hover:bg-muted border-transparent hover:border-border cursor-pointer active:scale-95";
+                      'bg-card hover:bg-muted border-transparent hover:border-border cursor-pointer active:scale-95';
                 }
 
                 return (
@@ -136,14 +129,14 @@ export function QuizContent({ quiz }: QuizContentProps) {
           disabled={Object.keys(selectedAnswers).length < quiz.questions.length}
           className="w-full py-5 rounded-[2rem] bg-foreground text-background font-black text-lg shadow-2xl transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-foreground/90 mt-10 focus:outline-none focus:ring-4 focus:ring-primary/20"
         >
-          {t("quiz.checkAnswers")}
+          {t('quiz.checkAnswers')}
         </button>
       ) : (
         <div className="p-10 rounded-[2rem] bg-emerald-500 text-white shadow-2xl shadow-emerald-500/30 flex flex-col items-center justify-center text-center transition-all duration-500 mt-10 scale-in-center">
           <Trophy className="w-16 h-16 mb-6" />
-          <h3 className="text-3xl font-black mb-2">{t("quiz.greatEffort")}</h3>
+          <h3 className="text-3xl font-black mb-2">{t('quiz.greatEffort')}</h3>
           <p className="text-emerald-50 font-bold mb-8 italic">
-            {t("quiz.yourScore", {
+            {t('quiz.yourScore', {
               score: calculateScore(),
               total: quiz.questions.length,
             })}
@@ -155,7 +148,7 @@ export function QuizContent({ quiz }: QuizContentProps) {
             }}
             className="px-8 py-3 bg-white/20 hover:bg-white/30 rounded-xl font-bold text-sm transition-colors focus:outline-none focus:ring-4 focus:ring-white/20"
           >
-            {t("quiz.tryAgain")}
+            {t('quiz.tryAgain')}
           </button>
         </div>
       )}

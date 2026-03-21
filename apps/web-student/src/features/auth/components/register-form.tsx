@@ -1,25 +1,26 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useAuthStore } from "../auth.store";
-import { Loader2, AlertCircle, Eye, EyeOff, User, Mail, Lock } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useState } from 'react';
+import { useAuthStore } from '../auth.store';
+import { Loader2, AlertCircle, Eye, EyeOff, User, Mail, Lock } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface RegisterFormProps {
   onSuccess?: () => void;
 }
 
 export function RegisterForm({ onSuccess }: RegisterFormProps) {
-  const t = useTranslations("Student");
+  const t = useTranslations('Student');
   const { register, loading, error, clearError } = useAuthStore();
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = await register!(fullName, email, password);
+    if (!register) return;
+    const success = await register(fullName, email, password);
     if (success && onSuccess) {
       onSuccess();
     }
@@ -36,9 +37,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
 
       {/* Full Name */}
       <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-zinc-400">
-          {t("auth.name")}
-        </label>
+        <label className="text-xs font-semibold text-zinc-400">{t('auth.name')}</label>
         <div className="relative">
           <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500">
             <User className="w-4 h-4" />
@@ -59,9 +58,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
 
       {/* Email */}
       <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-zinc-400">
-          {t("auth.email")}
-        </label>
+        <label className="text-xs font-semibold text-zinc-400">{t('auth.email')}</label>
         <div className="relative">
           <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500">
             <Mail className="w-4 h-4" />
@@ -82,15 +79,13 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
 
       {/* Password */}
       <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-zinc-400">
-          {t("auth.password")}
-        </label>
+        <label className="text-xs font-semibold text-zinc-400">{t('auth.password')}</label>
         <div className="relative">
           <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500">
             <Lock className="w-4 h-4" />
           </div>
           <input
-            type={showPassword ? "text" : "password"}
+            type={showPassword ? 'text' : 'password'}
             required
             minLength={8}
             value={password}
@@ -120,15 +115,15 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
         {loading ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
-            <span>{t("auth.loggingIn")}</span>
+            <span>{t('auth.loggingIn')}</span>
           </>
         ) : (
-          <span>{t("auth.registerButton")}</span>
+          <span>{t('auth.registerButton')}</span>
         )}
       </button>
 
       <p className="text-[11px] text-center text-zinc-600 leading-relaxed px-2">
-        {t("auth.terms")}
+        {t('auth.terms')}
       </p>
     </form>
   );
