@@ -1,33 +1,33 @@
-import { Module, MiddlewareConsumer, RequestMethod } from "@nestjs/common";
-import { ConfigModule } from "@nestjs/config";
-import { ThrottlerModule } from "@nestjs/throttler";
-import { APP_GUARD } from "@nestjs/core";
-import { TenantMiddleware } from "./common/middleware/tenant.middleware";
-import { AppThrottlerGuard } from "./common/guards/throttler.guard";
-import { PrismaModule } from "./common/prisma.module";
-import { AuthModule } from "./auth/auth.module";
-import { UserModule } from "./user/user.module";
-import { AdminModule } from "./admin/admin.module";
-import { McpModule } from "./mcp/mcp.module";
-import { LessonModule } from "./lesson.module";
-import { CourseModule } from "./course.module";
-import { ProgressModule } from "./progress.module";
-import { HealthModule } from "./common/health/health.module";
+import { Module, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
+import { TenantMiddleware } from './common/middleware/tenant.middleware';
+import { AppThrottlerGuard } from './common/guards/throttler.guard';
+import { PrismaModule } from './common/prisma.module';
+import { AuthModule } from './auth/auth.module';
+import { UserModule } from './user/user.module';
+import { AdminModule } from './admin/admin.module';
+import { McpModule } from './mcp/mcp.module';
+import { LessonModule } from './lesson.module';
+import { CourseModule } from './course.module';
+import { ProgressModule } from './progress.module';
+import { HealthModule } from './common/health/health.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: "../../.env",
+      envFilePath: '../../.env',
     }),
     ThrottlerModule.forRoot([
       {
-        name: "default",
+        name: 'default',
         ttl: 60000,
         limit: 100,
       },
       {
-        name: "auth",
+        name: 'auth',
         ttl: 60000,
         limit: 10,
       },
@@ -55,8 +55,10 @@ export class AppModule {
     consumer
       .apply(TenantMiddleware)
       .exclude(
-        { path: "auth/(.*)", method: RequestMethod.ALL },
+        { path: 'auth/(.*)', method: RequestMethod.ALL },
+        { path: 'health', method: RequestMethod.ALL },
+        { path: 'mcp/(.*)', method: RequestMethod.ALL },
       )
-      .forRoutes({ path: "*", method: RequestMethod.ALL });
+      .forRoutes({ path: '*', method: RequestMethod.ALL });
   }
 }

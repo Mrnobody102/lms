@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { Loader2 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export default function Loading() {
-  const t = useTranslations("Admin");
+  const t = useTranslations('Admin');
 
   return (
     <div className="min-h-screen font-sans flex transition-colors duration-300 bg-background/50">
@@ -13,9 +13,7 @@ export default function Loading() {
           <div className="w-16 h-16 bg-primary/10 rounded-3xl flex items-center justify-center mb-6">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
-          <p className="font-black text-sm uppercase tracking-widest opacity-50">
-            {t("Admin.loading")}
-          </p>
+          <p className="font-black text-sm uppercase tracking-widest opacity-50">{t('loading')}</p>
         </div>
       </div>
     </div>

@@ -1,36 +1,36 @@
-import { PrismaClient, Role, LessonType } from "../.prisma/client";
-import * as bcrypt from "bcrypt";
+import { PrismaClient, Role, LessonType } from '../.prisma/client';
+import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("Start seeding...");
+  console.log('Start seeding...');
 
   // Tạo một Tenant mẫu để test
   const tenant = await prisma.tenant.upsert({
-    where: { slug: "trung-tam-demo" },
+    where: { slug: 'trung-tam-demo' },
     update: {},
     create: {
-      name: "Trung Tâm Tiếng Trung Demo",
-      slug: "trung-tam-demo",
-      domain: "demo.lms.com",
+      name: 'Trung Tâm Tiếng Trung Demo',
+      slug: 'trung-tam-demo',
+      domain: 'demo.lms.com',
       settings: {
-        themeColor: "#ff0000",
-        logoUrl: "https://example.com/logo.png",
+        themeColor: '#ff0000',
+        logoUrl: 'https://example.com/logo.png',
       },
     },
   });
   console.log(`Created/Updated Tenant: ${tenant.name}`);
 
   // Tạo Super Admin
-  const hashedPassword = await bcrypt.hash("admin123", 10);
+  const hashedPassword = await bcrypt.hash('admin123', 12);
   const admin = await prisma.user.upsert({
-    where: { email: "admin@lms.com" },
+    where: { email: 'admin@lms.com' },
     update: {},
     create: {
-      email: "admin@lms.com",
+      email: 'admin@lms.com',
       password: hashedPassword,
-      fullName: "Super Admin",
+      fullName: 'Super Admin',
       role: Role.SUPER_ADMIN,
       tenantId: tenant.id,
     },
@@ -39,12 +39,12 @@ async function main() {
 
   // Tạo tài khoản Học Sinh
   const student = await prisma.user.upsert({
-    where: { email: "student@lms.com" },
+    where: { email: 'student@lms.com' },
     update: {},
     create: {
-      email: "student@lms.com",
+      email: 'student@lms.com',
       password: hashedPassword,
-      fullName: "Học Viên A",
+      fullName: 'Học Viên A',
       role: Role.STUDENT,
       tenantId: tenant.id,
     },
@@ -54,30 +54,30 @@ async function main() {
   // Create a sample Course
   const course = await prisma.course.create({
     data: {
-      title: "Khóa học Nhập môn Tiếng Trung (HSK 1 - Demo)",
+      title: 'Khóa học Nhập môn Tiếng Trung (HSK 1 - Demo)',
       tenantId: tenant.id,
       totalDuration: 30,
       lessons: {
         create: [
           {
-            title: "Bài 1: Giới thiệu Pinyin (Thanh mẫu, Vận mẫu)",
+            title: 'Bài 1: Giới thiệu Pinyin (Thanh mẫu, Vận mẫu)',
             type: LessonType.VIDEO,
-            videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", // Placeholder
+            videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', // Placeholder
             duration: 15,
             order: 1,
             tenantId: tenant.id,
           },
           {
-            title: "Bài 2: Từ vựng cơ bản (Chào hỏi)",
+            title: 'Bài 2: Từ vựng cơ bản (Chào hỏi)',
             type: LessonType.TEXT,
             content:
-              "<h2>Chào hỏi trong tiếng Trung</h2><p>Nǐ hǎo (你好) - Chào bạn</p><p>Zàijiàn (再见) - Tạm biệt</p>",
+              '<h2>Chào hỏi trong tiếng Trung</h2><p>Nǐ hǎo (你好) - Chào bạn</p><p>Zàijiàn (再见) - Tạm biệt</p>',
             duration: 10,
             order: 2,
             tenantId: tenant.id,
           },
           {
-            title: "Bài 3: Bài tập ôn tập Bài 1 & 2",
+            title: 'Bài 3: Bài tập ôn tập Bài 1 & 2',
             type: LessonType.QUIZ,
             duration: 5,
             order: 3,
@@ -86,7 +86,7 @@ async function main() {
               questions: [
                 {
                   question: "Từ 'Xin chào' trong tiếng Trung là gì?",
-                  options: ["Zàijiàn", "Nǐ hǎo", "Xièxiè", "Bù kèqì"],
+                  options: ['Zàijiàn', 'Nǐ hǎo', 'Xièxiè', 'Bù kèqì'],
                   correctAnswer: 1,
                 },
               ],
@@ -98,7 +98,7 @@ async function main() {
   });
   console.log(`Created Course: ${course.title} with 3 lessons`);
 
-  console.log("Seeding finished.");
+  console.log('Seeding finished.');
 }
 
 main()

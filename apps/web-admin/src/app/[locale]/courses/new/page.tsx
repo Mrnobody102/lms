@@ -1,24 +1,19 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
-import { AdminHeader } from "@/components/layout/admin-header";
-import { AdminSidebar } from "@/components/layout/admin-sidebar";
-import { useCreateCourse } from "@/hooks/use-courses";
-import {
-  Plus,
-  ArrowLeft,
-  Loader2,
-  AlertCircle,
-} from "lucide-react";
-import Link from "next/link";
+import { useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { AdminHeader } from '@/components/layout/admin-header';
+import { AdminSidebar } from '@/components/layout/admin-sidebar';
+import { useCreateCourse } from '@/hooks/use-courses';
+import { Plus, ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
+import Link from 'next/link';
 
 export default function NewCoursePage() {
-  const t = useTranslations("Admin");
+  const t = useTranslations('Admin');
   const router = useRouter();
 
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState('');
   const { mutate: createCourse, isPending: loading, error: createError } = useCreateCourse();
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -34,7 +29,7 @@ export default function NewCoursePage() {
           router.push(`/courses/${newCourse.id}/edit`);
         },
         onError: () => {
-          setLocalError(t("Admin.cannotCreateCourse"));
+          setLocalError(t('cannotCreateCourse'));
         },
       },
     );
@@ -53,13 +48,10 @@ export default function NewCoursePage() {
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8 font-bold text-sm group"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-{t("Admin.backToList")}
+            {t('backToList')}
           </Link>
 
-          <AdminHeader
-            title={t("Admin.createNewCourse")}
-            description={t("Admin.createNewCourseDesc")}
-          />
+          <AdminHeader title={t('createNewCourse')} description={t('createNewCourseDesc')} />
 
           {error && (
             <div className="mb-8 p-6 rounded-3xl border bg-destructive/10 border-destructive/20 text-destructive flex items-center gap-4 animate-in slide-in-from-top duration-500">
@@ -72,7 +64,7 @@ export default function NewCoursePage() {
             <form onSubmit={handleCreateCourse} className="space-y-8">
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-50 ml-2">
-                  {t("Admin.courseName")}
+                  {t('courseName')}
                 </label>
                 <input
                   type="text"
@@ -80,7 +72,7 @@ export default function NewCoursePage() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   className="w-full bg-muted/30 border border-border/50 rounded-2xl px-6 py-5 font-black focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-xl"
-                  placeholder={t("Admin.courseNamePlaceholder")}
+                  placeholder={t('courseNamePlaceholder')}
                 />
               </div>
 
@@ -95,10 +87,10 @@ export default function NewCoursePage() {
                   ) : (
                     <Plus className="w-6 h-6" />
                   )}
-                  {t("Admin.startBuilding")}
+                  {t('startBuilding')}
                 </button>
                 <p className="text-center text-xs text-muted-foreground font-bold italic opacity-60">
-                  {t("Admin.startBuildingDesc")}
+                  {t('startBuildingDesc')}
                 </p>
               </div>
             </form>

@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useTranslations } from "next-intl";
-import { LessonHeader } from "../../../../components/lessons/lesson-header";
-import { LessonSidebar } from "../../../../components/lessons/lesson-sidebar";
-import { LessonContent } from "../../../../components/lessons/lesson-content";
-import { LessonNavigation } from "../../../../components/lessons/lesson-navigation";
-import { useLesson, useCourse } from "../../../../hooks/use-courses";
-import { useCourseProgress, useUpdateProgress } from "../../../../hooks/use-progress";
-import { ProgressStatus } from "../../../../lib/progress-api";
+import { useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { LessonHeader } from '../../../../components/lessons/lesson-header';
+import { LessonSidebar } from '../../../../components/lessons/lesson-sidebar';
+import { LessonContent } from '../../../../components/lessons/lesson-content';
+import { LessonNavigation } from '../../../../components/lessons/lesson-navigation';
+import { useLesson, useCourse } from '../../../../hooks/use-courses';
+import { useCourseProgress, useUpdateProgress } from '../../../../hooks/use-progress';
+import { ProgressStatus } from '../../../../lib/progress-api';
 
 interface LessonPageProps {
   params: {
@@ -18,16 +18,14 @@ interface LessonPageProps {
 }
 
 export default function LessonPage({ params }: LessonPageProps) {
-  const t = useTranslations("Student");
+  const t = useTranslations('Student');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  const lessonId = Array.isArray(params.lessonId)
-    ? params.lessonId[0]
-    : params.lessonId;
+  const lessonId = Array.isArray(params.lessonId) ? params.lessonId[0] : params.lessonId;
 
   const { data: currentLesson, isLoading: lessonLoading, error: lessonError } = useLesson(lessonId);
-  const { data: course, isLoading: courseLoading } = useCourse(currentLesson?.courseId ?? "");
-  const { data: progress = [] } = useCourseProgress(currentLesson?.courseId ?? "");
+  const { data: course, isLoading: courseLoading } = useCourse(currentLesson?.courseId ?? '');
+  const { data: progress = [] } = useCourseProgress(currentLesson?.courseId ?? '');
   const updateProgress = useUpdateProgress();
 
   const loading = lessonLoading || courseLoading;
@@ -45,24 +43,20 @@ export default function LessonPage({ params }: LessonPageProps) {
     return (
       <div className="h-screen flex items-center justify-center bg-background">
         <div className="text-center p-8 rounded-[2rem] bg-card border shadow-2xl max-w-md mx-auto animate-in fade-in zoom-in duration-500">
-          <h1 className="text-3xl font-black mb-4 tracking-tighter">
-            {t("lesson.error")}
-          </h1>
+          <h1 className="text-3xl font-black mb-4 tracking-tighter">{t('lesson.error')}</h1>
           <p className="text-muted-foreground font-medium leading-relaxed">
-            {error || t("lesson.notFoundDesc")}
+            {error || t('lesson.notFoundDesc')}
           </p>
         </div>
       </div>
     );
   }
 
-  const currentIndex = course.lessons.findIndex(
-    (l) => l.id === currentLesson.id,
-  );
-  const prevLesson = currentIndex > 0 ? course.lessons[currentIndex - 1] : null;
+  const currentIndex = course.lessons?.findIndex((l) => l.id === currentLesson.id) ?? -1;
+  const prevLesson = currentIndex > 0 ? (course.lessons?.[currentIndex - 1] ?? null) : null;
   const nextLesson =
-    currentIndex < course.lessons.length - 1
-      ? course.lessons[currentIndex + 1]
+    currentIndex >= 0 && currentIndex < (course.lessons?.length ?? 0) - 1
+      ? (course.lessons?.[currentIndex + 1] ?? null)
       : null;
 
   const handleComplete = () => {
@@ -88,9 +82,7 @@ export default function LessonPage({ params }: LessonPageProps) {
             nextLesson={nextLesson}
             onComplete={handleComplete}
             isCompleted={progress.some(
-              (p) =>
-                p.lessonId === currentLesson.id &&
-                p.status === ProgressStatus.COMPLETED,
+              (p) => p.lessonId === currentLesson.id && p.status === ProgressStatus.COMPLETED,
             )}
           />
         </main>

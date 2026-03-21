@@ -10,6 +10,6 @@
     "declarationMap": false,
     "isolatedModules": false
   },
-  "include": ["src/**/*.ts", "index.ts"],
-  "exclude": ["node_modules", "prisma"]
+  "include": ["src/**/*.ts", "index.ts", "prisma/*.ts"],
+  "exclude": ["node_modules"]
 }

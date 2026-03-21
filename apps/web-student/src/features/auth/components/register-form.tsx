@@ -29,7 +29,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       {error && (
-        <div className="flex items-center gap-2.5 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">
+        <div className="flex items-center gap-2.5 p-3 bg-destructive/10 border border-destructive/20 rounded-xl text-destructive text-sm">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{error}</span>
         </div>
@@ -51,7 +51,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
               if (error) clearError();
             }}
             placeholder="Nguyễn Văn A"
-            className="w-full bg-zinc-800/50 border border-zinc-700/50 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all"
+            className="w-full bg-zinc-800 border border-zinc-700 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary/70 focus:ring-2 focus:ring-primary/20 transition-all"
           />
         </div>
       </div>
@@ -72,7 +72,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
               if (error) clearError();
             }}
             placeholder="email@example.com"
-            className="w-full bg-zinc-800/50 border border-zinc-700/50 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all"
+            className="w-full bg-zinc-800 border border-zinc-700 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary/70 focus:ring-2 focus:ring-primary/20 transition-all"
           />
         </div>
       </div>
@@ -94,12 +94,12 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
               if (error) clearError();
             }}
             placeholder="Tối thiểu 8 ký tự"
-            className="w-full bg-zinc-800/50 border border-zinc-700/50 rounded-xl pl-10 pr-11 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all"
+            className="w-full bg-zinc-800 border border-zinc-700 rounded-xl pl-10 pr-12 py-3 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary/70 focus:ring-2 focus:ring-primary/20 transition-all"
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors p-1"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors w-9 h-9 flex items-center justify-center rounded-lg hover:bg-zinc-700/50"
           >
             {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
@@ -115,7 +115,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
         {loading ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
-            <span>{t('auth.loggingIn')}</span>
+            <span>{t('auth.registering')}</span>
           </>
         ) : (
           <span>{t('auth.registerButton')}</span>

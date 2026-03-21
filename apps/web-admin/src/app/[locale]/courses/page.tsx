@@ -1,22 +1,16 @@
-"use client";
+'use client';
 
-import { useTranslations } from "next-intl";
-import { AdminHeader } from "@/components/layout/admin-header";
-import { AdminSidebar } from "@/components/layout/admin-sidebar";
-import { useCourses } from "@/hooks/use-courses";
-import {
-  BookOpen,
-  MoreVertical,
-  Edit2,
-  ExternalLink,
-  Loader2,
-} from "lucide-react";
-import Link from "next/link";
+import { useTranslations } from 'next-intl';
+import { AdminHeader } from '@/components/layout/admin-header';
+import { AdminSidebar } from '@/components/layout/admin-sidebar';
+import { useCourses } from '@/hooks/use-courses';
+import { BookOpen, MoreVertical, Edit2, ExternalLink, Loader2 } from 'lucide-react';
+import Link from 'next/link';
 
 export default function CoursesPage() {
-  const t = useTranslations("Admin");
+  const t = useTranslations('Admin');
   const { data: courseData, isLoading, error } = useCourses();
-  const courses = courseData?.data ?? [];
+  const courses = Array.isArray(courseData?.data) ? courseData.data : [];
   const errorMessage = error instanceof Error ? error.message : error ? String(error) : null;
 
   return (
@@ -26,17 +20,15 @@ export default function CoursesPage() {
       {/* Main Content */}
       <main className="flex-1 md:ml-64 p-6 md:p-10 lg:p-16">
         <AdminHeader
-          title={t("courses")}
-          description={t("Admin.courseManagement")}
+          title={t('courses')}
+          description={t('courseManagement')}
           showCreateCourse={true}
         />
 
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-32 space-y-4 opacity-50">
             <Loader2 className="w-10 h-10 animate-spin text-primary" />
-            <p className="font-bold text-sm uppercase tracking-[0.2em]">
-              {t("Admin.loading")}
-            </p>
+            <p className="font-bold text-sm uppercase tracking-[0.2em]">{t('loading')}</p>
           </div>
         ) : errorMessage ? (
           <div className="p-10 rounded-[2rem] bg-destructive/5 border border-destructive/20 text-destructive text-center space-y-4">
@@ -45,7 +37,7 @@ export default function CoursesPage() {
               onClick={() => window.location.reload()}
               className="px-6 py-2 bg-destructive text-white rounded-xl font-bold text-sm"
             >
-              {t("Admin.retry")}
+              {t('retry')}
             </button>
           </div>
         ) : courses.length === 0 ? (
@@ -54,16 +46,14 @@ export default function CoursesPage() {
               <BookOpen className="w-10 h-10" />
             </div>
             <div className="space-y-2">
-              <h3 className="text-xl font-black">{t("Admin.noCourses")}</h3>
-              <p className="text-muted-foreground font-medium max-w-xs">
-                {t("Admin.noCoursesDesc")}
-              </p>
+              <h3 className="text-xl font-black">{t('noCourses')}</h3>
+              <p className="text-muted-foreground font-medium max-w-xs">{t('noCoursesDesc')}</p>
             </div>
             <Link
               href="/courses/new"
               className="px-8 py-3 bg-primary text-primary-foreground font-black rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95"
             >
-              {t("Admin.createCourseNow")}
+              {t('createCourseNow')}
             </Link>
           </div>
         ) : (
@@ -88,12 +78,7 @@ export default function CoursesPage() {
                   </h3>
 
                   <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest opacity-60 mb-8">
-                    {course.lessons.length || 0} {t("Admin.lessons")} •{" "}
-                    {course.lessons.reduce(
-                      (acc: number, l) => acc + (l.duration || 0),
-                      0,
-                    ) || 0}{" "}
-                    {t("Admin.minutes")}
+                    {course._count?.lessons || 0} {t('lessons')}
                   </p>
                 </div>
 
@@ -103,7 +88,7 @@ export default function CoursesPage() {
                     className="flex-1 flex items-center justify-center gap-2 py-3 bg-card border border-border rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-muted transition-all active:scale-95 group/btn"
                   >
                     <Edit2 className="w-3.5 h-3.5 group-hover/btn:-rotate-12 transition-transform" />
-                    {t("Admin.edit")}
+                    {t('edit')}
                   </Link>
                   <Link
                     href={`/courses/${course.id}`} // Preview or specific view

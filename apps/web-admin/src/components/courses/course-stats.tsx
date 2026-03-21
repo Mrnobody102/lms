@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { useTranslations } from "next-intl";
-import { Lesson } from "@/lib/course-api";
-import { TrendingUp } from "lucide-react";
+import { useTranslations } from 'next-intl';
+import { Lesson } from '@/lib/course-api';
+import { TrendingUp } from 'lucide-react';
 
 interface CourseStatsProps {
   lessons: Lesson[];
 }
 
 export function CourseStats({ lessons }: CourseStatsProps) {
-  const t = useTranslations("Admin");
+  const t = useTranslations('Admin');
 
   const totalMinutes = lessons.reduce((acc, l) => acc + (l.duration || 0), 0);
 
@@ -18,17 +18,17 @@ export function CourseStats({ lessons }: CourseStatsProps) {
       <div className="relative z-10">
         <h4 className="text-xl font-black mb-4 flex items-center gap-3 italic">
           <TrendingUp className="w-5 h-5" />
-          {t("Admin.contentStats")}
+          {t('contentStats')}
         </h4>
         <div className="space-y-4">
           <div className="flex justify-between items-center text-sm font-bold opacity-80">
-            <span>{t("Admin.totalLectures")}</span>
+            <span>{t('totalLectures')}</span>
             <span>{lessons.length}</span>
           </div>
           <div className="flex justify-between items-center text-sm font-bold opacity-80">
-            <span>{t("Admin.expectedSize")}</span>
+            <span>{t('expectedSize')}</span>
             <span>
-              {totalMinutes} {t("Admin.minutes")}
+              {totalMinutes} {t('minutes')}
             </span>
           </div>
         </div>

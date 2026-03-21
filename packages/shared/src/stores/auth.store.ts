@@ -16,13 +16,13 @@ export interface AuthState {
   isInitialized: boolean;
   loading: boolean;
   error: string | null;
-  login: (email: string, password: string) => Promise<boolean>;
-  register?: (fullName: string, email: string, password: string) => Promise<boolean>;
+  login: (_email: string, _password: string) => Promise<boolean>;
+  register?: (_fullName: string, _email: string, _password: string) => Promise<boolean>;
   logout: () => void;
   checkAuth: () => void;
   clearError: () => void;
-  setAuth: (token: string, user: AuthUser) => void;
-  validateToken: (token: string) => boolean;
+  setAuth: (_token: string, _user: AuthUser) => void;
+  validateToken: (_token: string) => boolean;
 }
 
 export interface CreateAuthStoreOptions {
@@ -117,8 +117,20 @@ export function createAuthStore(options: CreateAuthStoreOptions) {
         set({ token, user: persistUser ? user : null, isAuthenticated: true, loading: false });
         return true;
       } catch (err: unknown) {
-        const error = err as { response?: { data?: { message?: string | string[] } } };
-        const msg = error.response?.data?.message;
+        const axiosErr = err as {
+          response?: {
+            data?: { message?: string | string[]; success?: boolean };
+            status?: number;
+          };
+          message?: string;
+          code?: string;
+        };
+        const data = axiosErr.response?.data;
+        let msg = data?.message;
+        // Fallback: if API returned { success: false } but no message
+        if (!msg && data?.success === false) {
+          msg = loginError;
+        }
         set({
           error: Array.isArray(msg) ? msg[0] : (msg ?? loginError),
           loading: false,
@@ -158,8 +170,17 @@ export function createAuthStore(options: CreateAuthStoreOptions) {
         set({ token, user: null, isAuthenticated: true, loading: false });
         return true;
       } catch (err: unknown) {
-        const error = err as { response?: { data?: { message?: string | string[] } } };
-        const msg = error.response?.data?.message;
+        const axiosErr = err as {
+          response?: {
+            data?: { message?: string | string[]; success?: boolean };
+            status?: number;
+          };
+        };
+        const data = axiosErr.response?.data;
+        let msg = data?.message;
+        if (!msg && data?.success === false) {
+          msg = registerError;
+        }
         set({
           error: Array.isArray(msg) ? msg[0] : (msg ?? registerError),
           loading: false,
