@@ -23,9 +23,8 @@ When prompted, enter migration name: `add_user_profile_fields`
 ### 3. Seed Sample Data (Optional but Recommended)
 
 ```bash
-# Generate Prisma Client and seed demo tenant & accounts
-pnpm --filter @repo/database run generate
-pnpm --filter @repo/database run seed
+# Seed demo tenant & accounts
+pnpm db:seed
 ```
 
 _Sample accounts created:_
@@ -485,8 +484,6 @@ curl -X GET http://localhost:4000/api/users/me \
 apps/api-server/src/
 ├── auth/
 │   ├── decorators/
-│   │   ├── current-user.decorator.ts
-│   │   └── roles.decorator.ts
 │   ├── dto/
 │   │   ├── login.dto.ts
 │   │   └── register.dto.ts
@@ -515,17 +512,25 @@ apps/api-server/src/
 │   ├── admin-tenant.controller.ts
 │   ├── admin.module.ts
 │   └── admin.service.ts
-├── common/
+├── course/
 │   ├── dto/
-│   │   └── base-response.dto.ts
-│   ├── filters/
-│   │   └── http-exception.filter.ts
-│   ├── interceptors/
-│   │   └── response.interceptor.ts
-│   ├── middleware/
-│   │   └── tenant.middleware.ts
-│   └── services/
-│       └── prisma.service.ts
-├── app.module.ts
-└── main.ts
+│   ├── course.controller.ts
+│   ├── course.module.ts
+│   └── course.service.ts
+├── lesson/
+│   ├── dto/
+│   ├── lesson.controller.ts
+│   ├── lesson.module.ts
+│   └── lesson.service.ts
+├── progress/
+│   ├── dto/
+│   ├── progress.controller.ts
+│   ├── progress.module.ts
+│   └── progress.service.ts
+└── common/
+    ├── dto/
+    ├── filters/
+    ├── interceptors/
+    ├── middleware/
+    └── services/
 ```

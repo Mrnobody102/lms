@@ -86,6 +86,8 @@ Once the database is running:
   ```typescript
   messages: (await import(`../messages/${locale}.json`)).default;
   ```
+- **Locale Navigation**: Use `next-intl` navigation helpers (`Link`, `redirect`) instead of `next/navigation` to avoid hardcoded locale paths.
+- **i18n routing**: Ensure `next.config.ts` has `localePrefix: 'always'` for apps requiring locale prefix.
 
 ### 3. Monorepo & Turbo Management
 
@@ -102,7 +104,7 @@ Once the database is running:
   - ❌ `--primary: hsl(222, 47%, 11%);`
 - **Config**: Use `<alpha-value>` in `tailwind.config.ts`:
   ```typescript
-  primary: "hsl(var(--primary) / <alpha-value>)";
+  primary: 'hsl(var(--primary) / <alpha-value>)';
   ```
 
 ---
@@ -118,4 +120,4 @@ Once the database is running:
 
 ---
 
-_Last updated: March 16, 2026_
+_Last updated: March 22, 2026_

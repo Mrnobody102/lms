@@ -8,8 +8,8 @@ Sử dụng mẫu này để ra lệnh cho các Agent như **OpenClaw**, **OpenH
 
 > "Chào Agent, tôi chuẩn bị đi ngủ. Từ giờ đến 8h sáng mai, hãy đóng vai trò là một **Senior Backend Engineer** để xử lý các tác vụ sau:
 >
-> 1. **Mục tiêu**: Đọc các hạng mục còn trống trong [task.md](file:///d:/WorkSpace/Projects/lms/lms-platform/brain/task.md) thuộc Phase [X].
-> 2. **Kiến thức**: Hãy rà soát [ai-agent-architecture.md](file:///d:/WorkSpace/Projects/lms/lms-platform/docs/ai-agent-architecture.md) để hiểu tri thức chuyên gia chúng tôi đang áp dụng.
+> 1. **Mục tiêu**: Đọc các hạng mục còn trống trong task list thuộc Phase [X].
+> 2. **Kiến thức**: Hãy rà soát [ai-agent-architecture.md](ai-agent-architecture.md) để hiểu tri thức chuyên gia chúng tôi đang áp dụng.
 > 3. **Quy tắc Vàng**:
 >    - Sau mỗi file thay đổi, PHẢI chạy `validate-ai-work.ps1`.
 >    - Nếu lỗi Build/Test, hãy tự đọc logs và sửa lỗi cho đến khi pass. Không được dừng lại trừ khi không thể giải quyết được sau 5 lần thử.

@@ -86,8 +86,8 @@ Tại giai đoạn này, ta phát triển các tính năng sâu cho từng ngác
 
 📖 **Documentation:**
 
-- [API Documentation](../API_DOCUMENTATION.md) - Complete API reference
-- [Quick Start Guide](../QUICK_START.md) - Setup instructions
+- [API Documentation](../api-documentation.md) - Complete API reference
+- [Quick Start Guide](../quick-start.md) - Setup instructions
 - [Project Structure](../../PROJECT_STRUCTURE.md) - Tổng quan dự án
 
 🧪 **Testing:**

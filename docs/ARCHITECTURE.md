@@ -21,10 +21,6 @@ graph TD
         Middleware -->|portal.lms.com| AppsPortal[Super Portal App]
     end
 
-    subgraph "Mobile Layer (React Native)"
-        UserMobile((User Mobile)) -->|Direct API| APIServer
-    end
-
     subgraph "Backend Layer (NestJS)"
         AppsStudent -->|REST API + JWT| APIServer[API Server]
         AppsAdmin -->|REST API + JWT| APIServer
@@ -34,7 +30,7 @@ graph TD
     subgraph "Data Layer"
         APIServer -->|Prisma ORM| DB[(PostgreSQL)]
         APIServer -->|Caching| Redis[(Redis)]
-        APIServer -->|Storage| S3[Object Storage]
+        APIServer -->|Storage| S3[S3 / Object Storage]
     end
 ```
 
@@ -44,7 +40,7 @@ graph TD
 
 - **Chiến lược**: Database-per-tenant (mỗi khách một DB) quá tốn kém cho 1 triệu user. Chúng ta sử dụng **Schema-based Multi-tenancy** (Dùng chung Database, phân biệt bằng cột `tenantId`).
 - **Triển khai**: Mọi bảng (trừ các bảng config global) đều có cột `tenantId`.
-- **Cô lập**: `TenantMiddleware` trong NestJS sẽ tự động lọc các truy vấn theo `tenantId` (Sử dụng Prisma Middleware/Extensions).
+- **Cô lập**: `TenantMiddleware` trong NestJS sẽ tự động lọc các truy vấn theo `tenantId`.
 
 ### 2. Single Codebase (Một bộ mã duy nhất)
 
@@ -60,6 +56,8 @@ graph TD
 
 ## Lý do về Cấu trúc Thư mục
 
-- **`apps/`**: Các ứng dụng có thể deploy. Việc tách biệt Student và Admin apps cho phép bundle size nhỏ hơn và các chính sách bảo mật riêng biệt.
-- **`packages/database`**: Nguồn chân lý duy nhất (Single source of truth). Ngăn chặn việc sai lệch schema giữa backend và frontend types.
-- **`packages/shared`**: Đảm bảo các DTOs được sử dụng trong API Controllers khớp chính xác với các types được gọi ở Frontend API.
+- **`apps/`**: Các ứng dụng có thể deploy. Việc tách biệt Student, Admin và Super Portal apps cho phép bundle size nhỏ hơn và các chính sách bảo mật riêng biệt.
+- **`packages/database`**: Nguồn chân lý duy nhất (Single source of truth) cho schema và types. Ngăn chặn việc sai lệch schema giữa backend và frontend types.
+- **`packages/shared`**: Đảm bảo các DTOs được sử dụng trong API Controllers khớp chính xác với các types được gọi ở Frontend.
+- **`packages/api-client`**: Shared axios instance với interceptors cho authentication và response handling, tránh duplicate code giữa các apps.
+- **`packages/ui`**: Shared components (shadcn/ui) được dùng chung cho tất cả frontend apps.

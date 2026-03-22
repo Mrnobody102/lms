@@ -27,7 +27,7 @@ Chúng tôi tuân thủ chuẩn [Conventional Commits](https://www.conventionalc
 ## 2. Quy Chuẩn Code (Code Style)
 
 - Chúng tôi sử dụng **ESLint** và **Prettier**.
-- Code sẽ được tự động format khi lưu (nếu cài đặt VS Code đúng) và được kiểm tra tự động khi commit.
+- Code sẽ được tự động format khi lưu (nếu cài đặt VS Code đúng) và được kiểm tra tự động khi commit thông qua Husky + lint-staged.
 - **Không** được bỏ qua bước kiểm tra này (hạn chế dùng `--no-verify`).
 
 ## 3. Quy Trình Làm Việc (Workflow)
@@ -39,19 +39,31 @@ Chúng tôi tuân thủ chuẩn [Conventional Commits](https://www.conventionalc
 
 ## 4. Các Lệnh Thường Dùng
 
-- `pnpm dev`: Chạy server phát triển (Turbo).
-- `pnpm build`: Build toàn bộ ứng dụng/packages.
-- `pnpm lint`: Kiểm tra lỗi linting.
-- `pnpm format`: Format code với Prettier.
-- `pnpm db:up`: Khởi động Docker containers.
-- `pnpm db:down`: Tắt Docker containers.
-- `pnpm db:migrate`: Chạy migration (Dev).
-- `pnpm db:studio`: Mở Prisma Studio.
+```bash
+# Development
+pnpm dev          # Chạy tất cả apps (API + Frontends)
+pnpm build        # Build toàn bộ ứng dụng/packages
+pnpm lint         # Kiểm tra lỗi linting
+pnpm format       # Format code với Prettier
+
+# Database
+pnpm db:up        # Khởi động Docker containers (PostgreSQL + Redis)
+pnpm db:down      # Tắt Docker containers
+pnpm db:migrate   # Chạy migration
+pnpm db:seed      # Tạo dữ liệu mẫu
+pnpm db:studio    # Mở Prisma Studio
+
+# Testing
+pnpm test         # Chạy unit tests (Vitest)
+pnpm test:e2e     # Chạy E2E tests (Playwright)
+```
 
 ## 5. Khắc Phục Sự Cố
 
 - Nếu gặp lỗi types, hãy thử chạy `pnpm install` ở thư mục gốc.
 - Nếu path alias không nhận, hãy kiểm tra `tsconfig.json` trong package/app tương ứng.
+- Nếu build bị lỗi kiểu `Cannot find module`, thử chạy `pnpm install` rồi `pnpm build` lại.
+- Nếu Docker không chạy, đảm bảo Docker Desktop đã được bật.
 
 ---
 
