@@ -15,7 +15,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center p-6">
       <div className="w-full max-w-sm">
         {/* Logo / Brand */}
         <div className="text-center mb-10">
@@ -32,17 +32,19 @@ export default function LoginPage() {
               <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">{t('auth.loginTitle')}</h1>
-          <p className="text-sm text-zinc-500 mt-1">{t('auth.loginDesc')}</p>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">
+            {t('auth.loginTitle')}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">{t('auth.loginDesc')}</p>
         </div>
 
         {/* Login Card */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 shadow-2xl">
+        <div className="bg-card border border-border rounded-2xl p-8 shadow-2xl dark:shadow-black/50">
           <LoginForm onSuccess={handleLoginSuccess} />
         </div>
 
         {/* Register Link */}
-        <p className="text-center text-sm text-zinc-500 mt-6">
+        <p className="text-center text-sm text-muted-foreground mt-6">
           {t('auth.footerLogin')}{' '}
           <Link
             href="/register"

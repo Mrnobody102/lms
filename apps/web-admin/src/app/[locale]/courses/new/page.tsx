@@ -3,16 +3,20 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { AdminHeader } from '@/components/layout/admin-header';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
+import { AdminHeader } from '@/components/layout/admin-header';
+import { AuthGuard } from '@/components/layout/auth-guard';
 import { useCreateCourse } from '@/hooks/use-courses';
-import { Plus, ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ArrowLeft, Plus, Loader2, AlertCircle, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 
 export default function NewCoursePage() {
   const t = useTranslations('Admin');
   const router = useRouter();
-
   const [title, setTitle] = useState('');
   const { mutate: createCourse, isPending: loading, error: createError } = useCreateCourse();
   const [localError, setLocalError] = useState<string | null>(null);
@@ -20,7 +24,6 @@ export default function NewCoursePage() {
   const handleCreateCourse = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
-
     setLocalError(null);
     createCourse(
       { title },
@@ -38,65 +41,65 @@ export default function NewCoursePage() {
   const error = createError?.message ?? localError;
 
   return (
-    <div className="min-h-screen font-sans flex bg-background/50">
-      <AdminSidebar />
+    <AuthGuard>
+      <div className="min-h-screen flex bg-background">
+        <AdminSidebar />
+        <main className="flex-1 md:ml-64 p-6 lg:p-8">
+          <div className="max-w-xl mx-auto">
+            <AdminHeader title={t('createNewCourse')} description={t('createNewCourseDesc')} />
+            <Link
+              href="/courses"
+              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 group"
+            >
+              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+              {t('backToList')}
+            </Link>
 
-      <main className="flex-1 md:ml-64 p-6 md:p-10 lg:p-16">
-        <div className="max-w-2xl mx-auto">
-          <Link
-            href="/courses"
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8 font-bold text-sm group"
-          >
-            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-            {t('backToList')}
-          </Link>
-
-          <AdminHeader title={t('createNewCourse')} description={t('createNewCourseDesc')} />
-
-          {error && (
-            <div className="mb-8 p-6 rounded-3xl border bg-destructive/10 border-destructive/20 text-destructive flex items-center gap-4 animate-in slide-in-from-top duration-500">
-              <AlertCircle className="w-6 h-6" />
-              <p className="font-black text-sm">{error}</p>
-            </div>
-          )}
-
-          <div className="bg-card/40 backdrop-blur-md rounded-[2.5rem] border border-border/50 shadow-2xl p-10">
-            <form onSubmit={handleCreateCourse} className="space-y-8">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-50 ml-2">
-                  {t('courseName')}
-                </label>
-                <input
-                  type="text"
-                  autoFocus
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full bg-muted/30 border border-border/50 rounded-2xl px-6 py-5 font-black focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-xl"
-                  placeholder={t('courseNamePlaceholder')}
-                />
+            <div className="bg-card border rounded-xl p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                  <BookOpen className="w-5 h-5" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold tracking-tight">{t('createNewCourse')}</h1>
+                  <p className="text-sm text-muted-foreground">{t('createNewCourseDesc')}</p>
+                </div>
               </div>
 
-              <div className="pt-4 flex flex-col gap-4">
-                <button
-                  type="submit"
-                  disabled={loading || !title.trim()}
-                  className="w-full flex items-center justify-center gap-3 py-5 bg-primary text-primary-foreground font-black rounded-2xl shadow-2xl shadow-primary/20 hover:opacity-90 active:scale-95 disabled:opacity-50 transition-all"
-                >
+              {error && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              <form onSubmit={handleCreateCourse} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium">{t('courseName')}</Label>
+                  <Input
+                    autoFocus
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder={t('courseNamePlaceholder')}
+                    className="text-base"
+                  />
+                </div>
+                <Button type="submit" disabled={loading || !title.trim()} className="w-full gap-2">
                   {loading ? (
-                    <Loader2 className="w-6 h-6 animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    <Plus className="w-6 h-6" />
+                    <Plus className="w-4 h-4" />
                   )}
                   {t('startBuilding')}
-                </button>
-                <p className="text-center text-xs text-muted-foreground font-bold italic opacity-60">
+                </Button>
+                <p className="text-xs text-muted-foreground text-center">
                   {t('startBuildingDesc')}
                 </p>
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
+    </AuthGuard>
   );
 }

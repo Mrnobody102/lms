@@ -4,12 +4,12 @@
     "moduleResolution": "node",
     "module": "commonjs",
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": ".",
     "composite": false,
     "declaration": false,
     "declarationMap": false,
     "isolatedModules": false
   },
-  "include": ["src/**/*.ts", "index.ts"],
-  "exclude": ["node_modules", "prisma"]
+  "include": ["src/**/*.ts", "prisma/*.ts", ".eslintrc.js"],
+  "exclude": ["node_modules"]
 }

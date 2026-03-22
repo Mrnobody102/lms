@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
-import { AdminHeader } from '@/components/layout/admin-header';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
+import { AuthGuard } from '@/components/layout/auth-guard';
 import {
   useCourse,
   useUpdateCourse,
@@ -14,11 +14,13 @@ import {
 } from '@/hooks/use-courses';
 import { CourseForm } from '@/components/courses/course-form';
 import { LessonList } from '@/components/courses/lesson-list';
-import { AddLessonForm } from '@/components/courses/add-lesson-form';
-import { EditLessonForm } from '@/components/courses/edit-lesson-form';
+import { AddLessonDialog } from '@/components/courses/add-lesson-form';
+import { EditLessonDialog } from '@/components/courses/edit-lesson-form';
 import { CourseStats } from '@/components/courses/course-stats';
 import { Lesson } from '@/lib/course-api';
-import { ArrowLeft, ChevronRight, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ArrowLeft, ExternalLink, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function CourseEditorPage() {
@@ -35,28 +37,24 @@ export default function CourseEditorPage() {
   const [showAddLesson, setShowAddLesson] = useState(false);
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
   const [localTitle, setLocalTitle] = useState('');
 
   useEffect(() => {
-    if (course?.title) {
-      setLocalTitle(course.title);
-    }
+    if (course?.title) setLocalTitle(course.title);
   }, [course]);
+
+  const showMsg = (type: 'success' | 'error', key: string) => {
+    setMessage({ type, text: t(key) });
+    setTimeout(() => setMessage(null), 4000);
+  };
 
   const handleUpdateCourse = () => {
     if (!course) return;
     updateCourse.mutate(
       { id: courseId, data: { title: localTitle } },
       {
-        onSuccess: () => {
-          setMessage({ type: 'success', text: t('courseSaved') });
-          setTimeout(() => setMessage(null), 3000);
-        },
-        onError: () => {
-          setMessage({ type: 'error', text: t('courseSaveError') });
-          setTimeout(() => setMessage(null), 3000);
-        },
+        onSuccess: () => showMsg('success', 'courseSaved'),
+        onError: () => showMsg('error', 'courseSaveError'),
       },
     );
   };
@@ -67,14 +65,11 @@ export default function CourseEditorPage() {
         { courseId, data },
         {
           onSuccess: () => {
-            setShowAddLesson(false);
-            setMessage({ type: 'success', text: t('lessonAdded') });
-            setTimeout(() => setMessage(null), 3000);
+            showMsg('success', 'lessonAdded');
             resolve(true);
           },
           onError: () => {
-            setMessage({ type: 'error', text: t('lessonAddError') });
-            setTimeout(() => setMessage(null), 3000);
+            showMsg('error', 'lessonAddError');
             resolve(false);
           },
         },
@@ -90,13 +85,11 @@ export default function CourseEditorPage() {
         {
           onSuccess: () => {
             setEditingLesson(null);
-            setMessage({ type: 'success', text: t('lessonUpdated') });
-            setTimeout(() => setMessage(null), 3000);
+            showMsg('success', 'lessonUpdated');
             resolve(true);
           },
           onError: () => {
-            setMessage({ type: 'error', text: t('lessonUpdateError') });
-            setTimeout(() => setMessage(null), 3000);
+            showMsg('error', 'lessonUpdateError');
             resolve(false);
           },
         },
@@ -105,18 +98,11 @@ export default function CourseEditorPage() {
   };
 
   const handleDeleteLesson = (lessonId: string) => {
-    if (!confirm(t('confirmDeleteLesson'))) return;
     deleteLesson.mutate(
       { id: lessonId, courseId },
       {
-        onSuccess: () => {
-          setMessage({ type: 'success', text: t('lessonDeleted') });
-          setTimeout(() => setMessage(null), 3000);
-        },
-        onError: () => {
-          setMessage({ type: 'error', text: t('lessonDeleteError') });
-          setTimeout(() => setMessage(null), 3000);
-        },
+        onSuccess: () => showMsg('success', 'lessonDeleted'),
+        onError: () => showMsg('error', 'lessonDeleteError'),
       },
     );
   };
@@ -125,113 +111,129 @@ export default function CourseEditorPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center space-y-4">
-        <Loader2 className="w-12 h-12 animate-spin text-primary" />
-        <p className="font-black text-sm uppercase tracking-widest opacity-50">{t('loadEditor')}</p>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">{t('loadEditor')}</p>
+        </div>
       </div>
     );
   }
 
-  if (!course) return <div className="p-20 text-center font-black">Course not found.</div>;
+  if (!course) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Alert variant="destructive" className="max-w-sm">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>Course not found.</AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen font-sans flex bg-background/50">
-      <AdminSidebar />
-
-      <main className="flex-1 md:ml-64 p-6 md:p-10 lg:p-16">
-        <div className="max-w-5xl mx-auto">
-          <Link
-            href="/courses"
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8 font-bold text-sm group"
-          >
-            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-            {t('courses')}
-          </Link>
-
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-8">
-            <AdminHeader title={course.title} description={`ID: ${course.id}`} />
-            {lessons[0] ? (
-              <Link
-                href={`${process.env.NEXT_PUBLIC_WEB_STUDENT_URL || 'http://localhost:3000'}/vi/lessons/${lessons[0].id}`}
-                target="_blank"
-                className="px-6 py-3 bg-white border border-border rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-muted transition-all active:scale-95 flex items-center gap-2 shadow-sm shrink-0"
-              >
-                {t('previewFirstLesson')}
-                <ChevronRight className="w-4 h-4" />
-              </Link>
-            ) : (
-              <span className="px-6 py-3 bg-muted border border-border/50 rounded-2xl font-black text-xs uppercase tracking-widest opacity-40 flex items-center gap-2 shadow-sm shrink-0 cursor-not-allowed">
-                {t('noLessons')}
-              </span>
-            )}
-          </div>
-
-          {message && (
-            <div
-              className={`mb-8 p-6 rounded-3xl border flex items-center gap-4 animate-in slide-in-from-top duration-500 ${
-                message.type === 'success'
-                  ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600'
-                  : 'bg-destructive/10 border-destructive/20 text-destructive'
-              }`}
+    <AuthGuard>
+      <div className="min-h-screen flex bg-background">
+        <AdminSidebar />
+        <main className="flex-1 md:ml-64 p-6 lg:p-8">
+          <div className="max-w-5xl mx-auto">
+            {/* Back */}
+            <Link
+              href="/courses"
+              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 group"
             >
-              {message.type === 'success' ? (
-                <CheckCircle className="w-6 h-6" />
-              ) : (
-                <AlertCircle className="w-6 h-6" />
+              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+              {t('backToList')}
+            </Link>
+
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight">{course.title}</h1>
+                <p className="text-sm text-muted-foreground mt-0.5">ID: {course.id}</p>
+              </div>
+              {lessons[0] && (
+                <Link
+                  href={`${process.env.NEXT_PUBLIC_WEB_STUDENT_URL || 'http://localhost:3000'}/vi/lessons/${lessons[0].id}`}
+                  target="_blank"
+                  className="shrink-0"
+                >
+                  <Button variant="outline" size="sm" className="gap-1.5">
+                    <ExternalLink className="w-4 h-4" />
+                    {t('previewFirstLesson')}
+                  </Button>
+                </Link>
               )}
-              <p className="font-black text-sm">{message.text}</p>
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-            {/* Left side: Course info + lessons */}
-            <div className="lg:col-span-2 space-y-12">
-              <CourseForm
-                title={localTitle}
-                onTitleChange={setLocalTitle}
-                onSave={handleUpdateCourse}
-                saving={updateCourse.isPending}
-              />
-
-              <LessonList
-                lessons={lessons}
-                onEdit={(lesson) => {
-                  setEditingLesson(lesson);
-                  setShowAddLesson(false);
-                }}
-                onDelete={handleDeleteLesson}
-                onAddClick={() => {
-                  setShowAddLesson(true);
-                  setEditingLesson(null);
-                }}
-              />
             </div>
 
-            {/* Right side: Sidebar panels */}
-            <div className="space-y-8">
-              {showAddLesson && (
-                <AddLessonForm
-                  existingLessonsCount={lessons.length}
-                  onSubmit={handleAddLesson}
-                  onCancel={() => setShowAddLesson(false)}
-                  saving={createLesson.isPending}
-                />
-              )}
+            {/* Toast */}
+            {message && (
+              <div
+                className={`mb-4 flex items-center gap-2 p-3 rounded-lg border text-sm ${
+                  message.type === 'success'
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950 dark:border-emerald-800 dark:text-emerald-400'
+                    : 'bg-destructive/5 border-destructive/20 text-destructive'
+                }`}
+              >
+                {message.type === 'success' ? (
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                )}
+                {message.text}
+              </div>
+            )}
 
-              {editingLesson && (
-                <EditLessonForm
-                  lesson={editingLesson}
-                  onSubmit={handleUpdateLesson}
-                  onCancel={() => setEditingLesson(null)}
-                  saving={updateLesson.isPending}
-                />
-              )}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Left: Course Info + Lessons */}
+              <div className="lg:col-span-2 space-y-6">
+                <div className="bg-card border rounded-xl p-5">
+                  <h2 className="text-base font-semibold mb-4">{t('basicInfo')}</h2>
+                  <CourseForm
+                    title={localTitle}
+                    onTitleChange={setLocalTitle}
+                    onSave={handleUpdateCourse}
+                    saving={updateCourse.isPending}
+                  />
+                </div>
 
-              <CourseStats lessons={lessons} />
+                <div className="bg-card border rounded-xl p-5">
+                  <LessonList
+                    lessons={lessons}
+                    onEdit={(lesson) => setEditingLesson(lesson)}
+                    onDelete={handleDeleteLesson}
+                    onAddClick={() => setShowAddLesson(true)}
+                  />
+                </div>
+              </div>
+
+              {/* Right: Stats */}
+              <div className="space-y-4">
+                <div className="bg-card border rounded-xl p-5">
+                  <CourseStats lessons={lessons} />
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </main>
-    </div>
+        </main>
+
+        <AddLessonDialog
+          existingLessonsCount={lessons.length}
+          onSubmit={handleAddLesson}
+          open={showAddLesson}
+          onOpenChange={setShowAddLesson}
+          saving={createLesson.isPending}
+        />
+        <EditLessonDialog
+          lesson={editingLesson}
+          onSubmit={handleUpdateLesson}
+          open={!!editingLesson}
+          onOpenChange={(open) => {
+            if (!open) setEditingLesson(null);
+          }}
+          saving={updateLesson.isPending}
+        />
+      </div>
+    </AuthGuard>
   );
 }

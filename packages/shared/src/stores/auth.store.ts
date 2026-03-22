@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { create } from 'zustand';
 import type { AxiosStatic } from 'axios';
 
@@ -16,13 +17,13 @@ export interface AuthState {
   isInitialized: boolean;
   loading: boolean;
   error: string | null;
-  login: (_email: string, _password: string) => Promise<boolean>;
-  register?: (_fullName: string, _email: string, _password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<boolean>;
+  register?: (fullName: string, email: string, password: string) => Promise<boolean>;
   logout: () => void;
   checkAuth: () => void;
   clearError: () => void;
-  setAuth: (_token: string, _user: AuthUser) => void;
-  validateToken: (_token: string) => boolean;
+  setAuth: (token: string, user: AuthUser) => void;
+  validateToken: (token: string) => boolean;
 }
 
 export interface CreateAuthStoreOptions {
@@ -52,6 +53,16 @@ function validateToken(token: string | null): boolean {
   if (!payload) return false;
   const now = Math.floor(Date.now() / 1000);
   return !payload.exp || (payload.exp as number) >= now;
+}
+
+function extractErrorMsg(err: unknown, fallback: string): string {
+  const axiosErr = err as {
+    response?: { data?: { message?: string | string[]; success?: boolean } };
+  };
+  const data = axiosErr.response?.data;
+  const msg = data?.message;
+  if (!msg && data?.success === false) return fallback;
+  return Array.isArray(msg) ? msg[0] : (msg ?? fallback);
 }
 
 export function createAuthStore(options: CreateAuthStoreOptions) {
@@ -116,25 +127,8 @@ export function createAuthStore(options: CreateAuthStoreOptions) {
 
         set({ token, user: persistUser ? user : null, isAuthenticated: true, loading: false });
         return true;
-      } catch (err: unknown) {
-        const axiosErr = err as {
-          response?: {
-            data?: { message?: string | string[]; success?: boolean };
-            status?: number;
-          };
-          message?: string;
-          code?: string;
-        };
-        const data = axiosErr.response?.data;
-        let msg = data?.message;
-        // Fallback: if API returned { success: false } but no message
-        if (!msg && data?.success === false) {
-          msg = loginError;
-        }
-        set({
-          error: Array.isArray(msg) ? msg[0] : (msg ?? loginError),
-          loading: false,
-        });
+      } catch (err) {
+        set({ error: extractErrorMsg(err, loginError), loading: false });
         return false;
       }
     },
@@ -148,48 +142,35 @@ export function createAuthStore(options: CreateAuthStoreOptions) {
       set({ token: null, user: null, isAuthenticated: false });
     },
 
-    register: async (fullName: string, email: string, password: string) => {
+    register: async (fullName, email, password) => {
       set({ loading: true, error: null });
       try {
-        const response = await api.post<{ token: string; user: { tenantId?: string } }>(
-          '/auth/register',
-          { fullName, email, password },
-        );
+        const response = await api.post<{ token: string; user: AuthUser }>('/auth/register', {
+          fullName,
+          email,
+          password,
+        });
         const { token, user } = response.data;
 
         if (typeof window !== 'undefined') {
           localStorage.setItem('token', token);
-          if (persistUser) {
-            localStorage.setItem('user', JSON.stringify({ fullName, email }));
+          if (persistUser && user) {
+            localStorage.setItem('user', JSON.stringify(user));
             if (user.tenantId) {
               localStorage.setItem('tenantId', user.tenantId);
             }
           }
         }
 
-        set({ token, user: null, isAuthenticated: true, loading: false });
+        set({ token, user: persistUser ? user : null, isAuthenticated: true, loading: false });
         return true;
-      } catch (err: unknown) {
-        const axiosErr = err as {
-          response?: {
-            data?: { message?: string | string[]; success?: boolean };
-            status?: number;
-          };
-        };
-        const data = axiosErr.response?.data;
-        let msg = data?.message;
-        if (!msg && data?.success === false) {
-          msg = registerError;
-        }
-        set({
-          error: Array.isArray(msg) ? msg[0] : (msg ?? registerError),
-          loading: false,
-        });
+      } catch (err) {
+        set({ error: extractErrorMsg(err, registerError), loading: false });
         return false;
       }
     },
 
-    setAuth: (token: string, user: AuthUser) => {
+    setAuth: (token, user) => {
       if (!token || !user) return;
       if (!validateToken(token)) {
         if (typeof window !== 'undefined') {

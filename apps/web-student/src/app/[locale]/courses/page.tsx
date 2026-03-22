@@ -1,103 +1,144 @@
-"use client";
+'use client';
 
-import { useTranslations } from "next-intl";
+import { useTranslations } from 'next-intl';
 import {
   BookOpen,
   Map,
   GraduationCap,
   ArrowRight,
   Loader2,
-} from "lucide-react";
-import { ThemeToggle, LanguageToggle } from "@repo/ui";
-import { Link } from "../../../navigation";
-import { useCourses } from "../../../hooks/use-courses";
+  User as UserIcon,
+  LogOut,
+} from 'lucide-react';
+import { ThemeToggle, LanguageToggle } from '@repo/ui';
+import { Link } from '../../../navigation';
+import { useCourses } from '../../../hooks/use-courses';
+import { useAuthStore } from '../../../features/auth/auth.store';
 
 export default function CoursesPage() {
-  const t = useTranslations("Student");
+  const t = useTranslations('Student');
   const { data: courses = [], isLoading } = useCourses();
+  const { isAuthenticated, user, logout } = useAuthStore();
 
   return (
-    <div className="min-h-screen font-sans bg-background selection:bg-primary/20">
-      {/* Navbar Minimalist */}
-      <nav className="border-b bg-card/50 backdrop-blur-xl px-6 py-4 flex items-center justify-between sticky top-0 z-50">
-        <Link href="/" className="flex items-center gap-2 group">
-          <div className="h-10 w-10 bg-primary rounded-2xl flex items-center justify-center text-primary-foreground font-black shadow-lg shadow-primary/20 group-hover:rotate-6 transition-transform">
-            C
+    <div className="min-h-screen font-sans bg-background">
+      {/* Navbar */}
+      <nav className="border-b bg-card/80 backdrop-blur-md px-6 py-3 flex items-center justify-between sticky top-0 z-10">
+        <Link href="/" className="flex items-center gap-2">
+          <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold shadow-lg shadow-primary/20">
+            L
           </div>
-          <span className="font-extrabold text-xl tracking-tighter">
-            LMS<span className="text-primary italic">Student</span>
-          </span>
+          <span className="font-bold text-lg tracking-tight">LMS Learning</span>
         </Link>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           <ThemeToggle />
           <LanguageToggle />
+          <div className="w-px h-5 bg-border" />
+          {isAuthenticated ? (
+            <div className="flex items-center gap-1.5">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                <UserIcon className="w-4 h-4" />
+              </div>
+              <p className="text-sm font-medium hidden lg:block max-w-[100px] truncate">
+                {user?.fullName}
+              </p>
+              <button
+                onClick={() => logout()}
+                className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-destructive transition-all rounded-lg hover:bg-destructive/5"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="px-3.5 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all"
+              >
+                {t('cta.login')}
+              </Link>
+              <Link
+                href="/register"
+                className="px-3.5 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-all"
+              >
+                {t('cta.register')}
+              </Link>
+            </>
+          )}
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-6 py-16">
-        <header className="mb-16 text-center md:text-left">
-          <h1 className="text-5xl font-black tracking-tighter mb-4 italic">
-            {t("courses.title")}
-          </h1>
-          <p className="text-lg text-muted-foreground font-bold opacity-60 max-w-2xl">
-            {t("courses.subtitle")}
-          </p>
+      <main className="max-w-7xl mx-auto px-6 py-12">
+        <header className="mb-10">
+          <h1 className="text-3xl font-bold tracking-tight mb-2">{t('courses.title')}</h1>
+          <p className="text-muted-foreground text-base max-w-2xl">{t('courses.subtitle')}</p>
         </header>
 
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-32 space-y-4 opacity-50">
-            <Loader2 className="w-12 h-12 animate-spin text-primary" />
-            <p className="font-black text-xs uppercase tracking-[0.2em]">
-              Đang chuẩn bị nội dung...
+          <div className="flex flex-col items-center justify-center py-24 space-y-4 opacity-50">
+            <Loader2 className="w-10 h-10 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground font-medium">
+              {t('courses.loading') || 'Loading...'}
+            </p>
+          </div>
+        ) : courses.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+              <GraduationCap className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">
+              {t('courses.empty') || 'No courses available'}
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              {t('courses.emptyDesc') || 'Check back later.'}
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {courses.map((course) => (
               <div
                 key={course.id}
-                className="group bg-card/40 backdrop-blur-md rounded-[2.5rem] border border-border/50 shadow-2xl shadow-foreground/5 overflow-hidden flex flex-col hover:shadow-primary/10 transition-all duration-500 hover:-translate-y-2"
+                className="group bg-card border rounded-xl overflow-hidden flex flex-col hover:shadow-md hover:border-primary/20 transition-all"
               >
-                <div className="p-10 pb-0">
-                  <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mb-8 border border-primary/20 shadow-inner group-hover:rotate-12 transition-transform">
-                    <GraduationCap className="w-8 h-8" />
+                <div className="p-6">
+                  <div className="flex items-start justify-between gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                      <GraduationCap className="w-5 h-5" />
+                    </div>
+                    <h3 className="font-semibold text-base line-clamp-2 leading-snug group-hover:text-primary transition-colors">
+                      {course.title}
+                    </h3>
                   </div>
 
-                  <h3 className="text-2xl font-black mb-3 line-clamp-2 leading-tight min-h-[4rem] group-hover:text-primary transition-colors italic">
-                    {course.title}
-                  </h3>
-
-                  <div className="flex items-center gap-4 mb-8">
-                    <div className="flex items-center gap-2 px-3 py-1 bg-muted/50 rounded-lg text-[10px] font-black uppercase tracking-widest opacity-60">
-                      <BookOpen className="w-3 h-3" />
-                      {t("courses.lessonsCount", {
-                        count: course.lessons?.length || 0,
-                      })}
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <BookOpen className="w-3.5 h-3.5" />
+                      <span>
+                        {t('courses.lessonsCount', { count: course.lessons?.length || 0 })}
+                      </span>
                     </div>
-                    <div className="flex items-center gap-2 px-3 py-1 bg-muted/50 rounded-lg text-[10px] font-black uppercase tracking-widest opacity-60">
-                      <Map className="w-3 h-3" />
-                      {t("courses.duration", {
-                        minutes:
-                          course.lessons?.reduce(
-                            (acc: number, l) => acc + (l.duration || 0),
-                            0,
-                          ) || 0,
-                      })}
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Map className="w-3.5 h-3.5" />
+                      <span>
+                        {t('courses.duration', {
+                          minutes:
+                            course.lessons?.reduce(
+                              (acc: number, l: { duration?: number }) => acc + (l.duration || 0),
+                              0,
+                            ) || 0,
+                        })}
+                      </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-auto p-6 pt-0">
+                <div className="mt-auto px-6 pb-6">
                   <Link
-                    href={
-                      course.lessons?.[0]?.id
-                        ? `/lessons/${course.lessons[0].id}`
-                        : "#"
-                    }
-                    className="w-full flex items-center justify-between px-8 py-5 bg-primary text-primary-foreground rounded-3xl font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/20 hover:opacity-90 active:scale-95 transition-all group/btn"
+                    href={course.lessons?.[0]?.id ? `/lessons/${course.lessons[0].id}` : '#'}
+                    className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:opacity-90 active:scale-[0.98] transition-all"
                   >
-                    {t("courses.startNow")}
-                    <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
+                    {t('courses.startNow')}
+                    <ArrowRight className="w-4 h-4" />
                   </Link>
                 </div>
               </div>

@@ -1,107 +1,138 @@
 'use client';
 
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { AdminHeader } from '@/components/layout/admin-header';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
-import { useCourses } from '@/hooks/use-courses';
-import { BookOpen, MoreVertical, Edit2, ExternalLink, Loader2 } from 'lucide-react';
+import { AuthGuard } from '@/components/layout/auth-guard';
+import { useCourses, useDeleteCourse } from '@/hooks/use-courses';
+import { CourseCard } from '@/components/courses/course-card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { BookOpen, AlertCircle, Search } from 'lucide-react';
 import Link from 'next/link';
 
 export default function CoursesPage() {
   const t = useTranslations('Admin');
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState<'all' | 'published' | 'draft'>('all');
+
   const { data: courseData, isLoading, error } = useCourses();
-  const courses = Array.isArray(courseData?.data) ? courseData.data : [];
+  const deleteCourse = useDeleteCourse();
+
+  const allCourses = Array.isArray(courseData?.data) ? courseData.data : [];
+  const courses = allCourses.filter((c) => {
+    const matchesSearch = c.title.toLowerCase().includes(search.toLowerCase());
+    const matchesFilter =
+      filter === 'all' ||
+      (filter === 'published' && (c.lessons?.length ?? 0) > 0) ||
+      (filter === 'draft' && (c.lessons?.length ?? 0) === 0);
+    return matchesSearch && matchesFilter;
+  });
+
   const errorMessage = error instanceof Error ? error.message : error ? String(error) : null;
 
+  const handleDelete = (courseId: string) => {
+    deleteCourse.mutate(courseId);
+  };
+
   return (
-    <div className="min-h-screen font-sans flex transition-colors duration-300 bg-background/50">
-      <AdminSidebar />
+    <AuthGuard>
+      <div className="min-h-screen flex bg-background">
+        <AdminSidebar />
+        <main className="flex-1 md:ml-64 p-6 lg:p-8">
+          <div className="max-w-6xl mx-auto">
+            <AdminHeader
+              title={t('courses')}
+              description={t('courseManagement')}
+              showCreateCourse={true}
+            />
 
-      {/* Main Content */}
-      <main className="flex-1 md:ml-64 p-6 md:p-10 lg:p-16">
-        <AdminHeader
-          title={t('courses')}
-          description={t('courseManagement')}
-          showCreateCourse={true}
-        />
-
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-32 space-y-4 opacity-50">
-            <Loader2 className="w-10 h-10 animate-spin text-primary" />
-            <p className="font-bold text-sm uppercase tracking-[0.2em]">{t('loading')}</p>
-          </div>
-        ) : errorMessage ? (
-          <div className="p-10 rounded-[2rem] bg-destructive/5 border border-destructive/20 text-destructive text-center space-y-4">
-            <p className="font-bold">{errorMessage}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="px-6 py-2 bg-destructive text-white rounded-xl font-bold text-sm"
-            >
-              {t('retry')}
-            </button>
-          </div>
-        ) : courses.length === 0 ? (
-          <div className="p-20 rounded-[3rem] bg-card/30 border border-dashed flex flex-col items-center justify-center text-center space-y-6">
-            <div className="w-20 h-20 bg-muted rounded-[2rem] flex items-center justify-center text-muted-foreground opacity-20">
-              <BookOpen className="w-10 h-10" />
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-xl font-black">{t('noCourses')}</h3>
-              <p className="text-muted-foreground font-medium max-w-xs">{t('noCoursesDesc')}</p>
-            </div>
-            <Link
-              href="/courses/new"
-              className="px-8 py-3 bg-primary text-primary-foreground font-black rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95"
-            >
-              {t('createCourseNow')}
-            </Link>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {courses.map((course) => (
-              <div
-                key={course.id}
-                className="bg-card/40 backdrop-blur-md rounded-[2.5rem] border border-border shadow-2xl shadow-foreground/5 overflow-hidden flex flex-col group hover:shadow-primary/10 transition-all duration-500 hover:-translate-y-2"
-              >
-                <div className="p-8 pb-0">
-                  <div className="flex items-start justify-between mb-6">
-                    <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center text-primary border border-primary/20 shadow-inner group-hover:rotate-6 transition-transform">
-                      <BookOpen className="w-7 h-7" />
-                    </div>
-                    <button className="p-2 hover:bg-muted rounded-xl transition-colors">
-                      <MoreVertical className="w-5 h-5 opacity-40" />
-                    </button>
-                  </div>
-
-                  <h3 className="text-xl font-black mb-2 line-clamp-2 leading-tight min-h-[3.5rem] group-hover:text-primary transition-colors">
-                    {course.title}
-                  </h3>
-
-                  <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest opacity-60 mb-8">
-                    {course._count?.lessons || 0} {t('lessons')}
-                  </p>
-                </div>
-
-                <div className="mt-auto p-4 bg-muted/30 border-t border-border/50 flex gap-2">
-                  <Link
-                    href={`/courses/${course.id}/edit`}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-card border border-border rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-muted transition-all active:scale-95 group/btn"
-                  >
-                    <Edit2 className="w-3.5 h-3.5 group-hover/btn:-rotate-12 transition-transform" />
-                    {t('edit')}
-                  </Link>
-                  <Link
-                    href={`/courses/${course.id}`} // Preview or specific view
-                    className="w-12 h-12 flex items-center justify-center bg-primary/10 text-primary border border-primary/20 rounded-2xl hover:bg-primary hover:text-white transition-all active:scale-95 shadow-inner"
-                  >
-                    <ExternalLink className="w-5 h-5" />
-                  </Link>
-                </div>
+            {/* Search & Filter Bar */}
+            <div className="flex flex-col sm:flex-row gap-3 mb-6">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                <Input
+                  placeholder={t('searchCourses')}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-9"
+                />
               </div>
-            ))}
+              <div className="flex gap-2">
+                {(['all', 'published', 'draft'] as const).map((f) => (
+                  <Button
+                    key={f}
+                    variant={filter === f ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setFilter(f)}
+                  >
+                    {f === 'all'
+                      ? t('allCourses')
+                      : f === 'published'
+                        ? t('published')
+                        : t('draft')}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <Separator className="mb-8" />
+
+            {/* Content */}
+            {isLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="bg-card border rounded-xl p-5 space-y-3">
+                    <div className="flex justify-between">
+                      <Skeleton className="w-10 h-10 rounded-lg" />
+                      <Skeleton className="w-8 h-8 rounded-md" />
+                    </div>
+                    <Skeleton className="h-5 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                    <Skeleton className="h-8 w-20 rounded-md" />
+                  </div>
+                ))}
+              </div>
+            ) : errorMessage ? (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{errorMessage}</AlertDescription>
+              </Alert>
+            ) : courses.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-24 text-center">
+                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                  <BookOpen className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">{t('noCourses')}</h3>
+                <p className="text-sm text-muted-foreground max-w-sm mb-6">{t('noCoursesDesc')}</p>
+                <Link href="/courses/new">
+                  <Button>{t('createCourseNow')}</Button>
+                </Link>
+              </div>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {courses.length} {courses.length === 1 ? 'course' : 'courses'}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {courses.map((course) => (
+                    <CourseCard
+                      key={course.id}
+                      course={course}
+                      onDelete={handleDelete}
+                      deleting={deleteCourse.isPending}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
           </div>
-        )}
-      </main>
-    </div>
+        </main>
+      </div>
+    </AuthGuard>
   );
 }

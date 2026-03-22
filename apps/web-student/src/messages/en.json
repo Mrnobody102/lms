@@ -108,7 +108,10 @@
       "startNow": "Start Now",
       "noLessons": "No lessons",
       "duration": "{minutes} mins",
-      "lessonsCount": "{count} lessons"
+      "lessonsCount": "{count} lessons",
+      "loading": "Loading courses...",
+      "empty": "No courses available",
+      "emptyDesc": "Check back later for new courses."
     }
   }
 }

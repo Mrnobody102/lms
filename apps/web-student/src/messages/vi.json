@@ -108,7 +108,10 @@
       "startNow": "Học ngay",
       "noLessons": "Chưa có bài học",
       "duration": "{minutes} phút",
-      "lessonsCount": "{count} bài học"
+      "lessonsCount": "{count} bài học",
+      "loading": "Đang tải khóa học...",
+      "empty": "Chưa có khóa học nào",
+      "emptyDesc": "Hãy quay lại sau để khám phá các khóa học mới."
     }
   }
 }

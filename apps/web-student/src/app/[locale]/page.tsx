@@ -24,17 +24,20 @@ export default function Home() {
     checkAuth();
   }, [checkAuth]);
 
+  // Guard: if already authenticated, don't allow modal to open
+  const canOpenModal = isAuthenticated === false;
+
   return (
     <div className="min-h-screen font-sans">
       {/* Navbar */}
-      <nav className="border-b bg-card/80 backdrop-blur-md px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+      <nav className="border-b bg-card/80 backdrop-blur-md px-6 py-3 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-2">
           <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold shadow-lg shadow-primary/20">
             L
           </div>
-          <span className="font-bold text-xl tracking-tight">LMS Learning</span>
+          <span className="font-bold text-lg tracking-tight">LMS Learning</span>
         </div>
-        <div className="flex gap-6 text-sm font-medium text-muted-foreground">
+        <div className="flex gap-5 text-sm font-medium text-muted-foreground">
           <Link href="#" className="hover:text-primary transition-colors">
             {t('nav.courses')}
           </Link>
@@ -48,45 +51,41 @@ export default function Home() {
             {t('nav.blog')}
           </Link>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <ThemeToggle />
           <LanguageToggle />
-
+          <div className="w-px h-5 bg-border" />
           {isAuthenticated ? (
-            <div className="flex items-center gap-4 ml-2">
-              <div className="flex items-center gap-2 group cursor-pointer">
-                <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all shadow-inner">
-                  <UserIcon className="w-5 h-5" />
-                </div>
-                <div className="hidden md:block">
-                  <p className="text-sm font-black truncate max-w-[120px] tracking-tight">
-                    {user?.fullName}
-                  </p>
-                </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                <UserIcon className="w-4 h-4" />
               </div>
+              <p className="text-sm font-medium hidden lg:block max-w-[100px] truncate">
+                {user?.fullName}
+              </p>
               <button
                 onClick={() => logout()}
-                className="w-10 h-10 flex items-center justify-center text-muted-foreground hover:text-destructive transition-all rounded-2xl hover:bg-destructive/10"
+                className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-destructive transition-all rounded-lg hover:bg-destructive/5"
                 title={t('cta.logout') || 'Logout'}
               >
-                <LogOut className="w-5 h-5" />
+                <LogOut className="w-4 h-4" />
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <>
               <Link
                 href="/login"
-                className="px-6 py-2.5 text-sm font-black uppercase tracking-widest hover:bg-muted rounded-2xl transition-all active:scale-95"
+                className="px-3.5 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all border border-transparent hover:border-border"
               >
                 {t('cta.login')}
               </Link>
               <Link
                 href="/register"
-                className="px-6 py-2.5 text-sm font-black uppercase tracking-widest bg-primary text-primary-foreground rounded-2xl hover:shadow-lg hover:shadow-primary/20 active:scale-95 transition-all"
+                className="px-3.5 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-all hover:shadow-md"
               >
                 {t('cta.register')}
               </Link>
-            </div>
+            </>
           )}
         </div>
       </nav>
@@ -185,11 +184,13 @@ export default function Home() {
         </div>
       </footer>
 
-      <AuthModal
-        isOpen={authModal.open}
-        onClose={() => setAuthModal({ ...authModal, open: false })}
-        defaultTab={authModal.tab}
-      />
+      {canOpenModal && (
+        <AuthModal
+          isOpen={authModal.open}
+          onClose={() => setAuthModal({ ...authModal, open: false })}
+          defaultTab={authModal.tab}
+        />
+      )}
     </div>
   );
 }

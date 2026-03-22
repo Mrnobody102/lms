@@ -52,9 +52,7 @@ export function QuizContent({ quiz }: QuizContentProps) {
       <div className="p-8 rounded-[2rem] bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 flex items-center justify-between transition-all duration-700">
         <div>
           <h3 className="text-xl font-black tracking-tight mb-2">{t('quiz.finalAssessment')}</h3>
-          <p className="text-sm text-muted-foreground font-medium italic">
-            {t('quiz.testKnowledge')}
-          </p>
+          <p className="text-sm text-muted-foreground font-medium">{t('quiz.testKnowledge')}</p>
         </div>
         <Trophy className="w-12 h-12 text-primary opacity-20" />
       </div>
@@ -67,9 +65,7 @@ export function QuizContent({ quiz }: QuizContentProps) {
             style={{ transitionDelay: `${qIdx * 100}ms` }}
           >
             <h4 className="text-lg font-black flex gap-4">
-              <span className="text-primary opacity-30 italic">
-                {String(qIdx + 1).padStart(2, '0')}
-              </span>
+              <span className="text-primary opacity-30">{String(qIdx + 1).padStart(2, '0')}</span>
               {q.question}
             </h4>
 
@@ -135,7 +131,7 @@ export function QuizContent({ quiz }: QuizContentProps) {
         <div className="p-10 rounded-[2rem] bg-emerald-500 text-white shadow-2xl shadow-emerald-500/30 flex flex-col items-center justify-center text-center transition-all duration-500 mt-10 scale-in-center">
           <Trophy className="w-16 h-16 mb-6" />
           <h3 className="text-3xl font-black mb-2">{t('quiz.greatEffort')}</h3>
-          <p className="text-emerald-50 font-bold mb-8 italic">
+          <p className="text-emerald-50 font-bold mb-8">
             {t('quiz.yourScore', {
               score: calculateScore(),
               total: quiz.questions.length,

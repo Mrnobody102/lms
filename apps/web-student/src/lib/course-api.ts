@@ -28,7 +28,7 @@ export interface Course {
 export const courseApi = {
   getCourses: async () => {
     const response = await api.get<Course[]>('/courses');
-    const raw = response.data as Record<string, unknown>;
+    const raw = response.data as unknown as Record<string, unknown>;
     if (raw && raw.success === false) {
       const msg = raw.message || 'Failed to load courses';
       throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg));

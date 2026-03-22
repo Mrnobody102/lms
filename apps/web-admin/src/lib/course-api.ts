@@ -64,7 +64,7 @@ export const courseApi = {
   },
 
   deleteLesson(id: string) {
-    return api.delete(`/courses/${id}`);
+    return api.delete(`/lessons/${id}`);
   },
 
   // Returns { data: Lesson[], meta } — caller extracts .data for array
