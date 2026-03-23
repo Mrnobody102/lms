@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { PrismaService } from "./common/services/prisma.service";
-import { Prisma, LessonType } from "@repo/database";
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../common/services/prisma.service';
+import { Prisma, LessonType } from '@repo/database';
 
 @Injectable()
 export class LessonService {
@@ -22,14 +22,12 @@ export class LessonService {
       where: { id: data.courseId, tenantId: data.tenantId },
     });
     if (!course)
-      throw new NotFoundException(
-        `Course with ID ${data.courseId} not found in this tenant`,
-      );
+      throw new NotFoundException(`Course with ID ${data.courseId} not found in this tenant`);
 
     return this.prisma.lesson.create({
       data: {
         title: data.title,
-        type: (data.type as LessonType) || "text",
+        type: (data.type as LessonType) || 'text',
         content: data.content,
         videoUrl: data.videoUrl,
         duration: data.duration || 10,
@@ -54,7 +52,7 @@ export class LessonService {
         where: { courseId, tenantId },
         skip,
         take: limit,
-        orderBy: { order: "asc" },
+        orderBy: { order: 'asc' },
       }),
       this.prisma.lesson.count({ where: { courseId, tenantId } }),
     ]);
@@ -74,10 +72,7 @@ export class LessonService {
     const lesson = await this.prisma.lesson.findFirst({
       where: { id, tenantId },
     });
-    if (!lesson)
-      throw new NotFoundException(
-        `Lesson with ID ${id} not found in this tenant`,
-      );
+    if (!lesson) throw new NotFoundException(`Lesson with ID ${id} not found in this tenant`);
     return lesson;
   }
 

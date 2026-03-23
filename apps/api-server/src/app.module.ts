@@ -9,9 +9,9 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { AdminModule } from './admin/admin.module';
 import { McpModule } from './mcp/mcp.module';
-import { LessonModule } from './lesson.module';
-import { CourseModule } from './course.module';
-import { ProgressModule } from './progress.module';
+import { LessonModule } from './lesson/lesson.module';
+import { CourseModule } from './course/course.module';
+import { ProgressModule } from './progress/progress.module';
 import { HealthModule } from './common/health/health.module';
 
 @Module({

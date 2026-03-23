@@ -1,5 +1,5 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { PrismaService } from "./common/services/prisma.service";
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../common/services/prisma.service';
 
 @Injectable()
 export class CourseService {
@@ -25,7 +25,7 @@ export class CourseService {
 
     const where = { tenantId };
     if (search) {
-      Object.assign(where, { title: { contains: search, mode: "insensitive" as const } });
+      Object.assign(where, { title: { contains: search, mode: 'insensitive' as const } });
     }
 
     const [courses, total] = await Promise.all([
@@ -38,7 +38,7 @@ export class CourseService {
             select: { lessons: true },
           },
         },
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: 'desc' },
       }),
       this.prisma.course.count({ where }),
     ]);
@@ -59,18 +59,19 @@ export class CourseService {
       where: { id, tenantId },
       include: {
         lessons: {
-          orderBy: { order: "asc" },
+          orderBy: { order: 'asc' },
         },
       },
     });
-    if (!course)
-      throw new NotFoundException(
-        `Course with ID ${id} not found in this tenant`,
-      );
+    if (!course) throw new NotFoundException(`Course with ID ${id} not found in this tenant`);
     return course;
   }
 
-  async update(id: string, tenantId: string, data: { title?: string; slug?: string; totalDuration?: number }) {
+  async update(
+    id: string,
+    tenantId: string,
+    data: { title?: string; slug?: string; totalDuration?: number },
+  ) {
     // Ensure course exists and belongs to tenant
     await this.findOne(id, tenantId);
 

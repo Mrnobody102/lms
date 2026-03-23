@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useAuthStore } from '../auth.store';
 import { Loader2, AlertCircle, Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { Button, Input, Label } from '@repo/ui';
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -35,10 +36,10 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
 
       {/* Email */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-foreground">{t('auth.email')}</label>
+        <Label>{t('auth.email')}</Label>
         <div className="relative">
           <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-          <input
+          <Input
             type="email"
             required
             value={email}
@@ -47,7 +48,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
               if (error) clearError();
             }}
             placeholder="email@example.com"
-            className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl pl-10 pr-4 py-3 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-primary/70 focus:ring-2 focus:ring-primary/20 transition-all"
+            className="pl-10 pr-4"
           />
         </div>
       </div>
@@ -55,7 +56,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
       {/* Password */}
       <div className="space-y-2">
         <div className="flex justify-between items-center">
-          <label className="text-sm font-medium text-foreground">{t('auth.password')}</label>
+          <Label>{t('auth.password')}</Label>
           <button
             type="button"
             className="text-xs text-muted-foreground hover:text-foreground transition-colors"
@@ -65,7 +66,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
         </div>
         <div className="relative">
           <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-          <input
+          <Input
             type={showPassword ? 'text' : 'password'}
             required
             value={password}
@@ -74,12 +75,12 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
               if (error) clearError();
             }}
             placeholder="••••••••"
-            className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl pl-10 pr-12 py-3 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-primary/70 focus:ring-2 focus:ring-primary/20 transition-all"
+            className="pl-10 pr-12"
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-muted-foreground/10"
           >
             {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
@@ -87,11 +88,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
       </div>
 
       {/* Submit */}
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full bg-primary hover:bg-primary/90 disabled:bg-primary/50 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 mt-2"
-      >
+      <Button type="submit" disabled={loading} className="w-full mt-2">
         {loading ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -100,7 +97,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
         ) : (
           <span>{t('auth.loginButton')}</span>
         )}
-      </button>
+      </Button>
     </form>
   );
 }

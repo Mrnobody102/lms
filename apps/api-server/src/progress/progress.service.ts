@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { ProgressStatus } from "@repo/database";
-import { PrismaService } from "./common/services/prisma.service";
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { ProgressStatus } from '@repo/database';
+import { PrismaService } from '../common/services/prisma.service';
 
 @Injectable()
 export class ProgressService {
@@ -10,12 +10,7 @@ export class ProgressService {
    * Update or create a progress record for a user and lesson.
    * Ensures the lesson belongs to the user's tenant.
    */
-  async updateProgress(
-    userId: string,
-    lessonId: string,
-    status: ProgressStatus,
-    tenantId: string,
-  ) {
+  async updateProgress(userId: string, lessonId: string, status: ProgressStatus, tenantId: string) {
     // Verify lesson ownership
     const lesson = await this._prisma.lesson.findFirst({
       where: { id: lessonId, tenantId },
@@ -54,7 +49,7 @@ export class ProgressService {
         },
       },
       orderBy: {
-        updatedAt: "desc",
+        updatedAt: 'desc',
       },
     });
   }
@@ -74,9 +69,7 @@ export class ProgressService {
     });
 
     if (!progress) {
-      throw new NotFoundException(
-        `Progress not found for lesson ${lessonId} and user ${userId}`,
-      );
+      throw new NotFoundException(`Progress not found for lesson ${lessonId} and user ${userId}`);
     }
 
     return progress;

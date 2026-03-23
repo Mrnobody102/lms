@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useAuthStore } from '../auth.store';
 import { Loader2, AlertCircle, Eye, EyeOff, User, Mail, Lock } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { Button, Input, Label } from '@repo/ui';
 
 interface RegisterFormProps {
   onSuccess?: () => void;
@@ -36,13 +37,11 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
       )}
 
       {/* Full Name */}
-      <div className="space-y-1.5">
-        <label className="text-sm font-medium text-foreground">{t('auth.name')}</label>
+      <div className="space-y-2">
+        <Label>{t('auth.name')}</Label>
         <div className="relative">
-          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground">
-            <User className="w-4 h-4" />
-          </div>
-          <input
+          <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          <Input
             type="text"
             required
             value={fullName}
@@ -51,19 +50,17 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
               if (error) clearError();
             }}
             placeholder="Nguyễn Văn A"
-            className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl pl-10 pr-4 py-3 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-primary/70 focus:ring-2 focus:ring-primary/20 transition-all"
+            className="pl-10 pr-4"
           />
         </div>
       </div>
 
       {/* Email */}
-      <div className="space-y-1.5">
-        <label className="text-sm font-medium text-foreground">{t('auth.email')}</label>
+      <div className="space-y-2">
+        <Label>{t('auth.email')}</Label>
         <div className="relative">
-          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground">
-            <Mail className="w-4 h-4" />
-          </div>
-          <input
+          <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          <Input
             type="email"
             required
             value={email}
@@ -72,19 +69,17 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
               if (error) clearError();
             }}
             placeholder="email@example.com"
-            className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl pl-10 pr-4 py-3 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-primary/70 focus:ring-2 focus:ring-primary/20 transition-all"
+            className="pl-10 pr-4"
           />
         </div>
       </div>
 
       {/* Password */}
-      <div className="space-y-1.5">
-        <label className="text-sm font-medium text-foreground">{t('auth.password')}</label>
+      <div className="space-y-2">
+        <Label>{t('auth.password')}</Label>
         <div className="relative">
-          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground">
-            <Lock className="w-4 h-4" />
-          </div>
-          <input
+          <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          <Input
             type={showPassword ? 'text' : 'password'}
             required
             minLength={8}
@@ -94,7 +89,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
               if (error) clearError();
             }}
             placeholder="Tối thiểu 8 ký tự"
-            className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl pl-10 pr-12 py-3 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-primary/70 focus:ring-2 focus:ring-primary/20 transition-all"
+            className="pl-10 pr-12"
           />
           <button
             type="button"
@@ -107,11 +102,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
       </div>
 
       {/* Submit */}
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full bg-primary hover:bg-primary/90 disabled:bg-primary/50 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 mt-2"
-      >
+      <Button type="submit" disabled={loading} className="w-full mt-2">
         {loading ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -120,7 +111,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
         ) : (
           <span>{t('auth.registerButton')}</span>
         )}
-      </button>
+      </Button>
 
       <p className="text-[11px] text-center text-muted-foreground leading-relaxed px-2">
         {t('auth.terms')}
