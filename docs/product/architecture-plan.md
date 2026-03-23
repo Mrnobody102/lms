@@ -1,6 +1,4 @@
-# Architecture Review & Improvement Plan
-
-# LMS Platform — Production Readiness Roadmap
+# LMS Platform — Architecture Review & Production Readiness Roadmap
 
 > **Ngày review:** 2026-03-21
 > **Phạm vi:** Toàn bộ monorepo (apps/api-server, apps/web-admin, apps/web-student, apps/super-portal, packages/)

@@ -14,20 +14,22 @@ LMS Platform là một hệ thống Multi-tenant dành cho các trung tâm đào
 ```
 lms-platform/
 ├── apps/
-│   ├── api-server/          # NestJS backend (REST API)
-│   ├── web-admin/           # Next.js 15 admin dashboard
-│   ├── web-student/         # Next.js 15 student portal
-│   └── super-portal/        # Next.js 15 super admin portal
+│   ├── api-server/          # NestJS backend (REST API, port 4000)
+│   ├── web-admin/          # Next.js admin dashboard (port 3001)
+│   ├── web-student/        # Next.js student portal (port 3000)
+│   └── super-portal/       # Next.js super admin portal (port 3002)
 ├── packages/
-│   ├── database/            # Prisma schema and client
-│   ├── ui/                 # Shared UI components
-│   ├── shared/              # Common types, constants, utils
-│   ├── api-client/          # Shared axios API client
-│   ├── eslint-config/       # Shared ESLint config
-│   └── ts-config/           # Shared TypeScript configs
-├── agent-knowledge/
-│   ├── lms-platform/        # Project overview
+│   ├── database/           # Prisma schema and client
+│   ├── ui/                 # Shared UI components (shadcn/ui)
+│   ├── shared/             # Common types, constants, auth store
+│   ├── api-client/         # Shared axios API client
+│   ├── eslint-config/      # Shared ESLint config
+│   └── ts-config/          # Shared TypeScript configs
+├── docs/                   # Tài liệu dự án
+├── agent-knowledge/        # AI Agent knowledge base (BMAD)
 │   └── skills/             # Domain-specific skills
+├── deployment/             # Docker configs for production
+└── .github/workflows/     # CI/CD (GitHub Actions)
 ```
 
 ## 3. Các thực thể cốt lõi (Core Entities)
@@ -41,9 +43,7 @@ lms-platform/
 ## 4. Quy luật nghiệp vụ (Business Rules)
 
 1. **Isolation**: Dữ liệu giữa các Tenant phải tuyệt đối riêng biệt (Đã xử lý tại lớp `TenantMiddleware`).
-2. **Access Control**:
-   - AI Agent tương tác qua MCP cần tuân thủ Role của User đang thực thi.
-   - Các kỹ năng tìm kiếm (`course_search`) chỉ trả về dữ liệu thuộc Tenant của User đó.
+2. **Access Control**: Các endpoint mutation (POST/PATCH/DELETE) trên Course và Lesson yêu cầu Role ADMIN hoặc SUPER_ADMIN.
 3. **Roles**: SUPER_ADMIN, ADMIN, INSTRUCTOR, STUDENT.
 
 ## 5. Technology Stack
@@ -51,20 +51,37 @@ lms-platform/
 | Layer           | Technology               | Notes                                             |
 | --------------- | ------------------------ | ------------------------------------------------- |
 | Backend         | NestJS                   | TypeScript, Prisma, class-validator, Swagger      |
-| Frontend        | Next.js 15               | App Router, React Server Components, Tailwind CSS |
-| Database        | PostgreSQL               | Prisma ORM, multi-tenant via `tenantId`           |
-| State (Client)  | Zustand + React Query v5 | Auth via Zustand, server state via TanStack Query |
+| Frontend        | Next.js (App Router)     | React Server Components, Tailwind CSS             |
+| Database        | PostgreSQL (Docker)      | Prisma ORM, multi-tenant via `tenantId`           |
+| State (Client)  | Zustand + TanStack Query | Auth via Zustand, server state via TanStack Query |
 | i18n            | next-intl                | Vietnamese and English                            |
-| Package Manager | pnpm                     | Workspaces                                        |
+| Package Manager | pnpm 9                   | Workspaces                                        |
 | Build Tool      | Turborepo                | Remote caching, selective builds                  |
+| CI/CD           | GitHub Actions           | Lint, typecheck, build pipeline                   |
 
 ## 6. Cấu trúc Module Context (AI Skills)
 
-Hệ thống AI Skills được tổ chức theo hướng **Modular**:
+Hệ thống AI Skills được tổ chức theo hướng **Modular** trong `agent-knowledge/skills/`:
 
-- `mcp-core-skills`: Các kỹ năng cơ bản về hạ tầng và tìm kiếm.
-- `auth-module`: Ngữ cảnh về xác thực và bảo mật.
-- `course-module`: Ngữ cảnh về quản lý học thuật.
+- `architecture-core`: Hiểu app boundaries và monorepo layout
+- `auth-standards`: Implement login, registration, JWT flow
+- `database-operations`: Chạy migrations, seeding, Prisma changes
+- `nestjs-standards`: Building API endpoints với NestJS
+- `nextjs-standards`: Building frontend pages và components
+- `i18n-workflow`: Thêm hoặc cập nhật translations
+- `testing-strategy`: Viết unit và integration tests
+- `engineering-planning`: Lên kế hoạch features hoặc refactors
+
+## 7. Tài liệu tham khảo nhanh
+
+| Tài liệu           | Đường dẫn                           |
+| ------------------ | ----------------------------------- |
+| Tổng quan dự án    | `README.md`                         |
+| Cấu trúc code      | `PROJECT_STRUCTURE.md`              |
+| Kiến trúc hệ thống | `docs/ARCHITECTURE.md`              |
+| Hướng dẫn bắt đầu  | `docs/quick-start.md`               |
+| API Documentation  | `docs/api-documentation.md`         |
+| Production roadmap | `docs/product/architecture-plan.md` |
 
 ---
 

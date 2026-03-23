@@ -57,7 +57,7 @@ If Docker continues to fail, install PostgreSQL 15/16 directly on your machine.
 
 Once the database is running:
 
-- [ ] **Verify Connection**: `Test-NetConnection -ComputerName localhost -Port 5432`
+- [ ] **Verify Connection**: `Test-NetConnection -ComputerName localhost -Port 5433`
 - [ ] **Run Migrations**: `pnpm db:migrate`
 - [ ] **Seed Data**: Use Prisma Studio (`pnpm --filter @repo/database db:studio`) to add a test tenant if necessary.
 - [ ] **Start API**: `pnpm dev` (should run on `http://localhost:4000/api`)

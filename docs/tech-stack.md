@@ -34,7 +34,7 @@
   - Client State: [Zustand](https://docs.pmnd.rs/zustand) - Quản lý global state nhẹ nhàng.
 - **Form Handling**: [React Hook Form](https://react-hook-form.com/) + [Zod](https://zod.dev/).
 
-### 6. Mobile App (Chiến Lược Tương Lai)
+### Mobile App (Chiến Lược Tương Lai)
 
 - **Framework**: **React Native (Expo)**.
   - _Lý do_: Tận dụng được tối đa code logic đã viết bằng TypeScript trong Monorepo (các gói `packages/shared`, `packages/api-client`). Đội ngũ dev frontend (React/Next.js) có thể dễ dàng tham gia phát triển.

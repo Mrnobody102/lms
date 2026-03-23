@@ -51,8 +51,8 @@ start "LMS-Portal" cmd /k "cd /d %D% && pnpm run dev --filter super-portal"
 echo.
 echo === Started ===
 echo   API Server:   http://localhost:4000
-echo   Web Admin:    http://localhost:3000/vi/login
-echo   Web Student:  http://localhost:3001/vi/login
+echo   Web Student:  http://localhost:3000/vi/login
+echo   Web Admin:    http://localhost:3001/vi/login
 echo   Super Portal: http://localhost:3002/vi/
 echo.
 echo IMPORTANT: Clear browser localStorage first!
