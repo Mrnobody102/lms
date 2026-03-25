@@ -5,8 +5,13 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "inputs": ["src/**", "next.config.*", "tsconfig.json", "package.json"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**", ".turbo/**"]
+      "inputs": ["src/**", "prisma/**", "next.config.*", "tsconfig.json", "package.json"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**", ".turbo/**"]
+    },
+    "@repo/database#build": {
+      "dependsOn": [],
+      "inputs": ["prisma/**", "package.json", "tsconfig.json"],
+      "outputs": ["dist/**", ".prisma/client/**"]
     },
     "lint": {
       "inputs": ["**/*.ts", "**/*.tsx", "**/*.js", "**/.eslintrc*"],

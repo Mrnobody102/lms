@@ -11,87 +11,47 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  setup:
-    name: Setup
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-      - run: pnpm install --frozen-lockfile
-      - name: Upload pnpm store
-        uses: actions/upload-artifact@v4
-        with:
-          name: pnpm-store
-          path: ~/.pnpm-store
-          retention-days: 1
-
   typecheck:
     name: Type Check
     runs-on: ubuntu-latest
-    needs: setup
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'pnpm'
-      - name: Restore pnpm store
-        uses: actions/download-artifact@v4
-        with:
-          name: pnpm-store
-          path: ~/.pnpm-store
       - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @repo/database generate
       - run: pnpm turbo typecheck
 
   lint:
     name: Lint
     runs-on: ubuntu-latest
-    needs: setup
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'pnpm'
-      - name: Restore pnpm store
-        uses: actions/download-artifact@v4
-        with:
-          name: pnpm-store
-          path: ~/.pnpm-store
       - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @repo/database generate
       - run: pnpm turbo lint
 
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: [setup, typecheck, lint]
+    needs: [typecheck, lint]
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'pnpm'
-      - name: Restore pnpm store
-        uses: actions/download-artifact@v4
-        with:
-          name: pnpm-store
-          path: ~/.pnpm-store
       - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @repo/database generate
       - run: pnpm turbo build
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/lms_test
