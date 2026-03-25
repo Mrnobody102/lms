@@ -12,14 +12,13 @@ import {
   useUpdateLesson,
   useDeleteLesson,
 } from '@/hooks/use-courses';
-import { CourseForm } from '@/components/courses/course-form';
-import { LessonList } from '@/components/courses/lesson-list';
-import { AddLessonDialog } from '@/components/courses/add-lesson-form';
-import { EditLessonDialog } from '@/components/courses/edit-lesson-form';
-import { CourseStats } from '@/components/courses/course-stats';
+import { CourseForm } from '@/features/courses/course-form';
+import { LessonList } from '@/features/courses/lesson-list';
+import { AddLessonDialog } from '@/features/courses/add-lesson-form';
+import { EditLessonDialog } from '@/features/courses/edit-lesson-form';
+import { CourseStats } from '@/features/courses/course-stats';
 import { Lesson } from '@/lib/course-api';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button, Alert, AlertDescription } from '@/components/ui';
 import { ArrowLeft, ExternalLink, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 

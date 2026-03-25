@@ -6,12 +6,8 @@ import { AdminHeader } from '@/components/layout/admin-header';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
 import { useCourses, useDeleteCourse } from '@/hooks/use-courses';
-import { CourseCard } from '@/components/courses/course-card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { CourseCard } from '@/features/courses/course-card';
+import { Button, Input, Separator, Skeleton, Alert, AlertDescription } from '@/components/ui';
 import { BookOpen, AlertCircle, Search } from 'lucide-react';
 import Link from 'next/link';
 

@@ -1,68 +1,72 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Lesson } from '@/lib/course-api';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Loader2 } from 'lucide-react';
+import { Button, Input, Label, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui';
+import { Loader2, Plus } from 'lucide-react';
 
-interface EditLessonDialogProps {
-  lesson: Lesson | null;
+interface AddLessonDialogProps {
+  existingLessonsCount: number;
   onSubmit: (data: Partial<Lesson>) => Promise<boolean>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   saving: boolean;
 }
 
-export function EditLessonDialog({
-  lesson,
+export function AddLessonDialog({
+  existingLessonsCount,
   onSubmit,
   open,
   onOpenChange,
   saving,
-}: EditLessonDialogProps) {
+}: AddLessonDialogProps) {
   const t = useTranslations('Admin');
 
   const [title, setTitle] = useState('');
   const [type, setType] = useState<'video' | 'text' | 'quiz'>('video');
   const [duration, setDuration] = useState(10);
 
-  useEffect(() => {
-    if (lesson) {
-      setTitle(lesson.title);
-      setType(lesson.type as 'video' | 'text' | 'quiz');
-      setDuration(lesson.duration);
-    }
-  }, [lesson]);
-
   const handleSubmit = async () => {
     if (!title.trim()) return;
-    await onSubmit({ title, type, duration });
+    const success = await onSubmit({
+      title,
+      type,
+      duration,
+      order: existingLessonsCount + 1,
+    });
+    if (success) {
+      setTitle('');
+      setType('video');
+      setDuration(10);
+      onOpenChange(false);
+    }
+  };
+
+  const handleClose = (isOpen: boolean) => {
+    if (!isOpen && !saving) {
+      setTitle('');
+      setType('video');
+      setDuration(10);
+    }
+    onOpenChange(isOpen);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{t('editLessonTitle')}</DialogTitle>
+          <DialogTitle>{t('addLessonTitle')}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
           <div className="space-y-1.5">
             <Label className="text-sm">{t('lessonTitleLabel')}</Label>
             <Input
+              placeholder={t('lessonTitlePlaceholder')}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder={t('lessonTitlePlaceholder')}
+              autoFocus
             />
           </div>
 
@@ -99,11 +103,12 @@ export function EditLessonDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+          <Button variant="outline" onClick={() => handleClose(false)} disabled={saving}>
             {t('cancel')}
           </Button>
           <Button onClick={handleSubmit} disabled={saving || !title.trim()}>
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : t('save')}
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+            {t('add')}
           </Button>
         </DialogFooter>
       </DialogContent>

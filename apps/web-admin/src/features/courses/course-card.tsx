@@ -2,15 +2,7 @@
 
 import { BookOpen, Edit2, ExternalLink, Trash2, MoreHorizontal, Eye } from 'lucide-react';
 import { Course } from '@/lib/course-api';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { Badge, Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

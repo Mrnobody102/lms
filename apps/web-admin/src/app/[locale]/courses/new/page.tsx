@@ -7,10 +7,7 @@ import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AdminHeader } from '@/components/layout/admin-header';
 import { AuthGuard } from '@/components/layout/auth-guard';
 import { useCreateCourse } from '@/hooks/use-courses';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button, Input, Label, Alert, AlertDescription } from '@/components/ui';
 import { ArrowLeft, Plus, Loader2, AlertCircle, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 
