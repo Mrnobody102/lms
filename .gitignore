@@ -8,6 +8,8 @@ dist
 .turbo
 out
 build
+packages/ui/storybook-static
+packages/ui/storybook-static
 
 # Prisma
 packages/database/generated

@@ -35,8 +35,6 @@ lms-platform/
 │   └── skills/                 # Shared AI skills
 │
 ├── scripts/                     # Scripts tiện ích
-│   ├── test-api.ps1            # PowerShell API testing
-│   ├── create-tenant.sql       # SQL tạo tenant test
 │   └── validate-ai-work.ps1    # AI work validation
 │
 ├── tests/                       # API test collections
@@ -79,7 +77,8 @@ apps/api-server/src/
 │   ├── admin.controller.ts
 │   ├── admin-tenant.controller.ts
 │   ├── admin.module.ts
-│   └── admin.service.ts
+│   ├── user-admin.service.ts   # User management service
+│   └── tenant-admin.service.ts # Tenant management service
 │
 ├── course/                      # Course management module
 │   ├── dto/
@@ -103,8 +102,8 @@ apps/api-server/src/
     ├── dto/                     # Base response DTOs
     ├── filters/                 # Exception filters
     ├── interceptors/            # Response interceptors
-    ├── middleware/              # Tenant middleware
-    └── services/                # PrismaService
+    ├── middleware/              # Tenant + request logging middleware
+    └── services/                # PrismaService, LoggerService
 ```
 
 ## Quick Commands

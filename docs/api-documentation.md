@@ -406,6 +406,18 @@ Content-Type: application/json
 
 ---
 
+## ⚙️ Runtime & Configuration
+
+- Environment variables are validated at startup using Zod schema (`apps/api-server/src/config/env.validation.ts`)
+- API request/response errors are logged via centralized logger service (`apps/api-server/src/common/services/logger.service.ts`)
+- Request logging middleware captures method, path, status code, duration, and request ID (`apps/api-server/src/common/middleware/request-logging.middleware.ts`)
+
+## ⚙️ Runtime & Configuration
+
+- Environment variables are validated at startup using Zod schema (`apps/api-server/src/config/env.validation.ts`)
+- API request/response errors are logged via centralized logger service (`apps/api-server/src/common/services/logger.service.ts`)
+- Request logging middleware captures method, path, status code, duration, and request ID (`apps/api-server/src/common/middleware/request-logging.middleware.ts`)
+
 ## 🔒 Security Features
 
 ### Password Requirements
@@ -511,7 +523,8 @@ apps/api-server/src/
 │   ├── admin.controller.ts
 │   ├── admin-tenant.controller.ts
 │   ├── admin.module.ts
-│   └── admin.service.ts
+│   ├── user-admin.service.ts
+│   └── tenant-admin.service.ts
 ├── course/
 │   ├── dto/
 │   ├── course.controller.ts

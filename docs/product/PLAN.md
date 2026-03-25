@@ -93,7 +93,7 @@ Tại giai đoạn này, ta phát triển các tính năng sâu cho từng ngác
 🧪 **Testing:**
 
 - [API Test Collection](../../tests/api-tests.http) - REST Client tests
-- [Test Script](../../scripts/test-api.ps1) - PowerShell automation
+- [AI Validation Script](../../scripts/validate-ai-work.ps1) - Quality checks and validation
 
 **Endpoints Deployed:**
 
@@ -112,7 +112,7 @@ Tại giai đoạn này, ta phát triển các tính năng sâu cho từng ngác
 📁 **Code Structure:**
 
 - `apps/api-server/src/admin/admin-tenant.controller.ts` - Controller quản lý Tenant
-- `apps/api-server/src/admin/admin.service.ts` - Logic tạo và cập nhật Tenant
+- `apps/api-server/src/admin/tenant-admin.service.ts` - Logic tạo và cập nhật Tenant
 - `apps/api-server/src/common/middleware/tenant.middleware.ts` - Trích xuất Token ngầm
 
 **Endpoints Deployed:**
