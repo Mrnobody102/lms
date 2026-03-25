@@ -23,7 +23,7 @@ export class CourseService {
     const { page = 1, limit = 10, search } = options;
     const skip = (page - 1) * limit;
 
-    const where = { tenantId };
+    const where = { tenantId, deletedAt: null };
     if (search) {
       Object.assign(where, { title: { contains: search, mode: 'insensitive' as const } });
     }
@@ -56,9 +56,10 @@ export class CourseService {
 
   async findOne(id: string, tenantId: string) {
     const course = await this.prisma.course.findFirst({
-      where: { id, tenantId },
+      where: { id, tenantId, deletedAt: null },
       include: {
         lessons: {
+          where: { deletedAt: null },
           orderBy: { order: 'asc' },
         },
       },
@@ -85,6 +86,9 @@ export class CourseService {
     // Ensure course exists and belongs to tenant
     await this.findOne(id, tenantId);
 
-    return this.prisma.course.delete({ where: { id } });
+    return this.prisma.course.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
   }
 }

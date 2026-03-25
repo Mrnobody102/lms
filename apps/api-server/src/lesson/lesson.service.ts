@@ -19,7 +19,7 @@ export class LessonService {
   }) {
     // Ensure course belongs to tenant
     const course = await this.prisma.course.findFirst({
-      where: { id: data.courseId, tenantId: data.tenantId },
+      where: { id: data.courseId, tenantId: data.tenantId, deletedAt: null },
     });
     if (!course)
       throw new NotFoundException(`Course with ID ${data.courseId} not found in this tenant`);
@@ -49,12 +49,12 @@ export class LessonService {
 
     const [lessons, total] = await Promise.all([
       this.prisma.lesson.findMany({
-        where: { courseId, tenantId },
+        where: { courseId, tenantId, deletedAt: null },
         skip,
         take: limit,
         orderBy: { order: 'asc' },
       }),
-      this.prisma.lesson.count({ where: { courseId, tenantId } }),
+      this.prisma.lesson.count({ where: { courseId, tenantId, deletedAt: null } }),
     ]);
 
     return {
@@ -70,7 +70,7 @@ export class LessonService {
 
   async findOne(id: string, tenantId: string) {
     const lesson = await this.prisma.lesson.findFirst({
-      where: { id, tenantId },
+      where: { id, tenantId, deletedAt: null },
     });
     if (!lesson) throw new NotFoundException(`Lesson with ID ${id} not found in this tenant`);
     return lesson;
@@ -106,6 +106,9 @@ export class LessonService {
     // Ensure lesson exists and belongs to tenant
     await this.findOne(id, tenantId);
 
-    return this.prisma.lesson.delete({ where: { id } });
+    return this.prisma.lesson.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
   }
 }

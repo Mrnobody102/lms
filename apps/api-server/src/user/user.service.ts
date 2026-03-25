@@ -1,20 +1,16 @@
-import {
-  Injectable,
-  UnauthorizedException,
-  NotFoundException,
-} from "@nestjs/common";
-import * as bcrypt from "bcrypt";
-import { PrismaService } from "../common/services/prisma.service";
-import { UpdateProfileDto } from "./dto/update-profile.dto";
-import { ChangePasswordDto } from "./dto/change-password.dto";
+import { Injectable, UnauthorizedException, NotFoundException } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
+import { PrismaService } from '../common/services/prisma.service';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class UserService {
   constructor(private _prisma: PrismaService) {}
 
   async getProfile(userId: string) {
-    const user = await this._prisma.user.findUnique({
-      where: { id: userId },
+    const user = await this._prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
       select: {
         id: true,
         email: true,
@@ -37,16 +33,22 @@ export class UserService {
     });
 
     if (!user) {
-      throw new NotFoundException("User not found");
+      throw new NotFoundException('User not found');
     }
 
     return user;
   }
 
-  async updateProfile(
-    userId: string,
-    updateProfileDto: UpdateProfileDto,
-  ) {
+  async updateProfile(userId: string, updateProfileDto: UpdateProfileDto) {
+    const existingUser = await this._prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
+      select: { id: true },
+    });
+
+    if (!existingUser) {
+      throw new NotFoundException('User not found');
+    }
+
     const user = await this._prisma.user.update({
       where: { id: userId },
       data: updateProfileDto,
@@ -69,12 +71,12 @@ export class UserService {
 
   async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {
     // Get current user with password
-    const user = await this._prisma.user.findUnique({
-      where: { id: userId },
+    const user = await this._prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
     });
 
     if (!user) {
-      throw new NotFoundException("User not found");
+      throw new NotFoundException('User not found');
     }
 
     // Verify current password
@@ -84,7 +86,7 @@ export class UserService {
     );
 
     if (!isCurrentPasswordValid) {
-      throw new UnauthorizedException("Current password is incorrect");
+      throw new UnauthorizedException('Current password is incorrect');
     }
 
     // Hash new password (OWASP recommends cost factor >= 12)
@@ -96,6 +98,6 @@ export class UserService {
       data: { password: hashedPassword },
     });
 
-    return { message: "Password changed successfully" };
+    return { message: 'Password changed successfully' };
   }
 }

@@ -5,11 +5,15 @@ import helmet from 'helmet';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
-import { HttpExceptionFilter } from './common/filters/http-exception.filter';
-import { ResponseInterceptor } from './common/interceptors/response.interceptor';
+import { LoggerService } from './common/services/logger.service';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    bufferLogs: true,
+  });
+
+  const logger = app.get(LoggerService);
+  app.useLogger(logger);
 
   // Security and Performance middlewares
   app.use(cookieParser());
@@ -43,12 +47,6 @@ async function bootstrap() {
     }),
   );
 
-  // Apply global exception filter
-  app.useGlobalFilters(new HttpExceptionFilter());
-
-  // Apply global response interceptor
-  app.useGlobalInterceptors(new ResponseInterceptor());
-
   const config = new DocumentBuilder()
     .setTitle('LMS Platform API')
     .setDescription('LMS Platform REST API Document')
@@ -61,6 +59,8 @@ async function bootstrap() {
   }
 
   await app.listen(process.env.PORT || 4000);
-  console.log(`🚀 Application is running on: http://localhost:${process.env.PORT || 4000}/api`);
+  logger.info(`Application is running on: http://localhost:${process.env.PORT || 4000}/api`, {
+    context: 'Bootstrap',
+  });
 }
 bootstrap();
