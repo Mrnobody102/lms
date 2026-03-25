@@ -3,13 +3,13 @@
   "type": "commonjs",
   "version": "0.0.0",
   "private": true,
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": ".prisma/client/index.js",
+  "types": ".prisma/client/index.d.ts",
   "scripts": {
     "db:push": "dotenv -e ../../.env -- prisma db push",
     "db:studio": "dotenv -e ../../.env -- prisma studio",
     "generate": "prisma generate",
-    "build": "tsc --noEmit false --outDir dist && prisma generate",
+    "build": "tsc --outDir dist && prisma generate",
     "db:migrate": "dotenv -e ../../.env -- prisma migrate dev",
     "db:deploy": "dotenv -e ../../.env -- prisma migrate deploy",
     "db:reset": "dotenv -e ../../.env -- prisma migrate reset"

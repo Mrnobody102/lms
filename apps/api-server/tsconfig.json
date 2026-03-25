@@ -3,6 +3,7 @@
   "compilerOptions": {
     "outDir": "./dist",
     "baseUrl": "./src",
+    "moduleResolution": "node",
     "strictPropertyInitialization": false,
     "paths": {
       "@repo/database": ["../packages/database/.prisma/client"],
