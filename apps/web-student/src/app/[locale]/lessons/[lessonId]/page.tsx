@@ -1,6 +1,7 @@
 'use client';
 
-import { use, useState } from 'react';
+import { useParams } from 'next/navigation';
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { LessonHeader } from '../../../../components/lessons/lesson-header';
 import { LessonSidebar } from '../../../../components/lessons/lesson-sidebar';
@@ -10,21 +11,13 @@ import { useLesson, useCourse } from '../../../../hooks/use-courses';
 import { useCourseProgress, useUpdateProgress } from '../../../../hooks/use-progress';
 import { ProgressStatus } from '../../../../lib/progress-api';
 
-interface LessonPageProps {
-  params: Promise<{
-    lessonId: string | string[];
-    locale: string;
-  }>;
-}
-
-export default function LessonPage({ params }: LessonPageProps) {
+export default function LessonPage() {
   const t = useTranslations('Student');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const resolvedParams = use(params);
+  const params = useParams();
 
-  const lessonId = Array.isArray(resolvedParams.lessonId)
-    ? resolvedParams.lessonId[0]
-    : resolvedParams.lessonId;
+  const lessonParam = params.lessonId;
+  const lessonId = (Array.isArray(lessonParam) ? lessonParam[0] : lessonParam) ?? '';
 
   const { data: currentLesson, isLoading: lessonLoading, error: lessonError } = useLesson(lessonId);
   const { data: course, isLoading: courseLoading } = useCourse(currentLesson?.courseId ?? '');

@@ -68,6 +68,7 @@ export default function Home() {
                   void logout();
                 }}
                 className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-destructive transition-all rounded-lg hover:bg-destructive/5"
+                aria-label={t('cta.logout')}
                 title={t('cta.logout') || 'Logout'}
               >
                 <LogOut className="w-4 h-4" />

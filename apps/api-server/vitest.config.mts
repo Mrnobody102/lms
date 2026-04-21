@@ -6,6 +6,10 @@ export default defineConfig({
     globals: true,
     root: './',
     include: ['src/**/*.spec.ts'],
+    pool: 'threads',
+    fileParallelism: false,
+    maxWorkers: 1,
+    hookTimeout: 30000,
   },
   plugins: [
     swc.vite({

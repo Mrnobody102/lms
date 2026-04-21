@@ -7,7 +7,8 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint .",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test --project=chromium --workers=1",
+    "test:e2e:all": "playwright test"
   },
   "dependencies": {
     "@repo/api-client": "workspace:*",

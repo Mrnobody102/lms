@@ -1,10 +1,19 @@
 ### Variables
 @baseUrl = http://localhost:4000/api
 @tenantId = 550e8400-e29b-41d4-a716-446655440000
+@otherTenantId = 11111111-1111-4111-8111-111111111111
 @studentEmail = qa@example.com
 @studentPassword = Test12345
 @adminEmail = admin@example.com
 @adminPassword = Admin12345
+@courseId = REPLACE_WITH_COURSE_ID
+@lessonId = REPLACE_WITH_LESSON_ID
+@userId = REPLACE_WITH_USER_ID
+
+### Notes
+# 1. Browser flow hien tai uu tien cookie session (`access_token` httpOnly).
+# 2. File nay van giu `Authorization: Bearer` cho Postman/REST Client/tooling thu cong.
+# 3. Neu client HTTP cua ban co ho tro cookie jar, hay dang nhap truoc roi goi tiep cac request khong can `Authorization`.
 
 ###############################################
 # AUTHENTICATION
@@ -33,7 +42,7 @@ x-tenant-id: {{tenantId}}
   "password": "{{studentPassword}}"
 }
 
-### Logout current browser session
+### Logout current session
 POST {{baseUrl}}/auth/logout
 x-tenant-id: {{tenantId}}
 
@@ -49,11 +58,15 @@ x-tenant-id: {{tenantId}}
 }
 
 ###############################################
-# USER PROFILE (Authenticated)
+# MANUAL TOKEN MODE
 ###############################################
 
 @studentToken = REPLACE_WITH_VALID_JWT_OR_USE_COOKIE_SESSION
 @adminToken = REPLACE_WITH_VALID_JWT_OR_USE_COOKIE_SESSION
+
+###############################################
+# USER PROFILE
+###############################################
 
 ### Get My Profile
 GET {{baseUrl}}/users/me
@@ -84,10 +97,55 @@ Content-Type: application/json
 }
 
 ###############################################
-# ADMIN ENDPOINTS (Admin only)
+# STUDENT BUSINESS APIS
 ###############################################
 
-### Get All Users (Admin)
+### Get Courses
+GET {{baseUrl}}/courses?page=1&limit=10
+Authorization: Bearer {{studentToken}}
+x-tenant-id: {{tenantId}}
+
+### Get Course Detail
+GET {{baseUrl}}/courses/{{courseId}}
+Authorization: Bearer {{studentToken}}
+x-tenant-id: {{tenantId}}
+
+### Get Lessons By Course
+GET {{baseUrl}}/lessons?courseId={{courseId}}&page=1&limit=20
+Authorization: Bearer {{studentToken}}
+x-tenant-id: {{tenantId}}
+
+### Get Lesson Detail
+GET {{baseUrl}}/lessons/{{lessonId}}
+Authorization: Bearer {{studentToken}}
+x-tenant-id: {{tenantId}}
+
+### Update Lesson Progress
+POST {{baseUrl}}/progress/update
+Authorization: Bearer {{studentToken}}
+x-tenant-id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "lessonId": "{{lessonId}}",
+  "status": "COMPLETED"
+}
+
+### Get Progress By Course
+GET {{baseUrl}}/progress/course/{{courseId}}
+Authorization: Bearer {{studentToken}}
+x-tenant-id: {{tenantId}}
+
+### Get Progress By Lesson
+GET {{baseUrl}}/progress/lesson/{{lessonId}}
+Authorization: Bearer {{studentToken}}
+x-tenant-id: {{tenantId}}
+
+###############################################
+# ADMIN APIS
+###############################################
+
+### Get All Users
 GET {{baseUrl}}/admin/users?page=1&limit=10
 Authorization: Bearer {{adminToken}}
 x-tenant-id: {{tenantId}}
@@ -98,12 +156,12 @@ Authorization: Bearer {{adminToken}}
 x-tenant-id: {{tenantId}}
 
 ### Get User by ID
-GET {{baseUrl}}/admin/users/USER_ID_HERE
+GET {{baseUrl}}/admin/users/{{userId}}
 Authorization: Bearer {{adminToken}}
 x-tenant-id: {{tenantId}}
 
-### Lock/Unlock User
-PATCH {{baseUrl}}/admin/users/USER_ID_HERE/status
+### Lock or Unlock User
+PATCH {{baseUrl}}/admin/users/{{userId}}/status
 Authorization: Bearer {{adminToken}}
 x-tenant-id: {{tenantId}}
 Content-Type: application/json
@@ -113,23 +171,49 @@ Content-Type: application/json
 }
 
 ###############################################
-# ERROR CASES
+# SECURITY / ERROR CASES
 ###############################################
 
-### No Token (Should return 401)
+### No Token - should return 401
 GET {{baseUrl}}/users/me
 x-tenant-id: {{tenantId}}
 
-### Invalid Token (Should return 401)
+### Invalid Token - should return 401
 GET {{baseUrl}}/users/me
 Authorization: Bearer invalid_token_here
 x-tenant-id: {{tenantId}}
 
-### Student accessing Admin endpoint (Should return 403)
+### Missing Tenant Context - should return 400 or 401 depending on endpoint
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{studentToken}}
+
+### Student accessing admin endpoint - should return 403
 GET {{baseUrl}}/admin/users
 Authorization: Bearer {{studentToken}}
 x-tenant-id: {{tenantId}}
 
-### No Tenant ID (Should return 400)
-GET {{baseUrl}}/users/me
+### Tenant mismatch on course detail - should return 403
+GET {{baseUrl}}/courses/{{courseId}}
 Authorization: Bearer {{studentToken}}
+x-tenant-id: {{otherTenantId}}
+
+### Tenant mismatch on lesson detail - should return 403
+GET {{baseUrl}}/lessons/{{lessonId}}
+Authorization: Bearer {{studentToken}}
+x-tenant-id: {{otherTenantId}}
+
+### Tenant mismatch on progress update - should return 403
+POST {{baseUrl}}/progress/update
+Authorization: Bearer {{studentToken}}
+x-tenant-id: {{otherTenantId}}
+Content-Type: application/json
+
+{
+  "lessonId": "{{lessonId}}",
+  "status": "COMPLETED"
+}
+
+### Tenant mismatch on course progress - should return 403
+GET {{baseUrl}}/progress/course/{{courseId}}
+Authorization: Bearer {{studentToken}}
+x-tenant-id: {{otherTenantId}}

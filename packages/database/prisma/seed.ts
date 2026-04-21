@@ -6,12 +6,11 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Start seeding...');
 
-  // Tạo một Tenant mẫu để test
   const tenant = await prisma.tenant.upsert({
     where: { slug: 'trung-tam-demo' },
     update: {},
     create: {
-      name: 'Trung Tâm Tiếng Trung Demo',
+      name: 'Trung Tam Tieng Trung Demo',
       slug: 'trung-tam-demo',
       domain: 'demo.lms.com',
       settings: {
@@ -22,8 +21,8 @@ async function main() {
   });
   console.log(`Created/Updated Tenant: ${tenant.name}`);
 
-  // Tạo Super Admin
   const hashedPassword = await bcrypt.hash('admin123', 12);
+
   const admin = await prisma.user.upsert({
     where: { email: 'admin@lms.com' },
     update: {},
@@ -37,73 +36,97 @@ async function main() {
   });
   console.log(`Created/Updated Admin User: ${admin.email}`);
 
-  // Tạo tài khoản Học Sinh
   const student = await prisma.user.upsert({
     where: { email: 'student@lms.com' },
     update: {},
     create: {
       email: 'student@lms.com',
       password: hashedPassword,
-      fullName: 'Học Viên A',
+      fullName: 'Hoc Vien A',
       role: Role.STUDENT,
       tenantId: tenant.id,
     },
   });
   console.log(`Created/Updated Student User: ${student.email}`);
 
-  // Create a sample Course
-  const course = await prisma.course.create({
-    data: {
-      title: 'Khóa học Nhập môn Tiếng Trung (HSK 1 - Demo)',
-      tenantId: tenant.id,
-      totalDuration: 30,
-      lessons: {
-        create: [
-          {
-            title: 'Bài 1: Giới thiệu Pinyin (Thanh mẫu, Vận mẫu)',
-            type: LessonType.VIDEO,
-            videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', // Placeholder
-            duration: 15,
-            order: 1,
-            tenantId: tenant.id,
-          },
-          {
-            title: 'Bài 2: Từ vựng cơ bản (Chào hỏi)',
-            type: LessonType.TEXT,
-            content:
-              '<h2>Chào hỏi trong tiếng Trung</h2><p>Nǐ hǎo (你好) - Chào bạn</p><p>Zàijiàn (再见) - Tạm biệt</p>',
-            duration: 10,
-            order: 2,
-            tenantId: tenant.id,
-          },
-          {
-            title: 'Bài 3: Bài tập ôn tập Bài 1 & 2',
-            type: LessonType.QUIZ,
-            duration: 5,
-            order: 3,
-            tenantId: tenant.id,
-            quiz: {
-              questions: [
-                {
-                  question: "Từ 'Xin chào' trong tiếng Trung là gì?",
-                  options: ['Zàijiàn', 'Nǐ hǎo', 'Xièxiè', 'Bù kèqì'],
-                  correctAnswer: 1,
-                },
-              ],
-            },
-          },
-        ],
+  const course = await prisma.course.upsert({
+    where: {
+      tenantId_slug: {
+        tenantId: tenant.id,
+        slug: 'hsk-1-demo',
       },
     },
+    update: {
+      title: 'Khoa hoc Nhap mon Tieng Trung (HSK 1 - Demo)',
+      totalDuration: 30,
+      isActive: true,
+    },
+    create: {
+      title: 'Khoa hoc Nhap mon Tieng Trung (HSK 1 - Demo)',
+      slug: 'hsk-1-demo',
+      tenantId: tenant.id,
+      totalDuration: 30,
+    },
   });
-  console.log(`Created Course: ${course.title} with 3 lessons`);
 
+  const existingLessons = await prisma.lesson.count({
+    where: {
+      courseId: course.id,
+      tenantId: tenant.id,
+      deletedAt: null,
+    },
+  });
+
+  if (existingLessons === 0) {
+    await prisma.lesson.createMany({
+      data: [
+        {
+          title: 'Bai 1: Gioi thieu Pinyin',
+          type: LessonType.video,
+          videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+          duration: 15,
+          order: 1,
+          tenantId: tenant.id,
+          courseId: course.id,
+        },
+        {
+          title: 'Bai 2: Tu vung co ban',
+          type: LessonType.text,
+          content:
+            '<h2>Chao hoi trong tieng Trung</h2><p>Ni hao (你好) - Xin chao</p><p>Zaijian (再见) - Tam biet</p>',
+          duration: 10,
+          order: 2,
+          tenantId: tenant.id,
+          courseId: course.id,
+        },
+        {
+          title: 'Bai 3: Bai tap on tap',
+          type: LessonType.quiz,
+          duration: 5,
+          order: 3,
+          tenantId: tenant.id,
+          courseId: course.id,
+          quiz: {
+            questions: [
+              {
+                question: "Tu 'Xin chao' trong tieng Trung la gi?",
+                options: ['Zaijian', 'Ni hao', 'Xiexie', 'Bu keqi'],
+                correctAnswer: 1,
+              },
+            ],
+          },
+        },
+      ],
+    });
+  }
+
+  console.log(`Created/Updated Course: ${course.title}`);
   console.log('Seeding finished.');
 }
 
 main()
-  .catch((e) => {
-    console.error(e);
+  .catch((error) => {
+    console.error(error);
     process.exit(1);
   })
   .finally(async () => {

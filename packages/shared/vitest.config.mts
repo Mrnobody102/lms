@@ -4,5 +4,9 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    pool: 'threads',
+    fileParallelism: false,
+    maxWorkers: 1,
+    hookTimeout: 30000,
   },
 });

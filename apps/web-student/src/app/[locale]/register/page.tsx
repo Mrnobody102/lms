@@ -1,11 +1,18 @@
 'use client';
 
+import { useParams } from 'next/navigation';
 import { RegisterForm } from '../../../features/auth/components/register-form';
 import { Link } from '../../../navigation';
 import { useTranslations } from 'next-intl';
 
 export default function RegisterPage() {
   const t = useTranslations('Student');
+  const params = useParams();
+  const locale = (params.locale as string) || 'vi';
+
+  const handleRegisterSuccess = () => {
+    window.location.href = `/${locale}/courses`;
+  };
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center p-6">
@@ -33,7 +40,7 @@ export default function RegisterPage() {
 
         {/* Register Card */}
         <div className="bg-card border border-border rounded-2xl p-8 shadow-2xl dark:shadow-black/50">
-          <RegisterForm />
+          <RegisterForm onSuccess={handleRegisterSuccess} />
         </div>
 
         {/* Login Link */}

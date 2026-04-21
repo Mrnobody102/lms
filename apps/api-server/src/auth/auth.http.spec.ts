@@ -208,11 +208,11 @@ describe('Auth HTTP flow', () => {
 
     await app.init();
     agent = request.agent(app.getHttpServer());
-  });
+  }, 30000);
 
   afterEach(async () => {
     await app.close();
-  });
+  }, 15000);
 
   it('should login with tenant context and set the auth cookie', async () => {
     const response = await agent
