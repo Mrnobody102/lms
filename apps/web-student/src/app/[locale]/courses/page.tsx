@@ -43,7 +43,9 @@ export default function CoursesPage() {
                 {user?.fullName}
               </p>
               <button
-                onClick={() => logout()}
+                onClick={() => {
+                  void logout();
+                }}
                 className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-destructive transition-all rounded-lg hover:bg-destructive/5"
               >
                 <LogOut className="w-4 h-4" />

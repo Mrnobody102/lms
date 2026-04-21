@@ -1,5 +1,5 @@
-import { Request } from "express";
-import { Role } from "@repo/database";
+import { Role } from '@repo/database';
+import { TenantAwareRequest } from '../../common/utils/tenant-request.util';
 
 export interface AuthenticatedUser {
   id: string;
@@ -14,6 +14,6 @@ export interface AuthenticatedUser {
   updatedAt: Date;
 }
 
-export interface AuthenticatedRequest extends Request {
+export interface AuthenticatedRequest extends TenantAwareRequest {
   user: AuthenticatedUser;
 }

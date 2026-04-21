@@ -17,10 +17,9 @@ x-tenant-id: {{tenantId}}
 
 {
   "email": "student2@example.com",
-  "password": "Student123",
+  "password": "Student@123",
   "fullName": "Student Two",
-  "phoneNumber": "+84909999999",
-  "tenantId": "{{tenantId}}"
+  "phoneNumber": "+84909999999"
 }
 
 ### Login as Student
@@ -33,6 +32,10 @@ x-tenant-id: {{tenantId}}
   "email": "{{studentEmail}}",
   "password": "{{studentPassword}}"
 }
+
+### Logout current browser session
+POST {{baseUrl}}/auth/logout
+x-tenant-id: {{tenantId}}
 
 ### Login as Admin
 # @name loginAdmin
@@ -49,8 +52,8 @@ x-tenant-id: {{tenantId}}
 # USER PROFILE (Authenticated)
 ###############################################
 
-@studentToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-@adminToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+@studentToken = REPLACE_WITH_VALID_JWT_OR_USE_COOKIE_SESSION
+@adminToken = REPLACE_WITH_VALID_JWT_OR_USE_COOKIE_SESSION
 
 ### Get My Profile
 GET {{baseUrl}}/users/me
@@ -76,8 +79,8 @@ x-tenant-id: {{tenantId}}
 Content-Type: application/json
 
 {
-  "oldPassword": "Test12345",
-  "newPassword": "NewPassword123"
+  "currentPassword": "Test12345",
+  "newPassword": "NewPassword@123"
 }
 
 ###############################################

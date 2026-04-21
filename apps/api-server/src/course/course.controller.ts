@@ -10,18 +10,17 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common';
-import { CourseService } from './course.service';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Role } from '@repo/database';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { Role } from '@repo/database';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { getScopedTenantId } from '../common/utils/tenant-request.util';
+import { AuthenticatedRequest } from '../progress/dto/authenticated-request.interface';
+import { CourseService } from './course.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { CourseQueryDto } from './dto/course-query.dto';
-import { AuthenticatedRequest } from '../progress/dto/authenticated-request.interface';
-
-type RequestWithTenant = AuthenticatedRequest & { tenantId: string };
 
 @ApiBearerAuth()
 @ApiTags('courses')
@@ -33,28 +32,29 @@ export class CourseController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Tạo khóa học mới' })
-  create(@Body() createCourseDto: CreateCourseDto, @Request() req: RequestWithTenant) {
+  create(@Body() createCourseDto: CreateCourseDto, @Request() req: AuthenticatedRequest) {
     const { title, slug, totalDuration } = createCourseDto;
+
     return this.courseService.create({
       title,
       slug,
       totalDuration,
-      tenantId: req.tenantId,
+      tenantId: getScopedTenantId(req),
     });
   }
 
   @Get()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Lấy danh sách khóa học của tenant (phân trang)' })
-  findAll(@Query() query: CourseQueryDto, @Request() req: RequestWithTenant) {
-    return this.courseService.findAll(req.tenantId, query);
+  findAll(@Query() query: CourseQueryDto, @Request() req: AuthenticatedRequest) {
+    return this.courseService.findAll(getScopedTenantId(req), query);
   }
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Lấy chi tiết khóa học kèm bài học' })
-  findOne(@Param('id') id: string, @Request() req: RequestWithTenant) {
-    return this.courseService.findOne(id, req.tenantId);
+  findOne(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
+    return this.courseService.findOne(id, getScopedTenantId(req));
   }
 
   @Patch(':id')
@@ -64,9 +64,9 @@ export class CourseController {
   update(
     @Param('id') id: string,
     @Body() updateCourseDto: UpdateCourseDto,
-    @Request() req: RequestWithTenant,
+    @Request() req: AuthenticatedRequest,
   ) {
-    return this.courseService.update(id, req.tenantId, {
+    return this.courseService.update(id, getScopedTenantId(req), {
       title: updateCourseDto.title,
       slug: updateCourseDto.slug,
       totalDuration: updateCourseDto.totalDuration,
@@ -77,7 +77,7 @@ export class CourseController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Xóa khóa học' })
-  remove(@Param('id') id: string, @Request() req: RequestWithTenant) {
-    return this.courseService.remove(id, req.tenantId);
+  remove(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
+    return this.courseService.remove(id, getScopedTenantId(req));
   }
 }

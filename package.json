@@ -6,6 +6,8 @@
     "dev": "turbo run dev --filter=api-server --filter=web-admin --filter=web-student --filter=super-portal",
     "dev:all": "turbo run dev",
     "lint": "turbo run lint",
+    "test": "pnpm --filter api-server test && pnpm --filter @repo/shared test",
+    "test:e2e": "pnpm --filter web-student test:e2e",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "prepare": "husky",
     "db:up": "docker-compose up -d",

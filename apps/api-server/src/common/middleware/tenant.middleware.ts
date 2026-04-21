@@ -1,31 +1,40 @@
-import {
-  Injectable,
-  NestMiddleware,
-  BadRequestException,
-} from "@nestjs/common";
-import { Request, Response, NextFunction } from "express";
+import { Injectable, NestMiddleware, BadRequestException } from '@nestjs/common';
+import type { Request, Response, NextFunction } from 'express';
+import { PrismaService } from '../services/prisma.service';
+import { extractTenantHint, TenantAwareRequest } from '../utils/tenant-request.util';
 
 @Injectable()
 export class TenantMiddleware implements NestMiddleware {
-  use(req: Request, res: Response, next: NextFunction) {
-    if (req.method === "OPTIONS") {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async use(req: Request, _res: Response, next: NextFunction) {
+    if (req.method === 'OPTIONS') {
       return next();
     }
 
-    const tenantId =
-      req.headers["x-tenant-id"] ||
-      this.getTenantFromDomain(req);
-    if (!tenantId) throw new BadRequestException("Tenant ID is missing");
-    (req as any).tenantId = tenantId;
-    next();
-  }
+    const tenantHint = extractTenantHint(req);
+    const tenantRequest = req as TenantAwareRequest;
+    tenantRequest.requestedTenantHint = tenantHint;
 
-  private getTenantFromDomain(req: Request): string | undefined {
-    // Basic domain parsing logic, can be expanded
-    const host = req.headers.host;
-    if (!host) return undefined;
-    const parts = host.split(".");
-    if (parts.length > 2) return parts[0]; // subdomain
-    return undefined;
+    if (!tenantHint) {
+      return next();
+    }
+
+    const tenant = await this.prisma.tenant.findFirst({
+      where: {
+        isActive: true,
+        OR: [{ id: tenantHint }, { slug: tenantHint }, { domain: tenantHint }],
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!tenant) {
+      throw new BadRequestException('Invalid or inactive tenant context');
+    }
+
+    tenantRequest.tenantId = tenant.id;
+    next();
   }
 }

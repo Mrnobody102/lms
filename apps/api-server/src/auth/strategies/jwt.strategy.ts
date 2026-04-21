@@ -1,9 +1,9 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common";
-import { PassportStrategy } from "@nestjs/passport";
-import { ExtractJwt, Strategy } from "passport-jwt";
-import { ConfigService } from "@nestjs/config";
-import { Request } from "express";
-import { PrismaService } from "../../common/services/prisma.service";
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { PassportStrategy } from '@nestjs/passport';
+import { ExtractJwt, Strategy } from 'passport-jwt';
+import { ConfigService } from '@nestjs/config';
+import type { Request } from 'express';
+import { PrismaService } from '../../common/services/prisma.service';
 
 export interface JwtPayload {
   sub: string;
@@ -18,9 +18,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     configService: ConfigService,
     private prisma: PrismaService,
   ) {
-    const jwtSecret = configService.get<string>("JWT_SECRET");
+    const jwtSecret = configService.get<string>('JWT_SECRET');
     if (!jwtSecret) {
-      throw new Error("JWT_SECRET environment variable is required");
+      throw new Error('JWT_SECRET environment variable is required');
     }
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
@@ -31,7 +31,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       ]),
       ignoreExpiration: false,
       secretOrKey: jwtSecret,
-      algorithms: ["HS256"],
+      algorithms: ['HS256'],
     });
   }
 
@@ -49,13 +49,23 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         tenantId: true,
         createdAt: true,
         updatedAt: true,
+        tenant: {
+          select: {
+            isActive: true,
+          },
+        },
       },
     });
 
-    if (!user || !user.isActive) {
-      throw new UnauthorizedException("User not found or inactive");
+    if (!user || !user.isActive || !user.tenant.isActive) {
+      throw new UnauthorizedException('User not found, inactive, or tenant is disabled');
     }
 
-    return user;
+    if (payload.tenantId !== user.tenantId) {
+      throw new UnauthorizedException('Token tenant mismatch');
+    }
+
+    const { tenant, ...safeUser } = user;
+    return safeUser;
   }
 }

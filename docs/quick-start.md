@@ -1,131 +1,129 @@
-# Quick Start Guide
+# Quick Start
 
-## Prerequisites
+Cập nhật lần cuối: 2026-04-21
 
-- **Node.js** 18+
-- **pnpm** 9+
-  ```bash
-  npm install -g pnpm
-  ```
+## Yêu cầu
 
-## Start Here
+- Node.js 18+
+- pnpm 9+
+- Docker
 
-### 1. Install Dependencies
+## Khởi động dự án
+
+### 1. Cài dependency
 
 ```bash
 pnpm install
 ```
 
-### 2. Start Docker Database
+### 2. Chạy database
 
 ```bash
-pnpm run db:up
+pnpm db:up
 ```
 
-### 3. Run Database Migration (First Time)
+### 3. Chạy migration
 
 ```bash
-pnpm run db:migrate
+pnpm db:migrate
 ```
 
-When prompted for migration name, enter a descriptive name (e.g., `init_schema`).
-
-### 4. Generate Prisma Client & Seed Data (First Time)
+### 4. Seed dữ liệu mẫu
 
 ```bash
-pnpm run db:seed
+pnpm db:seed
 ```
 
-**Sample Accounts:**
-
-- **Tenant:** Trung Tâm Tiếng Trung Demo (`trung-tam-demo`)
-- **Super Admin:** `admin@lms.com` (Pass: `admin123`)
-- **Student User:** `student@lms.com` (Pass: `admin123`)
-
-### 5. Start Development Servers
+### 5. Chạy app ở chế độ dev
 
 ```bash
 pnpm dev
 ```
 
-This starts all apps concurrently. You can also start individual apps:
+Hoặc chạy riêng từng app:
 
 ```bash
-# API Server (port 4000)
 pnpm --filter api-server dev
-
-# Web Student (port 3000)
 pnpm --filter web-student dev
-
-# Web Admin (port 3001)
 pnpm --filter web-admin dev
-
-# Super Portal (port 3002)
 pnpm --filter super-portal dev
 ```
 
-## Verify Setup
+## Địa chỉ mặc định
 
-| App          | URL                            |
-| ------------ | ------------------------------ |
-| Web Student  | http://localhost:3000          |
-| Web Admin    | http://localhost:3001          |
-| Super Portal | http://localhost:3002          |
-| API          | http://localhost:4000/api      |
-| Swagger Docs | http://localhost:4000/api/docs |
+| App          | URL                              |
+| ------------ | -------------------------------- |
+| Web Student  | `http://localhost:3000`          |
+| Web Admin    | `http://localhost:3001`          |
+| Super Portal | `http://localhost:3002`          |
+| API          | `http://localhost:4000/api`      |
+| Swagger      | `http://localhost:4000/api/docs` |
 
-Test API:
+## Kiểm tra nhanh API
 
 ```bash
 curl http://localhost:4000/api
 ```
 
-## Quick Test
+## Auth flow hiện tại
 
-### 1. Login
+Browser flow hiện tại là cookie-first:
+
+- Đăng nhập thành công sẽ được set cookie `access_token`
+- Frontend không cần lưu JWT trong `localStorage`
+- Muốn test bằng terminal thì nên dùng cookie jar
+
+## Quick test với cookie session
+
+### 1. Đăng nhập và lưu cookie
 
 ```bash
 curl -X POST http://localhost:4000/api/auth/login \
   -H "Content-Type: application/json" \
   -H "x-tenant-id: YOUR_TENANT_ID" \
+  -c cookies.txt \
   -d '{
     "email": "admin@lms.com",
     "password": "admin123"
   }'
 ```
 
-### 2. Get Profile
+### 2. Gọi profile bằng cookie
 
 ```bash
 curl -X GET http://localhost:4000/api/users/me \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+  -H "x-tenant-id: YOUR_TENANT_ID" \
+  -b cookies.txt
 ```
 
-## Environment Variables
+### 3. Đăng xuất
 
-Configured in `.env`:
+```bash
+curl -X POST http://localhost:4000/api/auth/logout \
+  -b cookies.txt \
+  -c cookies.txt
+```
 
-| Variable       | Description                            |
-| -------------- | -------------------------------------- |
-| `DATABASE_URL` | PostgreSQL connection string           |
-| `JWT_SECRET`   | Secret key for JWT tokens              |
-| `PORT`         | API server port (4000)                 |
-| `NODE_ENV`     | `development` or `production`          |
-| `CORS_ORIGINS` | Allowed CORS origins (comma-separated) |
+## Biến môi trường chính
 
-## Available Scripts
+| Biến           | Ý nghĩa                         |
+| -------------- | ------------------------------- |
+| `DATABASE_URL` | Kết nối PostgreSQL              |
+| `JWT_SECRET`   | Secret để ký JWT                |
+| `PORT`         | Port API server                 |
+| `NODE_ENV`     | `development` hoặc `production` |
+| `CORS_ORIGINS` | Danh sách origin được phép      |
 
-| Command           | Description                    |
-| ----------------- | ------------------------------ |
-| `pnpm dev`        | Start all apps in development  |
-| `pnpm build`      | Build all apps                 |
-| `pnpm lint`       | Lint all apps                  |
-| `pnpm format`     | Format code with Prettier      |
-| `pnpm db:up`      | Start Docker database          |
-| `pnpm db:down`    | Stop Docker database           |
-| `pnpm db:push`    | Push Prisma schema to database |
-| `pnpm db:migrate` | Run Prisma migrations          |
-| `pnpm db:seed`    | Seed database with sample data |
-| `pnpm db:studio`  | Open Prisma Studio             |
-| `pnpm test`       | Run unit tests (Vitest)        |
-| `pnpm test:e2e`   | Run E2E tests (Playwright)     |
+## Scripts thường dùng
+
+| Lệnh              | Mục đích                    |
+| ----------------- | --------------------------- |
+| `pnpm dev`        | Chạy toàn bộ app ở dev mode |
+| `pnpm build`      | Build workspace             |
+| `pnpm test`       | Chạy test                   |
+| `pnpm test:e2e`   | Chạy E2E test               |
+| `pnpm db:up`      | Bật database                |
+| `pnpm db:down`    | Tắt database                |
+| `pnpm db:migrate` | Chạy migration              |
+| `pnpm db:seed`    | Seed dữ liệu mẫu            |
+| `pnpm db:studio`  | Mở Prisma Studio            |

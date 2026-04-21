@@ -44,9 +44,10 @@ export function AdminSidebar() {
     return false;
   };
 
-  const handleLogout = () => {
-    logout();
-    router.push('/login');
+  const handleLogout = async () => {
+    const locale = pathname.match(/^\/(en|vi)(?:\/|$)/)?.[1] || 'vi';
+    await logout();
+    router.push(`/${locale}/login`);
   };
 
   const toggleTheme = () => {
@@ -163,7 +164,7 @@ export function AdminSidebar() {
               <button
                 onClick={() => {
                   setDropdownOpen(false);
-                  handleLogout();
+                  void handleLogout();
                 }}
                 className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-500/5 transition-colors"
               >

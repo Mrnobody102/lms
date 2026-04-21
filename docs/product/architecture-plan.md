@@ -1,656 +1,241 @@
-# LMS Platform — Architecture Review & Production Readiness Roadmap
-
-> **Ngày review:** 2026-03-21
-> **Phạm vi:** Toàn bộ monorepo (apps/api-server, apps/web-admin, apps/web-student, apps/super-portal, packages/)
-> **Công cụ review:** 5 agent chạy song song + xác minh với Next.js 16.2.1 official docs, OWASP JWT Cheat Sheet, OWASP CSRF Prevention Cheat Sheet
-
----
-
-## Mục Lục
-
-- [1. Tổng Quan](#1-tổng-quan)
-- [2. Issues theo mức độ nghiêm trọng](#2-issues-theo-mức-độ-nghiêm-trọng)
-- [3. Chi tiết từng Phase](#3-chi-tiết-từng-phase)
-- [4. Checklist tiến độ](#4-checklist-tiến-độ)
-
----
-
-## 1. Tổng Quan
-
-### 1.1 Đánh giá tổng thể
-
-| Khía cạnh                  | Đánh giá            | Production readiness |
-| -------------------------- | ------------------- | -------------------- |
-| Monorepo & Tooling         | Khá tốt             | ⭐⭐⭐               |
-| NestJS API Server          | Cần cải thiện nhiều | ⭐⭐                 |
-| NextJS Frontend Apps       | Cần cải thiện nhiều | ⭐⭐                 |
-| Database & Shared Packages | Trung bình          | ⭐⭐                 |
-| Security & Auth            | **NGHIÊM TRỌNG**    | ⭐                   |
-
-### 1.2 Thống kê issues
-
-```
-CRITICAL:  8 issues  — Fix trước bất kỳ deployment nào
-HIGH:     17 issues — Fix trước khi production
-MEDIUM:   20 issues — Fix khi có thời gian
-LOW:      10+ issues — Nice to have
-────────────────────────────────────────────
-Tổng cộng: ~55 issues
-```
-
-### 1.3 Nền tảng tốt — Giữ nguyên
-
-- Turborepo + pnpm workspaces (industry standard)
-- Next.js App Router với next-intl v4 (properly configured)
-- Prisma ORM (eliminates SQL injection risk)
-- NestJS module structure (mostly logical)
-- Tenant isolation middleware
-- Docker setup (dev + production compose)
-- Conventional commits + husky + commitlint
-- VSCode workspace settings
-- Global exception filter
-- Input validation với class-validator
-- PostgreSQL 15 + Redis containerized
-- Next.js `output: "standalone"` (tốt cho Docker)
-- Composite indexes trong Prisma schema
-- Enums cho fixed values
-- bcrypt password hashing
-
----
-
-## 2. Issues theo mức độ nghiêm trọng
-
-### 2.1 CRITICAL — Fix trước bất kỳ deployment nào
-
-| #   | Issue                                                                    | Location                                                   | Type     | Fix cần gì |
-| --- | ------------------------------------------------------------------------ | ---------------------------------------------------------- | -------- | ---------- |
-| C1  | **Thiếu RBAC trên Course/Lesson** — student có thể tạo/sửa/xóa khóa học  | `course.controller.ts:25-68`, `lesson.controller.ts:27-63` | Security | Chỉ source |
-| C2  | **Không có Token Refresh** — token expire sau 7d, không revoke được      | `auth.module.ts:23`, `auth.controller.ts`                  | Security | Chỉ source |
-| C3  | **Token trong localStorage** — XSS risk                                  | 3 api.ts files                                             | Security | Chỉ source |
-| C4  | **CSRF Protection thiếu** — `withCredentials: true` nhưng không có token | api.ts files + NestJS                                      | Security | Chỉ source |
-| C5  | **MCP filesystem access** — đọc được .env, schema.prisma                 | `mcp/mcp-core-skills.service.ts:79-103`                    | Security | Chỉ source |
-| C6  | **API key timing attack** — so sánh string không timing-safe             | `mcp/guards/mcp-auth.guard.ts:32`                          | Security | Chỉ source |
-| C7  | **Tenant ID hardcoded** trong 4 files                                    | api.ts, proxy.ts                                           | Security | Chỉ source |
-| C8  | **Middleware proxy.ts không hoạt động** — NextJS chỉ nhận middleware.ts  | `web-admin/src/proxy.ts`, `super-portal/src/proxy.ts`      | Security | Chỉ source |
-
-### 2.2 HIGH — Fix trước khi production
-
-| #   | Issue                                                  | Location                                         | Type            | Fix cần gì      |
-| --- | ------------------------------------------------------ | ------------------------------------------------ | --------------- | --------------- |
-| H1  | Password không validate complexity                     | `register.dto.ts:17-22`                          | Validation      | Chỉ source      |
-| H2  | Email không có @MaxLength                              | `register.dto.ts:13-15`                          | Validation      | Chỉ source      |
-| H3  | Tenant ID từ client header, không verify authorization | `tenant.middleware.ts:15-19`                     | Security        | Chỉ source      |
-| H4  | Bcrypt salt factor = 10 (OWASP recommends ≥12)         | `auth.service.ts:39`                             | Security        | Chỉ source      |
-| H5  | No logging cho auth failures                           | `auth.service.ts`                                | Observability   | Chỉ source      |
-| H6  | No pagination trên course/lesson listing               | `course.service.ts:19-27`                        | Performance     | Chỉ source      |
-| H7  | No connection pooling config cho Prisma                | `prisma.service.ts`                              | Performance     | Chỉ source      |
-| H8  | No caching anywhere (Redis)                            | Toàn bộ services                                 | Performance     | Docker + source |
-| H9  | AdminService god class 300+ dòng                       | `admin.service.ts`                               | Maintainability | Chỉ source      |
-| H10 | Heavy use of `any` types                               | Khắp nơi                                         | Type safety     | Chỉ source      |
-| H11 | RolesGuard return false thay vì throw exception        | `roles.guard.ts:22-24`                           | Bug             | Chỉ source      |
-| H12 | Response formats inconsistent                          | `http-exception.filter.ts` vs `admin.service.ts` | API design      | Chỉ source      |
-| H13 | No database transactions                               | `admin.service.ts`                               | Data integrity  | Chỉ source      |
-| H14 | Hardcoded /vi/ locale trong redirects                  | `api.ts:48,53`                                   | i18n bug        | Chỉ source      |
-| H15 | super-portal không check token expiry                  | `auth.store.ts:22-29`                            | Security        | Chỉ source      |
-| H16 | Mọi page là "use client" — không tận dụng RSC          | Tất cả pages                                     | Performance     | Chỉ source      |
-| H17 | Zod validation không dùng (có trong deps)              | Form files                                       | Validation      | Chỉ source      |
-
-### 2.3 MEDIUM — Fix khi có thời gian
-
-| #   | Issue                                                                 | Type             |
-| --- | --------------------------------------------------------------------- | ---------------- |
-| M1  | Rate limiting chỉ trên auth endpoints                                 | Security         |
-| M2  | No input length limits trên title/content                             | Validation       |
-| M3  | CreateLessonDto.type dùng @IsString() thay vì @IsEnum                 | Validation       |
-| M4  | CORS config không rõ ràng                                             | Security         |
-| M5  | Swagger exposed in non-production                                     | Security         |
-| M6  | No health check endpoint                                              | DevOps           |
-| M7  | Soft delete vs hard delete không nhất quán                            | Data integrity   |
-| M8  | Missing indexes: Lesson.order, UserLessonProgress([tenantId, userId]) | Performance      |
-| M9  | No loading.tsx Suspense boundaries                                    | Performance      |
-| M10 | Dynamic imports không dùng cho heavy components                       | Performance      |
-| M11 | Hardcoded Vietnamese text trong super-portal components               | i18n             |
-| M12 | Console.log credentials trong super-portal auth store                 | Security         |
-| M13 | Navigation từ next/navigation thay vì next-intl                       | i18n bug         |
-| M14 | React Query cache không invalidate sau mutations                      | Bug              |
-| M15 | AuthModal load cả LoginForm + RegisterForm                            | Performance      |
-| M16 | Không có .prettierrc ở root                                           | Tooling          |
-| M17 | turbo.json test phụ thuộc build                                       | Tooling          |
-| M18 | packages/ui dependencies nên là peerDependencies                      | Tooling          |
-| M19 | packages/database .env bị commit                                      | Security         |
-| M20 | Docker compose password mismatch                                      | DevOps           |
-| M21 | API client duplicated ~80% trong 3 apps                               | Code duplication |
-| M22 | Auth store duplicated ~95% trong 2 apps                               | Code duplication |
-| M23 | Middleware duplicated ở 3 apps                                        | Code duplication |
-| M24 | Seed thiếu INSTRUCTOR/ADMIN users và progress records                 | Testing          |
-
-### 2.4 LOW — Nice to have
+# LMS Platform - Architecture Review và Roadmap Production Readiness
 
-| #   | Issue                                             |
-| --- | ------------------------------------------------- |
-| L1  | Không có .editorconfig                            |
-| L2  | Không có .nvmrc / .node-version                   |
-| L3  | Không có CI/CD configuration                      |
-| L4  | Mixed Vietnamese/English trong Swagger decorators |
-| L5  | Bcrypt rounds nên configurable qua env var        |
-| L6  | ThrottlerGuard IP-only, nên per-user              |
-| L7  | No bundle analysis configured                     |
-| L8  | ChangePasswordDto cho phép reuse password         |
-| L9  | @repo/database path alias không ổn định           |
-| L10 | Root package.json có dangling references          |
-| L11 | web-student/tsconfig.json thiếu path aliases      |
-
----
+Cập nhật lần cuối: 2026-04-21
 
-## 3. Chi tiết từng Phase
-
-> **Quy ước:**
->
-> - `Chỉ source` = Chỉ cần edit source code, không cần Docker/DB
-> - `Cần Docker` = Cần Docker chạy (PostgreSQL, Redis) để test
-> - `Cần DB` = Cần database có dữ liệu để verify
+## 1. Tổng quan
 
----
+Review lại codebase hiện tại cho thấy:
 
-### PHASE 1: Security Hardening 🔴 (Ưu tiên cao nhất)
+- Nền tảng monorepo và cách chia module backend là hợp lý.
+- Hệ thống đã có auth, tenant management, course, lesson, progress ở mức MVP.
+- Tuy nhiên, production readiness vẫn đang bị chặn bởi bốn nhóm vấn đề lớn:
+  - tenant isolation chưa đúng boundary
+  - auth/session architecture chưa an toàn
+  - build/test/docs đang drift
+  - contract backend/frontend chưa nhất quán
 
-#### P1-1: RBAC — Fix Role-Based Access Control ⚡
+Kết luận:
 
-**Trạng thái:** TODO | **Ưu tiên:** CRITICAL | **Cần:** Chỉ source
+- Chưa nên coi hệ thống hiện tại là production-ready.
+- Nhiều task trong kế hoạch cũ đã được đánh dấu xong hoặc mô tả sai so với code hiện tại.
+- Ưu tiên kiến trúc tiếp theo phải là security + correctness, không phải mở rộng feature breadth.
 
-**Mô tả:** Các endpoint mutation (POST/PATCH/DELETE) trên Course và Lesson chỉ có JwtAuthGuard. Bất kỳ authenticated user nào (kể cả STUDENT) đều có thể tạo/sửa/xóa khóa học.
+## 2. Review lại tài liệu cũ
 
-**Files cần sửa:**
+Những điểm trong version trước cần sửa nhận định:
 
-1. **`apps/api-server/src/course.controller.ts`** — Thêm `@Roles()` decorator:
+- RBAC cho course/lesson không còn là issue chính; code hiện tại đã có guard và decorator.
+- Pagination cho course/lesson đã có ở backend.
+- `AdminService` god class không còn là hướng review chính; code đã tách `UserAdminService` và `TenantAdminService`.
+- `ResponseInterceptor` đã tồn tại nhưng chưa được wire vào app; vì vậy vấn đề hiện tại là contract drift, không phải thiếu implementation hoàn toàn.
+- `TenantMiddleware` không nên được ghi là “đã xử lý isolation”; đây mới chỉ là cơ chế gắn tenant context, chưa phải enforcement an toàn.
+- Phần CSRF/JWT trong bản cũ chưa đặt đúng thứ tự ưu tiên; vấn đề lớn hơn hiện tại là session source-of-truth và forged tenant context.
+- Các checklist `done` trước đó không phản ánh đúng runtime state vì build/test/doc scripts vẫn đang fail hoặc stale.
 
-```ts
-// create() — thêm @UseGuards(JwtAuthGuard, RolesGuard) + @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-// update() — thêm @UseGuards(JwtAuthGuard, RolesGuard) + @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-// remove() — thêm @UseGuards(JwtAuthGuard, RolesGuard) + @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-```
+## 3. Tóm tắt issue hiện tại
 
-2. **`apps/api-server/src/lesson.controller.ts`** — Thêm `@Roles()` decorator:
+### Critical
 
-```ts
-// create() — thêm @UseGuards(JwtAuthGuard, RolesGuard) + @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-// update() — thêm @UseGuards(JwtAuthGuard, RolesGuard) + @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-// remove() — thêm @UseGuards(JwtAuthGuard, RolesGuard) + @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-```
+- Tenant isolation có thể bị vô hiệu hóa vì server vẫn tin `x-tenant-id` từ client.
+- Login chưa ràng theo tenant; user đang bị lookup theo email toàn cục.
+- JWT validation chưa đối chiếu tenant của request với tenant của user/session.
 
-3. **`apps/api-server/src/auth/guards/roles.guard.ts`** — Fix bug return false:
+### High
 
-```ts
-// Cũ: return false
-// Mới: throw new ForbiddenException("Access denied")
-// Cũ: return requiredRoles.some(...)
-// Mới: if (!requiredRoles.some(...)) throw new ForbiddenException("Insufficient permissions")
-```
+- Frontend vẫn giữ JWT và tenant context trong `localStorage`.
+- Tenant bị disable chưa chặn được auth/session.
+- Build/test workspace chưa ổn:
+  - `api-server` test fail
+  - `web-admin` build fail
+  - `web-student` build fail
+  - `super-portal` build script sai
+- Docs test và sample payload không còn khớp DTO hiện tại.
 
-**Verification:** Không cần Docker — chỉ cần đọc code và verify decorators.
+### Medium
 
----
+- Response shape giữa backend và frontend chưa nhất quán.
+- Frontend còn duplication và workaround contract.
+- Course DTO/service/schema đang drift ở field `description`.
+- MCP auth vẫn cho API key qua query string.
 
-#### P1-2: CORS — Origin Validation nghiêm ngặt ⚡
+## 4. Kiến trúc đề xuất sau audit
 
-**Trạng thái:** TODO | **Ưu tiên:** CRITICAL | **Cần:** Chỉ source
+### Workstream A - Tenant boundary đúng nghĩa
 
-**Mô tả:** CORS hiện tại có fallback localhost trong production — nguy hiểm.
+Mục tiêu:
 
-**File cần sửa:**
+- Tenant phải là một phần của server-side authorization boundary.
 
-4. **`apps/api-server/src/main.ts`** — Validate origin function:
+Cần đạt:
 
-```ts
-// Thay fallback localhost bằng function validate
-origin: (origin, callback) => {
-  if (!origin) return callback(null, true); // server-to-server
-  if (!corsOrigins.includes(origin)) {
-    console.warn(`Blocked CORS for origin: ${origin}`);
-    return callback(new Error('Not allowed by CORS'));
-  }
-  callback(null, true);
-};
-```
+- Request anonymous:
+  - tenant có thể đến từ domain/subdomain hoặc input explicit.
+  - server phải validate tenant tồn tại và đang active.
+- Request authenticated:
+  - tenant context phải khớp với user session/token.
+  - client không thể “switch tenant” bằng header nếu không có quyền hợp lệ.
+- Controller/service:
+  - không lấy tenant authority từ request header một cách mù quáng.
+  - ưu tiên tenant context đã được resolve/verify sẵn.
 
----
+Task:
 
-#### P1-3: JWT — Hybrid httpOnly Cookie ⚡
+- [ ] Refactor `TenantMiddleware` thành tenant resolver + tenant verifier rõ vai trò.
+- [ ] Bổ sung check tenant active trong auth flow và JWT strategy.
+- [ ] Xác định quy tắc login theo tenant:
+  - email global hay email unique per tenant
+  - nếu giữ email global, login vẫn phải có tenant context hợp lệ
+- [ ] Viết integration tests cho cross-tenant access.
 
-**Trạng thái:** TODO | **Ưu tiên:** CRITICAL | **Cần:** Chỉ source
+### Workstream B - Auth và session architecture
 
-**Mô tả:** Chuyển từ localStorage sang httpOnly cookie. Hybrid approach — vẫn trả token trong response body để backward compatibility, nhưng set cookie cho security.
+Mục tiêu:
 
-**Files cần sửa:**
+- Session an toàn hơn và dễ revoke/quản lý hơn.
 
-5. **`apps/api-server/src/auth/auth.service.ts`** — Set httpOnly cookie:
+Cần đạt:
 
-```ts
-// import { Response } from "express";
-// Trong login() và register(): thêm res.cookie("access_token", token, {...})
-// httpOnly: true, secure: NODE_ENV==="production", sameSite: "lax", maxAge: 7d
-```
+- Cookie `HttpOnly` là cơ chế chính cho browser session.
+- Không đưa `tenantId` và bearer token trong `localStorage` làm authority.
+- Có logout/session invalidation rõ ràng.
+- Nếu thêm refresh token, phải làm sau khi tenant boundary đã đúng.
 
-6. **`apps/api-server/src/auth/strategies/jwt.strategy.ts`** — Extract từ cookie + header:
+Task:
 
-```ts
-// Thêm: ExtractJwt.fromCookies("access_token") vào extractor array
-// Giữ ExtractJwt.fromAuthHeaderAsBearerToken() cho backward compatibility
-```
+- [ ] Chuyển frontend sang cookie-first auth.
+- [ ] Giảm hoặc loại bỏ dependency vào `Authorization` header từ `localStorage`.
+- [ ] Cập nhật auth store để kiểm tra auth qua session state thay vì chỉ decode token local.
+- [ ] Đánh giá có cần refresh token ở phase này hay để phase sau.
 
-7. **`apps/api-server/src/auth/auth.controller.ts`** — Nhận Response parameter:
+Ghi chú:
 
-```ts
-// login() và register(): thêm @Res({ passthrough: true }) res: Response
-```
+- Refresh token là việc cần cân nhắc, nhưng không nên đặt cao hơn tenant isolation.
 
-**Verification:** Không cần Docker — chỉ verify code logic.
+### Workstream C - API contract và package boundaries
 
----
+Mục tiêu:
 
-### PHASE 2: Input Validation & DTO Cleanup 🟠
+- Mỗi app dùng cùng một contract đủ rõ.
 
-#### P2-1: Password & Email Validation ⚡
+Cần đạt:
 
-**Trạng thái:** TODO | **Ưu tiên:** HIGH | **Cần:** Chỉ source
+- Response wrapper nhất quán.
+- Route names nhất quán.
+- DTO, Prisma schema và frontend types khớp nhau.
+- Shared packages thực sự là nơi chứa logic dùng chung, không chỉ tách file hình thức.
 
-**Files cần sửa:**
+Task:
 
-8. **`apps/api-server/src/auth/dto/register.dto.ts`**:
+- [ ] Quyết định một response convention cho API.
+- [ ] Đăng ký `ResponseInterceptor` nếu chọn wrapper format.
+- [ ] Loại bỏ frontend-side special cases cho từng endpoint.
+- [ ] Fix endpoint mismatch ở lesson APIs.
+- [ ] Review lại shared packages:
+  - `@repo/api-client`
+  - `@repo/shared`
+  - common middleware helpers
 
-```ts
-// Thêm: @MaxLength(255) cho email
-// Thêm: @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
-```
+### Workstream D - Testability và workspace reliability
 
-9. **`apps/api-server/src/auth/dto/login.dto.ts`**:
+Mục tiêu:
 
-```ts
-// Thêm: @MaxLength(255) cho email
-```
+- Repo phải “tự chạy được” trước khi mở rộng product scope.
 
-10. **`apps/api-server/src/auth/auth.service.ts`**:
+Task:
 
-```ts
-// Bcrypt rounds: 10 → 12 (H4)
-```
+- [ ] Sửa `api-server` test failure và bổ sung integration tests.
+- [ ] Sửa frontend build failures.
+- [ ] Sửa `super-portal` build script.
+- [ ] Thêm/chuẩn hóa root scripts `test`, `test:e2e` nếu docs tiếp tục hướng dẫn sử dụng.
+- [ ] Đồng bộ `docs/guides/testing.md`, `tests/api-tests.http`, sample payloads với code thực tế.
 
----
+Verification tối thiểu:
 
-#### P2-2: Course & Lesson DTO Validation ⚡
+- `pnpm --filter api-server test`
+- `pnpm --filter api-server build`
+- `pnpm --filter web-admin build`
+- `pnpm --filter web-student build`
+- `pnpm --filter super-portal build`
 
-**Trạng thái:** TODO | **Ưu tiên:** MEDIUM | **Cần:** Chỉ source
+### Workstream E - Product modules trên nền tảng đã ổn
 
-**Files cần sửa:**
+Chỉ đẩy nhanh sau khi A-D ở mức chấp nhận được.
 
-11. **`apps/api-server/src/course/dto/create-course.dto.ts`**:
+Task:
 
-```ts
-// title: @MaxLength(255)
-// description: @MaxLength(5000)
-```
+- [ ] Hoàn thiện Course Builder contract và UI.
+- [ ] Hoàn thiện Student Learning Space và progress flow.
+- [ ] Mở rộng tenant settings và branding.
+- [ ] Đánh giá lesson block architecture sau khi MVP lesson flow ổn định.
 
-12. **`apps/api-server/src/lesson/dto/create-lesson.dto.ts`**:
+## 5. Roadmap theo phase
 
-```ts
-// title: @MaxLength(255)
-// content: @MaxLength(50000)
-// type: @IsEnum(LessonType) thay vì @IsString()
-```
+### Phase 0 - Blocking fixes
 
-13. **`apps/api-server/src/lesson/dto/update-lesson.dto.ts`**:
+- [ ] Fix tenant isolation end-to-end.
+- [ ] Fix auth source-of-truth trên frontend.
+- [ ] Fix build/test blockers.
+- [ ] Cập nhật stale docs/test assets.
 
-```ts
-// type: @IsEnum(LessonType) thay vì @IsString()
-```
+### Phase 1 - Contract consolidation
 
----
+- [ ] Standardize API response model.
+- [ ] Fix DTO/schema drift.
+- [ ] Fix route mismatch và duplicated client logic.
+- [ ] Bổ sung integration tests cho auth/tenant/course/lesson/progress.
 
-### PHASE 3: Auth Flow Improvement 🟡
+### Phase 2 - Operational hardening
 
-#### P3-1: Refresh Token Mechanism
+- [ ] Logout/session invalidation.
+- [ ] Tenant disable enforcement.
+- [ ] MCP auth hardening.
+- [ ] Observability cho auth, tenant và security events.
 
-**Trạng thái:** TODO | **Ưu tiên:** CRITICAL | **Cần:** Cần Docker + DB
+### Phase 3 - Feature acceleration
 
-**Prisma changes:**
+- [ ] Course Builder.
+- [ ] Student Learning Space.
+- [ ] Super Portal operational workflows.
 
-```prisma
-model RefreshToken {
-  id        String   @id @default(uuid())
-  token     String   @unique
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-}
-```
+## 6. Checklist cập nhật
 
-**Files cần sửa:**
+### Đã có nhưng chưa đủ để xem là done
 
-- `auth.service.ts` — Tạo refresh token, validate refresh token
-- `auth.controller.ts` — Thêm `/auth/refresh` endpoint
-- `auth.module.ts` — Config refresh token expiry
-- Thêm logout endpoint để revoke tokens
+- [x] NestJS modules auth/user/admin/course/lesson/progress
+- [x] JWT issue và cookie set cơ bản
+- [x] RBAC decorator/guards cho course và lesson mutation
+- [x] Pagination cơ bản cho course/lesson
+- [x] Shared `@repo/api-client`
+- [x] Shared auth store cơ bản
+- [x] Health endpoint/module có tồn tại
 
----
+### Chưa đạt
 
-#### P3-2: Standardize Error Response Format ⚡
+- [ ] Tenant isolation an toàn
+- [ ] Login/JWT validation ràng tenant đúng
+- [ ] Frontend cookie-first auth
+- [ ] Build ba frontend apps pass trong workspace hiện tại
+- [ ] Backend test suite pass
+- [ ] Docs testing khớp với scripts thật
+- [ ] API contract nhất quán giữa backend và frontend
+- [ ] Course DTO/schema alignment
 
-**Trạng thái:** TODO | **Ưu tiên:** HIGH | **Cần:** Chỉ source
+## 7. Việc nên làm tiếp theo
 
-14. **`apps/api-server/src/common/filters/http-exception.filter.ts`**:
+Thứ tự thực thi đề xuất:
 
-```ts
-// Đảm bảo response luôn có: { success: false, message, statusCode, timestamp }
-// Kiểm tra admin.service.ts:280-283 — không trả { success: true } riêng
-```
+1. Sửa tenant isolation và auth flow.
+2. Sửa build/test/scripts/docs drift.
+3. Chuẩn hóa API contract và shared boundaries.
+4. Thêm integration tests để bắt regression.
+5. Quay lại mở rộng Course Builder và Student Learning Space.
 
----
+## 8. Definition of done cho architecture roadmap
 
-#### P3-3: Add Logging cho Security Events ⚡
+Chỉ nên chuyển trọng tâm sang roadmap feature khi:
 
-**Trạng thái:** TODO | **Ưu tiên:** HIGH | **Cần:** Chỉ source
-
-15. **`apps/api-server/src/auth/auth.service.ts`**:
-
-```ts
-// Logger login failures (email + IP + timestamp) — không reveal email existence
-// Logger login success
-```
-
----
-
-### PHASE 4: Frontend Security & Quality 🟡
-
-#### P4-1: Middleware Fix ⚡
-
-**Trạng thái:** TODO | **Ưu tiên:** CRITICAL | **Cần:** Chỉ source
-
-16. **`apps/web-admin/src/proxy.ts`** → Xóa hoặc đổi tên thành `middleware.ts`
-17. **`apps/super-portal/src/proxy.ts`** → Xóa hoặc đổi tên thành `middleware.ts`
-18. **`apps/web-admin/src/middleware.ts`** → Khôi phục nếu đã xóa
-19. **`apps/web-student/src/middleware.ts`** → Khôi phục nếu đã xóa
-
----
-
-#### P4-2: Fix Hardcoded Locale Redirects ⚡
-
-**Trạng thái:** TODO | **Ưu tiên:** HIGH | **Cần:** Chỉ source
-
-20. **`apps/web-admin/src/lib/api.ts:48`** — `/vi/login` → dùng next-intl navigation
-21. **`apps/web-student/src/lib/api.ts:53`** — `/vi/login` → dùng next-intl navigation
-
----
-
-#### P4-3: Fix super-portal Token Expiry ⚡
-
-**Trạng thái:** TODO | **Ưu tiên:** HIGH | **Cần:** Chỉ source
-
-22. **`apps/super-portal/src/features/auth/auth.store.ts`**:
-
-```ts
-// Thêm JWT expiry check như web-admin và web-student
-// Decode payload.exp và so sánh với now
-```
-
----
-
-#### P4-4: Remove Credentials Console Log ⚡
-
-**Trạng thái:** TODO | **Ưu tiên:** MEDIUM | **Cần:** Chỉ source
-
-23. **`apps/super-portal/src/features/auth/auth.store.ts:35`**:
-
-```ts
-// Xóa: console.log("Login attempt:", { email, password });
-```
-
----
-
-### PHASE 5: Code Quality & Type Safety 🟡
-
-#### P5-1: Replace `any` Types ⚡
-
-**Trạng thái:** TODO | **Ưu tiên:** HIGH | **Cần:** Chỉ source
-
-24. **`auth.service.ts`** — Thêm proper return types thay vì `Promise<any>`
-25. **`jwt.strategy.ts`** — `validate()` return type thay vì `Promise<any>`
-26. **`admin.service.ts`** — Thêm proper return types
-27. **`progress/dto/authenticated-request.interface.ts`** — `role: string` → `role: Role`
-
----
-
-#### P5-2: Split AdminService ⚡
-
-**Trạng thái:** TODO | **Ưu tiên:** HIGH | **Cần:** Chỉ source
-
-28. **`apps/api-server/src/admin/admin.service.ts`** — Split thành:
-    - `AdminUserService` — user management logic
-    - `TenantService` — tenant management logic
-
----
-
-#### P5-3: Database Transactions ⚡
-
-**Trạng thái:** TODO | **Ưu tiên:** HIGH | **Cần:** Cần Docker + DB
-
-29. **`apps/api-server/src/admin/admin.service.ts`**:
-
-```ts
-// updateTenant() — wrap read/write operations trong $transaction
-```
-
----
-
-### PHASE 6: Performance & Scalability 🔵
-
-#### P6-1: Pagination cho Course/Lesson ⚡
-
-**Trạng thái:** TODO | **Ưu tiên:** HIGH | **Cần:** Cần Docker + DB
-
-30. **`apps/api-server/src/course.service.ts`** — Thêm skip/take parameters
-31. **`apps/api-server/src/lesson.service.ts`** — Thêm skip/take parameters
-32. **`apps/api-server/src/course.controller.ts`** — Thêm query params (page, limit)
-33. **`apps/api-server/src/lesson.controller.ts`** — Thêm query params (page, limit)
-
----
-
-#### P6-2: Redis Caching
-
-**Trạng thái:** TODO | **Ưu tiên:** HIGH | **Cần:** Docker + source
-
-34. **`apps/api-server/src/auth/strategies/jwt.strategy.ts`**:
-
-```ts
-// Cache user lookup với Redis, TTL 5 phút
-// Thay vì query DB mỗi request
-```
-
-35. **Cache course listings, lesson content, tenant configs**
-
----
-
-#### P6-3: Prisma Indexes
-
-**Trạng thái:** TODO | **Ưu tiên:** MEDIUM | **Cần:** Cần Docker + DB
-
-36. **`packages/database/prisma/schema.prisma`**:
-
-```prisma
-// Lesson: @@index([courseId, order])
-// UserLessonProgress: @@index([tenantId, userId])
-// Course: @@index([tenantId])
-```
-
----
-
-### PHASE 7: Shared Packages & Monorepo Cleanup 🔵
-
-#### P7-1: Extract Shared API Client ⚡
-
-**Trạng thái:** TODO | **Ưu tiên:** MEDIUM | **Cần:** Chỉ source
-
-37. Tạo `packages/api-client/src/index.ts`:
-
-```ts
-// createApiClient({ tenantId, baseURL, onUnauthorized }) → axios instance
-// Trích xuất interceptor logic từ 3 api.ts files
-```
-
-38. Update `apps/web-admin/src/lib/api.ts` → dùng `createApiClient()`
-39. Update `apps/web-student/src/lib/api.ts` → dùng `createApiClient()`
-40. Update `apps/super-portal/src/lib/api.ts` → dùng `createApiClient()`
-
----
-
-#### P7-2: Move Shared Auth Store ⚡
-
-**Trạng thái:** TODO | **Ưu tiên:** MEDIUM | **Cần:** Chỉ source
-
-41. Move `apps/web-student/src/features/auth/auth.store.ts` → `packages/shared/src/auth.store.ts`
-42. Update web-admin và super-portal dùng shared store
-
----
-
-#### P7-3: Monorepo Tooling Fixes ⚡
-
-**Trạng thái:** TODO | **Ưu tiên:** LOW | **Cần:** Chỉ source
-
-43. Thêm `.prettierrc` ở root
-44. Fix `turbo.json` test task — remove `"dependsOn": ["build"]`
-45. Add `@repo/database` proper export map
-46. Fix `packages/ui/peerDependencies`
-47. Thêm CI/CD workflow (`.github/workflows/`)
-48. Xóa dangling `api-server` và `express` references trong root `package.json`
-
----
-
-### PHASE 8: Missing Features & Testing 🟢
-
-#### P8-1: Seed Data Improvement ⚡
-
-**Trạng thái:** TODO | **Ưu tiên:** MEDIUM | **Cần:** Cần Docker + DB
-
-49. **`packages/database/prisma/seed.ts`** — Thêm INSTRUCTOR, ADMIN test users
-50. Thêm UserLessonProgress seed records
-51. Fix type casts: `type: LessonType.VIDEO` thay vì `type: "video" as any`
-
----
-
-#### P8-2: Missing Middleware Files ⚡
-
-**Trạng thái:** TODO | **Ưu tiên:** MEDIUM | **Cần:** Chỉ source
-
-52. Khôi phục `apps/web-admin/src/middleware.ts`
-53. Khôi phục `apps/web-student/src/middleware.ts`
-
----
-
-#### P8-3: Health Check Endpoint
-
-**Trạng thái:** TODO | **Ưu tiên:** MEDIUM | **Cần:** Chỉ source
-
-54. Thêm `apps/api-server/src/health.controller.ts`:
-
-```ts
-// GET /health → 200 OK
-// Kiểm tra DB connection
-// Kiểm tra Redis connection
-```
-
----
-
-## 4. Checklist tiến độ
-
-### Phase 1: Security Hardening 🔴
-
-- [x] P1-1: RBAC — Course controller @Roles() ✅
-- [x] P1-1: RBAC — Lesson controller @Roles() ✅
-- [x] P1-1: RBAC — Fix RolesGuard throw exception ✅
-- [x] P1-2: CORS — Origin validation function ✅
-- [x] P1-3: JWT — Set httpOnly cookie in auth.service.ts ✅
-- [x] P1-3: JWT — Extract from cookie + header in jwt.strategy.ts ✅
-- [x] P1-3: JWT — Add @Res param in auth.controller.ts ✅
-
-### Phase 2: Input Validation 🟠
-
-- [x] P2-1: register.dto.ts — @MaxLength email + @Matches password ✅
-- [x] P2-1: login.dto.ts — @MaxLength email ✅
-- [x] P2-1: auth.service.ts — bcrypt rounds 10 → 12 ✅
-- [x] P2-2: create-course.dto.ts — @MaxLength title, description ✅
-- [x] P2-2: create-lesson.dto.ts — @MaxLength + @IsEnum type ✅
-- [x] P2-2: update-lesson.dto.ts — @IsEnum type ✅
-
-### Phase 3: Auth Flow 🟡
-
-- [ ] P3-1: Refresh Token — Prisma model
-- [ ] P3-1: Refresh Token — /auth/refresh endpoint
-- [ ] P3-1: Refresh Token — logout endpoint
-- [x] P3-2: Error response — standardize format ✅
-- [ ] P3-3: Logging — auth failure logging
-
-### Phase 4: Frontend 🟡
-
-- [x] P4-1: proxy.ts → xóa hoặc đổi tên middleware.ts ✅
-- [x] P4-2: Fix hardcoded /vi/ locale redirects ✅
-- [x] P4-3: Fix super-portal token expiry check ✅
-- [x] P4-4: Remove console.log credentials ✅
-
-### Phase 5: Code Quality 🟡
-
-- [x] P5-1: Replace `any` types — auth services ✅
-- [x] P5-1: Replace `any` types — controllers ✅
-- [x] P5-1: Replace `any` types — authenticated-request interface ✅
-- [x] P5-2: Database transactions in admin.service.ts ✅
-- [ ] P5-2: Split AdminService → AdminUserService + TenantService (defer - too large for quick fix)
-
-### Phase 6: Performance 🔵
-
-- [x] P6-1: Pagination — course service + controller ✅
-- [x] P6-1: Pagination — lesson service + controller ✅
-- [ ] P6-2: Redis caching — JWT user lookup
-- [ ] P6-2: Redis caching — course listings
-- [ ] P6-3: Prisma indexes — Lesson.order, UserLessonProgress
-
-### Phase 7: Monorepo 🔵
-
-- [x] P7-1: Extract @repo/api-client package ✅
-- [x] P7-1: Update 3 apps dùng shared api-client ✅
-- [x] P7-2: Move auth store to @repo/shared ✅
-- [x] P7-3: Add .prettierrc ✅
-- [x] P7-3: Fix turbo.json test task ✅
-- [x] P7-3: Fix packages/ui peerDependencies ✅
-- [x] P7-3: Add CI/CD workflow ✅
-- [x] P7-3: Remove dangling package.json references ✅
-
-### Phase 8: Features 🟢
-
-- [x] P8-1: Seed — INSTRUCTOR/ADMIN users (seed.ts uses LessonType enum — done)
-- [x] P8-2: Restore middleware.ts files ✅
-- [x] P8-3: Health check endpoint ✅
-
----
-
-## Phụ lục: Xác minh Best Practices
-
-### JWT Storage
-
-- ✅ **Next.js 16.2.1 official docs (03/2026):** httpOnly + Secure + SameSite + HttpOnly cookie pattern
-- ✅ **OWASP JWT Cheat Sheet:** "hardened cookies (HttpOnly+Secure+SameSite) paired with CSRF protection"
-- ✅ **Decision:** Hybrid httpOnly cookie + Bearer header (pragmatic migration path)
-
-### CSRF Protection
-
-- ✅ **OWASP CSRF Prevention:** SameSite=Lax tự động chặn cross-site AJAX POST/PUT/DELETE
-- ✅ **Next.js official docs:** Bearer JWT header = natural CSRF mitigation
-- ✅ **Decision:** Không cần CSRF token vì Bearer header + Origin check đủ
-
-### Token Refresh
-
-- ✅ **OWASP:** Token revocation quan trọng khi có compromise risk
-- ✅ **Next.js official:** updateSession() pattern cho extending sessions
-- ✅ **Decision:** Cần refresh token cho LMS (nhiều role, instructor/admin management)
-
----
-
-_Document maintained by: Claude Opus — 2026-03-22_
+- Cross-tenant access tests pass.
+- Workspace build/test chạy được ở các app chính.
+- Frontend không còn dựa vào `localStorage` để mang authority auth/tenant.
+- Docs product và docs testing phản ánh đúng code state hiện tại.
+- Không còn mismatch lớn giữa DTO, service, schema và frontend client.

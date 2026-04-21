@@ -1,16 +1,15 @@
-import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import createMiddleware from 'next-intl/middleware';
 import { locales, defaultLocale } from '@repo/shared';
 
-const i18nMiddleware = createMiddleware({
+const i18nProxy = createMiddleware({
   locales,
   defaultLocale,
   localePrefix: 'always',
 });
 
-export default function middleware(request: NextRequest) {
-  const i18nResponse = i18nMiddleware(request);
+export default function proxy(request: NextRequest) {
+  const i18nResponse = i18nProxy(request);
 
   const securityHeaders = {
     'X-DNS-Prefetch-Control': 'on',

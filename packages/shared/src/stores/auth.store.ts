@@ -1,6 +1,5 @@
 /* eslint-disable no-unused-vars */
 import { create } from 'zustand';
-import type { AxiosStatic } from 'axios';
 
 export interface AuthUser {
   id: string;
@@ -12,47 +11,37 @@ export interface AuthUser {
 
 export interface AuthState {
   user: AuthUser | null;
-  token: string | null;
   isAuthenticated: boolean;
   isInitialized: boolean;
   loading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<boolean>;
   register?: (fullName: string, email: string, password: string) => Promise<boolean>;
-  logout: () => void;
-  checkAuth: () => void;
+  logout: () => Promise<void>;
+  checkAuth: () => Promise<void>;
   clearError: () => void;
-  setAuth: (token: string, user: AuthUser) => void;
-  validateToken: (token: string) => boolean;
 }
 
 export interface CreateAuthStoreOptions {
-  api: Pick<AxiosStatic, 'post'>;
-  /** Store user object in localStorage. Default: true */
+  api: AuthApiClient;
   persistUser?: boolean;
-  /** Custom error messages */
   messages?: {
     loginError?: string;
     registerError?: string;
   };
 }
 
-function decodeJwtPayload(token: string): Record<string, unknown> | null {
-  try {
-    const base64 = token.split('.')[1];
-    if (!base64) return null;
-    return JSON.parse(atob(base64.replace(/-/g, '+').replace(/_/g, '/')));
-  } catch {
-    return null;
-  }
+interface AuthRequestConfig {
+  skipUnauthorizedRedirect?: boolean;
 }
 
-function validateToken(token: string | null): boolean {
-  if (!token) return false;
-  const payload = decodeJwtPayload(token);
-  if (!payload) return false;
-  const now = Math.floor(Date.now() / 1000);
-  return !payload.exp || (payload.exp as number) >= now;
+interface AuthApiResponse<T> {
+  data: T;
+}
+
+interface AuthApiClient {
+  get<T>(url: string, config?: AuthRequestConfig): Promise<AuthApiResponse<T>>;
+  post<T>(url: string, data?: unknown, config?: AuthRequestConfig): Promise<AuthApiResponse<T>>;
 }
 
 function extractErrorMsg(err: unknown, fallback: string): string {
@@ -73,9 +62,34 @@ export function createAuthStore(options: CreateAuthStoreOptions) {
     registerError = 'Registration failed. Please try again.',
   } = messages;
 
+  const clearStoredAuth = () => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('tenantId');
+  };
+
+  const persistAuthUser = (user: AuthUser | null) => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    localStorage.removeItem('token');
+    localStorage.removeItem('tenantId');
+
+    if (persistUser && user) {
+      localStorage.setItem('user', JSON.stringify(user));
+      return;
+    }
+
+    localStorage.removeItem('user');
+  };
+
   return create<AuthState>((set) => ({
     user: null,
-    token: null,
     isAuthenticated: false,
     isInitialized: false,
     loading: false,
@@ -83,49 +97,53 @@ export function createAuthStore(options: CreateAuthStoreOptions) {
 
     clearError: () => set({ error: null }),
 
-    validateToken,
-
-    checkAuth: () => {
+    checkAuth: async () => {
       if (typeof window === 'undefined') {
         set({ isInitialized: true });
         return;
       }
 
-      const token = localStorage.getItem('token');
-      const userStr = localStorage.getItem('user');
+      try {
+        const response = await api.get<AuthUser>('/users/me', {
+          skipUnauthorizedRedirect: true,
+        });
+        const user = response.data;
 
-      if (token && validateToken(token)) {
-        const user = userStr ? (JSON.parse(userStr) as AuthUser) : null;
-        set({ token, user, isAuthenticated: true, isInitialized: true });
-      } else if (token || userStr) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        set({ token: null, user: null, isAuthenticated: false, isInitialized: true });
-      } else {
-        set({ isInitialized: true });
+        persistAuthUser(user);
+        set({
+          user,
+          isAuthenticated: true,
+          isInitialized: true,
+          error: null,
+        });
+      } catch {
+        clearStoredAuth();
+        set({
+          user: null,
+          isAuthenticated: false,
+          isInitialized: true,
+          error: null,
+        });
       }
     },
 
     login: async (email, password) => {
       set({ loading: true, error: null });
       try {
-        const response = await api.post<{ token: string; user: AuthUser }>('/auth/login', {
+        const response = await api.post<{ user: AuthUser }>('/auth/login', {
           email,
           password,
         });
-        const { token, user } = response.data;
+        const { user } = response.data;
 
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('token', token);
-          if (persistUser && user) {
-            localStorage.setItem('user', JSON.stringify(user));
-            if (user.tenantId) {
-              localStorage.setItem('tenantId', user.tenantId);
-            }
-          }
-        }
+        persistAuthUser(user);
 
-        set({ token, user: persistUser ? user : null, isAuthenticated: true, loading: false });
+        set({
+          user,
+          isAuthenticated: true,
+          isInitialized: true,
+          loading: false,
+        });
         return true;
       } catch (err) {
         set({ error: extractErrorMsg(err, loginError), loading: false });
@@ -133,62 +151,42 @@ export function createAuthStore(options: CreateAuthStoreOptions) {
       }
     },
 
-    logout: () => {
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        localStorage.removeItem('tenantId');
+    logout: async () => {
+      try {
+        await api.post('/auth/logout', null, {
+          skipUnauthorizedRedirect: true,
+        });
+      } catch {
+        // Local state still needs to be cleared if the logout request fails.
       }
-      set({ token: null, user: null, isAuthenticated: false });
+
+      clearStoredAuth();
+      set({ user: null, isAuthenticated: false, isInitialized: true, error: null });
     },
 
     register: async (fullName, email, password) => {
       set({ loading: true, error: null });
       try {
-        const response = await api.post<{ token: string; user: AuthUser }>('/auth/register', {
+        const response = await api.post<{ user: AuthUser }>('/auth/register', {
           fullName,
           email,
           password,
         });
-        const { token, user } = response.data;
+        const { user } = response.data;
 
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('token', token);
-          if (persistUser && user) {
-            localStorage.setItem('user', JSON.stringify(user));
-            if (user.tenantId) {
-              localStorage.setItem('tenantId', user.tenantId);
-            }
-          }
-        }
+        persistAuthUser(user);
 
-        set({ token, user: persistUser ? user : null, isAuthenticated: true, loading: false });
+        set({
+          user,
+          isAuthenticated: true,
+          isInitialized: true,
+          loading: false,
+        });
         return true;
       } catch (err) {
         set({ error: extractErrorMsg(err, registerError), loading: false });
         return false;
       }
-    },
-
-    setAuth: (token, user) => {
-      if (!token || !user) return;
-      if (!validateToken(token)) {
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-        }
-        return;
-      }
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('token', token);
-        if (persistUser) {
-          localStorage.setItem('user', JSON.stringify(user));
-          if (user.tenantId) {
-            localStorage.setItem('tenantId', user.tenantId);
-          }
-        }
-      }
-      set({ token, user: persistUser ? user : null, isAuthenticated: true });
     },
   }));
 }

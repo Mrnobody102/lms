@@ -21,7 +21,7 @@ export default function Home() {
   const { isAuthenticated, user, logout, checkAuth } = useAuthStore();
 
   useEffect(() => {
-    checkAuth();
+    void checkAuth();
   }, [checkAuth]);
 
   // Guard: if already authenticated, don't allow modal to open
@@ -64,7 +64,9 @@ export default function Home() {
                 {user?.fullName}
               </p>
               <button
-                onClick={() => logout()}
+                onClick={() => {
+                  void logout();
+                }}
                 className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-destructive transition-all rounded-lg hover:bg-destructive/5"
                 title={t('cta.logout') || 'Logout'}
               >

@@ -3,13 +3,14 @@ import {
   UnauthorizedException,
   ConflictException,
   Logger,
-} from "@nestjs/common";
-import { JwtService } from "@nestjs/jwt";
-import * as bcrypt from "bcrypt";
-import { Response } from "express";
-import { PrismaService } from "../common/services/prisma.service";
-import { LoginDto } from "./dto/login.dto";
-import { RegisterDto } from "./dto/register.dto";
+  BadRequestException,
+} from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
+import type { Response } from 'express';
+import { PrismaService } from '../common/services/prisma.service';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
 
 @Injectable()
 export class AuthService {
@@ -20,23 +21,27 @@ export class AuthService {
     private readonly _jwtService: JwtService,
   ) {}
 
-  async register(registerDto: RegisterDto, tenantId: string, res: Response) {
+  async register(registerDto: RegisterDto, tenantId: string | undefined, res: Response) {
+    if (!tenantId) {
+      throw new BadRequestException('Tenant context is required');
+    }
+
     const existingUser = await this._prisma.user.findUnique({
       where: { email: registerDto.email },
     });
 
     if (existingUser) {
-      this.logger.warn(`Registration failed — email already exists: ${registerDto.email}`);
-      throw new ConflictException("Email already registered");
+      this.logger.warn(`Registration failed - email already exists: ${registerDto.email}`);
+      throw new ConflictException('Email already registered');
     }
 
-    const tenant = await this._prisma.tenant.findUnique({
-      where: { id: tenantId },
+    const tenant = await this._prisma.tenant.findFirst({
+      where: { id: tenantId, isActive: true },
     });
 
     if (!tenant) {
-      this.logger.warn(`Registration failed — invalid tenant: ${tenantId}`);
-      throw new ConflictException("Invalid tenant");
+      this.logger.warn(`Registration failed - invalid tenant: ${tenantId}`);
+      throw new ConflictException('Invalid tenant');
     }
 
     const hashedPassword = await bcrypt.hash(registerDto.password, 12);
@@ -47,7 +52,7 @@ export class AuthService {
         password: hashedPassword,
         fullName: registerDto.fullName,
         phoneNumber: registerDto.phoneNumber,
-        tenantId: tenantId,
+        tenantId,
       },
       select: {
         id: true,
@@ -70,34 +75,47 @@ export class AuthService {
 
     return {
       user,
-      token,
     };
   }
 
-  async login(loginDto: LoginDto, res: Response) {
-    const user = await this._prisma.user.findUnique({
-      where: { email: loginDto.email },
+  async login(loginDto: LoginDto, tenantId: string | undefined, res: Response) {
+    if (!tenantId) {
+      throw new BadRequestException('Tenant context is required');
+    }
+
+    const user = await this._prisma.user.findFirst({
+      where: {
+        email: loginDto.email,
+        tenantId,
+        deletedAt: null,
+      },
     });
 
     if (!user) {
-      // Log attempt but don't reveal email existence (OWASP recommendation)
-      this.logger.warn(`Login failed — email not found: ${loginDto.email}`);
-      throw new UnauthorizedException("Invalid credentials");
+      this.logger.warn(`Login failed - invalid tenant/email combination: ${loginDto.email}`);
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     if (!user.isActive) {
-      this.logger.warn(`Login failed — inactive account: id=${user.id}`);
-      throw new UnauthorizedException("Account is inactive");
+      this.logger.warn(`Login failed - inactive account: id=${user.id}`);
+      throw new UnauthorizedException('Account is inactive');
     }
 
-    const isPasswordValid = await bcrypt.compare(
-      loginDto.password,
-      user.password,
-    );
+    const tenant = await this._prisma.tenant.findFirst({
+      where: { id: tenantId, isActive: true },
+      select: { id: true },
+    });
+
+    if (!tenant) {
+      this.logger.warn(`Login failed - inactive tenant: ${tenantId}`);
+      throw new UnauthorizedException('Tenant is inactive');
+    }
+
+    const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
 
     if (!isPasswordValid) {
-      this.logger.warn(`Login failed — invalid password: id=${user.id}`);
-      throw new UnauthorizedException("Invalid credentials");
+      this.logger.warn(`Login failed - invalid password: id=${user.id}`);
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     this.logger.log(`User logged in: id=${user.id}, role=${user.role}`);
@@ -109,7 +127,15 @@ export class AuthService {
 
     return {
       user: userWithoutPassword,
-      token,
+    };
+  }
+
+  logout(res: Response) {
+    this.clearAuthCookie(res);
+
+    return {
+      success: true,
+      message: 'Logged out successfully',
     };
   }
 
@@ -125,12 +151,21 @@ export class AuthService {
   }
 
   private setAuthCookie(res: Response, token: string): void {
-    res.cookie("access_token", token, {
+    res.cookie('access_token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      path: "/",
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/',
+    });
+  }
+
+  private clearAuthCookie(res: Response): void {
+    res.clearCookie('access_token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
     });
   }
 }

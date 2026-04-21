@@ -73,7 +73,6 @@ export class AppModule {
     consumer
       .apply(RequestLoggingMiddleware, TenantMiddleware)
       .exclude(
-        { path: 'auth/(.*)', method: RequestMethod.ALL },
         { path: 'health', method: RequestMethod.ALL },
         { path: 'mcp/(.*)', method: RequestMethod.ALL },
       )

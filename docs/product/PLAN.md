@@ -1,152 +1,198 @@
-# Kế Hoạch Triển Khai: Nền Tảng LMS Đa Dụng (SaaS)
+# Kế hoạch triển khai LMS Platform
 
-Mục tiêu dài hạn: Xây dựng nền tảng SaaS cho phép tạo hàng ngàn website đào tạo chỉ với vài click.
+Cập nhật lần cuối: 2026-04-21
 
-## Mục Lục
+## Mục tiêu
 
-- [Giai đoạn 1: Lõi Hệ Thống (Platform Core)](#giai-đoạn-1-lõi-hệ-thống-platform-core---)
-- [Giai đoạn 2: Content Management System (Generalized)](#giai-đoạn-2-content-management-system-generalized-)
-- [Giai đoạn 3: Các Module Chuyên Biệt (Vertical Features)](#giai-đoạn-3-các-module-chuyên-biệt-vertical-features-)
-- [Giai đoạn 4: Thương mại hóa & Scale (SaaS)](#giai-đoạn-4-thương-mại-hóa--scale-saas-)
+Mục tiêu ngắn hạn của dự án không còn là thêm thật nhiều tính năng mới ngay lập tức, mà là đưa nền tảng hiện tại về trạng thái có thể mở rộng an toàn:
 
-## Giai đoạn 1: Lõi Hệ Thống (Platform Core) 🟢
+- Multi-tenant đúng nghĩa: tenant isolation được enforce ở phía server, không tin client header như nguồn sự thật.
+- Auth và session an toàn hơn: không để JWT hoặc tenant context trong `localStorage` làm authority chính.
+- API contract ổn định: frontend, backend, test và docs khớp nhau.
+- Build và test chạy được trong workspace thực tế.
+- Sau khi nền tảng ổn định mới tiếp tục đẩy nhanh Course Builder và Student Learning Space.
 
-- [x] **Core Monorepo & Multi-tenancy**:
-  - Cấu trúc thư mục chuẩn.
-  - Tenant Middleware định tuyến theo subdomain.
-  - Database Isolation (Shared Schema, Tenant Discriminator).
-- [x] **Tenant Management (Super Portal)**: ✅ **COMPLETED** (Feb 26, 2026)
-  - ✅ Flow tạo Tenant mới.
-  - ✅ Cấu hình Branding cơ bản (Logo, Brand Color).
-- [x] **Auth System**: ✅ **COMPLETED** (Jan 21, 2026)
-  - ✅ JWT-based authentication với Passport
-  - ✅ Register endpoint với validation
-  - ✅ Login endpoint với password hashing (bcrypt)
-  - ✅ Role-based access control (STUDENT, TEACHER, ADMIN, SUPER_ADMIN)
-  - ✅ Tenant isolation middleware
-- [x] **User Management**: ✅ **COMPLETED** (Jan 21, 2026)
-  - ✅ User profile management (GET/PUT /users/me)
-  - ✅ Password change functionality
-  - ✅ Admin user management endpoints
-  - ✅ User filtering và pagination
-  - ✅ Account lock/unlock features
+## Đánh giá hiện trạng
 
-## Giai đoạn 2: Content Management System (Generalized) 🟡
+Những phần đã có giá trị:
 
-- [ ] **Course Builder Đa năng**:
-  - Hệ thống tạo bài học linh hoạt (Lesson Blocks).
-  - Block Video (Upload/Embed).
-  - Block Rich Text (Soạn thảo văn bản).
-  - Block Quiz cơ bản.
-- [ ] **Student Learning Space**:
-  - Giao diện học tập (LMS Player) chung cho mọi tenant.
-  - Sidebar điều hướng bài học.
+- Monorepo `apps/` + `packages/` khá rõ ràng.
+- Backend NestJS đã tách module `auth`, `user`, `admin`, `course`, `lesson`, `progress`.
+- Prisma schema đã có nền tảng tenant, course, lesson, progress.
+- Ba frontend app đã dùng chung một phần shared packages.
 
-## Giai đoạn 3: Các Module Chuyên Biệt (Vertical Features) ⚪
+Những điểm chưa thể xem là hoàn thành:
 
-Tại giai đoạn này, ta phát triển các tính năng sâu cho từng ngách khách hàng (ví dụ: Trung tâm Tiếng Trung).
+- Auth và tenant management mới ở mức MVP, chưa production-ready.
+- Multi-tenancy hiện tại còn phụ thuộc vào `x-tenant-id` từ client.
+- Frontend vẫn đang giữ JWT trong `localStorage`.
+- Test và tài liệu test đang lệch với code hiện tại.
+- `web-admin`, `web-student`, `super-portal` chưa ở trạng thái build ổn định trong workspace hiện tại.
 
-- [ ] **Module Ngôn Ngữ (Language Pack)**:
-  - Flashcard component (Reusable).
-  - Audio Player nâng cao.
-  - Bài tập điền từ/sắp xếp câu.
-- [ ] **Module Luyện thi (Exam Pack)**:
-  - Đồng hồ đếm ngược.
-  - Ngân hàng câu hỏi.
+## Nguyên tắc cập nhật roadmap
 
-## Giai Đoạn 5: Hệ Sinh Thái Mobile (Future)
+- Không đánh dấu `done` nếu chưa qua được `build`, `lint`, test phù hợp và verify nghiệp vụ.
+- Security và tenancy là blocker cho mọi tính năng tiếp theo.
+- Mỗi task phải có đầu ra rõ ràng và cách verify.
+- Ưu tiên giảm drift giữa code, docs, test và shared contracts.
 
-- **Mục tiêu**: Mở rộng trải nghiệm học tập mọi lúc mọi nơi.
-- **Công việc**:
-  - Setup dự án React Native (Expo) trong Monorepo (`apps/mobile`).
-  - Tích hợp Authentication (Login/Register).
-  - Xây dựng màn hình học tập (Video Player, Flashcard cảm ứng).
-  - Tính năng Offline Sync (học khi không có mạng).
-  - Push Notification (nhắc lịch học).
+## Roadmap ưu tiên
 
-## Giai đoạn 6: Thương mại hóa & Scale (SaaS) ⚪
+### P0. Security và tenant isolation
 
-- [ ] **Billing System**: Tích hợp thanh toán phí thuê bao tháng cho các Chủ trung tâm.
-- [ ] **Custom Domain**: Hỗ trợ gắn tên miền riêng (ví dụ: `hoc.trungtamA.com` thay vì `trungtama.lms.com`).
-- [ ] **API Gateway**: Mở API cho các bên thứ 3 tích hợp.
+Mục tiêu:
 
----
+- Khóa tenant context theo identity của user/token/cookie ở phía server.
+- Loại bỏ khả năng đọc hoặc ghi chéo tenant bằng cách sửa header.
+- Giảm bề mặt tấn công của auth flow.
 
-## 📊 Chi Tiết Triển Khai
+Công việc:
 
-### ✅ Giai Đoạn 1 - Hoàn Thành (Jan 21, 2026)
+- [ ] Thiết kế lại tenant resolution:
+  - `TenantMiddleware` không được tin `x-tenant-id` như authority duy nhất.
+  - Nếu user đã authenticate, tenant phải được suy ra và verify từ token hoặc user record.
+  - Header tenant, nếu còn dùng, chỉ là input phụ và phải được đối chiếu.
+- [ ] Sửa login/register flow theo tenant:
+  - Login phải xác định tenant hợp lệ thay vì lookup theo email toàn cục.
+  - JWT validation phải reject nếu tenant bị vô hiệu hóa hoặc request tenant không khớp.
+- [ ] Chuẩn hóa auth storage:
+  - Ưu tiên `HttpOnly` cookie làm session source of truth.
+  - Giảm dần và loại bỏ JWT hoặc tenant context khỏi `localStorage`.
+- [ ] Review lại tenant lifecycle:
+  - Tenant `isActive = false` phải chặn login và các session tiếp tục sử dụng hệ thống.
+- [ ] Giảm rủi ro MCP:
+  - Không truyền API key qua query string nếu có thể.
+  - Hardening compare/check và scope truy cập.
 
-**Auth System & User Management** đã được triển khai đầy đủ:
+Done khi:
 
-📁 **Code Structure:**
+- Student hoặc Admin của tenant A không thể dùng header tenant B để truy cập course, lesson hoặc progress của tenant B.
+- User thuộc tenant đã bị disable không thể đăng nhập.
+- Frontend không còn cần `localStorage.token` làm cách xác thực chính cho browser flow.
 
-- `apps/api-server/src/auth/` - Authentication module
-- `apps/api-server/src/user/` - User profile module
-- `apps/api-server/src/admin/` - Admin management module
+### P1. Ổn định build, runtime và workspace
 
-📖 **Documentation:**
+Mục tiêu:
 
-- [API Documentation](../api-documentation.md) - Complete API reference
-- [Quick Start Guide](../quick-start.md) - Setup instructions
-- [Project Structure](../../PROJECT_STRUCTURE.md) - Tổng quan dự án
+- Mỗi app hoặc script quan trọng phải chạy được thật trong workspace.
+- Loại bỏ các script “trông có vẻ đúng” nhưng thực tế fail.
 
-🧪 **Testing:**
+Công việc:
 
-- [API Test Collection](../../tests/api-tests.http) - REST Client tests
-- [AI Validation Script](../../scripts/validate-ai-work.ps1) - Quality checks and validation
+- [ ] Sửa build pipeline cho ba frontend apps:
+  - Xử lý lỗi resolve `autoprefixer` trong `web-admin` và `web-student`.
+  - Sửa script `super-portal` vì `next build --webpack` hiện không hợp lệ.
+- [ ] Sửa test runtime của backend:
+  - `api-server` test hiện fail ở suite MCP vì dependency hoặc runtime setup.
+- [ ] Bổ sung root scripts còn thiếu:
+  - `pnpm test`, `pnpm test:e2e` hoặc cập nhật docs để khớp với script thật.
+- [ ] Đồng bộ hướng dẫn test với workspace hiện tại.
 
-**Endpoints Deployed:**
+Done khi:
 
-- `POST /api/auth/register` - Đăng ký user mới
-- `POST /api/auth/login` - Đăng nhập với JWT
-- `GET /api/users/me` - Xem profile
-- `PUT /api/users/me` - Cập nhật profile
-- `PUT /api/users/change-password` - Đổi mật khẩu
-- `GET /api/admin/users` - Admin quản lý users
-- `PATCH /api/admin/users/:id/status` - Khóa/mở tài khoản
+- `pnpm --filter api-server test` pass.
+- `pnpm --filter web-admin build`, `pnpm --filter web-student build`, `pnpm --filter super-portal build` pass.
+- Docs không còn hướng dẫn các lệnh không tồn tại.
 
-### ✅ Giai Đoạn 1.5 - Hoàn Thành (Feb 26, 2026)
+### P2. API contract và shared architecture
 
-**Tenant Management (Super Portal)** đã được thiết lập:
+Mục tiêu:
 
-📁 **Code Structure:**
+- Backend và frontend chia sẻ một contract đủ rõ để giảm bug runtime.
+- Giảm duplication giữa ba frontend apps.
 
-- `apps/api-server/src/admin/admin-tenant.controller.ts` - Controller quản lý Tenant
-- `apps/api-server/src/admin/tenant-admin.service.ts` - Logic tạo và cập nhật Tenant
-- `apps/api-server/src/common/middleware/tenant.middleware.ts` - Trích xuất Token ngầm
+Công việc:
 
-**Endpoints Deployed:**
+- [ ] Chuẩn hóa response format:
+  - Đăng ký và dùng nhất quán `ResponseInterceptor`, hoặc bỏ hẳn giả định unwrap ở client.
+- [ ] Đồng bộ DTO, service và Prisma schema:
+  - Loại bỏ field trong docs hoặc API không tồn tại thật, hoặc bổ sung schema cho nó.
+  - Ví dụ: `Course.description` hiện có trong DTO nhưng chưa có trong schema hoặc service.
+- [ ] Đồng bộ endpoint contract:
+  - Frontend không được gọi endpoint không tồn tại.
+  - Review lại các route `course`, `lesson`, `progress`.
+- [ ] Tiếp tục gom shared logic:
+  - `api-client`
+  - auth store
+  - middleware/security headers
+  - locale-aware redirect helpers
 
-- `POST /api/admin/tenants` - Tạo trung tâm mới (Tenant)
-- `GET /api/admin/tenants` - Danh sách các Tenant
-- `GET /api/admin/tenants/:id` - Xem thông tin chi tiết một Tenant
-- `PUT /api/admin/tenants/:id` - Cập nhật cấu hình & Branding cho Tenant
-- `DELETE /api/admin/tenants/:id` - Xóa trung tâm/Tenant
+Done khi:
 
-**Frontend Implementation (`apps/super-portal`):**
+- Không còn workaround riêng trong từng app để đoán response shape.
+- Frontend và backend khớp route, payload, field và pagination model.
 
-- Dashboard thống kê hệ thống (Global Stats)
-- Auth Store (Global state quản lý JWT và Session với Zustand)
-- Màn hình chi tiết Tenant (`/tenants/[id]`) sẵn sàng mở rộng module (Config/Settings)
-- Quản lý danh sách Tenant hiện đại với `TanStack Table` (Tự động Phân trang, Tìm kiếm Global Text)
-- Tenant Form Modal (Popup xử lý Create/Update Tenant)
-- Hệ thống Mocks Data Độc Lập (`tenant.mock.ts`) hỗ trợ test UI dễ dàng
-- Tenant Actions Inline (Actions xem, sửa, xóa hiển thị trực quan thay vì dropdown)
+### P3. Test strategy đúng với hệ thống hiện tại
 
-- NestJS Middleware Exclude (Bỏ chặn CORS/Tenant ID)
-- JWT Token Parsing (Cơ chế Token Fallback)
-- Axios & Interceptors (Tự động bắt lỗi 401 xoá token)
-- Tailwind CSS & `lucide-react` (Thiết kế giao diện hiện đại Glassmorphism)
-- React Server Control (Next.js 15+ App Router, `React.use()` unwrapping)
+Mục tiêu:
 
----
+- Có test bắt được các lỗi nghiêm trọng vừa audit.
 
-## 🎯 Tiếp Theo
+Công việc:
 
-### Priority 1: Course Builder
+- [ ] Bổ sung integration tests cho:
+  - auth theo tenant
+  - tenant isolation
+  - RBAC cho course, lesson, admin
+  - tenant disable flow
+  - progress access control
+- [ ] Cập nhật test artifacts:
+  - `tests/api-tests.http`
+  - sample payloads
+  - seed data phục vụ test
+- [ ] Có seed hoặc fixture cho:
+  - ít nhất hai tenants
+  - user roles: `SUPER_ADMIN`, `ADMIN`, `INSTRUCTOR`, `STUDENT`
+  - course, lesson, progress chéo tenant
+- [ ] Duy trì ít nhất một E2E flow có giá trị:
+  - login
+  - xem khóa học
+  - mở lesson
+  - update progress
 
-Hệ thống tạo và quản lý khóa học đa năng (Tạo bài giảng, Video, Quiz).
+Done khi:
 
-### Priority 2: Student Learning Space
+- Các regression sau được test bắt: forged tenant header, login sai tenant, stale docs payload, route mismatch.
 
-LMS Player Sidebar, giao diện học viên.
+### P4. Product modules sau khi nền tảng ổn định
+
+Chỉ bắt đầu đẩy nhanh phase này sau khi P0-P3 đạt mức chấp nhận được.
+
+#### P4.1 Course Builder
+
+- [ ] Hoàn thiện CRUD khóa học và bài học với contract nhất quán.
+- [ ] Hỗ trợ lesson types rõ ràng: `video`, `text`, `quiz`.
+- [ ] Xử lý ordering, validation và soft-delete nhất quán.
+- [ ] Đánh giá có cần tách “lesson blocks” hay giữ model đơn giản trong phase hiện tại.
+
+#### P4.2 Student Learning Space
+
+- [ ] Sidebar điều hướng bài học.
+- [ ] Lesson player cho text, video, quiz.
+- [ ] Progress tracking theo user, tenant, course.
+- [ ] Error/loading states đúng với contract mới.
+
+#### P4.3 Super Portal và tenant operations
+
+- [ ] Tenant activation/deactivation phải tác động đúng lên auth và session.
+- [ ] Tenant settings/branding có contract rõ ràng.
+- [ ] Quản lý tenant không phụ thuộc mock data hoặc giả định cũ.
+
+## Việc cần làm tiếp theo
+
+Thứ tự đề xuất:
+
+1. Fix tenant isolation và auth source-of-truth.
+2. Sửa build/test/scripts/docs để repo chạy được thật.
+3. Chuẩn hóa API contract và bổ sung integration tests.
+4. Quay lại hoàn thiện Course Builder và Student Learning Space.
+
+## Các tiêu chí “done” cấp dự án
+
+Chỉ nên xem giai đoạn nền tảng đã ổn khi thỏa các điều kiện sau:
+
+- Build của bốn app chính pass.
+- Backend test pass và có integration test cho tenant/auth.
+- Frontend không còn phụ thuộc `localStorage` như authority chính cho auth.
+- Không còn API hoặc test docs stale so với DTO hiện tại.
+- Tài liệu product và architecture đồng bộ với code state thực tế.
