@@ -48,7 +48,7 @@ function Wait-ForApiHealth {
   $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
   while ((Get-Date) -lt $deadline) {
     try {
-      $health = Invoke-RestMethod -Uri "$baseUrl/health" -TimeoutSec 5
+      $health = Invoke-RestMethod -Uri "$baseUrl/health/ready" -TimeoutSec 5
       if ($health.status -eq 'ok' -and $health.checks.database.status -eq 'up') {
         return $health
       }
@@ -77,6 +77,9 @@ try {
   Write-Host 'Freeing API port if an older repo process is still running...'
   Free-RepoPorts -Ports @(4000)
 
+  Write-Host 'Building api-server...'
+  Invoke-RepoCommand 'pnpm --filter api-server build'
+
   Write-Host 'Starting api-server...'
   $apiProcess = Start-Process -FilePath 'cmd.exe' `
     -ArgumentList '/d', '/s', '/c', 'pnpm --filter api-server start' `
@@ -85,6 +88,11 @@ try {
     -WindowStyle Hidden
 
   $health = Wait-ForApiHealth
+  $live = Invoke-RestMethod -Uri "$baseUrl/health/live" -TimeoutSec 5
+  if ($live.status -ne 'ok') {
+    throw 'API liveness check failed'
+  }
+
   Write-Host "Health OK: database latency ${($health.checks.database.latencyMs)}ms"
 
   $session = New-Object Microsoft.PowerShell.Commands.WebRequestSession

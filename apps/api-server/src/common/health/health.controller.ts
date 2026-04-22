@@ -1,30 +1,27 @@
-import { Controller, Get } from "@nestjs/common";
-import { ApiTags, ApiOperation } from "@nestjs/swagger";
-import { PrismaService } from "../services/prisma.service";
+import { Controller, Get } from '@nestjs/common';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { HealthService } from './health.service';
 
-@ApiTags("Health")
-@Controller("health")
+@ApiTags('Health')
+@Controller('health')
 export class HealthController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly healthService: HealthService) {}
 
   @Get()
-  @ApiOperation({ summary: "Health check endpoint" })
+  @ApiOperation({ summary: 'Backward-compatible readiness summary' })
   async check() {
-    const dbStart = Date.now();
-    try {
-      await this.prisma.$queryRaw`SELECT 1`;
-    } catch {
-      return {
-        status: "unhealthy",
-        timestamp: new Date().toISOString(),
-        checks: { database: { status: "down", latencyMs: Date.now() - dbStart } },
-      };
-    }
+    return this.healthService.getReadiness();
+  }
 
-    return {
-      status: "ok",
-      timestamp: new Date().toISOString(),
-      checks: { database: { status: "up", latencyMs: Date.now() - dbStart } },
-    };
+  @Get('live')
+  @ApiOperation({ summary: 'Liveness check' })
+  getLiveness() {
+    return this.healthService.getLiveness();
+  }
+
+  @Get('ready')
+  @ApiOperation({ summary: 'Readiness check for dependencies' })
+  async getReadiness() {
+    return this.healthService.getReadiness();
   }
 }
