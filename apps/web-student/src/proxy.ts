@@ -1,6 +1,6 @@
 import type { NextRequest } from 'next/server';
 import createMiddleware from 'next-intl/middleware';
-import { locales, defaultLocale } from '@repo/shared';
+import { buildContentSecurityPolicy, locales, defaultLocale } from '@repo/shared';
 
 const i18nProxy = createMiddleware({
   locales,
@@ -18,8 +18,9 @@ export default function proxy(request: NextRequest) {
     'X-Content-Type-Options': 'nosniff',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
-    'Content-Security-Policy':
-      "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' http://localhost:4000 http://localhost:3000 http://localhost:3001 http://localhost:3002;",
+    'Content-Security-Policy': buildContentSecurityPolicy([process.env.NEXT_PUBLIC_API_URL], {
+      includeLocalhost: process.env.NODE_ENV !== 'production',
+    }),
   };
 
   Object.entries(securityHeaders).forEach(([key, value]) => {

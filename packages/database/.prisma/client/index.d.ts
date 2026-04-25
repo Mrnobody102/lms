@@ -3736,6 +3736,7 @@ export namespace Prisma {
     id: string | null;
     title: string | null;
     slug: string | null;
+    description: string | null;
     isActive: boolean | null;
     deletedAt: Date | null;
     tenantId: string | null;
@@ -3748,6 +3749,7 @@ export namespace Prisma {
     id: string | null;
     title: string | null;
     slug: string | null;
+    description: string | null;
     isActive: boolean | null;
     deletedAt: Date | null;
     tenantId: string | null;
@@ -3760,6 +3762,7 @@ export namespace Prisma {
     id: number;
     title: number;
     slug: number;
+    description: number;
     isActive: number;
     deletedAt: number;
     tenantId: number;
@@ -3781,6 +3784,7 @@ export namespace Prisma {
     id?: true;
     title?: true;
     slug?: true;
+    description?: true;
     isActive?: true;
     deletedAt?: true;
     tenantId?: true;
@@ -3793,6 +3797,7 @@ export namespace Prisma {
     id?: true;
     title?: true;
     slug?: true;
+    description?: true;
     isActive?: true;
     deletedAt?: true;
     tenantId?: true;
@@ -3805,6 +3810,7 @@ export namespace Prisma {
     id?: true;
     title?: true;
     slug?: true;
+    description?: true;
     isActive?: true;
     deletedAt?: true;
     tenantId?: true;
@@ -3905,6 +3911,7 @@ export namespace Prisma {
     id: string;
     title: string;
     slug: string | null;
+    description: string | null;
     isActive: boolean;
     deletedAt: Date | null;
     tenantId: string;
@@ -3936,6 +3943,7 @@ export namespace Prisma {
         id?: boolean;
         title?: boolean;
         slug?: boolean;
+        description?: boolean;
         isActive?: boolean;
         deletedAt?: boolean;
         tenantId?: boolean;
@@ -3956,6 +3964,7 @@ export namespace Prisma {
       id?: boolean;
       title?: boolean;
       slug?: boolean;
+      description?: boolean;
       isActive?: boolean;
       deletedAt?: boolean;
       tenantId?: boolean;
@@ -3971,6 +3980,7 @@ export namespace Prisma {
     id?: boolean;
     title?: boolean;
     slug?: boolean;
+    description?: boolean;
     isActive?: boolean;
     deletedAt?: boolean;
     tenantId?: boolean;
@@ -4001,6 +4011,7 @@ export namespace Prisma {
         id: string;
         title: string;
         slug: string | null;
+        description: string | null;
         isActive: boolean;
         deletedAt: Date | null;
         tenantId: string;
@@ -4483,6 +4494,7 @@ export namespace Prisma {
     readonly id: FieldRef<'Course', 'String'>;
     readonly title: FieldRef<'Course', 'String'>;
     readonly slug: FieldRef<'Course', 'String'>;
+    readonly description: FieldRef<'Course', 'String'>;
     readonly isActive: FieldRef<'Course', 'Boolean'>;
     readonly deletedAt: FieldRef<'Course', 'DateTime'>;
     readonly tenantId: FieldRef<'Course', 'String'>;
@@ -7234,6 +7246,7 @@ export namespace Prisma {
     id: 'id';
     title: 'title';
     slug: 'slug';
+    description: 'description';
     isActive: 'isActive';
     deletedAt: 'deletedAt';
     tenantId: 'tenantId';
@@ -7605,6 +7618,7 @@ export namespace Prisma {
     id?: StringFilter<'Course'> | string;
     title?: StringFilter<'Course'> | string;
     slug?: StringNullableFilter<'Course'> | string | null;
+    description?: StringNullableFilter<'Course'> | string | null;
     isActive?: BoolFilter<'Course'> | boolean;
     deletedAt?: DateTimeNullableFilter<'Course'> | Date | string | null;
     tenantId?: StringFilter<'Course'> | string;
@@ -7619,6 +7633,7 @@ export namespace Prisma {
     id?: SortOrder;
     title?: SortOrder;
     slug?: SortOrderInput | SortOrder;
+    description?: SortOrderInput | SortOrder;
     isActive?: SortOrder;
     deletedAt?: SortOrderInput | SortOrder;
     tenantId?: SortOrder;
@@ -7638,6 +7653,7 @@ export namespace Prisma {
       NOT?: CourseWhereInput | CourseWhereInput[];
       title?: StringFilter<'Course'> | string;
       slug?: StringNullableFilter<'Course'> | string | null;
+      description?: StringNullableFilter<'Course'> | string | null;
       isActive?: BoolFilter<'Course'> | boolean;
       deletedAt?: DateTimeNullableFilter<'Course'> | Date | string | null;
       tenantId?: StringFilter<'Course'> | string;
@@ -7654,6 +7670,7 @@ export namespace Prisma {
     id?: SortOrder;
     title?: SortOrder;
     slug?: SortOrderInput | SortOrder;
+    description?: SortOrderInput | SortOrder;
     isActive?: SortOrder;
     deletedAt?: SortOrderInput | SortOrder;
     tenantId?: SortOrder;
@@ -7674,6 +7691,7 @@ export namespace Prisma {
     id?: StringWithAggregatesFilter<'Course'> | string;
     title?: StringWithAggregatesFilter<'Course'> | string;
     slug?: StringNullableWithAggregatesFilter<'Course'> | string | null;
+    description?: StringNullableWithAggregatesFilter<'Course'> | string | null;
     isActive?: BoolWithAggregatesFilter<'Course'> | boolean;
     deletedAt?: DateTimeNullableWithAggregatesFilter<'Course'> | Date | string | null;
     tenantId?: StringWithAggregatesFilter<'Course'> | string;
@@ -8065,6 +8083,7 @@ export namespace Prisma {
     id?: string;
     title: string;
     slug?: string | null;
+    description?: string | null;
     isActive?: boolean;
     deletedAt?: Date | string | null;
     totalDuration?: number;
@@ -8078,6 +8097,7 @@ export namespace Prisma {
     id?: string;
     title: string;
     slug?: string | null;
+    description?: string | null;
     isActive?: boolean;
     deletedAt?: Date | string | null;
     tenantId: string;
@@ -8091,6 +8111,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string;
     title?: StringFieldUpdateOperationsInput | string;
     slug?: NullableStringFieldUpdateOperationsInput | string | null;
+    description?: NullableStringFieldUpdateOperationsInput | string | null;
     isActive?: BoolFieldUpdateOperationsInput | boolean;
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     totalDuration?: IntFieldUpdateOperationsInput | number;
@@ -8104,6 +8125,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string;
     title?: StringFieldUpdateOperationsInput | string;
     slug?: NullableStringFieldUpdateOperationsInput | string | null;
+    description?: NullableStringFieldUpdateOperationsInput | string | null;
     isActive?: BoolFieldUpdateOperationsInput | boolean;
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     tenantId?: StringFieldUpdateOperationsInput | string;
@@ -8117,6 +8139,7 @@ export namespace Prisma {
     id?: string;
     title: string;
     slug?: string | null;
+    description?: string | null;
     isActive?: boolean;
     deletedAt?: Date | string | null;
     tenantId: string;
@@ -8129,6 +8152,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string;
     title?: StringFieldUpdateOperationsInput | string;
     slug?: NullableStringFieldUpdateOperationsInput | string | null;
+    description?: NullableStringFieldUpdateOperationsInput | string | null;
     isActive?: BoolFieldUpdateOperationsInput | boolean;
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     totalDuration?: IntFieldUpdateOperationsInput | number;
@@ -8140,6 +8164,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string;
     title?: StringFieldUpdateOperationsInput | string;
     slug?: NullableStringFieldUpdateOperationsInput | string | null;
+    description?: NullableStringFieldUpdateOperationsInput | string | null;
     isActive?: BoolFieldUpdateOperationsInput | boolean;
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     tenantId?: StringFieldUpdateOperationsInput | string;
@@ -8675,6 +8700,7 @@ export namespace Prisma {
     id?: SortOrder;
     title?: SortOrder;
     slug?: SortOrder;
+    description?: SortOrder;
     isActive?: SortOrder;
     deletedAt?: SortOrder;
     tenantId?: SortOrder;
@@ -8691,6 +8717,7 @@ export namespace Prisma {
     id?: SortOrder;
     title?: SortOrder;
     slug?: SortOrder;
+    description?: SortOrder;
     isActive?: SortOrder;
     deletedAt?: SortOrder;
     tenantId?: SortOrder;
@@ -8703,6 +8730,7 @@ export namespace Prisma {
     id?: SortOrder;
     title?: SortOrder;
     slug?: SortOrder;
+    description?: SortOrder;
     isActive?: SortOrder;
     deletedAt?: SortOrder;
     tenantId?: SortOrder;
@@ -9853,6 +9881,7 @@ export namespace Prisma {
     id?: string;
     title: string;
     slug?: string | null;
+    description?: string | null;
     isActive?: boolean;
     deletedAt?: Date | string | null;
     totalDuration?: number;
@@ -9865,6 +9894,7 @@ export namespace Prisma {
     id?: string;
     title: string;
     slug?: string | null;
+    description?: string | null;
     isActive?: boolean;
     deletedAt?: Date | string | null;
     totalDuration?: number;
@@ -9982,6 +10012,7 @@ export namespace Prisma {
     id?: StringFilter<'Course'> | string;
     title?: StringFilter<'Course'> | string;
     slug?: StringNullableFilter<'Course'> | string | null;
+    description?: StringNullableFilter<'Course'> | string | null;
     isActive?: BoolFilter<'Course'> | boolean;
     deletedAt?: DateTimeNullableFilter<'Course'> | Date | string | null;
     tenantId?: StringFilter<'Course'> | string;
@@ -10326,6 +10357,7 @@ export namespace Prisma {
     id?: string;
     title: string;
     slug?: string | null;
+    description?: string | null;
     isActive?: boolean;
     deletedAt?: Date | string | null;
     totalDuration?: number;
@@ -10338,6 +10370,7 @@ export namespace Prisma {
     id?: string;
     title: string;
     slug?: string | null;
+    description?: string | null;
     isActive?: boolean;
     deletedAt?: Date | string | null;
     tenantId: string;
@@ -10434,6 +10467,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string;
     title?: StringFieldUpdateOperationsInput | string;
     slug?: NullableStringFieldUpdateOperationsInput | string | null;
+    description?: NullableStringFieldUpdateOperationsInput | string | null;
     isActive?: BoolFieldUpdateOperationsInput | boolean;
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     totalDuration?: IntFieldUpdateOperationsInput | number;
@@ -10446,6 +10480,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string;
     title?: StringFieldUpdateOperationsInput | string;
     slug?: NullableStringFieldUpdateOperationsInput | string | null;
+    description?: NullableStringFieldUpdateOperationsInput | string | null;
     isActive?: BoolFieldUpdateOperationsInput | boolean;
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     tenantId?: StringFieldUpdateOperationsInput | string;
@@ -10656,6 +10691,7 @@ export namespace Prisma {
     id?: string;
     title: string;
     slug?: string | null;
+    description?: string | null;
     isActive?: boolean;
     deletedAt?: Date | string | null;
     totalDuration?: number;
@@ -10726,6 +10762,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string;
     title?: StringFieldUpdateOperationsInput | string;
     slug?: NullableStringFieldUpdateOperationsInput | string | null;
+    description?: NullableStringFieldUpdateOperationsInput | string | null;
     isActive?: BoolFieldUpdateOperationsInput | boolean;
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     totalDuration?: IntFieldUpdateOperationsInput | number;
@@ -10738,6 +10775,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string;
     title?: StringFieldUpdateOperationsInput | string;
     slug?: NullableStringFieldUpdateOperationsInput | string | null;
+    description?: NullableStringFieldUpdateOperationsInput | string | null;
     isActive?: BoolFieldUpdateOperationsInput | boolean;
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     totalDuration?: IntFieldUpdateOperationsInput | number;
@@ -10750,6 +10788,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string;
     title?: StringFieldUpdateOperationsInput | string;
     slug?: NullableStringFieldUpdateOperationsInput | string | null;
+    description?: NullableStringFieldUpdateOperationsInput | string | null;
     isActive?: BoolFieldUpdateOperationsInput | boolean;
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     totalDuration?: IntFieldUpdateOperationsInput | number;

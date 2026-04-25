@@ -22,6 +22,8 @@ export interface Course {
   id: string;
   title: string;
   lessons?: Lesson[];
+  _count?: { lessons: number };
+  description?: string | null;
   totalDuration?: number;
 }
 

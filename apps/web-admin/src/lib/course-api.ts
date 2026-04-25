@@ -14,6 +14,7 @@ export interface Lesson {
 export interface Course {
   id: string;
   title: string;
+  description?: string | null;
   lessons: Lesson[];
   _count?: { lessons: number };
 }
@@ -43,7 +44,12 @@ export const courseApi = {
     return api.get(`/courses/${id}`).then((r) => r.data as Course);
   },
 
-  createCourse(data: { title: string }) {
+  createCourse(data: {
+    title: string;
+    slug?: string;
+    description?: string;
+    totalDuration?: number;
+  }) {
     return api.post('/courses', data).then((r) => r.data as Course);
   },
 
@@ -70,7 +76,7 @@ export const courseApi = {
   // Returns { data: Lesson[], meta } — caller extracts .data for array
   getLessons(courseId: string, params?: { page?: number; limit?: number }) {
     return api
-      .get(`/lessons/course/${courseId}`, { params })
+      .get('/lessons', { params: { ...params, courseId } })
       .then((r) => r.data as PaginatedResponse<Lesson>);
   },
 };

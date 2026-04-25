@@ -10,7 +10,7 @@ import { TenantAwareRequest } from '../common/utils/tenant-request.util';
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private _authService: AuthService) {}
+  constructor(private authService: AuthService) {}
 
   @Post('register')
   @Throttle({ default: { limit: 10, ttl: 60000 } })
@@ -23,7 +23,7 @@ export class AuthController {
     @Req() req: TenantAwareRequest,
     @Res({ passthrough: true }) res: Response,
   ) {
-    return this._authService.register(registerDto, req.tenantId, res);
+    return this.authService.register(registerDto, req.tenantId, res);
   }
 
   @Post('login')
@@ -37,7 +37,7 @@ export class AuthController {
     @Req() req: TenantAwareRequest,
     @Res({ passthrough: true }) res: Response,
   ) {
-    return this._authService.login(loginDto, req.tenantId, res);
+    return this.authService.login(loginDto, req.tenantId, res);
   }
 
   @Post('logout')
@@ -45,6 +45,6 @@ export class AuthController {
   @ApiOperation({ summary: 'Logout current session' })
   @ApiResponse({ status: 200, description: 'Logout successful' })
   async logout(@Res({ passthrough: true }) res: Response) {
-    return this._authService.logout(res);
+    return this.authService.logout(res);
   }
 }

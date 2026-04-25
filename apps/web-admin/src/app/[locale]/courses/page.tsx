@@ -22,10 +22,11 @@ export default function CoursesPage() {
   const allCourses = Array.isArray(courseData?.data) ? courseData.data : [];
   const courses = allCourses.filter((c) => {
     const matchesSearch = c.title.toLowerCase().includes(search.toLowerCase());
+    const lessonCount = c._count?.lessons ?? c.lessons?.length ?? 0;
     const matchesFilter =
       filter === 'all' ||
-      (filter === 'published' && (c.lessons?.length ?? 0) > 0) ||
-      (filter === 'draft' && (c.lessons?.length ?? 0) === 0);
+      (filter === 'published' && lessonCount > 0) ||
+      (filter === 'draft' && lessonCount === 0);
     return matchesSearch && matchesFilter;
   });
 

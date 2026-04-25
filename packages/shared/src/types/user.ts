@@ -1,6 +1,6 @@
 export interface UserDTO {
   id: string;
   email: string;
-  role: "STUDENT" | "INSTRUCTOR" | "ADMIN";
+  role: 'SUPER_ADMIN' | 'ADMIN' | 'INSTRUCTOR' | 'STUDENT';
   tenantId: string;
 }

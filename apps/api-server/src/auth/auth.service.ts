@@ -5,10 +5,12 @@ import {
   Logger,
   BadRequestException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import type { Response } from 'express';
 import { PrismaService } from '../common/services/prisma.service';
+import { parseDurationToMs } from '../config/duration';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 
@@ -17,8 +19,9 @@ export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
   constructor(
-    private readonly _prisma: PrismaService,
-    private readonly _jwtService: JwtService,
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
 
   async register(registerDto: RegisterDto, tenantId: string | undefined, res: Response) {
@@ -26,7 +29,7 @@ export class AuthService {
       throw new BadRequestException('Tenant context is required');
     }
 
-    const existingUser = await this._prisma.user.findUnique({
+    const existingUser = await this.prisma.user.findUnique({
       where: { email: registerDto.email },
     });
 
@@ -35,7 +38,7 @@ export class AuthService {
       throw new ConflictException('Email already registered');
     }
 
-    const tenant = await this._prisma.tenant.findFirst({
+    const tenant = await this.prisma.tenant.findFirst({
       where: { id: tenantId, isActive: true },
     });
 
@@ -46,7 +49,7 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(registerDto.password, 12);
 
-    const user = await this._prisma.user.create({
+    const user = await this.prisma.user.create({
       data: {
         email: registerDto.email,
         password: hashedPassword,
@@ -83,7 +86,7 @@ export class AuthService {
       throw new BadRequestException('Tenant context is required');
     }
 
-    const user = await this._prisma.user.findFirst({
+    const user = await this.prisma.user.findFirst({
       where: {
         email: loginDto.email,
         tenantId,
@@ -101,7 +104,7 @@ export class AuthService {
       throw new UnauthorizedException('Account is inactive');
     }
 
-    const tenant = await this._prisma.tenant.findFirst({
+    const tenant = await this.prisma.tenant.findFirst({
       where: { id: tenantId, isActive: true },
       select: { id: true },
     });
@@ -147,7 +150,7 @@ export class AuthService {
       tenantId: user.tenantId,
     };
 
-    return this._jwtService.sign(payload);
+    return this.jwtService.sign(payload);
   }
 
   private setAuthCookie(res: Response, token: string): void {
@@ -155,7 +158,7 @@ export class AuthService {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: parseDurationToMs(this.configService.get<string>('JWT_EXPIRES_IN') ?? '7d'),
       path: '/',
     });
   }

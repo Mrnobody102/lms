@@ -6,6 +6,7 @@ import {
   Delete,
   Patch,
   Param,
+  ParseUUIDPipe,
   Body,
   UseGuards,
   Query,
@@ -51,7 +52,7 @@ export class AdminTenantController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Tenant not found' })
-  async getTenantById(@Param('id') id: string) {
+  async getTenantById(@Param('id', ParseUUIDPipe) id: string) {
     return this.tenantAdminService.getTenantById(id);
   }
 
@@ -61,7 +62,10 @@ export class AdminTenantController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Tenant not found' })
-  async updateTenant(@Param('id') id: string, @Body() updateTenantDto: UpdateTenantDto) {
+  async updateTenant(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateTenantDto: UpdateTenantDto,
+  ) {
     return this.tenantAdminService.updateTenant(id, updateTenantDto);
   }
 
@@ -71,7 +75,7 @@ export class AdminTenantController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Tenant not found' })
-  async deleteTenant(@Param('id') id: string) {
+  async deleteTenant(@Param('id', ParseUUIDPipe) id: string) {
     return this.tenantAdminService.deleteTenant(id);
   }
 
@@ -81,7 +85,7 @@ export class AdminTenantController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Tenant not found' })
-  async restoreTenant(@Param('id') id: string) {
+  async restoreTenant(@Param('id', ParseUUIDPipe) id: string) {
     return this.tenantAdminService.restoreTenant(id);
   }
 }

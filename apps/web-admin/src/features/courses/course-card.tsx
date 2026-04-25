@@ -2,7 +2,15 @@
 
 import { BookOpen, Edit2, ExternalLink, Trash2, MoreHorizontal, Eye } from 'lucide-react';
 import { Course } from '@/lib/course-api';
-import { Badge, Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui';
+import {
+  Badge,
+  Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -17,6 +25,7 @@ export function CourseCard({ course, onDelete, deleting }: CourseCardProps) {
   const t = useTranslations('Admin');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const lessonCount = course._count?.lessons ?? 0;
+  const firstLessonId = course.lessons?.[0]?.id;
 
   return (
     <>
@@ -46,10 +55,10 @@ export function CourseCard({ course, onDelete, deleting }: CourseCardProps) {
                   {t('edit')}
                 </Link>
               </DropdownMenuItem>
-              {lessonCount > 0 && (
+              {firstLessonId && (
                 <DropdownMenuItem asChild>
                   <Link
-                    href={`${process.env.NEXT_PUBLIC_WEB_STUDENT_URL || 'http://localhost:3000'}/vi/lessons/${course.lessons[0]?.id}`}
+                    href={`${process.env.NEXT_PUBLIC_WEB_STUDENT_URL || 'http://localhost:3000'}/vi/lessons/${firstLessonId}`}
                     target="_blank"
                     className="flex items-center gap-2 cursor-pointer"
                   >

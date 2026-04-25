@@ -5,11 +5,18 @@ import { PrismaService } from '../common/services/prisma.service';
 export class CourseService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(data: { title: string; tenantId: string; slug?: string; totalDuration?: number }) {
+  async create(data: {
+    title: string;
+    tenantId: string;
+    slug?: string;
+    description?: string;
+    totalDuration?: number;
+  }) {
     return this.prisma.course.create({
       data: {
         title: data.title,
         slug: data.slug,
+        description: data.description,
         totalDuration: data.totalDuration,
         tenantId: data.tenantId,
       },
@@ -34,8 +41,17 @@ export class CourseService {
         skip,
         take: limit,
         include: {
+          lessons: {
+            where: { deletedAt: null },
+            orderBy: { order: 'asc' },
+            take: 1,
+          },
           _count: {
-            select: { lessons: true },
+            select: {
+              lessons: {
+                where: { deletedAt: null },
+              },
+            },
           },
         },
         orderBy: { createdAt: 'desc' },
@@ -71,7 +87,7 @@ export class CourseService {
   async update(
     id: string,
     tenantId: string,
-    data: { title?: string; slug?: string; totalDuration?: number },
+    data: { title?: string; slug?: string; description?: string; totalDuration?: number },
   ) {
     // Ensure course exists and belongs to tenant
     await this.findOne(id, tenantId);

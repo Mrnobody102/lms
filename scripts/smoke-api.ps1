@@ -1,3 +1,7 @@
+param(
+  [switch]$SkipContainerCheck
+)
+
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
@@ -62,13 +66,17 @@ function Wait-ForApiHealth {
 }
 
 try {
-  Write-Host 'Checking Docker services...'
-  Assert-ContainerRunning -ContainerName 'lms_postgres' -Description 'Postgres'
-  Assert-ContainerRunning -ContainerName 'lms_redis' -Description 'Redis'
+  if (-not $SkipContainerCheck) {
+    Write-Host 'Checking Docker services...'
+    Assert-ContainerRunning -ContainerName 'lms_postgres' -Description 'Postgres'
+    Assert-ContainerRunning -ContainerName 'lms_redis' -Description 'Redis'
 
-  $redisPing = (docker exec lms_redis redis-cli ping 2>$null)
-  if (-not $redisPing -or $redisPing.Trim().ToUpperInvariant() -ne 'PONG') {
-    throw 'Redis ping failed'
+    $redisPing = (docker exec lms_redis redis-cli ping 2>$null)
+    if (-not $redisPing -or $redisPing.Trim().ToUpperInvariant() -ne 'PONG') {
+      throw 'Redis ping failed'
+    }
+  } else {
+    Write-Host 'Skipped checking Docker services (SkipContainerCheck is $true)'
   }
 
   Write-Host 'Preparing database...'

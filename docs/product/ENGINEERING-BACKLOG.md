@@ -14,18 +14,18 @@ Nguyên tắc:
 
 ## Trạng thái tổng quan
 
-| Hạng mục | Trạng thái | Ghi chú |
-| --- | --- | --- |
-| Cookie-first auth cho browser flow | Đã làm | Không còn coi `localStorage` là authority chính |
-| Tenant-aware auth + business API tests | Đã làm | Có HTTP integration tests cho auth/course/lesson/progress |
-| Student E2E flow thực tế | Đã làm | Đã thay test giả bằng register/login/lesson/progress |
-| Local release verification | Đã làm | Có `build:stable`, `smoke:api`, `test:e2e`, cleanup port |
-| Health/readiness có DB + Redis check | Đã làm | Có `live`, `ready` và smoke runtime thật |
-| CI release-grade checks | Đang làm | Cần đồng bộ workflow với release flow mới |
-| Migration hygiene production-safe | Chưa làm xong | Vẫn cần baseline/migrate strategy rõ ràng |
-| Enrollment / access model | Chưa làm | Epic lớn tiếp theo |
-| Quiz attempt / grading | Chưa làm | Nên đi sau progress/enrollment |
-| Media storage / background jobs | Chưa làm | Chỉ nên làm sau hạ tầng release ổn định |
+| Hạng mục                               | Trạng thái    | Ghi chú                                                   |
+| -------------------------------------- | ------------- | --------------------------------------------------------- |
+| Cookie-first auth cho browser flow     | Đã làm        | Không còn coi `localStorage` là authority chính           |
+| Tenant-aware auth + business API tests | Đã làm        | Có HTTP integration tests cho auth/course/lesson/progress |
+| Student E2E flow thực tế               | Đã làm        | Đã thay test giả bằng register/login/lesson/progress      |
+| Local release verification             | Đã làm        | Có `build:stable`, `smoke:api`, `test:e2e`, cleanup port  |
+| Health/readiness có DB + Redis check   | Đã làm        | Có `live`, `ready` và smoke runtime thật                  |
+| CI release-grade checks                | Đang làm      | Cần đồng bộ workflow với release flow mới                 |
+| Migration hygiene production-safe      | Chưa làm xong | Vẫn cần baseline/migrate strategy rõ ràng                 |
+| Enrollment / access model              | Chưa làm      | Epic lớn tiếp theo                                        |
+| Quiz attempt / grading                 | Chưa làm      | Nên đi sau progress/enrollment                            |
+| Media storage / background jobs        | Chưa làm      | Chỉ nên làm sau hạ tầng release ổn định                   |
 
 ## Những gì đã hoàn thành
 

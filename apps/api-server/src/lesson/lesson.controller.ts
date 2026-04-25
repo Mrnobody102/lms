@@ -17,7 +17,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { getScopedTenantId } from '../common/utils/tenant-request.util';
-import { AuthenticatedRequest } from '../progress/dto/authenticated-request.interface';
+import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
 import { LessonService } from './lesson.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
@@ -57,7 +57,7 @@ export class LessonController {
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Lấy chi tiết một bài học' })
-  findOne(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
+  findOne(@Param('id', ParseUUIDPipe) id: string, @Request() req: AuthenticatedRequest) {
     return this.lessonService.findOne(id, getScopedTenantId(req));
   }
 
@@ -66,7 +66,7 @@ export class LessonController {
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Cập nhật bài học' })
   update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateLessonDto: UpdateLessonDto,
     @Request() req: AuthenticatedRequest,
   ) {
@@ -77,7 +77,7 @@ export class LessonController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Xóa bài học' })
-  remove(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
+  remove(@Param('id', ParseUUIDPipe) id: string, @Request() req: AuthenticatedRequest) {
     return this.lessonService.remove(id, getScopedTenantId(req));
   }
 }

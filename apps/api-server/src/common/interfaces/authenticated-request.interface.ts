@@ -1,5 +1,5 @@
 import { Role } from '@repo/database';
-import { TenantAwareRequest } from '../../common/utils/tenant-request.util';
+import { TenantAwareRequest } from '../utils/tenant-request.util';
 
 export interface AuthenticatedUser {
   id: string;

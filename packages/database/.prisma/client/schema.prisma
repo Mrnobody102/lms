@@ -67,6 +67,7 @@ model Course {
   id            String    @id @default(uuid())
   title         String
   slug          String? // SEO-friendly slug
+  description   String?
   isActive      Boolean   @default(true)
   deletedAt     DateTime?
   tenantId      String

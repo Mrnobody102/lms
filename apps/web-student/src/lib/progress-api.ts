@@ -1,7 +1,8 @@
-import api from "./api";
+import api from './api';
 
 export enum ProgressStatus {
-  COMPLETED = "COMPLETED",
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
 }
 
 export interface UserLessonProgress {
@@ -13,7 +14,7 @@ export interface UserLessonProgress {
 
 export const progressApi = {
   updateProgress: async (lessonId: string, status: ProgressStatus) => {
-    const response = await api.post<UserLessonProgress>("/progress/update", {
+    const response = await api.post<UserLessonProgress>('/progress/update', {
       lessonId,
       status,
     });
@@ -21,16 +22,12 @@ export const progressApi = {
   },
 
   getCourseProgress: async (courseId: string) => {
-    const response = await api.get<UserLessonProgress[]>(
-      `/progress/course/${courseId}`,
-    );
+    const response = await api.get<UserLessonProgress[]>(`/progress/course/${courseId}`);
     return response.data;
   },
 
   getLessonProgress: async (lessonId: string) => {
-    const response = await api.get<UserLessonProgress>(
-      `/progress/lesson/${lessonId}`,
-    );
+    const response = await api.get<UserLessonProgress>(`/progress/lesson/${lessonId}`);
     return response.data;
   },
 };

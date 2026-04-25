@@ -1,11 +1,20 @@
-import { Controller, Get, Patch, Param, Query, Body, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { Role } from '@repo/database';
 import { UserAdminService } from './user-admin.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { AuthenticatedUser } from '../progress/dto/authenticated-request.interface';
+import { AuthenticatedUser } from '../common/interfaces/authenticated-request.interface';
 import { AdminUserQueryDto } from './dto/admin-user-query.dto';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
 
@@ -34,7 +43,10 @@ export class AdminController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  async getUserById(@CurrentUser() user: AuthenticatedUser, @Param('id') userId: string) {
+  async getUserById(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) userId: string,
+  ) {
     return this.userAdminService.getUserById(user, userId);
   }
 
@@ -46,7 +58,7 @@ export class AdminController {
   @ApiResponse({ status: 404, description: 'User not found' })
   async updateUserStatus(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('id') userId: string,
+    @Param('id', ParseUUIDPipe) userId: string,
     @Body() updateUserStatusDto: UpdateUserStatusDto,
   ) {
     return this.userAdminService.updateUserStatus(user, userId, updateUserStatusDto);

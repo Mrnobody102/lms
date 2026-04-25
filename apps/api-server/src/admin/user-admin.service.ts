@@ -3,7 +3,7 @@ import { Prisma, Role } from '@repo/database';
 import { PrismaService } from '../common/services/prisma.service';
 import { AdminUserQueryDto } from './dto/admin-user-query.dto';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
-import { AuthenticatedUser } from '../progress/dto/authenticated-request.interface';
+import { AuthenticatedUser } from '../common/interfaces/authenticated-request.interface';
 
 @Injectable()
 export class UserAdminService {
@@ -112,8 +112,8 @@ export class UserAdminService {
     userId: string,
     updateUserStatusDto: UpdateUserStatusDto,
   ) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
     });
 
     if (!user) {

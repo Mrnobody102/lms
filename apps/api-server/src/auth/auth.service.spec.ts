@@ -24,6 +24,9 @@ describe('AuthService', () => {
   let jwtService: {
     sign: ReturnType<typeof vi.fn>;
   };
+  let configService: {
+    get: ReturnType<typeof vi.fn>;
+  };
   let response: Response;
 
   beforeEach(() => {
@@ -42,12 +45,19 @@ describe('AuthService', () => {
       sign: vi.fn().mockReturnValue('signed-jwt-token'),
     };
 
+    configService = {
+      get: vi.fn().mockImplementation((key: string) => {
+        if (key === 'JWT_EXPIRES_IN') return '7d';
+        return undefined;
+      }),
+    };
+
     response = {
       cookie: vi.fn(),
       clearCookie: vi.fn(),
     } as unknown as Response;
 
-    service = new AuthService(prisma as any, jwtService as any);
+    service = new AuthService(prisma as any, jwtService as any, configService as any);
   });
 
   describe('register', () => {
@@ -128,6 +138,7 @@ describe('AuthService', () => {
         'signed-jwt-token',
         expect.objectContaining({
           httpOnly: true,
+          maxAge: 7 * 24 * 60 * 60 * 1000,
           sameSite: 'lax',
           path: '/',
         }),
@@ -217,6 +228,7 @@ describe('AuthService', () => {
         'signed-jwt-token',
         expect.objectContaining({
           httpOnly: true,
+          maxAge: 7 * 24 * 60 * 60 * 1000,
           sameSite: 'lax',
           path: '/',
         }),

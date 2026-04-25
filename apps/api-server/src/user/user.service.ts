@@ -6,10 +6,10 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class UserService {
-  constructor(private _prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) {}
 
   async getProfile(userId: string) {
-    const user = await this._prisma.user.findFirst({
+    const user = await this.prisma.user.findFirst({
       where: { id: userId, deletedAt: null },
       select: {
         id: true,
@@ -40,7 +40,7 @@ export class UserService {
   }
 
   async updateProfile(userId: string, updateProfileDto: UpdateProfileDto) {
-    const existingUser = await this._prisma.user.findFirst({
+    const existingUser = await this.prisma.user.findFirst({
       where: { id: userId, deletedAt: null },
       select: { id: true },
     });
@@ -49,7 +49,7 @@ export class UserService {
       throw new NotFoundException('User not found');
     }
 
-    const user = await this._prisma.user.update({
+    const user = await this.prisma.user.update({
       where: { id: userId },
       data: updateProfileDto,
       select: {
@@ -71,7 +71,7 @@ export class UserService {
 
   async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {
     // Get current user with password
-    const user = await this._prisma.user.findFirst({
+    const user = await this.prisma.user.findFirst({
       where: { id: userId, deletedAt: null },
     });
 
@@ -93,7 +93,7 @@ export class UserService {
     const hashedPassword = await bcrypt.hash(changePasswordDto.newPassword, 12);
 
     // Update password
-    await this._prisma.user.update({
+    await this.prisma.user.update({
       where: { id: userId },
       data: { password: hashedPassword },
     });
