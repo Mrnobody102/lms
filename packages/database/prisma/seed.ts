@@ -1,4 +1,4 @@
-import { PrismaClient, Role, LessonType } from '../.prisma/client';
+import { PrismaClient, Role, LessonType, EnrollmentStatus } from '../.prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -24,7 +24,7 @@ async function main() {
   const hashedPassword = await bcrypt.hash('admin123', 12);
 
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@lms.com' },
+    where: { tenantId_email: { tenantId: tenant.id, email: 'admin@lms.com' } },
     update: {},
     create: {
       email: 'admin@lms.com',
@@ -37,7 +37,7 @@ async function main() {
   console.log(`Created/Updated Admin User: ${admin.email}`);
 
   const student = await prisma.user.upsert({
-    where: { email: 'student@lms.com' },
+    where: { tenantId_email: { tenantId: tenant.id, email: 'student@lms.com' } },
     update: {},
     create: {
       email: 'student@lms.com',
@@ -119,6 +119,26 @@ async function main() {
       ],
     });
   }
+
+  await prisma.courseEnrollment.upsert({
+    where: {
+      userId_courseId: {
+        userId: student.id,
+        courseId: course.id,
+      },
+    },
+    update: {
+      status: EnrollmentStatus.ACTIVE,
+      tenantId: tenant.id,
+      unenrolledAt: null,
+    },
+    create: {
+      userId: student.id,
+      courseId: course.id,
+      tenantId: tenant.id,
+      status: EnrollmentStatus.ACTIVE,
+    },
+  });
 
   console.log(`Created/Updated Course: ${course.title}`);
   console.log('Seeding finished.');

@@ -23,7 +23,7 @@ Nguyên tắc:
 | Health/readiness có DB + Redis check   | Đã làm     | Có `live`, `ready` và smoke runtime thật                                   |
 | CI release-grade checks                | Đã làm     | Đã tách fast/build/e2e/api smoke trong workflow                            |
 | Migration hygiene production-safe      | Đã làm     | Có runbook baseline, `db:status`, `db:resolve`, guard `db:push` production |
-| Enrollment / access model              | Chưa làm   | Epic lớn tiếp theo                                                         |
+| Enrollment / access model              | Đang làm   | Đã có DB/API access control; còn UI/reporting                              |
 | Quiz attempt / grading                 | Chưa làm   | Nên đi sau progress/enrollment                                             |
 | Media storage / background jobs        | Chưa làm   | Chỉ nên làm sau hạ tầng release ổn định                                    |
 
@@ -109,11 +109,13 @@ Mục tiêu:
 
 Task:
 
-- [ ] Thiết kế bảng enrollment
-- [ ] Admin enroll / unenroll học viên
-- [ ] Student course list chỉ lấy dữ liệu theo enrollment
-- [ ] Progress/reporting theo enrollment
-- [ ] Test quyền truy cập course chưa được enroll
+- [x] Thiết kế bảng enrollment
+- [x] Admin enroll / unenroll học viên qua API
+- [x] Student course list chỉ lấy dữ liệu theo enrollment
+- [x] Progress access control theo enrollment
+- [x] Test quyền truy cập course chưa được enroll
+- [ ] Admin UI cho enroll / unenroll
+- [ ] Reporting theo enrollment
 
 ### Epic E. Progress Và Learning Experience
 
@@ -143,7 +145,7 @@ Task:
 
 Thứ tự nên làm tiếp:
 
-1. Bắt đầu Epic D: enrollment model.
+1. Hoàn thiện admin UI cho enroll / unenroll.
 2. Mở rộng progress theo enrollment: completion percentage, resume learning.
 3. Sau đó mới mở rộng quiz attempt và grading.
 

@@ -31,6 +31,7 @@ export class ProgressController {
       data.lessonId,
       data.status,
       req.user.tenantId,
+      req.user.role,
     );
   }
 
@@ -42,7 +43,12 @@ export class ProgressController {
     @Request() req: AuthenticatedRequest,
     @Param('courseId', ParseUUIDPipe) courseId: string,
   ) {
-    return this.progressService.getProgress(req.user.id, courseId, req.user.tenantId);
+    return this.progressService.getProgress(
+      req.user.id,
+      courseId,
+      req.user.tenantId,
+      req.user.role,
+    );
   }
 
   @Get('lesson/:lessonId')
@@ -53,6 +59,11 @@ export class ProgressController {
     @Request() req: AuthenticatedRequest,
     @Param('lessonId', ParseUUIDPipe) lessonId: string,
   ) {
-    return this.progressService.getLessonProgress(req.user.id, lessonId, req.user.tenantId);
+    return this.progressService.getLessonProgress(
+      req.user.id,
+      lessonId,
+      req.user.tenantId,
+      req.user.role,
+    );
   }
 }

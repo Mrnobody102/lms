@@ -4,7 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ValidationPipe, type INestApplication } from '@nestjs/common';
 import type { NextFunction, Request, Response } from 'express';
 import { PassportModule } from '@nestjs/passport';
-import { ProgressStatus, Role } from '@repo/database';
+import { EnrollmentStatus, ProgressStatus, Role } from '@repo/database';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as bcrypt from 'bcrypt';
 import cookieParser from 'cookie-parser';
@@ -54,14 +54,21 @@ describe('Tenant resource HTTP flow', () => {
       findFirst: ReturnType<typeof vi.fn>;
       upsert: ReturnType<typeof vi.fn>;
     };
+    courseEnrollment: {
+      findFirst: ReturnType<typeof vi.fn>;
+      update: ReturnType<typeof vi.fn>;
+      upsert: ReturnType<typeof vi.fn>;
+    };
   };
 
   const tenantOneId = '11111111-1111-4111-8111-111111111111';
   const tenantTwoId = '22222222-2222-4222-8222-222222222222';
   const courseOneId = '33333333-3333-4333-8333-333333333333';
   const courseTwoId = '44444444-4444-4444-8444-444444444444';
+  const unenrolledCourseId = '77777777-7777-4777-8777-777777777777';
   const lessonOneId = '55555555-5555-4555-8555-555555555555';
   const lessonTwoId = '66666666-6666-4666-8666-666666666666';
+  const unenrolledLessonId = '88888888-8888-4888-8888-888888888888';
 
   const currentUser = {
     id: 'user-1',
@@ -99,6 +106,16 @@ describe('Tenant resource HTTP flow', () => {
       updatedAt: new Date('2026-04-21T00:00:00.000Z'),
       deletedAt: null,
     },
+    {
+      id: unenrolledCourseId,
+      title: 'Unenrolled Tenant One Course',
+      slug: 'unenrolled-tenant-one-course',
+      totalDuration: 20,
+      tenantId: tenantOneId,
+      createdAt: new Date('2026-04-21T00:00:00.000Z'),
+      updatedAt: new Date('2026-04-21T00:00:00.000Z'),
+      deletedAt: null,
+    },
   ];
 
   const lessons = [
@@ -131,6 +148,33 @@ describe('Tenant resource HTTP flow', () => {
       createdAt: new Date('2026-04-21T00:00:00.000Z'),
       updatedAt: new Date('2026-04-21T00:00:00.000Z'),
       deletedAt: null,
+    },
+    {
+      id: unenrolledLessonId,
+      title: 'Unenrolled Lesson',
+      type: 'text',
+      content: 'Private lesson',
+      videoUrl: null,
+      duration: 8,
+      order: 1,
+      quiz: null,
+      courseId: unenrolledCourseId,
+      tenantId: tenantOneId,
+      createdAt: new Date('2026-04-21T00:00:00.000Z'),
+      updatedAt: new Date('2026-04-21T00:00:00.000Z'),
+      deletedAt: null,
+    },
+  ];
+
+  const enrollments = [
+    {
+      id: 'enrollment-1',
+      userId: currentUser.id,
+      courseId: courseOneId,
+      tenantId: tenantOneId,
+      status: EnrollmentStatus.ACTIVE,
+      enrolledAt: new Date('2026-04-21T00:00:00.000Z'),
+      unenrolledAt: null,
     },
   ];
 
@@ -234,7 +278,22 @@ describe('Tenant resource HTTP flow', () => {
       course: {
         findMany: vi.fn().mockImplementation(({ where }: { where: Record<string, unknown> }) => {
           const scopedCourses = courses
-            .filter((course) => course.tenantId === where.tenantId && course.deletedAt === null)
+            .filter((course) => {
+              const enrollmentFilter = where.enrollments as
+                | { some?: { userId: string; tenantId: string; status: EnrollmentStatus } }
+                | undefined;
+              const isEnrolled =
+                !enrollmentFilter?.some ||
+                enrollments.some(
+                  (enrollment) =>
+                    enrollment.courseId === course.id &&
+                    enrollment.userId === enrollmentFilter.some?.userId &&
+                    enrollment.tenantId === enrollmentFilter.some?.tenantId &&
+                    enrollment.status === enrollmentFilter.some?.status,
+                );
+
+              return course.tenantId === where.tenantId && course.deletedAt === null && isEnrolled;
+            })
             .map((course) => ({
               ...course,
               _count: {
@@ -248,18 +307,46 @@ describe('Tenant resource HTTP flow', () => {
         }),
         count: vi.fn().mockImplementation(({ where }: { where: Record<string, unknown> }) => {
           return Promise.resolve(
-            courses.filter(
-              (course) => course.tenantId === where.tenantId && course.deletedAt === null,
-            ).length,
+            courses.filter((course) => {
+              const enrollmentFilter = where.enrollments as
+                | { some?: { userId: string; tenantId: string; status: EnrollmentStatus } }
+                | undefined;
+              const isEnrolled =
+                !enrollmentFilter?.some ||
+                enrollments.some(
+                  (enrollment) =>
+                    enrollment.courseId === course.id &&
+                    enrollment.userId === enrollmentFilter.some?.userId &&
+                    enrollment.tenantId === enrollmentFilter.some?.tenantId &&
+                    enrollment.status === enrollmentFilter.some?.status,
+                );
+
+              return course.tenantId === where.tenantId && course.deletedAt === null && isEnrolled;
+            }).length,
           );
         }),
         findFirst: vi.fn().mockImplementation(({ where }: { where: Record<string, unknown> }) => {
-          const course = courses.find(
-            (entry) =>
+          const course = courses.find((entry) => {
+            const enrollmentFilter = where.enrollments as
+              | { some?: { userId: string; tenantId: string; status: EnrollmentStatus } }
+              | undefined;
+            const isEnrolled =
+              !enrollmentFilter?.some ||
+              enrollments.some(
+                (enrollment) =>
+                  enrollment.courseId === entry.id &&
+                  enrollment.userId === enrollmentFilter.some?.userId &&
+                  enrollment.tenantId === enrollmentFilter.some?.tenantId &&
+                  enrollment.status === enrollmentFilter.some?.status,
+              );
+
+            return (
               entry.id === where.id &&
               entry.tenantId === where.tenantId &&
-              entry.deletedAt === where.deletedAt,
-          );
+              entry.deletedAt === where.deletedAt &&
+              isEnrolled
+            );
+          });
 
           if (!course) {
             return Promise.resolve(null);
@@ -297,12 +384,32 @@ describe('Tenant resource HTTP flow', () => {
           );
         }),
         findFirst: vi.fn().mockImplementation(({ where }: { where: Record<string, unknown> }) => {
-          const lesson = lessons.find(
-            (entry) =>
+          const lesson = lessons.find((entry) => {
+            const courseFilter = where.course as
+              | {
+                  enrollments?: {
+                    some?: { userId: string; tenantId: string; status: EnrollmentStatus };
+                  };
+                }
+              | undefined;
+            const enrollmentFilter = courseFilter?.enrollments;
+            const isEnrolled =
+              !enrollmentFilter?.some ||
+              enrollments.some(
+                (enrollment) =>
+                  enrollment.courseId === entry.courseId &&
+                  enrollment.userId === enrollmentFilter.some?.userId &&
+                  enrollment.tenantId === enrollmentFilter.some?.tenantId &&
+                  enrollment.status === enrollmentFilter.some?.status,
+              );
+
+            return (
               entry.id === where.id &&
               entry.tenantId === where.tenantId &&
-              (!('deletedAt' in where) || entry.deletedAt === where.deletedAt),
-          );
+              (!('deletedAt' in where) || entry.deletedAt === where.deletedAt) &&
+              isEnrolled
+            );
+          });
 
           return Promise.resolve(lesson ?? null);
         }),
@@ -398,6 +505,11 @@ describe('Tenant resource HTTP flow', () => {
           },
         ),
       },
+      courseEnrollment: {
+        findFirst: vi.fn().mockResolvedValue(null),
+        update: vi.fn(),
+        upsert: vi.fn(),
+      },
     };
 
     vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
@@ -488,6 +600,17 @@ describe('Tenant resource HTTP flow', () => {
     });
   });
 
+  it('should hide same-tenant courses when the student is not enrolled', async () => {
+    await loginTenantOne();
+
+    await agent.get(`/courses/${unenrolledCourseId}`).set('x-tenant-id', tenantOneId).expect(404);
+
+    await agent
+      .get(`/lessons?courseId=${unenrolledCourseId}`)
+      .set('x-tenant-id', tenantOneId)
+      .expect(404);
+  });
+
   it('should list lessons only inside the authenticated tenant scope', async () => {
     await loginTenantOne();
 
@@ -566,6 +689,19 @@ describe('Tenant resource HTTP flow', () => {
         status: ProgressStatus.COMPLETED,
       }),
     );
+  });
+
+  it('should reject progress writes for lessons outside active enrollment', async () => {
+    await loginTenantOne();
+
+    await agent
+      .post('/progress/update')
+      .set('x-tenant-id', tenantOneId)
+      .send({
+        lessonId: unenrolledLessonId,
+        status: ProgressStatus.COMPLETED,
+      })
+      .expect(404);
   });
 
   it('should reject progress APIs when the tenant header does not match the session', async () => {

@@ -22,6 +22,7 @@ import { CourseService } from './course.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { CourseQueryDto } from './dto/course-query.dto';
+import { EnrollStudentDto } from './dto/enroll-student.dto';
 
 @ApiBearerAuth()
 @ApiTags('courses')
@@ -49,14 +50,38 @@ export class CourseController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Lấy danh sách khóa học của tenant (phân trang)' })
   findAll(@Query() query: CourseQueryDto, @Request() req: AuthenticatedRequest) {
-    return this.courseService.findAll(getScopedTenantId(req), query);
+    return this.courseService.findAll(getScopedTenantId(req), req.user, query);
   }
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Lấy chi tiết khóa học kèm bài học' })
   findOne(@Param('id', ParseUUIDPipe) id: string, @Request() req: AuthenticatedRequest) {
-    return this.courseService.findOne(id, getScopedTenantId(req));
+    return this.courseService.findOne(id, getScopedTenantId(req), req.user);
+  }
+
+  @Post(':id/enrollments')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Enroll a student into a course' })
+  enrollStudent(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() enrollStudentDto: EnrollStudentDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.courseService.enrollStudent(id, getScopedTenantId(req), enrollStudentDto.userId);
+  }
+
+  @Delete(':id/enrollments/:userId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Unenroll a student from a course' })
+  unenrollStudent(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('userId', ParseUUIDPipe) userId: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.courseService.unenrollStudent(id, getScopedTenantId(req), userId);
   }
 
   @Patch(':id')

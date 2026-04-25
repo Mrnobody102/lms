@@ -51,14 +51,14 @@ export class LessonController {
     @Query() query: LessonQueryDto,
     @Request() req: AuthenticatedRequest,
   ) {
-    return this.lessonService.findAll(courseId, getScopedTenantId(req), query);
+    return this.lessonService.findAll(courseId, getScopedTenantId(req), req.user, query);
   }
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Lấy chi tiết một bài học' })
   findOne(@Param('id', ParseUUIDPipe) id: string, @Request() req: AuthenticatedRequest) {
-    return this.lessonService.findOne(id, getScopedTenantId(req));
+    return this.lessonService.findOne(id, getScopedTenantId(req), req.user);
   }
 
   @Patch(':id')

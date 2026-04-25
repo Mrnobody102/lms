@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/services/prisma.service';
-import { Prisma, LessonType } from '@repo/database';
+import { EnrollmentStatus, Prisma, LessonType, Role } from '@repo/database';
 
 @Injectable()
 export class LessonService {
@@ -42,10 +42,12 @@ export class LessonService {
   async findAll(
     courseId: string,
     tenantId: string,
+    user: { id: string; role: Role },
     options: { page?: number; limit?: number } = {},
   ) {
     const { page = 1, limit = 10 } = options;
     const skip = (page - 1) * limit;
+    await this.ensureCourseAccess(courseId, tenantId, user);
 
     const [lessons, total] = await Promise.all([
       this.prisma.lesson.findMany({
@@ -68,10 +70,23 @@ export class LessonService {
     };
   }
 
-  async findOne(id: string, tenantId: string) {
-    const lesson = await this.prisma.lesson.findFirst({
-      where: { id, tenantId, deletedAt: null },
-    });
+  async findOne(id: string, tenantId: string, user?: { id: string; role: Role }) {
+    const where: Prisma.LessonWhereInput = { id, tenantId, deletedAt: null };
+    if (user?.role === Role.STUDENT) {
+      where.course = {
+        deletedAt: null,
+        isActive: true,
+        enrollments: {
+          some: {
+            userId: user.id,
+            tenantId,
+            status: EnrollmentStatus.ACTIVE,
+          },
+        },
+      };
+    }
+
+    const lesson = await this.prisma.lesson.findFirst({ where });
     if (!lesson) throw new NotFoundException(`Lesson with ID ${id} not found in this tenant`);
     return lesson;
   }
@@ -110,5 +125,37 @@ export class LessonService {
       where: { id },
       data: { deletedAt: new Date() },
     });
+  }
+
+  private async ensureCourseAccess(
+    courseId: string,
+    tenantId: string,
+    user: { id: string; role: Role },
+  ) {
+    const where: Prisma.CourseWhereInput = {
+      id: courseId,
+      tenantId,
+      deletedAt: null,
+      isActive: true,
+    };
+
+    if (user.role === Role.STUDENT) {
+      where.enrollments = {
+        some: {
+          userId: user.id,
+          tenantId,
+          status: EnrollmentStatus.ACTIVE,
+        },
+      };
+    }
+
+    const course = await this.prisma.course.findFirst({
+      where,
+      select: { id: true },
+    });
+
+    if (!course) {
+      throw new NotFoundException(`Course with ID ${courseId} not found in this tenant`);
+    }
   }
 }

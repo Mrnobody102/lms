@@ -18,6 +18,7 @@ The repo currently expects these migrations to be applied in order:
 2. `20260121105702_add_user_profile_fields`
 3. `20260425000000_add_course_description`
 4. `20260425001000_tenant_scoped_user_email`
+5. `20260425002000_add_course_enrollments`
 
 Before deploying, check status:
 
@@ -45,6 +46,7 @@ pnpm db:resolve -- --applied 20260119185654_init
 pnpm db:resolve -- --applied 20260121105702_add_user_profile_fields
 pnpm db:resolve -- --applied 20260425000000_add_course_description
 pnpm db:resolve -- --applied 20260425001000_tenant_scoped_user_email
+pnpm db:resolve -- --applied 20260425002000_add_course_enrollments
 ```
 
 5. Confirm:

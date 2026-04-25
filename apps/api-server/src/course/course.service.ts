@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { EnrollmentStatus, Prisma, Role } from '@repo/database';
 import { PrismaService } from '../common/services/prisma.service';
 
 @Injectable()
@@ -25,14 +26,24 @@ export class CourseService {
 
   async findAll(
     tenantId: string,
+    user: { id: string; role: Role },
     options: { page?: number; limit?: number; search?: string } = {},
   ) {
     const { page = 1, limit = 10, search } = options;
     const skip = (page - 1) * limit;
 
-    const where = { tenantId, deletedAt: null, isActive: true };
+    const where: Prisma.CourseWhereInput = { tenantId, deletedAt: null, isActive: true };
     if (search) {
       Object.assign(where, { title: { contains: search, mode: 'insensitive' as const } });
+    }
+    if (user.role === Role.STUDENT) {
+      where.enrollments = {
+        some: {
+          userId: user.id,
+          tenantId,
+          status: EnrollmentStatus.ACTIVE,
+        },
+      };
     }
 
     const [courses, total] = await Promise.all([
@@ -70,9 +81,20 @@ export class CourseService {
     };
   }
 
-  async findOne(id: string, tenantId: string) {
+  async findOne(id: string, tenantId: string, user?: { id: string; role: Role }) {
+    const where: Prisma.CourseWhereInput = { id, tenantId, deletedAt: null, isActive: true };
+    if (user?.role === Role.STUDENT) {
+      where.enrollments = {
+        some: {
+          userId: user.id,
+          tenantId,
+          status: EnrollmentStatus.ACTIVE,
+        },
+      };
+    }
+
     const course = await this.prisma.course.findFirst({
-      where: { id, tenantId, deletedAt: null, isActive: true },
+      where,
       include: {
         lessons: {
           where: { deletedAt: null },
@@ -105,6 +127,71 @@ export class CourseService {
     return this.prisma.course.update({
       where: { id },
       data: { deletedAt: new Date() },
+    });
+  }
+
+  async enrollStudent(courseId: string, tenantId: string, userId: string) {
+    await this.findOne(courseId, tenantId);
+
+    const student = await this.prisma.user.findFirst({
+      where: {
+        id: userId,
+        tenantId,
+        role: Role.STUDENT,
+        deletedAt: null,
+        isActive: true,
+      },
+      select: { id: true },
+    });
+
+    if (!student) {
+      throw new BadRequestException('Active student not found in this tenant');
+    }
+
+    return this.prisma.courseEnrollment.upsert({
+      where: {
+        userId_courseId: {
+          userId,
+          courseId,
+        },
+      },
+      update: {
+        status: EnrollmentStatus.ACTIVE,
+        enrolledAt: new Date(),
+        unenrolledAt: null,
+        tenantId,
+      },
+      create: {
+        userId,
+        courseId,
+        tenantId,
+        status: EnrollmentStatus.ACTIVE,
+      },
+    });
+  }
+
+  async unenrollStudent(courseId: string, tenantId: string, userId: string) {
+    await this.findOne(courseId, tenantId);
+
+    const enrollment = await this.prisma.courseEnrollment.findFirst({
+      where: {
+        courseId,
+        userId,
+        tenantId,
+        status: EnrollmentStatus.ACTIVE,
+      },
+    });
+
+    if (!enrollment) {
+      throw new NotFoundException('Active enrollment not found in this tenant');
+    }
+
+    return this.prisma.courseEnrollment.update({
+      where: { id: enrollment.id },
+      data: {
+        status: EnrollmentStatus.REVOKED,
+        unenrolledAt: new Date(),
+      },
     });
   }
 }
