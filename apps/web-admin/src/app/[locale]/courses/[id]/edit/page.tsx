@@ -11,12 +11,15 @@ import {
   useCreateLesson,
   useUpdateLesson,
   useDeleteLesson,
+  useEnrollStudent,
+  useUnenrollStudent,
 } from '@/hooks/use-courses';
 import { CourseForm } from '@/features/courses/course-form';
 import { LessonList } from '@/features/courses/lesson-list';
 import { AddLessonDialog } from '@/features/courses/add-lesson-form';
 import { EditLessonDialog } from '@/features/courses/edit-lesson-form';
 import { CourseStats } from '@/features/courses/course-stats';
+import { EnrollmentPanel } from '@/features/courses/enrollment-panel';
 import { Lesson } from '@/lib/course-api';
 import { Button, Alert, AlertDescription } from '@/components/ui';
 import { ArrowLeft, ExternalLink, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
@@ -32,6 +35,8 @@ export default function CourseEditorPage() {
   const createLesson = useCreateLesson();
   const updateLesson = useUpdateLesson();
   const deleteLesson = useDeleteLesson();
+  const enrollStudent = useEnrollStudent();
+  const unenrollStudent = useUnenrollStudent();
 
   const [showAddLesson, setShowAddLesson] = useState(false);
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
@@ -106,7 +111,28 @@ export default function CourseEditorPage() {
     );
   };
 
+  const handleEnrollStudent = (userId: string) => {
+    enrollStudent.mutate(
+      { courseId, userId },
+      {
+        onSuccess: () => showMsg('success', 'studentEnrolled'),
+        onError: () => showMsg('error', 'studentEnrollError'),
+      },
+    );
+  };
+
+  const handleUnenrollStudent = (userId: string) => {
+    unenrollStudent.mutate(
+      { courseId, userId },
+      {
+        onSuccess: () => showMsg('success', 'studentUnenrolled'),
+        onError: () => showMsg('error', 'studentUnenrollError'),
+      },
+    );
+  };
+
   const lessons = course?.lessons ?? [];
+  const enrollments = course?.enrollments ?? [];
   const studentBaseUrl = process.env.NEXT_PUBLIC_WEB_STUDENT_URL;
   const firstLessonPreviewUrl =
     studentBaseUrl && lessons[0] ? `${studentBaseUrl}/vi/lessons/${lessons[0].id}` : null;
@@ -209,6 +235,16 @@ export default function CourseEditorPage() {
               <div className="space-y-4">
                 <div className="bg-card border rounded-xl p-5">
                   <CourseStats lessons={lessons} />
+                </div>
+                <div className="bg-card border rounded-xl p-5">
+                  <EnrollmentPanel
+                    courseId={courseId}
+                    enrollments={enrollments}
+                    enrolling={enrollStudent.isPending}
+                    unenrolling={unenrollStudent.isPending}
+                    onEnroll={handleEnrollStudent}
+                    onUnenroll={handleUnenrollStudent}
+                  />
                 </div>
               </div>
             </div>

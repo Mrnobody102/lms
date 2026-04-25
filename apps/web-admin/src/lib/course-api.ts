@@ -16,7 +16,24 @@ export interface Course {
   title: string;
   description?: string | null;
   lessons: Lesson[];
+  enrollments?: CourseEnrollment[];
   _count?: { lessons: number };
+}
+
+export interface CourseEnrollment {
+  id: string;
+  userId: string;
+  courseId: string;
+  tenantId: string;
+  status: 'ACTIVE' | 'REVOKED';
+  enrolledAt: string;
+  unenrolledAt?: string | null;
+  user?: {
+    id: string;
+    email: string;
+    fullName: string;
+    isActive: boolean;
+  };
 }
 
 interface PaginatedResponse<T> {
@@ -59,6 +76,18 @@ export const courseApi = {
 
   deleteCourse(id: string) {
     return api.delete(`/courses/${id}`);
+  },
+
+  enrollStudent(courseId: string, userId: string) {
+    return api
+      .post(`/courses/${courseId}/enrollments`, { userId })
+      .then((r) => r.data as CourseEnrollment);
+  },
+
+  unenrollStudent(courseId: string, userId: string) {
+    return api
+      .delete(`/courses/${courseId}/enrollments/${userId}`)
+      .then((r) => r.data as CourseEnrollment);
   },
 
   createLesson(courseId: string, data: Partial<Lesson>) {

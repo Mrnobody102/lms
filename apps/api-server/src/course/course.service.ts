@@ -83,6 +83,13 @@ export class CourseService {
 
   async findOne(id: string, tenantId: string, user?: { id: string; role: Role }) {
     const where: Prisma.CourseWhereInput = { id, tenantId, deletedAt: null, isActive: true };
+    const include: Prisma.CourseInclude = {
+      lessons: {
+        where: { deletedAt: null },
+        orderBy: { order: 'asc' },
+      },
+    };
+
     if (user?.role === Role.STUDENT) {
       where.enrollments = {
         some: {
@@ -91,16 +98,26 @@ export class CourseService {
           status: EnrollmentStatus.ACTIVE,
         },
       };
+    } else {
+      include.enrollments = {
+        where: { status: EnrollmentStatus.ACTIVE },
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              fullName: true,
+              isActive: true,
+            },
+          },
+        },
+        orderBy: { enrolledAt: 'desc' },
+      };
     }
 
     const course = await this.prisma.course.findFirst({
       where,
-      include: {
-        lessons: {
-          where: { deletedAt: null },
-          orderBy: { order: 'asc' },
-        },
-      },
+      include,
     });
     if (!course) throw new NotFoundException(`Course with ID ${id} not found in this tenant`);
     return course;

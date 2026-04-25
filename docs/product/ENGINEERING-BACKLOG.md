@@ -23,7 +23,7 @@ Nguyên tắc:
 | Health/readiness có DB + Redis check   | Đã làm     | Có `live`, `ready` và smoke runtime thật                                   |
 | CI release-grade checks                | Đã làm     | Đã tách fast/build/e2e/api smoke trong workflow                            |
 | Migration hygiene production-safe      | Đã làm     | Có runbook baseline, `db:status`, `db:resolve`, guard `db:push` production |
-| Enrollment / access model              | Đang làm   | Đã có DB/API access control; còn UI/reporting                              |
+| Enrollment / access model              | Đang làm   | Đã có DB/API/UI access control; còn reporting                              |
 | Quiz attempt / grading                 | Chưa làm   | Nên đi sau progress/enrollment                                             |
 | Media storage / background jobs        | Chưa làm   | Chỉ nên làm sau hạ tầng release ổn định                                    |
 
@@ -114,7 +114,7 @@ Task:
 - [x] Student course list chỉ lấy dữ liệu theo enrollment
 - [x] Progress access control theo enrollment
 - [x] Test quyền truy cập course chưa được enroll
-- [ ] Admin UI cho enroll / unenroll
+- [x] Admin UI cho enroll / unenroll
 - [ ] Reporting theo enrollment
 
 ### Epic E. Progress Và Learning Experience
