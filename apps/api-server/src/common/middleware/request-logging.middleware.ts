@@ -1,18 +1,19 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
-import { randomUUID } from 'crypto';
 import { LoggerService } from '../services/logger.service';
+import { REQUEST_ID_HEADER, resolveRequestId } from '../utils/request-id.util';
 
 @Injectable()
 export class RequestLoggingMiddleware implements NestMiddleware {
   constructor(private logger: LoggerService) {}
 
   use(req: Request, res: Response, next: NextFunction) {
-    const requestId = (req.headers['x-request-id'] as string) || randomUUID();
+    const requestId = resolveRequestId(req.headers[REQUEST_ID_HEADER]);
     const start = Date.now();
 
     // Attach requestId to request for downstream use
     (req as Request & { requestId: string }).requestId = requestId;
+    res.setHeader(REQUEST_ID_HEADER, requestId);
 
     // Log incoming request
     this.logger.info('Incoming request', {

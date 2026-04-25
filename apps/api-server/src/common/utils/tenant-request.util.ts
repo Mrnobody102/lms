@@ -2,6 +2,7 @@ import type { Request } from 'express';
 import { Role } from '@repo/database';
 
 export interface TenantAwareRequest extends Request {
+  requestId?: string;
   tenantId?: string;
   requestedTenantHint?: string;
 }

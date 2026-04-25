@@ -1,6 +1,7 @@
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
 import { Response } from 'express';
 import { LoggerService } from '../services/logger.service';
+import { REQUEST_ID_HEADER } from '../utils/request-id.util';
 
 type HttpExceptionResponse = {
   message?: string | string[];
@@ -34,19 +35,25 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
 
     const responseMessage = Array.isArray(message) && message.length === 1 ? message[0] : message;
+    const requestId = (request as { requestId?: string }).requestId;
+
+    if (requestId) {
+      response.setHeader(REQUEST_ID_HEADER, requestId);
+    }
 
     this.logger.error('Request error', {
       method: request.method,
       path: request.originalUrl,
       statusCode: status,
       error: exception instanceof Error ? exception.stack : exception,
-      requestId: (request as { requestId?: string }).requestId,
+      requestId,
     });
 
     response.status(status).json({
       success: false,
       message: responseMessage,
       statusCode: status,
+      requestId,
       timestamp: new Date().toISOString(),
     });
   }

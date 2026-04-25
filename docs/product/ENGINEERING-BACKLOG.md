@@ -84,8 +84,8 @@ Task:
 - [x] Tách `GET /api/health/ready`
 - [x] Readiness có DB check
 - [x] Readiness có Redis connectivity check
-- [ ] Bổ sung request id / correlation id trong log
-- [ ] Bổ sung metrics cơ bản cho auth + business APIs
+- [x] Bổ sung request id / correlation id trong log
+- [x] Bổ sung metrics cơ bản cho auth + business APIs
 - [ ] Tách response cho monitoring và human-readable docs
 
 ### Epic C. CI Production-Style

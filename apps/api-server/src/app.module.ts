@@ -8,6 +8,7 @@ import { AppThrottlerGuard } from './common/guards/throttler.guard';
 import { LoggerService } from './common/services/logger.service';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { RequestLoggingMiddleware } from './common/middleware/request-logging.middleware';
+import { RequestMetricsMiddleware } from './common/metrics/request-metrics.middleware';
 import { envSchema } from './config/env.validation';
 import { PrismaModule } from './common/prisma.module';
 import { AuthModule } from './auth/auth.module';
@@ -18,6 +19,7 @@ import { LessonModule } from './lesson/lesson.module';
 import { CourseModule } from './course/course.module';
 import { ProgressModule } from './progress/progress.module';
 import { HealthModule } from './common/health/health.module';
+import { MetricsModule } from './common/metrics/metrics.module';
 
 @Module({
   imports: [
@@ -54,6 +56,7 @@ import { HealthModule } from './common/health/health.module';
     LessonModule,
     CourseModule,
     ProgressModule,
+    MetricsModule,
     HealthModule,
   ],
   controllers: [],
@@ -72,7 +75,7 @@ import { HealthModule } from './common/health/health.module';
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply(RequestLoggingMiddleware, TenantMiddleware, CsrfMiddleware)
+      .apply(RequestLoggingMiddleware, RequestMetricsMiddleware, TenantMiddleware, CsrfMiddleware)
       .exclude(
         { path: 'health', method: RequestMethod.ALL },
         { path: 'mcp/(.*)', method: RequestMethod.ALL },
