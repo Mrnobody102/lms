@@ -1,6 +1,6 @@
 # Tài liệu API LMS Platform
 
-Cập nhật lần cuối: 2026-04-21
+Cập nhật lần cuối: 2026-04-25
 
 ## Tổng quan
 
@@ -173,11 +173,98 @@ Các route quản trị người dùng yêu cầu `ADMIN` hoặc `SUPER_ADMIN`.
 - `GET /api/admin/users/:id`
 - `PATCH /api/admin/users/:id/status`
 
+Query thường dùng để lấy học viên:
+
+```http
+GET /api/admin/users?role=STUDENT&isActive=true&page=1&limit=100
+```
+
 ### Super Admin
 
 Các route quản trị tenant yêu cầu `SUPER_ADMIN`.
 
 - `POST /api/admin/tenants`
+
+## Course, Lesson Và Enrollment
+
+Các endpoint dưới đây yêu cầu xác thực.
+
+### Course
+
+```http
+GET /api/courses
+GET /api/courses/:id
+POST /api/courses
+PATCH /api/courses/:id
+DELETE /api/courses/:id
+```
+
+Quy tắc access:
+
+- `ADMIN` và `SUPER_ADMIN` xem/quản trị course trong tenant scope hợp lệ.
+- `STUDENT` chỉ thấy course đang có enrollment `ACTIVE`.
+- Course bị soft-delete hoặc inactive không xuất hiện trong learning flow.
+
+### Enrollment
+
+Các endpoint enrollment yêu cầu `ADMIN` hoặc `SUPER_ADMIN`.
+
+```http
+POST /api/courses/:id/enrollments
+Content-Type: application/json
+
+{
+  "userId": "student-user-id"
+}
+```
+
+```http
+DELETE /api/courses/:id/enrollments/:userId
+```
+
+Quy tắc:
+
+- Chỉ enroll được user role `STUDENT`, active, chưa bị soft-delete và cùng tenant scope.
+- Enroll lại một enrollment đã revoked sẽ chuyển về `ACTIVE`.
+- Unenroll chuyển enrollment sang `REVOKED`, không xóa cứng lịch sử.
+
+### Lesson
+
+```http
+GET /api/lessons?courseId=:courseId
+GET /api/lessons/:id
+POST /api/lessons
+PATCH /api/lessons/:id
+DELETE /api/lessons/:id
+```
+
+Quy tắc access:
+
+- Student chỉ đọc được lesson của course đã enroll.
+- Admin mutation vẫn yêu cầu RBAC.
+
+## Progress
+
+```http
+POST /api/progress/update
+Content-Type: application/json
+
+{
+  "lessonId": "lesson-id",
+  "status": "COMPLETED"
+}
+```
+
+```http
+GET /api/progress/course/:courseId
+GET /api/progress/lesson/:lessonId
+```
+
+Quy tắc:
+
+- Progress được tenant-scoped.
+- Student chỉ update/read progress của lesson thuộc course đã enroll.
+- Roadmap tiếp theo sẽ mở rộng progress từ trạng thái `IN_PROGRESS`/`COMPLETED` sang completion percentage, last accessed lesson, streak và reporting.
 - `PUT /api/admin/tenants/:tenantId`
 
 ## Ghi chú bảo mật

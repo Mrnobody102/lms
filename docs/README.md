@@ -21,6 +21,13 @@ Nếu bạn mới tham gia dự án, hãy đọc theo thứ tự:
 3. **[docs/tech-analysis.md](tech-analysis.md)** — Phân tích sâu về kiến trúc và tech stack backend.
 4. **[docs/product/architecture-plan.md](product/architecture-plan.md)** — Production readiness roadmap, checklist tiến độ các phase cải thiện.
 
+### Product / Roadmap
+
+1. **[docs/product/PLAN.md](product/PLAN.md)** — Lộ trình tổng thể từ LMS foundation tới dashboard, practice, exam, reports, activation và AI.
+2. **[docs/product/features.md](product/features.md)** — Feature map theo actor/module và trạng thái hiện tại.
+3. **[docs/product/ENGINEERING-BACKLOG.md](product/ENGINEERING-BACKLOG.md)** — Backlog kỹ thuật và tiến độ đã verify.
+4. **[docs/product/architecture-plan.md](product/architecture-plan.md)** — Kiến trúc domain cần giữ khi mở rộng feature.
+
 ### Dev Frontend (Web Apps)
 
 1. **[docs/ARCHITECTURE.md](ARCHITECTURE.md)** — Hiểu cách frontend apps giao tiếp với API.
@@ -52,7 +59,8 @@ docs/
 │
 ├── product/                  # Tài liệu sản phẩm
 │   ├── features.md          # Danh sách tính năng theo Actor
-│   ├── plan.md              # Kế hoạch phát triển tổng thể
+│   ├── PLAN.md              # Kế hoạch phát triển tổng thể
+│   ├── ENGINEERING-BACKLOG.md # Tiến độ kỹ thuật và backlog
 │   └── architecture-plan.md # Production readiness roadmap
 │
 └── ai-agent/                 # Tài liệu AI Agent (nội bộ)

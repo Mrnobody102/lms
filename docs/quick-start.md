@@ -1,6 +1,6 @@
 # Quick Start
 
-Cập nhật lần cuối: 2026-04-21
+Cập nhật lần cuối: 2026-04-25
 
 ## Yêu cầu
 
@@ -34,6 +34,8 @@ pnpm db:migrate
 pnpm db:seed
 ```
 
+Seed hiện tạo tenant demo, admin, student, course demo, lessons demo và enrollment cho student demo vào course demo.
+
 ### 5. Chạy app ở chế độ dev
 
 ```bash
@@ -64,6 +66,15 @@ pnpm --filter super-portal dev
 ```bash
 curl http://localhost:4000/api
 ```
+
+## Tài khoản demo local
+
+Sau khi `pnpm db:seed`:
+
+| Role        | Email             | Password   | Ghi chú                        |
+| ----------- | ----------------- | ---------- | ------------------------------ |
+| Super Admin | `admin@lms.com`   | `admin123` | Quản trị platform/tenant demo  |
+| Student     | `student@lms.com` | `admin123` | Đã được enroll vào course demo |
 
 ## Auth flow hiện tại
 
@@ -127,14 +138,33 @@ curl -X POST http://localhost:4000/api/auth/logout \
 
 ## Scripts thường dùng
 
-| Lệnh              | Mục đích                    |
-| ----------------- | --------------------------- |
-| `pnpm dev`        | Chạy toàn bộ app ở dev mode |
-| `pnpm build`      | Build workspace             |
-| `pnpm test`       | Chạy test                   |
-| `pnpm test:e2e`   | Chạy E2E test               |
-| `pnpm db:up`      | Bật database                |
-| `pnpm db:down`    | Tắt database                |
-| `pnpm db:migrate` | Chạy migration              |
-| `pnpm db:seed`    | Seed dữ liệu mẫu            |
-| `pnpm db:studio`  | Mở Prisma Studio            |
+| Lệnh              | Mục đích                            |
+| ----------------- | ----------------------------------- |
+| `pnpm dev`        | Chạy toàn bộ app ở dev mode         |
+| `pnpm build`      | Build workspace                     |
+| `pnpm test`       | Chạy test                           |
+| `pnpm test:e2e`   | Chạy E2E test                       |
+| `pnpm db:up`      | Bật database                        |
+| `pnpm db:down`    | Tắt database                        |
+| `pnpm db:migrate` | Chạy migration                      |
+| `pnpm db:deploy`  | Apply migration đã commit           |
+| `pnpm db:status`  | Kiểm tra trạng thái migration       |
+| `pnpm db:resolve` | Resolve baseline/recovery migration |
+| `pnpm db:seed`    | Seed dữ liệu mẫu                    |
+| `pnpm db:studio`  | Mở Prisma Studio                    |
+
+## Roadmap feature hiện tại
+
+Trạng thái sản phẩm và lộ trình chi tiết nằm ở:
+
+- [Product plan](product/PLAN.md)
+- [Feature map](product/features.md)
+- [Engineering backlog](product/ENGINEERING-BACKLOG.md)
+
+Thứ tự làm tiếp hiện tại:
+
+1. Student Dashboard V1: continue learning, completion percentage, last accessed lesson.
+2. Progress/reporting theo enrollment.
+3. Content hierarchy `Unit/Chapter`.
+4. Practice engine.
+5. Exam/test engine.

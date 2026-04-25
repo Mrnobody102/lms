@@ -1,241 +1,189 @@
-# LMS Platform - Architecture Review và Roadmap Production Readiness
+# Architecture Plan Và Product Readiness
 
-Cập nhật lần cuối: 2026-04-21
+Cập nhật lần cuối: 2026-04-25
 
-## 1. Tổng quan
+## Mục tiêu
 
-Review lại codebase hiện tại cho thấy:
+Tài liệu này nối phần kiến trúc kỹ thuật với roadmap sản phẩm. Chi tiết feature nằm ở [features.md](features.md), còn tiến độ task nằm ở [ENGINEERING-BACKLOG.md](ENGINEERING-BACKLOG.md).
 
-- Nền tảng monorepo và cách chia module backend là hợp lý.
-- Hệ thống đã có auth, tenant management, course, lesson, progress ở mức MVP.
-- Tuy nhiên, production readiness vẫn đang bị chặn bởi bốn nhóm vấn đề lớn:
-  - tenant isolation chưa đúng boundary
-  - auth/session architecture chưa an toàn
-  - build/test/docs đang drift
-  - contract backend/frontend chưa nhất quán
+## Kiến trúc hiện tại
 
-Kết luận:
+### Apps
 
-- Chưa nên coi hệ thống hiện tại là production-ready.
-- Nhiều task trong kế hoạch cũ đã được đánh dấu xong hoặc mô tả sai so với code hiện tại.
-- Ưu tiên kiến trúc tiếp theo phải là security + correctness, không phải mở rộng feature breadth.
+- `apps/api-server`: NestJS API.
+- `apps/web-student`: trải nghiệm học viên.
+- `apps/web-admin`: quản trị trung tâm.
+- `apps/super-portal`: quản trị platform/tenant.
 
-## 2. Review lại tài liệu cũ
+### Packages
 
-Những điểm trong version trước cần sửa nhận định:
+- `@repo/database`: Prisma schema/client/seed.
+- `@repo/api-client`: Axios client cookie-first, CSRF header, tenant hint.
+- `@repo/shared`: shared auth/state helpers.
+- `@repo/ui`: shared UI primitives.
 
-- RBAC cho course/lesson không còn là issue chính; code hiện tại đã có guard và decorator.
-- Pagination cho course/lesson đã có ở backend.
-- `AdminService` god class không còn là hướng review chính; code đã tách `UserAdminService` và `TenantAdminService`.
-- `ResponseInterceptor` đã tồn tại nhưng chưa được wire vào app; vì vậy vấn đề hiện tại là contract drift, không phải thiếu implementation hoàn toàn.
-- `TenantMiddleware` không nên được ghi là “đã xử lý isolation”; đây mới chỉ là cơ chế gắn tenant context, chưa phải enforcement an toàn.
-- Phần CSRF/JWT trong bản cũ chưa đặt đúng thứ tự ưu tiên; vấn đề lớn hơn hiện tại là session source-of-truth và forged tenant context.
-- Các checklist `done` trước đó không phản ánh đúng runtime state vì build/test/doc scripts vẫn đang fail hoặc stale.
+### Backend modules chính
 
-## 3. Tóm tắt issue hiện tại
+- `auth`
+- `user`
+- `admin`
+- `course`
+- `lesson`
+- `progress`
+- `health`
+- `metrics`
+- `mcp`
 
-### Critical
+## Trạng thái readiness
 
-- Tenant isolation có thể bị vô hiệu hóa vì server vẫn tin `x-tenant-id` từ client.
-- Login chưa ràng theo tenant; user đang bị lookup theo email toàn cục.
-- JWT validation chưa đối chiếu tenant của request với tenant của user/session.
+Đã hoàn thành:
 
-### High
+- Cookie-first auth.
+- Tenant-aware login/register/JWT validation.
+- Cross-tenant resource tests.
+- Course/lesson/progress tenant scoping.
+- Course enrollment model và access control.
+- Admin enroll/unenroll UI.
+- Health/readiness với DB + Redis.
+- Request id + basic request metrics.
+- Production-safe Prisma migration flow.
+- CI/release verification workflow.
 
-- Frontend vẫn giữ JWT và tenant context trong `localStorage`.
-- Tenant bị disable chưa chặn được auth/session.
-- Build/test workspace chưa ổn:
-  - `api-server` test fail
-  - `web-admin` build fail
-  - `web-student` build fail
-  - `super-portal` build script sai
-- Docs test và sample payload không còn khớp DTO hiện tại.
+Còn cần trước khi scale feature lớn:
 
-### Medium
+- Cross-environment deploy guide end-to-end.
+- Reporting/aggregation strategy.
+- Content hierarchy strategy.
+- Background jobs/media storage strategy.
+- API contract cleanup khi domain practice/exam được thêm.
 
-- Response shape giữa backend và frontend chưa nhất quán.
-- Frontend còn duplication và workaround contract.
-- Course DTO/service/schema đang drift ở field `description`.
-- MCP auth vẫn cho API key qua query string.
+## Product Domain Hiện Tại
 
-## 4. Kiến trúc đề xuất sau audit
+Hiện schema có:
 
-### Workstream A - Tenant boundary đúng nghĩa
+- `Tenant`
+- `User`
+- `Course`
+- `Lesson`
+- `CourseEnrollment`
+- `UserLessonProgress`
 
-Mục tiêu:
+Domain này đủ cho MVP:
 
-- Tenant phải là một phần của server-side authorization boundary.
+- Admin tạo khóa học/bài học.
+- Admin enroll học viên.
+- Student học bài được enroll.
+- Student mark progress.
 
-Cần đạt:
+Domain này chưa đủ cho:
 
-- Request anonymous:
-  - tenant có thể đến từ domain/subdomain hoặc input explicit.
-  - server phải validate tenant tồn tại và đang active.
-- Request authenticated:
-  - tenant context phải khớp với user session/token.
-  - client không thể “switch tenant” bằng header nếu không có quyền hợp lệ.
-- Controller/service:
-  - không lấy tenant authority từ request header một cách mù quáng.
-  - ưu tiên tenant context đã được resolve/verify sẵn.
+- Unit/chapter.
+- Practice question bank.
+- Exam attempt/grading.
+- Activation/license code.
+- Learning streak/activity.
+- AI conversation.
 
-Task:
+## Hướng mở rộng domain
 
-- [ ] Refactor `TenantMiddleware` thành tenant resolver + tenant verifier rõ vai trò.
-- [ ] Bổ sung check tenant active trong auth flow và JWT strategy.
-- [ ] Xác định quy tắc login theo tenant:
-  - email global hay email unique per tenant
-  - nếu giữ email global, login vẫn phải có tenant context hợp lệ
-- [ ] Viết integration tests cho cross-tenant access.
+### 1. Progress và activity
 
-### Workstream B - Auth và session architecture
+Cần bổ sung trước dashboard:
 
-Mục tiêu:
+- last accessed lesson.
+- completion percentage.
+- time spent hoặc session count.
+- daily activity/streak.
 
-- Session an toàn hơn và dễ revoke/quản lý hơn.
+Có hai hướng:
 
-Cần đạt:
+- Mở rộng `UserLessonProgress` cho MVP nhanh.
+- Thêm `LearningActivity` để lưu event học tập, phù hợp reporting hơn.
 
-- Cookie `HttpOnly` là cơ chế chính cho browser session.
-- Không đưa `tenantId` và bearer token trong `localStorage` làm authority.
-- Có logout/session invalidation rõ ràng.
-- Nếu thêm refresh token, phải làm sau khi tenant boundary đã đúng.
+Khuyến nghị: dùng `LearningActivity` nếu muốn báo cáo/streak chính xác; có thể cache aggregate sau.
 
-Task:
+### 2. Content hierarchy
 
-- [ ] Chuyển frontend sang cookie-first auth.
-- [ ] Giảm hoặc loại bỏ dependency vào `Authorization` header từ `localStorage`.
-- [ ] Cập nhật auth store để kiểm tra auth qua session state thay vì chỉ decode token local.
-- [ ] Đánh giá có cần refresh token ở phase này hay để phase sau.
+Hiện `Course -> Lesson` là đủ cho MVP nhưng chưa giống sản phẩm HSK/book/unit.
 
-Ghi chú:
+Khuyến nghị phase gần:
 
-- Refresh token là việc cần cân nhắc, nhưng không nên đặt cao hơn tenant isolation.
+- Thêm `Unit` hoặc `Chapter`.
+- `Lesson` thuộc `Unit`, `Unit` thuộc `Course`.
+- Sau đó mới cân nhắc `Program/Level` nếu cần HSK 1/2/3 rõ ràng.
 
-### Workstream C - API contract và package boundaries
+### 3. Practice và exam
 
-Mục tiêu:
+Không nên tiếp tục mở rộng `Lesson.quiz` thành mọi thứ.
 
-- Mỗi app dùng cùng một contract đủ rõ.
+Nên tách:
 
-Cần đạt:
+- `Question`
+- `ExerciseSet`
+- `PracticeAttempt`
+- `Exam`
+- `ExamSection`
+- `ExamAttempt`
+- `ExamAnswer`
 
-- Response wrapper nhất quán.
-- Route names nhất quán.
-- DTO, Prisma schema và frontend types khớp nhau.
-- Shared packages thực sự là nơi chứa logic dùng chung, không chỉ tách file hình thức.
+Practice ưu tiên feedback nhanh; exam ưu tiên attempt lifecycle, timer, score và review.
 
-Task:
+### 4. Activation/license
 
-- [ ] Quyết định một response convention cho API.
-- [ ] Đăng ký `ResponseInterceptor` nếu chọn wrapper format.
-- [ ] Loại bỏ frontend-side special cases cho từng endpoint.
-- [ ] Fix endpoint mismatch ở lesson APIs.
-- [ ] Review lại shared packages:
-  - `@repo/api-client`
-  - `@repo/shared`
-  - common middleware helpers
+Activation code nên cấp quyền qua entitlement rõ ràng:
 
-### Workstream D - Testability và workspace reliability
+- code -> entitlement/license grant.
+- entitlement -> course/program access.
+- enrollment có thể được tạo tự động sau redeem.
 
-Mục tiêu:
+Không nên để code activation ghi trực tiếp nhiều nơi mà không có audit log.
 
-- Repo phải “tự chạy được” trước khi mở rộng product scope.
+### 5. AI conversation
 
-Task:
+AI nên đi sau khi có:
 
-- [ ] Sửa `api-server` test failure và bổ sung integration tests.
-- [ ] Sửa frontend build failures.
-- [ ] Sửa `super-portal` build script.
-- [ ] Thêm/chuẩn hóa root scripts `test`, `test:e2e` nếu docs tiếp tục hướng dẫn sử dụng.
-- [ ] Đồng bộ `docs/guides/testing.md`, `tests/api-tests.http`, sample payloads với code thực tế.
+- authenticated student identity.
+- tenant/enrollment/license boundary.
+- usage quota.
+- logging/reporting cơ bản.
 
-Verification tối thiểu:
+Domain đề xuất:
 
-- `pnpm --filter api-server test`
-- `pnpm --filter api-server build`
-- `pnpm --filter web-admin build`
-- `pnpm --filter web-student build`
-- `pnpm --filter super-portal build`
+- `AiConversation`
+- `AiMessage`
+- `AiUsage`
+- optional `AiFeedback`
 
-### Workstream E - Product modules trên nền tảng đã ổn
+## Quy tắc kiến trúc khi thêm feature
 
-Chỉ đẩy nhanh sau khi A-D ở mức chấp nhận được.
+- Mọi read/write student-facing phải check tenant và enrollment/license.
+- Admin route phải check role và tenant scope.
+- Migration phải đi cùng schema change.
+- Seed nên giữ flow demo chạy được.
+- Feature lớn phải có test bắt authorization regression.
+- Frontend không hardcode tenant/course IDs.
+- Docs API/product/backlog phải cập nhật cùng PR.
 
-Task:
+## Roadmap kiến trúc gần nhất
 
-- [ ] Hoàn thiện Course Builder contract và UI.
-- [ ] Hoàn thiện Student Learning Space và progress flow.
-- [ ] Mở rộng tenant settings và branding.
-- [ ] Đánh giá lesson block architecture sau khi MVP lesson flow ổn định.
+1. Progress/activity model.
+2. Student Dashboard V1.
+3. Unit/chapter model.
+4. Practice question bank.
+5. Exam attempt/grading.
+6. Reporting aggregate.
+7. Activation/license.
+8. AI conversation.
 
-## 5. Roadmap theo phase
+## Definition Of Done
 
-### Phase 0 - Blocking fixes
+Một module mới chỉ được xem là production-ready khi:
 
-- [ ] Fix tenant isolation end-to-end.
-- [ ] Fix auth source-of-truth trên frontend.
-- [ ] Fix build/test blockers.
-- [ ] Cập nhật stale docs/test assets.
-
-### Phase 1 - Contract consolidation
-
-- [ ] Standardize API response model.
-- [ ] Fix DTO/schema drift.
-- [ ] Fix route mismatch và duplicated client logic.
-- [ ] Bổ sung integration tests cho auth/tenant/course/lesson/progress.
-
-### Phase 2 - Operational hardening
-
-- [ ] Logout/session invalidation.
-- [ ] Tenant disable enforcement.
-- [ ] MCP auth hardening.
-- [ ] Observability cho auth, tenant và security events.
-
-### Phase 3 - Feature acceleration
-
-- [ ] Course Builder.
-- [ ] Student Learning Space.
-- [ ] Super Portal operational workflows.
-
-## 6. Checklist cập nhật
-
-### Đã có nhưng chưa đủ để xem là done
-
-- [x] NestJS modules auth/user/admin/course/lesson/progress
-- [x] JWT issue và cookie set cơ bản
-- [x] RBAC decorator/guards cho course và lesson mutation
-- [x] Pagination cơ bản cho course/lesson
-- [x] Shared `@repo/api-client`
-- [x] Shared auth store cơ bản
-- [x] Health endpoint/module có tồn tại
-
-### Chưa đạt
-
-- [ ] Tenant isolation an toàn
-- [ ] Login/JWT validation ràng tenant đúng
-- [ ] Frontend cookie-first auth
-- [ ] Build ba frontend apps pass trong workspace hiện tại
-- [ ] Backend test suite pass
-- [ ] Docs testing khớp với scripts thật
-- [ ] API contract nhất quán giữa backend và frontend
-- [ ] Course DTO/schema alignment
-
-## 7. Việc nên làm tiếp theo
-
-Thứ tự thực thi đề xuất:
-
-1. Sửa tenant isolation và auth flow.
-2. Sửa build/test/scripts/docs drift.
-3. Chuẩn hóa API contract và shared boundaries.
-4. Thêm integration tests để bắt regression.
-5. Quay lại mở rộng Course Builder và Student Learning Space.
-
-## 8. Definition of done cho architecture roadmap
-
-Chỉ nên chuyển trọng tâm sang roadmap feature khi:
-
-- Cross-tenant access tests pass.
-- Workspace build/test chạy được ở các app chính.
-- Frontend không còn dựa vào `localStorage` để mang authority auth/tenant.
-- Docs product và docs testing phản ánh đúng code state hiện tại.
-- Không còn mismatch lớn giữa DTO, service, schema và frontend client.
+- Schema/API/UI/test/docs cùng hoàn thành.
+- Authorization đã cover tenant + enrollment/license.
+- Có migration production-safe.
+- Có verify local tối thiểu:
+  - `pnpm --filter api-server test`
+  - build app liên quan
+  - lint app liên quan
+- Có trạng thái trong `ENGINEERING-BACKLOG.md`.

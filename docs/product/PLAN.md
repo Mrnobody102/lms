@@ -1,198 +1,220 @@
-# Kế hoạch triển khai LMS Platform
+# Kế Hoạch Triển Khai LMS Platform
 
-Cập nhật lần cuối: 2026-04-21
+Cập nhật lần cuối: 2026-04-25
 
-## Mục tiêu
+## Định hướng sản phẩm
 
-Mục tiêu ngắn hạn của dự án không còn là thêm thật nhiều tính năng mới ngay lập tức, mà là đưa nền tảng hiện tại về trạng thái có thể mở rộng an toàn:
+LMS Platform đang đi theo hướng nền tảng học tập multi-tenant, có thể phục vụ nhiều trung tâm giáo dục. Trục sản phẩm gần nhất là một learning experience giống các hệ thống HSK/language learning hiện đại:
 
-- Multi-tenant đúng nghĩa: tenant isolation được enforce ở phía server, không tin client header như nguồn sự thật.
-- Auth và session an toàn hơn: không để JWT hoặc tenant context trong `localStorage` làm authority chính.
-- API contract ổn định: frontend, backend, test và docs khớp nhau.
-- Build và test chạy được trong workspace thực tế.
-- Sau khi nền tảng ổn định mới tiếp tục đẩy nhanh Course Builder và Student Learning Space.
+- Học bài theo chương trình, khóa học, chương, bài học.
+- Tiếp tục học từ bài gần nhất.
+- Luyện tập theo kỹ năng và bộ câu hỏi.
+- Kiểm tra/thi thử có chấm điểm và review.
+- Theo dõi tiến độ, streak, báo cáo học tập.
+- Admin quản lý course, lesson, học viên, enrollment và báo cáo.
+- Sau khi nền đủ ổn mới mở AI conversation và module chuyên sâu.
 
-## Đánh giá hiện trạng
+## Hiện trạng
 
-Những phần đã có giá trị:
+Đã có nền tảng quan trọng:
 
-- Monorepo `apps/` + `packages/` khá rõ ràng.
-- Backend NestJS đã tách module `auth`, `user`, `admin`, `course`, `lesson`, `progress`.
-- Prisma schema đã có nền tảng tenant, course, lesson, progress.
-- Ba frontend app đã dùng chung một phần shared packages.
+- Monorepo `apps/` + `packages/`.
+- Backend NestJS module hóa: `auth`, `user`, `admin`, `course`, `lesson`, `progress`, health, metrics.
+- Cookie-first auth cho browser flow.
+- Tenant-aware auth và access checks.
+- Course/lesson CRUD cơ bản.
+- Enrollment DB/API/UI: admin enroll/unenroll, student chỉ thấy course được enroll.
+- Student E2E flow: register/login/course/lesson/progress.
+- Release checks, smoke API, health/readiness, request id, metrics.
+- Production-safe database migration flow.
 
-Những điểm chưa thể xem là hoàn thành:
+Chưa có hoặc mới ở mức sơ khai:
 
-- Auth và tenant management mới ở mức MVP, chưa production-ready.
-- Multi-tenancy hiện tại còn phụ thuộc vào `x-tenant-id` từ client.
-- Frontend vẫn đang giữ JWT trong `localStorage`.
-- Test và tài liệu test đang lệch với code hiện tại.
-- `web-admin`, `web-student`, `super-portal` chưa ở trạng thái build ổn định trong workspace hiện tại.
+- Dashboard học tập giống màn hình tổng quan: continue learning, streak, progress chart.
+- Content hierarchy rõ hơn cho program/level/book/unit/lesson.
+- Practice engine/question bank.
+- Exam/test attempt/grading đầy đủ.
+- Reporting theo enrollment/progress.
+- Activation/license code.
+- AI conversation.
+- Media storage/background jobs.
 
-## Nguyên tắc cập nhật roadmap
+## Nguyên tắc roadmap
 
-- Không đánh dấu `done` nếu chưa qua được `build`, `lint`, test phù hợp và verify nghiệp vụ.
-- Security và tenancy là blocker cho mọi tính năng tiếp theo.
-- Mỗi task phải có đầu ra rõ ràng và cách verify.
-- Ưu tiên giảm drift giữa code, docs, test và shared contracts.
+- Nền tảng auth, tenant boundary, migration và verification phải ổn trước khi mở feature lớn.
+- Product feature phải có model dữ liệu, API contract, UI flow và test tương ứng.
+- Student chỉ truy cập nội dung qua enrollment/license hợp lệ.
+- Progress/reporting phải dựa trên event hoặc trạng thái đủ giàu, không chỉ boolean completed.
+- Không trộn practice/test/AI vào `Lesson.quiz` quá lâu; field này chỉ phù hợp MVP.
 
 ## Roadmap ưu tiên
 
-### P0. Security và tenant isolation
+### P0. Foundation Hardening
 
-Mục tiêu:
+Trạng thái: phần lớn đã hoàn thành.
 
-- Khóa tenant context theo identity của user/token/cookie ở phía server.
-- Loại bỏ khả năng đọc hoặc ghi chéo tenant bằng cách sửa header.
-- Giảm bề mặt tấn công của auth flow.
+Đã làm:
 
-Công việc:
+- Cookie-first auth.
+- Tenant validation trong login/register/JWT strategy.
+- Cross-tenant guard cho resource APIs.
+- CSRF cho state-changing cookie requests.
+- CORS/CSP production hardening.
+- Health/readiness với DB + Redis.
+- Request id + request metrics.
+- CI/release verification.
+- Production migration runbook và `db:push` guard.
 
-- [ ] Thiết kế lại tenant resolution:
-  - `TenantMiddleware` không được tin `x-tenant-id` như authority duy nhất.
-  - Nếu user đã authenticate, tenant phải được suy ra và verify từ token hoặc user record.
-  - Header tenant, nếu còn dùng, chỉ là input phụ và phải được đối chiếu.
-- [ ] Sửa login/register flow theo tenant:
-  - Login phải xác định tenant hợp lệ thay vì lookup theo email toàn cục.
-  - JWT validation phải reject nếu tenant bị vô hiệu hóa hoặc request tenant không khớp.
-- [ ] Chuẩn hóa auth storage:
-  - Ưu tiên `HttpOnly` cookie làm session source of truth.
-  - Giảm dần và loại bỏ JWT hoặc tenant context khỏi `localStorage`.
-- [ ] Review lại tenant lifecycle:
-  - Tenant `isActive = false` phải chặn login và các session tiếp tục sử dụng hệ thống.
-- [ ] Giảm rủi ro MCP:
-  - Không truyền API key qua query string nếu có thể.
-  - Hardening compare/check và scope truy cập.
+Còn cần theo dõi:
 
-Done khi:
+- Cross-environment deploy guide end-to-end.
+- Build trace của Next standalone có thể chậm, cần theo dõi trong CI.
 
-- Student hoặc Admin của tenant A không thể dùng header tenant B để truy cập course, lesson hoặc progress của tenant B.
-- User thuộc tenant đã bị disable không thể đăng nhập.
-- Frontend không còn cần `localStorage.token` làm cách xác thực chính cho browser flow.
+### P1. Course Builder Và Enrollment
 
-### P1. Ổn định build, runtime và workspace
+Trạng thái: đang làm, backend/API/UI core đã có.
 
-Mục tiêu:
+Đã làm:
 
-- Mỗi app hoặc script quan trọng phải chạy được thật trong workspace.
-- Loại bỏ các script “trông có vẻ đúng” nhưng thực tế fail.
+- Course và lesson CRUD cơ bản.
+- Lesson types: `video`, `text`, `quiz` ở mức schema/MVP.
+- Enrollment model.
+- Admin enroll/unenroll học viên vào course.
+- Student course list/detail/lesson/progress bị giới hạn theo enrollment.
 
-Công việc:
+Còn cần:
 
-- [ ] Sửa build pipeline cho ba frontend apps:
-  - Xử lý lỗi resolve `autoprefixer` trong `web-admin` và `web-student`.
-  - Sửa script `super-portal` vì `next build --webpack` hiện không hợp lệ.
-- [ ] Sửa test runtime của backend:
-  - `api-server` test hiện fail ở suite MCP vì dependency hoặc runtime setup.
-- [ ] Bổ sung root scripts còn thiếu:
-  - `pnpm test`, `pnpm test:e2e` hoặc cập nhật docs để khớp với script thật.
-- [ ] Đồng bộ hướng dẫn test với workspace hiện tại.
+- Reporting theo enrollment.
+- Admin UX quản lý học viên tốt hơn: filter, bulk enroll, class/cohort.
+- Xem trạng thái học viên trong từng course.
 
-Done khi:
+### P2. Student Dashboard V1
 
-- `pnpm --filter api-server test` pass.
-- `pnpm --filter web-admin build`, `pnpm --filter web-student build`, `pnpm --filter super-portal build` pass.
-- Docs không còn hướng dẫn các lệnh không tồn tại.
+Mục tiêu: tạo màn hình học tập chính gần với sản phẩm mục tiêu.
 
-### P2. API contract và shared architecture
+Phạm vi:
 
-Mục tiêu:
+- Course/program selector.
+- Continue learning card.
+- Last accessed lesson.
+- Completion percentage theo course.
+- Daily activity/streak.
+- Progress chart đơn giản.
+- Empty states khi chưa được enroll hoặc chưa có nội dung.
 
-- Backend và frontend chia sẻ một contract đủ rõ để giảm bug runtime.
-- Giảm duplication giữa ba frontend apps.
+Data cần bổ sung:
 
-Công việc:
+- `lastAccessedAt` hoặc learning activity event.
+- Course-level progress aggregate.
+- Streak/activity calculation.
 
-- [ ] Chuẩn hóa response format:
-  - Đăng ký và dùng nhất quán `ResponseInterceptor`, hoặc bỏ hẳn giả định unwrap ở client.
-- [ ] Đồng bộ DTO, service và Prisma schema:
-  - Loại bỏ field trong docs hoặc API không tồn tại thật, hoặc bổ sung schema cho nó.
-  - Ví dụ: `Course.description` hiện có trong DTO nhưng chưa có trong schema hoặc service.
-- [ ] Đồng bộ endpoint contract:
-  - Frontend không được gọi endpoint không tồn tại.
-  - Review lại các route `course`, `lesson`, `progress`.
-- [ ] Tiếp tục gom shared logic:
-  - `api-client`
-  - auth store
-  - middleware/security headers
-  - locale-aware redirect helpers
+### P3. Content Hierarchy
 
-Done khi:
+Mục tiêu: tránh để mọi thứ chỉ là `Course -> Lesson` khi sản phẩm có HSK/book/unit.
 
-- Không còn workaround riêng trong từng app để đoán response shape.
-- Frontend và backend khớp route, payload, field và pagination model.
+Mô hình đề xuất:
 
-### P3. Test strategy đúng với hệ thống hiện tại
+- `Program` hoặc `Track`: HSK, IELTS, Coding...
+- `Level`: HSK 1, HSK 2...
+- `Course` hoặc `Book`: khóa/chương trình cụ thể.
+- `Unit` hoặc `Chapter`.
+- `Lesson`.
 
-Mục tiêu:
+Quyết định cần chốt:
 
-- Có test bắt được các lỗi nghiêm trọng vừa audit.
+- Giữ `Course` làm book/course chính, thêm `Unit`.
+- Hay thêm `Program/Level` trước rồi course thuộc level.
 
-Công việc:
+### P4. Practice Engine
 
-- [ ] Bổ sung integration tests cho:
-  - auth theo tenant
-  - tenant isolation
-  - RBAC cho course, lesson, admin
-  - tenant disable flow
-  - progress access control
-- [ ] Cập nhật test artifacts:
-  - `tests/api-tests.http`
-  - sample payloads
-  - seed data phục vụ test
-- [ ] Có seed hoặc fixture cho:
-  - ít nhất hai tenants
-  - user roles: `SUPER_ADMIN`, `ADMIN`, `INSTRUCTOR`, `STUDENT`
-  - course, lesson, progress chéo tenant
-- [ ] Duy trì ít nhất một E2E flow có giá trị:
-  - login
-  - xem khóa học
-  - mở lesson
-  - update progress
+Mục tiêu: phục vụ menu "Luyện tập".
 
-Done khi:
+Phạm vi:
 
-- Các regression sau được test bắt: forged tenant header, login sai tenant, stale docs payload, route mismatch.
+- Question bank.
+- Exercise set.
+- Question types: multiple choice, fill blank, matching, ordering, listening.
+- Practice attempt.
+- Skill tags: vocabulary, grammar, reading, listening, writing.
+- Immediate feedback.
 
-### P4. Product modules sau khi nền tảng ổn định
+Không nên nhét lâu dài vào `Lesson.quiz`; cần tách domain practice.
 
-Chỉ bắt đầu đẩy nhanh phase này sau khi P0-P3 đạt mức chấp nhận được.
+### P5. Exam/Test Engine
 
-#### P4.1 Course Builder
+Mục tiêu: phục vụ menu "Kiểm tra".
 
-- [ ] Hoàn thiện CRUD khóa học và bài học với contract nhất quán.
-- [ ] Hỗ trợ lesson types rõ ràng: `video`, `text`, `quiz`.
-- [ ] Xử lý ordering, validation và soft-delete nhất quán.
-- [ ] Đánh giá có cần tách “lesson blocks” hay giữ model đơn giản trong phase hiện tại.
+Phạm vi:
 
-#### P4.2 Student Learning Space
+- Exam template.
+- Sections.
+- Timer.
+- Attempt lifecycle: started, submitted, graded.
+- Answer snapshot.
+- Score, pass/fail, review.
+- Authorization theo enrollment/license.
 
-- [ ] Sidebar điều hướng bài học.
-- [ ] Lesson player cho text, video, quiz.
-- [ ] Progress tracking theo user, tenant, course.
-- [ ] Error/loading states đúng với contract mới.
+### P6. Reporting
 
-#### P4.3 Super Portal và tenant operations
+Mục tiêu: phục vụ menu "Báo cáo" cho student và admin.
 
-- [ ] Tenant activation/deactivation phải tác động đúng lên auth và session.
-- [ ] Tenant settings/branding có contract rõ ràng.
-- [ ] Quản lý tenant không phụ thuộc mock data hoặc giả định cũ.
+Student reports:
 
-## Việc cần làm tiếp theo
+- Completion by course/unit.
+- Streak/activity calendar.
+- Accuracy by skill.
+- Recent attempts.
 
-Thứ tự đề xuất:
+Admin reports:
 
-1. Fix tenant isolation và auth source-of-truth.
-2. Sửa build/test/scripts/docs để repo chạy được thật.
-3. Chuẩn hóa API contract và bổ sung integration tests.
-4. Quay lại hoàn thiện Course Builder và Student Learning Space.
+- Course completion.
+- Student activity.
+- Enrollment progress.
+- Practice/exam performance.
 
-## Các tiêu chí “done” cấp dự án
+### P7. Activation Và Licensing
 
-Chỉ nên xem giai đoạn nền tảng đã ổn khi thỏa các điều kiện sau:
+Mục tiêu: phục vụ flow "Nhập mã kích hoạt".
 
-- Build của bốn app chính pass.
-- Backend test pass và có integration test cho tenant/auth.
-- Frontend không còn phụ thuộc `localStorage` như authority chính cho auth.
-- Không còn API hoặc test docs stale so với DTO hiện tại.
-- Tài liệu product và architecture đồng bộ với code state thực tế.
+Phạm vi:
+
+- Activation code.
+- License grant: course/program access.
+- Redemption history.
+- Expiration/usage limits.
+- Mapping activation -> enrollment hoặc entitlement.
+
+### P8. AI Conversation
+
+Mục tiêu: phục vụ menu "AI Convo".
+
+Chỉ nên làm sau khi auth, enrollment, usage tracking và basic reports ổn.
+
+Phạm vi:
+
+- Conversation scenarios.
+- AI session/messages.
+- Usage quota.
+- Safety/system prompts.
+- Optional feedback/scoring.
+
+## Thứ tự làm tiếp đề xuất
+
+1. Student Dashboard V1: continue learning, completion percentage, last accessed lesson.
+2. Progress aggregate/reporting theo enrollment.
+3. Content hierarchy: thêm `Unit/Chapter` trước.
+4. Practice engine MVP.
+5. Exam/test engine MVP.
+6. Activation/license.
+7. AI conversation.
+
+## Definition Of Done Cấp Dự Án
+
+Một phase chỉ được xem là xong khi:
+
+- Có migration/schema tương ứng nếu có dữ liệu mới.
+- API có authorization theo tenant/enrollment/license.
+- Frontend dùng contract thật, không mock hoặc hardcode tenant/course.
+- Có test phù hợp với rủi ro của feature.
+- `pnpm --filter api-server test`, build app liên quan và lint pass.
+- Docs product/API/backlog được cập nhật cùng thay đổi code.

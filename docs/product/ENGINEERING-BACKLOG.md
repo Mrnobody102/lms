@@ -1,6 +1,6 @@
 # Backlog Kỹ Thuật Và Theo Dõi Tiến Độ
 
-Cập nhật lần cuối: 2026-04-22
+Cập nhật lần cuối: 2026-04-25
 
 ## Mục tiêu
 
@@ -24,7 +24,12 @@ Nguyên tắc:
 | CI release-grade checks                | Đã làm     | Đã tách fast/build/e2e/api smoke trong workflow                            |
 | Migration hygiene production-safe      | Đã làm     | Có runbook baseline, `db:status`, `db:resolve`, guard `db:push` production |
 | Enrollment / access model              | Đang làm   | Đã có DB/API/UI access control; còn reporting                              |
+| Student dashboard / continue learning  | Chưa làm   | Feature gần nhất sau enrollment                                            |
+| Content hierarchy                      | Chưa làm   | Cần `Unit/Chapter` trước khi nội dung lớn                                  |
+| Practice engine                        | Chưa làm   | Cần question bank/exercise attempt                                         |
 | Quiz attempt / grading                 | Chưa làm   | Nên đi sau progress/enrollment                                             |
+| Activation / license code              | Chưa làm   | Phục vụ flow nhập mã kích hoạt                                             |
+| AI conversation                        | Chưa làm   | Làm sau usage/reporting                                                    |
 | Media storage / background jobs        | Chưa làm   | Chỉ nên làm sau hạ tầng release ổn định                                    |
 
 ## Những gì đã hoàn thành
@@ -122,6 +127,7 @@ Task:
 Mục tiêu:
 
 - Progress không chỉ là `COMPLETED`, mà có giá trị vận hành và sản phẩm.
+- Tạo nền cho dashboard học tập: tiếp tục học, % hoàn thành, streak, biểu đồ tiến độ.
 
 Task:
 
@@ -129,9 +135,32 @@ Task:
 - [ ] Last accessed lesson
 - [ ] Resume learning
 - [ ] Time spent hoặc session count
+- [ ] Daily learning streak
+- [ ] Student dashboard V1
 - [ ] Admin dashboard cơ bản theo tiến độ
 
-### Epic F. Quiz Attempt Và Grading
+### Epic F. Content Hierarchy
+
+Task:
+
+- [ ] Thiết kế `Unit/Chapter` thuộc course
+- [ ] Lesson thuộc unit/chapter nhưng vẫn migrate được dữ liệu hiện tại
+- [ ] Admin UI quản lý unit/chapter
+- [ ] Student lesson sidebar theo unit/chapter
+- [ ] Test ordering và soft-delete
+
+### Epic G. Practice Engine
+
+Task:
+
+- [ ] Thiết kế question bank
+- [ ] Thiết kế exercise set theo course/unit/skill
+- [ ] Hỗ trợ question types MVP: multiple choice, fill blank
+- [ ] Practice attempt
+- [ ] Lưu answer và feedback
+- [ ] Test authorization theo enrollment
+
+### Epic H. Quiz / Exam Attempt Và Grading
 
 Task:
 
@@ -141,13 +170,44 @@ Task:
 - [ ] Review kết quả
 - [ ] Test scoring + authorization
 
+### Epic I. Reporting
+
+Task:
+
+- [ ] Student activity calendar
+- [ ] Course completion report
+- [ ] Enrollment progress report
+- [ ] Practice/exam accuracy report
+- [ ] Admin report dashboard cơ bản
+
+### Epic J. Activation Và License
+
+Task:
+
+- [ ] Thiết kế activation code
+- [ ] Redeem code
+- [ ] Mapping code sang entitlement/enrollment
+- [ ] Expiration/usage limit
+- [ ] Redemption audit log
+
+### Epic K. AI Conversation
+
+Task:
+
+- [ ] Thiết kế conversation scenario
+- [ ] Lưu AI session/messages
+- [ ] Usage quota/rate limit
+- [ ] Safety/system prompt theo tenant
+- [ ] Feedback/scoring nếu cần
+
 ## Bước tiếp theo đề xuất
 
 Thứ tự nên làm tiếp:
 
-1. Hoàn thiện admin UI cho enroll / unenroll.
-2. Mở rộng progress theo enrollment: completion percentage, resume learning.
-3. Sau đó mới mở rộng quiz attempt và grading.
+1. Mở rộng progress theo enrollment: completion percentage, last accessed lesson, resume learning.
+2. Làm Student Dashboard V1 giống màn hình tổng quan học tập.
+3. Thêm content hierarchy `Unit/Chapter`.
+4. Sau đó mới mở practice engine và exam/test engine.
 
 ## Checklist xác minh gần nhất
 
