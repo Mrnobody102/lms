@@ -1,104 +1,66 @@
-# Hướng Dẫn Database & Migrations
+# Database And Migration Guide
 
-Tài liệu này hướng dẫn cách quản lý Database và Prisma Migration trong dự án **LMS Platform**.
+This guide is for day-to-day database work. The production procedure is defined in [database-migration-runbook.md](../runbooks/database-migration-runbook.md).
 
-## 1. Tổng quan Công nghệ
+## Local Services
 
-- **Database**: PostgreSQL (chạy qua Docker).
-- **ORM**: Prisma.
-- **Port mặc định**: `5433` (Local, internal 5432).
+Start PostgreSQL and Redis:
 
-## 2. Các lệnh quản lý Database
+```bash
+pnpm db:up
+```
 
-Từ thư mục gốc của dự án, bạn có thể sử dụng các lệnh sau:
+Stop them:
 
-| Lệnh              | Mô tả                                                    |
-| :---------------- | :------------------------------------------------------- |
-| `pnpm db:up`      | Khởi động PostgreSQL và Redis qua Docker.                |
-| `pnpm db:down`    | Tắt các dịch vụ database.                                |
-| `pnpm db:migrate` | Chạy migration để cập nhật schema.                       |
-| `pnpm db:seed`    | Tạo dữ liệu mẫu (tenant demo, accounts).                 |
-| `pnpm db:studio`  | Mở giao diện Prisma Studio để xem/sửa dữ liệu.           |
-| `pnpm db:push`    | Push schema mà không tạo migration (dùng khi dev nhanh). |
+```bash
+pnpm db:down
+```
 
-## 3. Quy trình làm việc với Migration
+## Common Commands
 
-Mỗi khi bạn thay đổi file `packages/database/prisma/schema.prisma`, hãy tuân theo các bước sau:
+| Command                                    | Use                                                              |
+| ------------------------------------------ | ---------------------------------------------------------------- |
+| `pnpm db:migrate`                          | Create and apply a local Prisma migration.                       |
+| `pnpm db:deploy`                           | Apply committed migrations. This is the production-safe command. |
+| `pnpm db:status`                           | Inspect migration state.                                         |
+| `pnpm db:resolve -- --applied <migration>` | Mark an existing migration as already applied during baseline.   |
+| `pnpm db:seed`                             | Seed demo tenant, admin, student, courses, and lessons.          |
+| `pnpm db:studio`                           | Open Prisma Studio.                                              |
+| `pnpm db:push`                             | Local/dev prototype only. Guarded against `NODE_ENV=production`. |
 
-### Bước 1: Tạo Migration
+## Local Migration Workflow
 
-Chạy lệnh sau để Prisma so sánh schema và tạo file migration mới:
+1. Edit `packages/database/prisma/schema.prisma`.
+2. Generate a migration:
 
 ```bash
 pnpm db:migrate
 ```
 
-Hệ thống sẽ yêu cầu bạn nhập tên cho migration. Một thư mục mới sẽ được tạo trong `packages/database/prisma/migrations/`.
+3. Review the generated SQL under `packages/database/prisma/migrations`.
+4. Run tests/build that cover the changed schema.
+5. Commit both schema and migration files.
 
-### Bước 2: Seed Dữ liệu (nếu cần)
+## Production Rule
 
-```bash
-pnpm db:seed
-```
-
-Điều này tạo:
-
-- Tenant demo (`trung-tam-demo`)
-- Super Admin account: `admin@lms.com` / `admin123`
-- Student account: `student@lms.com` / `admin123`
-
-### Bước 3: Kiểm tra dữ liệu
-
-Sử dụng Prisma Studio để đảm bảo cấu hình mới hoạt động đúng:
+Production deploys must use:
 
 ```bash
-pnpm db:studio
+pnpm db:deploy
 ```
 
-## 4. Cấu hình Database
+Never use `db:push` or `db:reset` against production.
 
-### Local Development
+## Connection String
 
-File `docker-compose.yml` ở root đã cấu hình sẵn PostgreSQL và Redis:
-
-- **PostgreSQL**: Port `5433` (host) → `5432` (container)
-- **Redis**: Port `6379`
-- **Database**: `lms_platform`
-- **User**: `postgres`
-- **Password**: `password`
-
-### Connection String
+Local default:
 
 ```env
 DATABASE_URL="postgresql://postgres:password@127.0.0.1:5433/lms_platform?schema=public"
 ```
 
-## 5. Troubleshooting (Xử lý sự cố)
+## Troubleshooting
 
-### Lỗi kết nối (P1001/P1000)
-
-- Kiểm tra Docker đã bật chưa: `docker ps`.
-- Kiểm tra port `5433` có bị phần mềm khác chiếm dụng không.
-- Đảm bảo file `.env` tại root có chuỗi kết nối đúng.
-
-### Cập nhật Schema mà không tạo Migration (Dev nhanh)
-
-Nếu bạn chỉ muốn thử nghiệm nhanh mà không cần lưu lịch sử migration:
-
-```bash
-pnpm db:push
-```
-
-_Lưu ý: Không khuyến khích dùng cách này cho production._
-
-## 6. Cấu hình Production
-
-Khi deploy lên môi trường Production, Prisma sẽ sử dụng lệnh:
-
-```bash
-pnpm --filter @repo/database run deploy
-```
-
-Lệnh này sẽ áp dụng các migration đã có vào database production mà không tạo thêm file mới.
-
-Tham khảo: [Deployment Guide](../ops/deployment.md)
+- `P1001` or connection refused: verify Docker is running and port `5433` is free.
+- Migration drift: run `pnpm db:status`, then follow the production runbook before changing shared databases.
+- Failed production migration: stop deploy and follow the recovery section in the runbook.

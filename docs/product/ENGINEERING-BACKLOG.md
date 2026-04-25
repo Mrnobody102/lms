@@ -14,18 +14,18 @@ Nguyên tắc:
 
 ## Trạng thái tổng quan
 
-| Hạng mục                               | Trạng thái    | Ghi chú                                                   |
-| -------------------------------------- | ------------- | --------------------------------------------------------- |
-| Cookie-first auth cho browser flow     | Đã làm        | Không còn coi `localStorage` là authority chính           |
-| Tenant-aware auth + business API tests | Đã làm        | Có HTTP integration tests cho auth/course/lesson/progress |
-| Student E2E flow thực tế               | Đã làm        | Đã thay test giả bằng register/login/lesson/progress      |
-| Local release verification             | Đã làm        | Có `build:stable`, `smoke:api`, `test:e2e`, cleanup port  |
-| Health/readiness có DB + Redis check   | Đã làm        | Có `live`, `ready` và smoke runtime thật                  |
-| CI release-grade checks                | Đang làm      | Cần đồng bộ workflow với release flow mới                 |
-| Migration hygiene production-safe      | Chưa làm xong | Vẫn cần baseline/migrate strategy rõ ràng                 |
-| Enrollment / access model              | Chưa làm      | Epic lớn tiếp theo                                        |
-| Quiz attempt / grading                 | Chưa làm      | Nên đi sau progress/enrollment                            |
-| Media storage / background jobs        | Chưa làm      | Chỉ nên làm sau hạ tầng release ổn định                   |
+| Hạng mục                               | Trạng thái | Ghi chú                                                                    |
+| -------------------------------------- | ---------- | -------------------------------------------------------------------------- |
+| Cookie-first auth cho browser flow     | Đã làm     | Không còn coi `localStorage` là authority chính                            |
+| Tenant-aware auth + business API tests | Đã làm     | Có HTTP integration tests cho auth/course/lesson/progress                  |
+| Student E2E flow thực tế               | Đã làm     | Đã thay test giả bằng register/login/lesson/progress                       |
+| Local release verification             | Đã làm     | Có `build:stable`, `smoke:api`, `test:e2e`, cleanup port                   |
+| Health/readiness có DB + Redis check   | Đã làm     | Có `live`, `ready` và smoke runtime thật                                   |
+| CI release-grade checks                | Đã làm     | Đã tách fast/build/e2e/api smoke trong workflow                            |
+| Migration hygiene production-safe      | Đã làm     | Có runbook baseline, `db:status`, `db:resolve`, guard `db:push` production |
+| Enrollment / access model              | Chưa làm   | Epic lớn tiếp theo                                                         |
+| Quiz attempt / grading                 | Chưa làm   | Nên đi sau progress/enrollment                                             |
+| Media storage / background jobs        | Chưa làm   | Chỉ nên làm sau hạ tầng release ổn định                                    |
 
 ## Những gì đã hoàn thành
 
@@ -66,8 +66,8 @@ Task:
 - [x] Thêm `build:stable`, `smoke:api`, `release:check`.
 - [x] Tách `db:deploy` khỏi `smoke:api`; smoke không được tự ý mutate schema.
 - [x] Làm `seed` chạy lặp lại được.
-- [ ] Chuẩn hóa baseline migration cho DB hiện hữu.
-- [ ] Chốt chiến lược production DB:
+- [x] Chuẩn hóa baseline migration cho DB hiện hữu.
+- [x] Chốt chiến lược production DB:
   - Chỉ `migrate deploy`
   - Không dùng `db push`
   - Có runbook rollback rõ ràng
@@ -86,7 +86,7 @@ Task:
 - [x] Readiness có Redis connectivity check
 - [x] Bổ sung request id / correlation id trong log
 - [x] Bổ sung metrics cơ bản cho auth + business APIs
-- [ ] Tách response cho monitoring và human-readable docs
+- [x] Tách response cho monitoring và human-readable docs
 
 ### Epic C. CI Production-Style
 
@@ -96,10 +96,10 @@ Mục tiêu:
 
 Task:
 
-- [ ] Đồng bộ `.github/workflows/ci.yml` với script verify mới
-- [ ] Bổ sung E2E smoke job trên Chromium
-- [ ] Bổ sung API smoke job với Postgres + Redis service containers
-- [ ] Tách fast checks và release checks để giữ CI đủ nhanh
+- [x] Đồng bộ `.github/workflows/ci.yml` với script verify mới
+- [x] Bổ sung E2E smoke job trên Chromium
+- [x] Bổ sung API smoke job với Postgres + Redis service containers
+- [x] Tách fast checks và release checks để giữ CI đủ nhanh
 
 ### Epic D. Enrollment Và Access Control Mức Product
 
@@ -143,10 +143,9 @@ Task:
 
 Thứ tự nên làm tiếp:
 
-1. Chốt CI release-grade cho `test + lint + build + smoke + e2e`.
-2. Làm migration/baseline strategy cho DB production-safe.
-3. Bắt đầu Epic D: enrollment model.
-4. Sau đó mới mở rộng progress và quiz.
+1. Bắt đầu Epic D: enrollment model.
+2. Mở rộng progress theo enrollment: completion percentage, resume learning.
+3. Sau đó mới mở rộng quiz attempt và grading.
 
 ## Checklist xác minh gần nhất
 
@@ -160,6 +159,6 @@ Thứ tự nên làm tiếp:
 
 Chưa xác minh xong:
 
-- [ ] CI workflow mới
-- [ ] Production migration runbook
+- [x] CI workflow mới
+- [x] Production migration runbook
 - [ ] Cross-environment deploy guide end-to-end

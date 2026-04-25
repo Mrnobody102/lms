@@ -37,7 +37,7 @@ async function installStudentApiMocks(page: Page) {
     'access-control-allow-origin': 'http://127.0.0.1:3100',
     'access-control-allow-credentials': 'true',
     'access-control-allow-methods': 'GET,POST,OPTIONS',
-    'access-control-allow-headers': 'content-type,x-tenant-id',
+    'access-control-allow-headers': 'content-type,x-tenant-id,x-csrf-token',
   };
 
   await page.route('**/api/**', async (route) => {

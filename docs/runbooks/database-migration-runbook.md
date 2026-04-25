@@ -1,100 +1,104 @@
-# Database Migration Runbook (Production)
+# Database Migration Runbook
 
-Tài liệu này hướng dẫn quy trình chuyển đổi và chuẩn hoá việc quản lý Schema Cơ sở dữ liệu (Database) trên Production.
+This runbook defines the production-safe Prisma migration workflow for the LMS Platform.
 
-**Mục tiêu cốt lõi**:
+## Rules
 
-- Dừng hoàn toàn việc dùng `prisma db push` trên Production (chỉ dành cho local prototype).
-- Chuyển sang sử dụng `prisma migrate deploy`.
-- Tạo cơ chế "Baseline" cho bảng hiện có.
-- Chuẩn bị phương án rollback/khắc phục sự cố.
+- Production uses `pnpm db:deploy` only.
+- `db:push` is allowed only for local/dev prototyping.
+- `db:reset` is never allowed against a shared or production database.
+- Every schema change must include a committed migration folder under `packages/database/prisma/migrations`.
+- Take a database backup before applying production migrations.
 
----
+## Current Migration Chain
 
-## 1. Baseline Migration cho Database Hiện Hữu (Production)
+The repo currently expects these migrations to be applied in order:
 
-Trong trường hợp database production đã được tạo từ trước thông qua lệnh `db push`, các records và tables đã tồn tại. Nếu bạn chạy `prisma migrate deploy` ngay lập tức, Prisma sẽ báo lỗi vì nó sẽ cố gắng tạo lại các bảng đó.
+1. `20260119185654_init`
+2. `20260121105702_add_user_profile_fields`
+3. `20260425000000_add_course_description`
+4. `20260425001000_tenant_scoped_user_email`
 
-Bạn phải tạo Baseline Migration (đánh dấu migration khởi tạo là ĐÃ CHẠY).
-
-### Bước 1: Xác định Migration Khởi tạo
-
-Chắc chắn rằng trong thư mục `packages/database/prisma/migrations` đã có một bản migration khớp chính xác với state của database hiện có trên Production. Ví dụ: `20260119185654_init`.
-_(Nếu chưa có, hãy trỏ DB vào một db trống ảo trên local và chạy `prisma migrate dev --name init`)_.
-
-### Bước 2: Apply Baseline Migration vào Production
-
-Đảm bảo biến môi trường `DATABASE_URL` trong file `.env` (hoặc môi trường chạy CI/CD của bạn) đang trỏ đúng vào CSDL Production.
-Sau đó chạy lệnh Prisma Resolve:
+Before deploying, check status:
 
 ```bash
-pnpm --filter @repo/database prisma migrate resolve --applied 20260119185654_init
+pnpm db:status
 ```
 
-> **Lưu ý**: Lệnh này KHÔNG thực thi SQL từ file init, nó chỉ insert một dòng vào bảng `_prisma_migrations` để nói rằng "Migration này coi như đã được apply". Kể từ nay, Prisma lấy snapshot này làm chuẩn.
-
----
-
-## 2. Quy Trình Cập Nhật Schema Hằng Ngày
-
-Khi bạn cần thêm cột / bảng mới trong tương lai.
-
-### Ở Local/Dev (Quá trình Code)
-
-Thay đổi file `schema.prisma`. Chạy lệnh sau để tạo file migration và apply thử ở Local:
+Apply pending migrations:
 
 ```bash
-pnpm --filter @repo/database prisma migrate dev --name them_cot_x
+pnpm db:deploy
 ```
 
-Hãy commit luôn file `..._them_cot_x/migration.sql` mới sinh lên Git.
+## Baseline Existing Production Databases
 
-### Ở Production (Quá trình Deploy)
+Use this only when the production database already has the schema but `_prisma_migrations` is empty because it was created by an older `db push` flow.
 
-Trong CD Pipeline hoặc CI/CD script, chạy duy nhất lệnh:
+1. Point `DATABASE_URL` at the production database.
+2. Take a backup or snapshot.
+3. Verify the real production schema matches the initial migration.
+4. Mark existing migrations as applied without running their SQL:
 
 ```bash
-pnpm --filter @repo/database db:deploy
+pnpm db:resolve -- --applied 20260119185654_init
+pnpm db:resolve -- --applied 20260121105702_add_user_profile_fields
+pnpm db:resolve -- --applied 20260425000000_add_course_description
+pnpm db:resolve -- --applied 20260425001000_tenant_scoped_user_email
 ```
 
-(Lệnh này gọi trực tiếp `prisma migrate deploy` dưới hook của module database).
+5. Confirm:
 
----
+```bash
+pnpm db:status
+```
 
-## 3. Rollback/Troubleshooting & Runbook Xử Lý Sự Cố
+After baseline is complete, future deploys must use:
 
-### Cảnh báo trước khi Deploy
+```bash
+pnpm db:deploy
+```
 
-**Luôn tạo Snapshot/Backup Database trước khi chạy `migrate deploy`**.
+## Local Development Workflow
 
-- Với các nền tảng AWS RDS / Supabase / Vercel Postgres: Chủ động trigger manual backup/snapshot.
-- Với Self-hosted: Chạy `pg_dump`:
-  ```bash
-  pg_dump -U username -h hostname dsdb_name > dsdb_backup_pre_deploy.sql
-  ```
+Create a migration locally:
 
-### Sự Cố 1: Migration bị thất bại (Failed/Interrupted)
+```bash
+pnpm db:migrate
+```
 
-Prisma sẽ bôi đỏ (failed state) trong bảng `_prisma_migrations` nếu một migration bị ngắt (do rớt mạng, cú pháp tuỳ chỉnh schema lõm).
-**Cách khắc phục**:
+Commit both files:
 
-1. Đọc Logs để biết cụ thể lỗi ở dòng nào. Bỏ qua fix nhanh trực tiếp trong DBeaver/PgAdmin nếu an toàn.
-2. Chạy lệnh đánh dấu rolled-back và thử lại:
-   ```bash
-   pnpm --filter @repo/database prisma migrate resolve --rolled-back <migration_name_bi_loi>
-   ```
+- `packages/database/prisma/schema.prisma`
+- `packages/database/prisma/migrations/<timestamp_name>/migration.sql`
 
-### Sự Cố 2: Dữ liệu bị hỏng hoàn toàn (Cần Rollback Toàn Bộ)
+`pnpm db:push` is guarded and refuses to run when `NODE_ENV=production` unless `ALLOW_PRODUCTION_DB_PUSH=true` is explicitly set for an approved emergency.
 
-Database đã bị drop table hoặc làm mất integrity không thể nối lại bằng migration mới.
-**Cách khắc phục**:
+## Failed Migration Recovery
 
-1. Xoá DB hiện tại hoặc Drop all tables.
-2. Restore từ snapshot đã backup:
-   ```bash
-   psql -U username -h hostname dsdb_name < dsdb_backup_pre_deploy.sql
-   ```
-3. Khởi động lại service API, đảm bảo code được lật lại commit / docker tag trùng khớp với snapshot database.
+If `migrate deploy` fails:
 
-> [!CAUTION]
-> Chức năng `prisma db push` hay `prisma migrate reset` có thể drop schema dẫn tới việc bốc hơi dữ liệu. Không bao giờ cấu hình hay gõ tay những lệnh này vào trong Terminal / CI liên kết với Production DB. Lệnh hợp lệ duy nhất là `db:deploy` (`prisma migrate deploy`).
+1. Stop deploy.
+2. Inspect logs and the failed row in `_prisma_migrations`.
+3. Fix forward with a new migration whenever possible.
+4. If the migration did not apply and must be retried, mark it rolled back:
+
+```bash
+pnpm db:resolve -- --rolled-back <migration_name>
+```
+
+5. Re-run:
+
+```bash
+pnpm db:deploy
+```
+
+## Full Rollback
+
+If data integrity is broken:
+
+1. Stop API traffic.
+2. Restore the database from the pre-deploy snapshot.
+3. Roll back the API image/code to the matching version.
+4. Run `pnpm db:status` against the restored database.
+5. Re-open traffic only after `/api/health/ready` returns `status: "ok"`.

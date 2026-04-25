@@ -1,97 +1,85 @@
-# Hướng Dẫn Triển Khai (Deployment Guide)
+# Deployment Guide
 
-Tài liệu này hướng dẫn chi tiết cách triển khai hệ thống LMS Platform trên môi trường Local (Dev) và Production.
+This guide covers local development, production deployment, CI checks, and runtime monitoring for the LMS Platform.
 
-## 1. Môi trường Local (Development)
+## 1. Local Development
 
-### Yêu cầu tiên quyết
+Prerequisites:
 
 - Node.js >= 18
-- pnpm (`npm install -g pnpm`)
-- Docker Desktop (đang chạy)
+- pnpm
+- Docker Desktop
 
-### Các bước chạy
+Run locally:
 
-1. **Cài đặt thư viện**:
-   ```bash
-   pnpm install
-   ```
-2. **Khởi tạo Database & Redis**:
-   - Đảm bảo Docker Desktop đã bật.
-   - Chạy lệnh:
-     ```bash
-     pnpm db:up
-     ```
-   - _Lỗi thường gặp_: Nếu gặp lỗi connection (P1001), hãy kiểm tra Docker Desktop đã được bật chưa.
-3. **Tạo Schema Database**:
-   ```bash
-   pnpm db:migrate
-   ```
-4. **Tạo dữ liệu mẫu** (tùy chọn):
-   ```bash
-   pnpm db:seed
-   ```
-5. **Chạy ứng dụng**:
-   ```bash
-   pnpm dev
-   ```
+```bash
+pnpm install
+pnpm db:up
+pnpm db:migrate
+pnpm db:seed
+pnpm dev
+```
 
-## 2. Môi trường Production
+## 2. Production Strategy
 
-### Chiến lược Triển khai (Hybrid)
+Recommended deployment split:
 
-- **Frontend** (`apps/web-*`, `apps/super-portal`): Deploy lên **Vercel** (Tối ưu cho Next.js).
-- **Backend** (`apps/api-server`): Deploy lên **VPS** (Ubuntu) dùng Docker.
+- Frontend apps (`web-student`, `web-admin`, `super-portal`): Vercel or equivalent Next.js hosting.
+- Backend API (`api-server`): Docker on VPS/container platform.
+- Database: managed PostgreSQL where possible.
+- Redis: managed Redis where possible.
 
-### A. Deploy Frontend (Vercel)
+Frontend environment variables:
 
-1. Kết nối GitHub repo với Vercel.
-2. Cấu hình **Root Directory** cho từng project:
-   - Web Student: `apps/web-student`
-   - Web Admin: `apps/web-admin`
-   - Super Portal: `apps/super-portal`
-3. Cấu hình Environment Variables (trên Vercel):
-   - `NEXT_PUBLIC_API_URL`: URL của Backend (ví dụ: `https://api.lms.com`)
+- `NEXT_PUBLIC_API_URL`
+- `NEXT_PUBLIC_WEB_STUDENT_URL`
+- `NEXT_PUBLIC_TENANT_ID` for tenant-specific frontend deployments
 
-### B. Deploy Backend & DB (VPS with Docker)
+Backend environment variables:
 
-1. **Chuẩn bị VPS**: Cài đặt Docker & Docker Compose.
-2. **Setup Database**: Sử dụng Managed Database (AWS RDS, Supabase hoặc PostgreSQL trên VPS).
-3. **Build Docker Image**: Sử dụng `docker-compose.prod.yml` trong `deployment/production/`.
-   ```bash
-   docker-compose -f deployment/production/docker-compose.prod.yml up -d
-   ```
-4. **Chạy Migration**:
-   ```bash
-   pnpm --filter @repo/database run deploy
-   ```
+- `DATABASE_URL`
+- `REDIS_URL`
+- `JWT_SECRET`
+- `JWT_EXPIRES_IN`
+- `CORS_ORIGINS`
+- `AUTH_COOKIE_SAME_SITE`
+- `AUTH_COOKIE_DOMAIN`
+- `MCP_ENABLED`
 
-## 3. CI/CD (GitHub Actions)
+Production database changes must use migrations:
 
-File cấu hình CI/CD nằm tại `.github/workflows/ci.yml`.
+```bash
+pnpm --filter @repo/database db:deploy
+```
 
-Workflow tự động:
+Do not run `db:push` against production databases.
 
-1. Kiểm tra lint
-2. Build tất cả apps
-3. Run unit tests
+## 3. CI/CD
 
-## 4. Environment Variables (Checklist)
+The release-grade workflow lives in `.github/workflows/ci.yml`.
 
-Đảm bảo các biến sau được cấu hình trong `.env` (Local) hoặc Secret Manager (Prod):
+CI jobs:
 
-| Biến                  | Mô tả                                        |
-| --------------------- | -------------------------------------------- |
-| `DATABASE_URL`        | Chuỗi kết nối PostgreSQL                     |
-| `REDIS_URL`           | Chuỗi kết nối Redis                          |
-| `JWT_SECRET`          | Secret key để ký token                       |
-| `PORT`                | Cổng chạy API (Mặc định 4000)                |
-| `NODE_ENV`            | `development` hoặc `production`              |
-| `CORS_ORIGINS`        | Danh sách domain được phép (comma-separated) |
-| `NEXT_PUBLIC_API_URL` | URL API gọi từ Frontend                      |
+1. `fast_checks`: install, generate Prisma client, typecheck, lint, unit/integration tests.
+2. `build`: sequential production builds for API, frontend apps, and database package.
+3. `e2e_chromium`: Chromium Playwright smoke for the student web app.
+4. `api_smoke`: PostgreSQL + Redis service containers, `migrate deploy`, API smoke script.
+
+## 4. Monitoring
+
+| Endpoint                  | Use                                      |
+| ------------------------- | ---------------------------------------- |
+| `GET /api/health/live`    | Liveness probe                           |
+| `GET /api/health/ready`   | Readiness probe for database and Redis   |
+| `GET /api/health/metrics` | In-memory request metrics                |
+| `GET /api/health/docs`    | Human-readable health endpoint reference |
+
+See [monitoring.md](monitoring.md) for operational details.
 
 ## 5. Troubleshooting
 
-- **Lỗi kết nối DB**: Kiểm tra port 5432 có bị chặn bởi Firewall không.
-- **Lỗi CORS**: Đảm bảo Backend đã allow domain của Frontend trong `CORS_ORIGINS`.
-- **Lỗi build**: Chạy `pnpm install` rồi `pnpm build` lại từ root.
+- Database connection errors: verify `DATABASE_URL`, firewall rules, and migration state.
+- Redis readiness errors: verify `REDIS_URL` and network access.
+- CORS errors: ensure all frontend origins are listed in `CORS_ORIGINS`.
+- Cookie auth across subdomains: configure `AUTH_COOKIE_DOMAIN`, `AUTH_COOKIE_SAME_SITE`, and HTTPS.
+- Build errors: run `pnpm install --frozen-lockfile`, `pnpm --filter @repo/database generate`, then the failing build command.

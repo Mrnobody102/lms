@@ -41,4 +41,21 @@ describe('HealthService', () => {
 
     process.env.REDIS_URL = originalRedisUrl;
   });
+
+  it('should expose human-readable health endpoint docs separately from monitoring probes', () => {
+    const result = service.getDocs();
+
+    expect(result.endpoints).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: '/api/health/ready',
+          audience: 'monitoring',
+        }),
+        expect.objectContaining({
+          path: '/api/health/docs',
+          audience: 'human',
+        }),
+      ]),
+    );
+  });
 });

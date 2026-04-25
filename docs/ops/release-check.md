@@ -30,13 +30,19 @@ pnpm run build:stable
 pnpm run smoke:api
 ```
 
-5. Smoke E2E UI:
+5. Kiểm tra trạng thái migration nếu đang chuẩn bị deploy shared/staging/production:
+
+```bash
+pnpm db:status
+```
+
+6. Smoke E2E UI:
 
 ```bash
 pnpm test:e2e
 ```
 
-6. Nếu cần chạy một lệnh duy nhất:
+7. Nếu cần chạy một lệnh duy nhất:
 
 ```bash
 pnpm run release:check
@@ -46,5 +52,5 @@ pnpm run release:check
 
 - `smoke:api` không chạy migration schema phá dữ liệu.
 - `db:push` chỉ nên dùng cho local/dev có chủ đích.
-- Production nên đi theo `migrate deploy` và runbook migration riêng.
+- Production phải dùng `pnpm db:deploy`; baseline hoặc recovery đi theo runbook migration riêng.
 - `ports:free` chỉ dừng process thuộc repo này, không kill bừa tiến trình ngoài workspace.

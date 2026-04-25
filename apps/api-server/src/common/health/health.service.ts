@@ -9,6 +9,12 @@ interface DependencyCheck {
   message?: string;
 }
 
+interface HealthEndpointDoc {
+  path: string;
+  audience: 'monitoring' | 'human';
+  purpose: string;
+}
+
 @Injectable()
 export class HealthService {
   constructor(private readonly prisma: PrismaService) {}
@@ -37,6 +43,39 @@ export class HealthService {
         database,
         redis,
       },
+    };
+  }
+
+  getDocs() {
+    return {
+      service: 'api-server',
+      generatedAt: new Date().toISOString(),
+      endpoints: [
+        {
+          path: '/api/health/live',
+          audience: 'monitoring',
+          purpose: 'Liveness probe. Does not check downstream dependencies.',
+        },
+        {
+          path: '/api/health/ready',
+          audience: 'monitoring',
+          purpose: 'Readiness probe. Checks database and Redis connectivity.',
+        },
+        {
+          path: '/api/health/metrics',
+          audience: 'monitoring',
+          purpose: 'In-memory request counters and latency summary by API group.',
+        },
+        {
+          path: '/api/health/docs',
+          audience: 'human',
+          purpose: 'Human-readable health and monitoring endpoint reference.',
+        },
+      ] satisfies HealthEndpointDoc[],
+      notes: [
+        '/api/health remains as a backward-compatible readiness alias.',
+        'Monitoring systems should prefer /api/health/live, /api/health/ready, and /api/health/metrics.',
+      ],
     };
   }
 

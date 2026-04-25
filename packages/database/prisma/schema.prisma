@@ -26,6 +26,11 @@ enum ProgressStatus {
   COMPLETED
 }
 
+enum EnrollmentStatus {
+  ACTIVE
+  REVOKED
+}
+
 model Tenant {
   id          String   @id @default(uuid())
   name        String
@@ -35,6 +40,7 @@ model Tenant {
   users       User[]
   courses     Course[]
   lessons     Lesson[]
+  enrollments CourseEnrollment[]
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
@@ -55,6 +61,7 @@ model User {
   tenantId    String
   tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   progress    UserLessonProgress[]
+  enrollments CourseEnrollment[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -74,6 +81,7 @@ model Course {
   tenantId  String
   tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   lessons   Lesson[]
+  enrollments CourseEnrollment[]
   totalDuration Int      @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
