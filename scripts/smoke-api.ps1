@@ -65,6 +65,18 @@ function Wait-ForApiHealth {
   throw 'API health check did not become ready in time'
 }
 
+function Get-CsrfToken {
+  param([Microsoft.PowerShell.Commands.WebRequestSession]$Session)
+
+  $cookies = $Session.Cookies.GetCookies($baseUrl)
+  $csrfCookie = $cookies | Where-Object { $_.Name -eq 'csrf_token' } | Select-Object -First 1
+  if (-not $csrfCookie -or -not $csrfCookie.Value) {
+    throw 'CSRF cookie was not set after login'
+  }
+
+  return $csrfCookie.Value
+}
+
 try {
   if (-not $SkipContainerCheck) {
     Write-Host 'Checking Docker services...'
@@ -121,6 +133,7 @@ try {
   if (-not $loginResponse.user -or $loginResponse.user.email -ne $studentEmail) {
     throw 'Login smoke test failed'
   }
+  $csrfToken = Get-CsrfToken -Session $session
 
   $me = Invoke-RestMethod `
     -Method Get `
@@ -168,7 +181,7 @@ try {
   $progressUpdate = Invoke-RestMethod `
     -Method Post `
     -Uri "$baseUrl/progress/update" `
-    -Headers @{ 'x-tenant-id' = $tenantHint } `
+    -Headers @{ 'x-tenant-id' = $tenantHint; 'x-csrf-token' = $csrfToken } `
     -ContentType 'application/json' `
     -Body $progressUpdateBody `
     -WebSession $session `
@@ -188,7 +201,7 @@ try {
   Invoke-RestMethod `
     -Method Post `
     -Uri "$baseUrl/auth/logout" `
-    -Headers @{ 'x-tenant-id' = $tenantHint } `
+    -Headers @{ 'x-tenant-id' = $tenantHint; 'x-csrf-token' = $csrfToken } `
     -WebSession $session `
     -TimeoutSec 10 | Out-Null
 

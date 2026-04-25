@@ -7,6 +7,25 @@ import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { LoggerService } from './common/services/logger.service';
 
+function getCorsOrigins(): string[] {
+  const configuredOrigins = process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(',')
+        .map((origin) => origin.trim())
+        .filter(Boolean)
+    : [];
+
+  if (process.env.NODE_ENV === 'production') {
+    return configuredOrigins;
+  }
+
+  return [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:3002',
+    ...configuredOrigins,
+  ];
+}
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     bufferLogs: true,
@@ -22,15 +41,17 @@ async function bootstrap() {
 
   // Enable CORS
   app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://localhost:3002',
-      ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',').map((s) => s.trim()) : []),
-    ],
+    origin: getCorsOrigins(),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-tenant-id', 'Cookie', 'x-api-key'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'x-tenant-id',
+      'Cookie',
+      'x-api-key',
+      'x-csrf-token',
+    ],
     exposedHeaders: ['set-cookie'],
   });
 

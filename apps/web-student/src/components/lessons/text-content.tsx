@@ -1,6 +1,7 @@
 'use client';
 
 import { BookOpen } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import { useTranslations } from 'next-intl';
 
 interface TextContentProps {
@@ -10,6 +11,13 @@ interface TextContentProps {
 
 export function TextContent({ content, title }: TextContentProps) {
   const t = useTranslations('Student');
+  const safeContent = content
+    ? DOMPurify.sanitize(content, {
+        USE_PROFILES: { html: true },
+        FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed'],
+        FORBID_ATTR: ['style', 'onerror', 'onload', 'onclick'],
+      })
+    : '';
 
   return (
     <div className="p-8 sm:p-12 rounded-[2rem] bg-card/30 backdrop-blur-md border border-border shadow-xl relative overflow-hidden group">
@@ -26,7 +34,7 @@ export function TextContent({ content, title }: TextContentProps) {
 
         <div className="prose prose-lg dark:prose-invert max-w-none text-muted-foreground font-medium leading-relaxed space-y-4">
           {content ? (
-            <div dangerouslySetInnerHTML={{ __html: content }} />
+            <div dangerouslySetInnerHTML={{ __html: safeContent }} />
           ) : (
             <p className="opacity-50">No content available for this reading lesson.</p>
           )}

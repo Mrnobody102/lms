@@ -2,10 +2,11 @@ import {
   CanActivate,
   ExecutionContext,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
-} from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import { Request } from "express";
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Request } from 'express';
 
 @Injectable()
 export class McpAuthGuard implements CanActivate {
@@ -14,23 +15,26 @@ export class McpAuthGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<Request>();
 
-    // Kiểm tra API Key từ Header hoặc Query Params (dành cho SSE)
+    const mcpEnabled = this.configService.get<boolean>('MCP_ENABLED');
+    if (process.env.NODE_ENV === 'production' && !mcpEnabled) {
+      throw new NotFoundException('MCP is not enabled');
+    }
+
+    const allowQueryApiKey =
+      process.env.NODE_ENV !== 'production' &&
+      this.configService.get<boolean>('MCP_ALLOW_QUERY_API_KEY');
+
     const apiKey =
-      (request.headers["x-api-key"] as string) ||
-      (request.query["apiKey"] as string);
+      (request.headers['x-api-key'] as string) ||
+      (allowQueryApiKey ? (request.query['apiKey'] as string) : undefined);
 
-    const expectedApiKey = this.configService.get<string>("MCP_API_KEY");
-
+    const expectedApiKey = this.configService.get<string>('MCP_API_KEY');
     if (!expectedApiKey) {
-      // Nếu chưa cấu hình Key trên Server, tạm thời cho phép hoặc chặn tùy policy
-      // Ở đây ta chặn để đảm bảo an toàn Production
-      throw new UnauthorizedException(
-        "MCP_API_KEY is not configured on server",
-      );
+      throw new UnauthorizedException('MCP_API_KEY is not configured on server');
     }
 
     if (apiKey !== expectedApiKey) {
-      throw new UnauthorizedException("Invalid MCP API Key");
+      throw new UnauthorizedException('Invalid MCP API Key');
     }
 
     return true;

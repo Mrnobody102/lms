@@ -1,12 +1,10 @@
-import { createApiClient } from "@repo/api-client";
-
-const ADMIN_TENANT_ID = "ed8ae489-ab40-4ff7-95a3-3ce35e769e5d";
+import { createApiClient } from '@repo/api-client';
 
 export default createApiClient({
-  tenantId: ADMIN_TENANT_ID,
+  tenantId: process.env.NEXT_PUBLIC_TENANT_ID,
   onUnauthorized: () => {
     const returnUrl = window.location.pathname;
-    const locale = returnUrl.match(/^\/(en|vi)\//)?.[1] || "vi";
+    const locale = returnUrl.match(/^\/(en|vi)\//)?.[1] || 'vi';
     window.location.href = `/${locale}/login`;
   },
 });

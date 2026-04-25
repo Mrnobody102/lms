@@ -208,6 +208,12 @@ curl -X POST http://localhost:4000/api/auth/login \
 
 ### Gọi profile bằng cookie session
 
+CSRF token for state-changing cookie requests:
+
+```bash
+CSRF_TOKEN=$(awk '$0 ~ /csrf_token/ { print $7 }' cookies.txt | tail -1)
+```
+
 ```bash
 curl -X GET http://localhost:4000/api/users/me \
   -H "x-tenant-id: YOUR_TENANT_ID" \
@@ -218,6 +224,7 @@ curl -X GET http://localhost:4000/api/users/me \
 
 ```bash
 curl -X POST http://localhost:4000/api/auth/logout \
+  -H "x-csrf-token: $CSRF_TOKEN" \
   -b cookies.txt \
   -c cookies.txt
 ```

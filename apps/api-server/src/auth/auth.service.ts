@@ -8,8 +8,10 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import type { Response } from 'express';
+import { randomBytes } from 'crypto';
+import type { CookieOptions, Response } from 'express';
 import { PrismaService } from '../common/services/prisma.service';
+import { CSRF_COOKIE_NAME } from '../common/middleware/csrf.middleware';
 import { parseDurationToMs } from '../config/duration';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -30,7 +32,7 @@ export class AuthService {
     }
 
     const existingUser = await this.prisma.user.findUnique({
-      where: { email: registerDto.email },
+      where: { tenantId_email: { tenantId, email: registerDto.email } },
     });
 
     if (existingUser) {
@@ -75,6 +77,7 @@ export class AuthService {
 
     const token = this.generateToken(user);
     this.setAuthCookie(res, token);
+    this.setCsrfCookie(res);
 
     return {
       user,
@@ -125,6 +128,7 @@ export class AuthService {
 
     const token = this.generateToken(user);
     this.setAuthCookie(res, token);
+    this.setCsrfCookie(res);
 
     const { password, ...userWithoutPassword } = user;
 
@@ -135,6 +139,7 @@ export class AuthService {
 
   logout(res: Response) {
     this.clearAuthCookie(res);
+    this.clearCsrfCookie(res);
 
     return {
       success: true,
@@ -155,20 +160,44 @@ export class AuthService {
 
   private setAuthCookie(res: Response, token: string): void {
     res.cookie('access_token', token, {
+      ...this.getCookieOptions(),
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
       maxAge: parseDurationToMs(this.configService.get<string>('JWT_EXPIRES_IN') ?? '7d'),
-      path: '/',
     });
   }
 
   private clearAuthCookie(res: Response): void {
     res.clearCookie('access_token', {
+      ...this.getCookieOptions(),
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
     });
+  }
+
+  private setCsrfCookie(res: Response): void {
+    res.cookie(CSRF_COOKIE_NAME, randomBytes(32).toString('hex'), {
+      ...this.getCookieOptions(),
+      httpOnly: false,
+      maxAge: parseDurationToMs(this.configService.get<string>('JWT_EXPIRES_IN') ?? '7d'),
+    });
+  }
+
+  private clearCsrfCookie(res: Response): void {
+    res.clearCookie(CSRF_COOKIE_NAME, {
+      ...this.getCookieOptions(),
+      httpOnly: false,
+    });
+  }
+
+  private getCookieOptions(): CookieOptions {
+    const sameSite =
+      this.configService.get<'lax' | 'strict' | 'none'>('AUTH_COOKIE_SAME_SITE') ?? 'lax';
+    const domain = this.configService.get<string>('AUTH_COOKIE_DOMAIN') || undefined;
+
+    return {
+      secure: process.env.NODE_ENV === 'production',
+      sameSite,
+      domain,
+      path: '/',
+    };
   }
 }

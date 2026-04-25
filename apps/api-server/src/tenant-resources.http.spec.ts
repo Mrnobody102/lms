@@ -170,6 +170,24 @@ describe('Tenant resource HTTP flow', () => {
           });
         }),
         findFirst: vi.fn().mockImplementation(({ where }: { where: Record<string, unknown> }) => {
+          if (where.id === currentUser.id && where.deletedAt === null) {
+            return Promise.resolve({
+              id: currentUser.id,
+              email: currentUser.email,
+              fullName: currentUser.fullName,
+              phoneNumber: currentUser.phoneNumber,
+              avatarUrl: currentUser.avatarUrl,
+              role: currentUser.role,
+              isActive: currentUser.isActive,
+              tenantId: currentUser.tenantId,
+              createdAt: currentUser.createdAt,
+              updatedAt: currentUser.updatedAt,
+              tenant: {
+                isActive: true,
+              },
+            });
+          }
+
           const matchesLogin =
             where.email === currentUser.email &&
             where.tenantId === currentUser.tenantId &&

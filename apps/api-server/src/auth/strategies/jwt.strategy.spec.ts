@@ -6,14 +6,14 @@ describe('JwtStrategy', () => {
   let strategy: JwtStrategy;
   let prisma: {
     user: {
-      findUnique: ReturnType<typeof vi.fn>;
+      findFirst: ReturnType<typeof vi.fn>;
     };
   };
 
   beforeEach(() => {
     prisma = {
       user: {
-        findUnique: vi.fn(),
+        findFirst: vi.fn(),
       },
     };
 
@@ -26,7 +26,7 @@ describe('JwtStrategy', () => {
   });
 
   it('should reject when user is inactive or tenant is disabled', async () => {
-    prisma.user.findUnique.mockResolvedValue({
+    prisma.user.findFirst.mockResolvedValue({
       id: 'user-1',
       email: 'student@example.com',
       fullName: 'Student User',
@@ -53,7 +53,7 @@ describe('JwtStrategy', () => {
   });
 
   it('should reject when payload tenant does not match user tenant', async () => {
-    prisma.user.findUnique.mockResolvedValue({
+    prisma.user.findFirst.mockResolvedValue({
       id: 'user-1',
       email: 'student@example.com',
       fullName: 'Student User',
@@ -80,7 +80,7 @@ describe('JwtStrategy', () => {
   });
 
   it('should return the safe user payload when token and tenant are valid', async () => {
-    prisma.user.findUnique.mockResolvedValue({
+    prisma.user.findFirst.mockResolvedValue({
       id: 'user-1',
       email: 'student@example.com',
       fullName: 'Student User',

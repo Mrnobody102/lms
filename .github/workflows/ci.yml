@@ -104,5 +104,5 @@ jobs:
           echo "JWT_SECRET=test-jwt-secret-for-ci" >> .env
           echo "PORT=4000" >> .env
           echo "NODE_ENV=development" >> .env
-      - run: pnpm --filter @repo/database db:push
+      - run: pnpm --filter @repo/database db:deploy
       - run: pwsh -File ./scripts/smoke-api.ps1 -SkipContainerCheck

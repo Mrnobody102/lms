@@ -1,76 +1,75 @@
-import { Injectable, Logger } from "@nestjs/common";
-import { McpTool } from "./mcp.decorators";
-import { z } from "zod";
-import * as fs from "fs";
-import * as path from "path";
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { z } from 'zod';
+import * as fs from 'fs';
+import * as path from 'path';
+import { McpTool } from './mcp.decorators';
 
 @Injectable()
 export class McpDbSkillsService {
   private readonly logger = new Logger(McpDbSkillsService.name);
-  private readonly schemaPath = path.resolve(
-    process.cwd(),
-    "../../packages/database/prisma/schema.prisma",
-  );
+
+  constructor(private readonly configService: ConfigService) {}
+
+  private getSchemaPath(): string {
+    const rootPath = path.resolve(
+      this.configService.get<string>('MCP_PROJECT_ROOT') || process.cwd(),
+    );
+    return path.resolve(rootPath, 'packages/database/prisma/schema.prisma');
+  }
 
   @McpTool({
-    name: "db_schema_review",
-    description:
-      "Đọc và phân tích cấu trúc Database hiện tại từ file Prisma Schema.",
+    name: 'db_schema_review',
+    description: 'Read and summarize the Prisma schema from the configured MCP project root.',
     schema: z.object({}),
   })
   async reviewSchema() {
-    try {
-      if (!fs.existsSync(this.schemaPath)) {
-        return { error: `Không tìm thấy file schema tại: ${this.schemaPath}` };
-      }
-      const content = fs.readFileSync(this.schemaPath, "utf-8");
+    const schemaPath = this.getSchemaPath();
 
-      // Phân tích sơ bộ
-      const models =
-        content.match(/model\s+(\w+)\s+{/g)?.map((m) => m.split(/\s+/)[1]) ||
-        [];
-      const enums =
-        content.match(/enum\s+(\w+)\s+{/g)?.map((m) => m.split(/\s+/)[1]) || [];
+    try {
+      if (!fs.existsSync(schemaPath)) {
+        return { error: `Schema file was not found at: ${schemaPath}` };
+      }
+
+      const content = fs.readFileSync(schemaPath, 'utf-8');
+      const models = content.match(/model\s+(\w+)\s+{/g)?.map((m) => m.split(/\s+/)[1]) || [];
+      const enums = content.match(/enum\s+(\w+)\s+{/g)?.map((m) => m.split(/\s+/)[1]) || [];
 
       return {
-        path: "packages/database/prisma/schema.prisma",
-        content: content,
+        path: 'packages/database/prisma/schema.prisma',
+        content,
         analysis: {
           modelCount: models.length,
-          models: models,
+          models,
           enumCount: enums.length,
-          enums: enums,
+          enums,
         },
       };
     } catch (error: any) {
-      return { error: `Lỗi khi đọc schema: ${error.message}` };
+      this.logger.error(`Schema review failed: ${error.message}`);
+      return { error: `Cannot read schema: ${error.message}` };
     }
   }
 
   @McpTool({
-    name: "generate_migration_plan",
-    description:
-      "Đề xuất kế hoạch thay đổi Database (Prisma models) dựa trên yêu cầu.",
+    name: 'generate_migration_plan',
+    description: 'Suggest a safe Prisma migration workflow for a requested schema change.',
     schema: z.object({
-      intent: z
-        .string()
-        .describe(
-          "Mô tả thay đổi bạn muốn thực hiện (ví dụ: 'Thêm field category vào Course')",
-        ),
-      targetModel: z.string().optional().describe("Tên model cần thay đổi"),
+      intent: z.string().describe('Requested database change.'),
+      targetModel: z.string().optional().describe('Target model name.'),
     }),
   })
   async generateMigrationPlan(_args: { intent: string; targetModel?: string }) {
-    // Công cụ này chủ yếu trả về hướng dẫn để AI Agent tự suy luận và đề xuất code cho User
     return {
-      instructions: "Dựa trên intent của bạn, hãy thực hiện các bước sau:",
+      instructions: 'Use a migration-first workflow for database changes.',
       steps: [
-        "1. Chạy db_schema_review để lấy code hiện tại của model.",
-        "2. Đề xuất đoạn code Prisma mới cho User trong khung chat.",
-        "3. Sau khi User đồng ý, hướng dẫn User chạy lệnh: 'pnpm db:migrate --name <ten_migration>' hoặc 'pnpm db:push'.",
+        '1. Run db_schema_review to inspect the current Prisma schema.',
+        '2. Propose the Prisma schema change and call out data-migration risks.',
+        "3. For local development, create a migration with 'pnpm db:migrate --name <migration_name>'.",
+        "4. For release and production, apply existing migrations with 'pnpm db:deploy'. Do not use db:push against production databases.",
       ],
       safety_check:
-        "CẢNH BÁO: Nếu thay đổi này xóa cột hoặc đổi kiểu dữ liệu, hãy hỏi xác nhận User về việc bảo toàn dữ liệu cũ.",
+        'Ask for confirmation before destructive changes such as dropping columns, changing column types, or rewriting relation cardinality.',
     };
   }
 }

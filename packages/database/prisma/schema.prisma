@@ -44,7 +44,7 @@ model Tenant {
 
 model User {
   id          String   @id @default(uuid())
-  email       String   @unique
+  email       String
   password    String
   fullName    String
   phoneNumber String?
@@ -61,6 +61,7 @@ model User {
   @@index([tenantId, role])
   @@index([tenantId, isActive])
   @@index([deletedAt])
+  @@unique([tenantId, email])
 }
 
 model Course {

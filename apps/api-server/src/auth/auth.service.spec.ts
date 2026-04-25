@@ -143,6 +143,16 @@ describe('AuthService', () => {
           path: '/',
         }),
       );
+      expect(response.cookie).toHaveBeenCalledWith(
+        'csrf_token',
+        expect.any(String),
+        expect.objectContaining({
+          httpOnly: false,
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+          sameSite: 'lax',
+          path: '/',
+        }),
+      );
       expect(result).toEqual({
         user: expect.objectContaining({
           id: 'user-1',
@@ -233,6 +243,16 @@ describe('AuthService', () => {
           path: '/',
         }),
       );
+      expect(response.cookie).toHaveBeenCalledWith(
+        'csrf_token',
+        expect.any(String),
+        expect.objectContaining({
+          httpOnly: false,
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+          sameSite: 'lax',
+          path: '/',
+        }),
+      );
       expect(result).toEqual({
         user: expect.objectContaining({
           id: 'user-1',
@@ -252,6 +272,14 @@ describe('AuthService', () => {
         'access_token',
         expect.objectContaining({
           httpOnly: true,
+          sameSite: 'lax',
+          path: '/',
+        }),
+      );
+      expect(response.clearCookie).toHaveBeenCalledWith(
+        'csrf_token',
+        expect.objectContaining({
+          httpOnly: false,
           sameSite: 'lax',
           path: '/',
         }),

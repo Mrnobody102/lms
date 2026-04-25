@@ -114,8 +114,12 @@ describe('McpAuthGuard', () => {
     expect(() => guard.canActivate(mockContext)).toThrow('Invalid MCP API Key');
   });
 
-  it('should allow API Key from query params (for SSE)', () => {
-    configService.get.mockReturnValue('valid-key');
+  it('should allow API Key from query params only when explicitly enabled outside production', () => {
+    configService.get.mockImplementation((key: string) => {
+      if (key === 'MCP_ALLOW_QUERY_API_KEY') return true;
+      if (key === 'MCP_API_KEY') return 'valid-key';
+      return undefined;
+    });
     const mockContext = {
       switchToHttp: () => ({
         getRequest: () => ({

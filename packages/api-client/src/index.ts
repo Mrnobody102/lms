@@ -1,6 +1,8 @@
 import axios, { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 
 const TIMEOUT_MS = 15000;
+const CSRF_COOKIE_NAME = 'csrf_token';
+const CSRF_HEADER_NAME = 'x-csrf-token';
 
 declare module 'axios' {
   interface AxiosRequestConfig {
@@ -24,15 +26,34 @@ function detectLocale(): string {
   return match?.[1] || 'vi';
 }
 
+function getDefaultBaseUrl(): string {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return `${process.env.NEXT_PUBLIC_API_URL}/api`;
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('NEXT_PUBLIC_API_URL is required in production');
+  }
+
+  return 'http://localhost:4000/api';
+}
+
+function readCookie(name: string): string | undefined {
+  if (typeof document === 'undefined') return undefined;
+
+  return document.cookie
+    .split('; ')
+    .find((row) => row.startsWith(`${name}=`))
+    ?.split('=')
+    .slice(1)
+    .join('=');
+}
+
 export function createApiClient(config: ApiClientConfig = {}): AxiosInstance {
   const { tenantId, onUnauthorized } = config;
 
   const api = axios.create({
-    baseURL:
-      config.baseURL ??
-      (process.env.NEXT_PUBLIC_API_URL
-        ? `${process.env.NEXT_PUBLIC_API_URL}/api`
-        : 'http://localhost:4000/api'),
+    baseURL: config.baseURL ?? getDefaultBaseUrl(),
     timeout: TIMEOUT_MS,
     withCredentials: true,
   });
@@ -40,6 +61,11 @@ export function createApiClient(config: ApiClientConfig = {}): AxiosInstance {
   api.interceptors.request.use((requestConfig: InternalAxiosRequestConfig) => {
     if (tenantId) {
       requestConfig.headers['x-tenant-id'] = tenantId;
+    }
+
+    const csrfToken = readCookie(CSRF_COOKIE_NAME);
+    if (csrfToken) {
+      requestConfig.headers[CSRF_HEADER_NAME] = decodeURIComponent(csrfToken);
     }
 
     return requestConfig;

@@ -19,7 +19,7 @@ export class LessonService {
   }) {
     // Ensure course belongs to tenant
     const course = await this.prisma.course.findFirst({
-      where: { id: data.courseId, tenantId: data.tenantId, deletedAt: null },
+      where: { id: data.courseId, tenantId: data.tenantId, deletedAt: null, isActive: true },
     });
     if (!course)
       throw new NotFoundException(`Course with ID ${data.courseId} not found in this tenant`);

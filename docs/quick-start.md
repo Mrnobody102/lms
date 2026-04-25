@@ -90,6 +90,12 @@ curl -X POST http://localhost:4000/api/auth/login \
 
 ### 2. Gọi profile bằng cookie
 
+CSRF token for state-changing cookie requests:
+
+```bash
+CSRF_TOKEN=$(awk '$0 ~ /csrf_token/ { print $7 }' cookies.txt | tail -1)
+```
+
 ```bash
 curl -X GET http://localhost:4000/api/users/me \
   -H "x-tenant-id: YOUR_TENANT_ID" \
@@ -100,19 +106,24 @@ curl -X GET http://localhost:4000/api/users/me \
 
 ```bash
 curl -X POST http://localhost:4000/api/auth/logout \
+  -H "x-csrf-token: $CSRF_TOKEN" \
   -b cookies.txt \
   -c cookies.txt
 ```
 
 ## Biến môi trường chính
 
-| Biến           | Ý nghĩa                         |
-| -------------- | ------------------------------- |
-| `DATABASE_URL` | Kết nối PostgreSQL              |
-| `JWT_SECRET`   | Secret để ký JWT                |
-| `PORT`         | Port API server                 |
-| `NODE_ENV`     | `development` hoặc `production` |
-| `CORS_ORIGINS` | Danh sách origin được phép      |
+| Biến                    | Ý nghĩa                                                       |
+| ----------------------- | ------------------------------------------------------------- |
+| `DATABASE_URL`          | Kết nối PostgreSQL                                            |
+| `JWT_SECRET`            | Secret để ký JWT                                              |
+| `PORT`                  | Port API server                                               |
+| `NODE_ENV`              | `development` hoặc `production`                               |
+| `CORS_ORIGINS`          | Danh sách origin được phép                                    |
+| `NEXT_PUBLIC_TENANT_ID` | Tenant mặc định cho từng frontend local/dev                   |
+| `AUTH_COOKIE_SAME_SITE` | Chính sách SameSite cho cookie auth (`lax`, `strict`, `none`) |
+| `AUTH_COOKIE_DOMAIN`    | Cookie domain khi deploy frontend/API trên subdomain chung    |
+| `MCP_ENABLED`           | Bật MCP có chủ đích, mặc định nên là `false`                  |
 
 ## Scripts thường dùng
 

@@ -107,6 +107,9 @@ export default function CourseEditorPage() {
   };
 
   const lessons = course?.lessons ?? [];
+  const studentBaseUrl = process.env.NEXT_PUBLIC_WEB_STUDENT_URL;
+  const firstLessonPreviewUrl =
+    studentBaseUrl && lessons[0] ? `${studentBaseUrl}/vi/lessons/${lessons[0].id}` : null;
 
   if (isLoading) {
     return (
@@ -151,12 +154,8 @@ export default function CourseEditorPage() {
                 <h1 className="text-2xl font-bold tracking-tight">{course.title}</h1>
                 <p className="text-sm text-muted-foreground mt-0.5">ID: {course.id}</p>
               </div>
-              {lessons[0] && (
-                <Link
-                  href={`${process.env.NEXT_PUBLIC_WEB_STUDENT_URL || 'http://localhost:3000'}/vi/lessons/${lessons[0].id}`}
-                  target="_blank"
-                  className="shrink-0"
-                >
+              {firstLessonPreviewUrl && (
+                <Link href={firstLessonPreviewUrl} target="_blank" className="shrink-0">
                   <Button variant="outline" size="sm" className="gap-1.5">
                     <ExternalLink className="w-4 h-4" />
                     {t('previewFirstLesson')}

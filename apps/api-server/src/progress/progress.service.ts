@@ -13,7 +13,7 @@ export class ProgressService {
   async updateProgress(userId: string, lessonId: string, status: ProgressStatus, tenantId: string) {
     // Verify lesson ownership
     const lesson = await this.prisma.lesson.findFirst({
-      where: { id: lessonId, tenantId },
+      where: { id: lessonId, tenantId, deletedAt: null },
     });
     if (!lesson) throw new NotFoundException(`Lesson not found in this tenant`);
 
@@ -46,6 +46,7 @@ export class ProgressService {
         lesson: {
           courseId,
           tenantId,
+          deletedAt: null,
         },
       },
       orderBy: {
@@ -64,6 +65,7 @@ export class ProgressService {
         lessonId,
         lesson: {
           tenantId,
+          deletedAt: null,
         },
       },
     });

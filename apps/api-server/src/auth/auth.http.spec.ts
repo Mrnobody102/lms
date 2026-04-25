@@ -112,6 +112,7 @@ describe('Auth HTTP flow', () => {
                       id: currentUser.tenantId,
                       name: 'Tenant One',
                       slug: 'tenant-one',
+                      isActive: true,
                     },
                   });
                 }

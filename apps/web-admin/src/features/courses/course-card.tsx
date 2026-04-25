@@ -26,6 +26,9 @@ export function CourseCard({ course, onDelete, deleting }: CourseCardProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const lessonCount = course._count?.lessons ?? 0;
   const firstLessonId = course.lessons?.[0]?.id;
+  const studentBaseUrl = process.env.NEXT_PUBLIC_WEB_STUDENT_URL;
+  const previewUrl =
+    studentBaseUrl && firstLessonId ? `${studentBaseUrl}/vi/lessons/${firstLessonId}` : null;
 
   return (
     <>
@@ -55,10 +58,10 @@ export function CourseCard({ course, onDelete, deleting }: CourseCardProps) {
                   {t('edit')}
                 </Link>
               </DropdownMenuItem>
-              {firstLessonId && (
+              {previewUrl && (
                 <DropdownMenuItem asChild>
                   <Link
-                    href={`${process.env.NEXT_PUBLIC_WEB_STUDENT_URL || 'http://localhost:3000'}/vi/lessons/${firstLessonId}`}
+                    href={previewUrl}
                     target="_blank"
                     className="flex items-center gap-2 cursor-pointer"
                   >

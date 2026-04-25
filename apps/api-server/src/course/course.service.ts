@@ -30,7 +30,7 @@ export class CourseService {
     const { page = 1, limit = 10, search } = options;
     const skip = (page - 1) * limit;
 
-    const where = { tenantId, deletedAt: null };
+    const where = { tenantId, deletedAt: null, isActive: true };
     if (search) {
       Object.assign(where, { title: { contains: search, mode: 'insensitive' as const } });
     }
@@ -72,7 +72,7 @@ export class CourseService {
 
   async findOne(id: string, tenantId: string) {
     const course = await this.prisma.course.findFirst({
-      where: { id, tenantId, deletedAt: null },
+      where: { id, tenantId, deletedAt: null, isActive: true },
       include: {
         lessons: {
           where: { deletedAt: null },

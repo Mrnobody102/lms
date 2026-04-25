@@ -12,6 +12,7 @@ packages/ui/storybook-static
 packages/ui/storybook-static
 
 # Prisma
+packages/database/.prisma
 packages/database/generated
 generated
 

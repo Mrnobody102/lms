@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD, APP_FILTER } from '@nestjs/core';
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
+import { CsrfMiddleware } from './common/middleware/csrf.middleware';
 import { AppThrottlerGuard } from './common/guards/throttler.guard';
 import { LoggerService } from './common/services/logger.service';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
@@ -71,7 +72,7 @@ import { HealthModule } from './common/health/health.module';
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply(RequestLoggingMiddleware, TenantMiddleware)
+      .apply(RequestLoggingMiddleware, TenantMiddleware, CsrfMiddleware)
       .exclude(
         { path: 'health', method: RequestMethod.ALL },
         { path: 'mcp/(.*)', method: RequestMethod.ALL },
