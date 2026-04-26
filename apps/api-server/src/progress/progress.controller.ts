@@ -12,6 +12,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagg
 import { ProgressService } from './progress.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UpdateProgressDto } from './dto/update-progress.dto';
+import { RecordLearningActivityDto } from './dto/record-learning-activity.dto';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
 
 @ApiTags('Progress')
@@ -20,6 +21,24 @@ import { AuthenticatedRequest } from '../common/interfaces/authenticated-request
 @UseGuards(JwtAuthGuard)
 export class ProgressController {
   constructor(private readonly progressService: ProgressService) {}
+
+  @Post('activity')
+  @ApiOperation({ summary: 'Record a learning activity event for the current user' })
+  @ApiResponse({ status: 201, description: 'Learning activity recorded successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async recordActivity(
+    @Request() req: AuthenticatedRequest,
+    @Body() data: RecordLearningActivityDto,
+  ) {
+    return this.progressService.recordActivity(
+      req.user.id,
+      data.lessonId,
+      data.type,
+      req.user.tenantId,
+      req.user.role,
+      data.timeSpentSeconds,
+    );
+  }
 
   @Post('update')
   @ApiOperation({ summary: 'Update lesson progress' })

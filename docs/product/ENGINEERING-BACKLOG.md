@@ -24,7 +24,7 @@ Nguyên tắc:
 | CI release-grade checks                | Đã làm     | Đã tách fast/build/e2e/api smoke trong workflow                              |
 | Migration hygiene production-safe      | Đã làm     | Có runbook baseline, `db:status`, `db:resolve`, guard `db:push` production   |
 | Enrollment / access model              | Đang làm   | Đã có DB/API/UI access control, shared policy, DB constraints; còn reporting |
-| Student dashboard / continue learning  | Đang làm   | Đã có dashboard shell + progress summary; còn streak/chart                   |
+| Student dashboard / continue learning  | Đang làm   | Đã có dashboard shell + activity-backed summary; còn streak/chart UI         |
 | Content hierarchy                      | Chưa làm   | Cần `Unit/Chapter` trước khi nội dung lớn                                    |
 | Practice engine                        | Chưa làm   | Cần question bank/exercise attempt                                           |
 | Quiz attempt / grading                 | Chưa làm   | Nên đi sau progress/enrollment                                               |
@@ -154,9 +154,10 @@ Task:
 - [x] Completion percentage theo course
 - [x] Resume learning / continue lesson summary
 - [x] Student dashboard V1 shell trên trang home khi đã login
-- [ ] Last accessed lesson event chi tiết
+- [x] Last accessed lesson event chi tiết qua `LearningActivity`
 - [ ] Time spent hoặc session count
-- [ ] Daily learning streak
+- [x] Daily learning streak foundation trong summary API
+- [ ] Daily learning streak hiển thị trên UI
 - [ ] Admin dashboard cơ bản theo tiến độ
 
 ### Epic F. Content Hierarchy

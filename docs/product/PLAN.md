@@ -29,6 +29,7 @@ LMS Platform đang đi theo hướng nền tảng học tập multi-tenant, có 
 - Production-safe database migration flow.
 - Tenant-scoped database constraints for learning relations.
 - Centralized learning access policy for course/lesson/progress.
+- `LearningActivity` foundation cho lesson opened/completed để summary/reporting không phụ thuộc hoàn toàn vào `UserLessonProgress`.
 - Production tenant resolution no longer relies on frontend hardcoded tenant headers.
 - Reproducible dependency policy without `"latest"` package specs.
 
@@ -105,6 +106,7 @@ Trạng thái: đã có bước đầu.
 - `GET /api/progress/summary` cho active course, continue lesson, completion percentage.
 - Trang home của student khi đã login hiển thị dashboard học tập thay vì hero marketing.
 - E2E cover register/login/lesson/progress và dashboard summary.
+- `LearningActivity` event foundation cho `lastAccessedLesson`, `lastActivityAt` và reporting về sau.
 
 Phạm vi:
 
@@ -117,9 +119,9 @@ Phạm vi:
 
 Data cần bổ sung:
 
-- `lastAccessedAt` hoặc learning activity event.
-- Learning activity event để streak/reporting chính xác hơn.
-- Streak/activity calculation.
+- Time spent hoặc session duration đủ tin cậy.
+- Streak/activity visualization trên UI.
+- Aggregate/reporting query cho admin theo enrollment.
 
 ### P3. Content Hierarchy
 

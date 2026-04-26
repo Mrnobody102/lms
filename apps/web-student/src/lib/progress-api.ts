@@ -5,6 +5,11 @@ export enum ProgressStatus {
   COMPLETED = 'COMPLETED',
 }
 
+export enum LearningActivityType {
+  LESSON_OPENED = 'LESSON_OPENED',
+  LESSON_COMPLETED = 'LESSON_COMPLETED',
+}
+
 export interface UserLessonProgress {
   id: string;
   lessonId: string;
@@ -22,6 +27,12 @@ export interface CourseProgressSummary {
   completedLessons: number;
   completionPercentage: number;
   lastActivityAt: string | null;
+  lastAccessedLesson: {
+    id: string;
+    title: string;
+    courseId: string;
+    duration: number;
+  } | null;
   continueLesson: {
     id: string;
     title: string;
@@ -37,8 +48,18 @@ export interface LearningProgressSummary {
     courses: number;
     lessons: number;
     completedLessons: number;
+    currentStreak: number;
     completionPercentage: number;
   };
+}
+
+export interface LearningActivityRecord {
+  id: string;
+  lessonId: string;
+  courseId: string;
+  type: LearningActivityType;
+  occurredAt: string;
+  timeSpentSeconds?: number | null;
 }
 
 export const progressApi = {
@@ -57,6 +78,19 @@ export const progressApi = {
 
   getLessonProgress: async (lessonId: string) => {
     const response = await api.get<UserLessonProgress>(`/progress/lesson/${lessonId}`);
+    return response.data;
+  },
+
+  recordActivity: async (
+    lessonId: string,
+    type: LearningActivityType,
+    timeSpentSeconds?: number,
+  ) => {
+    const response = await api.post<LearningActivityRecord>('/progress/activity', {
+      lessonId,
+      type,
+      timeSpentSeconds,
+    });
     return response.data;
   },
 

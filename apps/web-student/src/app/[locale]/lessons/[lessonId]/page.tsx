@@ -1,15 +1,19 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { LessonHeader } from '../../../../components/lessons/lesson-header';
 import { LessonSidebar } from '../../../../components/lessons/lesson-sidebar';
 import { LessonContent } from '../../../../components/lessons/lesson-content';
 import { LessonNavigation } from '../../../../components/lessons/lesson-navigation';
 import { useLesson, useCourse } from '../../../../hooks/use-courses';
-import { useCourseProgress, useUpdateProgress } from '../../../../hooks/use-progress';
-import { ProgressStatus } from '../../../../lib/progress-api';
+import {
+  useCourseProgress,
+  useRecordLessonActivity,
+  useUpdateProgress,
+} from '../../../../hooks/use-progress';
+import { LearningActivityType, ProgressStatus } from '../../../../lib/progress-api';
 
 export default function LessonPage() {
   const t = useTranslations('Student');
@@ -23,9 +27,23 @@ export default function LessonPage() {
   const { data: course, isLoading: courseLoading } = useCourse(currentLesson?.courseId ?? '');
   const { data: progress = [] } = useCourseProgress(currentLesson?.courseId ?? '');
   const updateProgress = useUpdateProgress();
+  const { mutate: recordLessonActivity } = useRecordLessonActivity();
+  const trackedLessonIdRef = useRef<string | null>(null);
 
   const loading = lessonLoading || courseLoading;
   const error = lessonError?.message ?? null;
+
+  useEffect(() => {
+    if (!currentLesson || trackedLessonIdRef.current === currentLesson.id) {
+      return;
+    }
+
+    trackedLessonIdRef.current = currentLesson.id;
+    recordLessonActivity({
+      lessonId: currentLesson.id,
+      type: LearningActivityType.LESSON_OPENED,
+    });
+  }, [currentLesson, recordLessonActivity]);
 
   if (loading) {
     return (

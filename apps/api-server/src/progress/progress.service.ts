@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { ProgressStatus, Role } from '@repo/database';
+import { LearningActivityType, ProgressStatus, Role } from '@repo/database';
 import { LearningAccessService } from '../common/services/learning-access.service';
 import { PrismaService } from '../common/services/prisma.service';
 
@@ -26,7 +26,7 @@ export class ProgressService {
     });
     if (!lesson) throw new NotFoundException(`Lesson not found in this tenant`);
 
-    return this.prisma.userLessonProgress.upsert({
+    const progress = await this.prisma.userLessonProgress.upsert({
       where: {
         userId_lessonId: {
           userId,
@@ -41,6 +41,49 @@ export class ProgressService {
         lessonId,
         tenantId,
         status,
+      },
+    });
+
+    if (status === ProgressStatus.COMPLETED) {
+      await this.prisma.learningActivity.create({
+        data: {
+          userId,
+          tenantId,
+          courseId: lesson.courseId,
+          lessonId,
+          type: LearningActivityType.LESSON_COMPLETED,
+        },
+      });
+    }
+
+    return progress;
+  }
+
+  async recordActivity(
+    userId: string,
+    lessonId: string,
+    type: LearningActivityType,
+    tenantId: string,
+    role: Role,
+    timeSpentSeconds?: number,
+  ) {
+    const lesson = await this.prisma.lesson.findFirst({
+      where: this.learningAccess.lessonWhere(tenantId, { id: userId, role }, lessonId),
+      select: {
+        id: true,
+        courseId: true,
+      },
+    });
+    if (!lesson) throw new NotFoundException(`Lesson not found in this tenant`);
+
+    return this.prisma.learningActivity.create({
+      data: {
+        userId,
+        tenantId,
+        courseId: lesson.courseId,
+        lessonId: lesson.id,
+        type,
+        timeSpentSeconds,
       },
     });
   }
@@ -117,21 +160,37 @@ export class ProgressService {
       orderBy: { createdAt: 'desc' },
     });
 
+    const courseIds = courses.map((course) => course.id);
+    const activities =
+      courseIds.length === 0
+        ? []
+        : await this.prisma.learningActivity.findMany({
+            where: {
+              userId,
+              tenantId,
+              courseId: { in: courseIds },
+            },
+            select: {
+              courseId: true,
+              lessonId: true,
+              type: true,
+              occurredAt: true,
+            },
+            orderBy: { occurredAt: 'desc' },
+          });
+
     const courseSummaries = courses.map((course) => {
+      const courseActivities = activities.filter((activity) => activity.courseId === course.id);
       const completedLessons = course.lessons.filter(
         (lesson) => lesson.progress[0]?.status === ProgressStatus.COMPLETED,
       ).length;
       const totalLessons = course.lessons.length;
       const completionPercentage =
         totalLessons === 0 ? 0 : Math.round((completedLessons / totalLessons) * 100);
-      let lastActivityAt: Date | null = null;
-
-      for (const lesson of course.lessons) {
-        const updatedAt = lesson.progress[0]?.updatedAt;
-        if (updatedAt && (!lastActivityAt || updatedAt > lastActivityAt)) {
-          lastActivityAt = updatedAt;
-        }
-      }
+      const latestActivity = courseActivities[0];
+      const lastAccessedLesson = latestActivity
+        ? (course.lessons.find((lesson) => lesson.id === latestActivity.lessonId) ?? null)
+        : null;
 
       const continueLesson =
         course.lessons.find((lesson) => lesson.progress[0]?.status !== ProgressStatus.COMPLETED) ??
@@ -146,7 +205,15 @@ export class ProgressService {
         totalLessons,
         completedLessons,
         completionPercentage,
-        lastActivityAt,
+        lastActivityAt: latestActivity?.occurredAt ?? null,
+        lastAccessedLesson: lastAccessedLesson
+          ? {
+              id: lastAccessedLesson.id,
+              title: lastAccessedLesson.title,
+              courseId: lastAccessedLesson.courseId,
+              duration: lastAccessedLesson.duration,
+            }
+          : null,
         continueLesson: continueLesson
           ? {
               id: continueLesson.id,
@@ -171,6 +238,9 @@ export class ProgressService {
       (sum, course) => sum + course.completedLessons,
       0,
     );
+    const currentStreak = this.calculateCurrentStreak(
+      activities.map((activity) => activity.occurredAt),
+    );
 
     return {
       activeCourse: activeCourse ?? null,
@@ -179,9 +249,28 @@ export class ProgressService {
         courses: courseSummaries.length,
         lessons: totalLessons,
         completedLessons,
+        currentStreak,
         completionPercentage:
           totalLessons === 0 ? 0 : Math.round((completedLessons / totalLessons) * 100),
       },
     };
+  }
+
+  private calculateCurrentStreak(activityDates: Date[]) {
+    const distinctDays = new Set(activityDates.map((date) => date.toISOString().slice(0, 10)));
+    if (distinctDays.size === 0) {
+      return 0;
+    }
+
+    let streak = 0;
+    const cursor = new Date();
+    cursor.setUTCHours(0, 0, 0, 0);
+
+    while (distinctDays.has(cursor.toISOString().slice(0, 10))) {
+      streak += 1;
+      cursor.setUTCDate(cursor.getUTCDate() - 1);
+    }
+
+    return streak;
   }
 }

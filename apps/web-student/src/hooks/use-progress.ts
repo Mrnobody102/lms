@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { progressApi, ProgressStatus } from '@/lib/progress-api';
+import { LearningActivityType, progressApi, ProgressStatus } from '@/lib/progress-api';
 
 export function useCourseProgress(courseId: string) {
   return useQuery({
@@ -17,6 +17,24 @@ export function useUpdateProgress() {
       progressApi.updateProgress(lessonId, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['course-progress'] });
+      queryClient.invalidateQueries({ queryKey: ['progress-summary'] });
+    },
+  });
+}
+
+export function useRecordLessonActivity() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      lessonId,
+      type,
+      timeSpentSeconds,
+    }: {
+      lessonId: string;
+      type: LearningActivityType;
+      timeSpentSeconds?: number;
+    }) => progressApi.recordActivity(lessonId, type, timeSpentSeconds),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['progress-summary'] });
     },
   });

@@ -33,6 +33,13 @@ async function installStudentApiMocks(page: Page) {
     status: 'COMPLETED';
     updatedAt: string;
   }>;
+  let activities = [] as Array<{
+    id: string;
+    lessonId: string;
+    courseId: string;
+    type: 'LESSON_OPENED' | 'LESSON_COMPLETED';
+    occurredAt: string;
+  }>;
   const corsHeaders = {
     'access-control-allow-origin': 'http://127.0.0.1:3100',
     'access-control-allow-credentials': 'true',
@@ -95,6 +102,7 @@ async function installStudentApiMocks(page: Page) {
     if (path.endsWith('/api/auth/logout') && method === 'POST') {
       currentUser = null;
       progress = [];
+      activities = [];
 
       return json(200, {
         success: true,
@@ -120,6 +128,7 @@ async function installStudentApiMocks(page: Page) {
 
     if (path.endsWith('/api/progress/summary') && method === 'GET') {
       const completedLessons = progress.filter((item) => item.status === 'COMPLETED').length;
+      const latestActivity = activities[0] ?? null;
 
       return json(200, {
         activeCourse: {
@@ -131,7 +140,15 @@ async function installStudentApiMocks(page: Page) {
           totalLessons: course.lessons.length,
           completedLessons,
           completionPercentage: Math.round((completedLessons / course.lessons.length) * 100),
-          lastActivityAt: progress[0]?.updatedAt ?? null,
+          lastActivityAt: latestActivity?.occurredAt ?? null,
+          lastAccessedLesson: latestActivity
+            ? {
+                id: course.lessons[0].id,
+                title: course.lessons[0].title,
+                courseId: course.id,
+                duration: course.lessons[0].duration,
+              }
+            : null,
           continueLesson: {
             id: course.lessons[0].id,
             title: course.lessons[0].title,
@@ -144,9 +161,26 @@ async function installStudentApiMocks(page: Page) {
           courses: 1,
           lessons: course.lessons.length,
           completedLessons,
+          currentStreak: 0,
           completionPercentage: Math.round((completedLessons / course.lessons.length) * 100),
         },
       });
+    }
+
+    if (path.endsWith('/api/progress/activity') && method === 'POST') {
+      const payload = request.postDataJSON() as {
+        lessonId: string;
+        type: 'LESSON_OPENED' | 'LESSON_COMPLETED';
+      };
+      const activity = {
+        id: `activity-${activities.length + 1}`,
+        lessonId: payload.lessonId,
+        courseId: course.id,
+        type: payload.type,
+        occurredAt: '2026-04-21T11:55:00.000Z',
+      };
+      activities = [activity, ...activities];
+      return json(201, activity);
     }
 
     if (path.endsWith('/api/progress/update') && method === 'POST') {
@@ -157,6 +191,16 @@ async function installStudentApiMocks(page: Page) {
           status: 'COMPLETED',
           updatedAt: '2026-04-21T12:00:00.000Z',
         },
+      ];
+      activities = [
+        {
+          id: 'activity-complete-1',
+          lessonId: 'lesson-1',
+          courseId: course.id,
+          type: 'LESSON_COMPLETED',
+          occurredAt: '2026-04-21T12:00:00.000Z',
+        },
+        ...activities,
       ];
 
       return json(200, progress[0]);

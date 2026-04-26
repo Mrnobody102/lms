@@ -31,6 +31,11 @@ enum EnrollmentStatus {
   REVOKED
 }
 
+enum LearningActivityType {
+  LESSON_OPENED
+  LESSON_COMPLETED
+}
+
 model Tenant {
   id          String             @id @default(uuid())
   name        String
@@ -41,6 +46,7 @@ model Tenant {
   courses     Course[]
   lessons     Lesson[]
   enrollments CourseEnrollment[]
+  activities  LearningActivity[]
   isActive    Boolean            @default(true)
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @default(now()) @updatedAt
@@ -62,6 +68,7 @@ model User {
   tenant      Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   progress    UserLessonProgress[]
   enrollments CourseEnrollment[]
+  activities  LearningActivity[]
   createdAt   DateTime             @default(now())
   updatedAt   DateTime             @updatedAt
 
@@ -83,6 +90,7 @@ model Course {
   tenant        Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   lessons       Lesson[]
   enrollments   CourseEnrollment[]
+  activities    LearningActivity[]
   totalDuration Int                @default(0)
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
@@ -94,22 +102,23 @@ model Course {
 }
 
 model Lesson {
-  id        String               @id @default(uuid())
-  title     String
-  type      LessonType           @default(text)
-  content   String? // Nội dung bài học (HTML/Markdown)
-  videoUrl  String? // Link video bài giảng
-  duration  Int                  @default(10) // Thời lượng dự kiến (phút)
-  quiz      Json? // Nội dung quiz (nếu type là quiz)
-  order     Int                  @default(0) // Thứ tự bài học trong khóa học
-  deletedAt DateTime?
-  tenantId  String
-  tenant    Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  courseId  String
-  course    Course               @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
-  progress  UserLessonProgress[]
-  createdAt DateTime             @default(now())
-  updatedAt DateTime             @updatedAt
+  id         String               @id @default(uuid())
+  title      String
+  type       LessonType           @default(text)
+  content    String? // Nội dung bài học (HTML/Markdown)
+  videoUrl   String? // Link video bài giảng
+  duration   Int                  @default(10) // Thời lượng dự kiến (phút)
+  quiz       Json? // Nội dung quiz (nếu type là quiz)
+  order      Int                  @default(0) // Thứ tự bài học trong khóa học
+  deletedAt  DateTime?
+  tenantId   String
+  tenant     Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  courseId   String
+  course     Course               @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  progress   UserLessonProgress[]
+  activities LearningActivity[]
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
 
   @@unique([id, tenantId])
   @@index([courseId])
@@ -152,4 +161,25 @@ model CourseEnrollment {
   @@index([tenantId, status])
   @@index([courseId])
   @@index([userId])
+}
+
+model LearningActivity {
+  id               String               @id @default(uuid())
+  userId           String
+  user             User                 @relation(fields: [userId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  tenantId         String
+  tenant           Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  courseId         String
+  course           Course               @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  lessonId         String
+  lesson           Lesson               @relation(fields: [lessonId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  type             LearningActivityType
+  timeSpentSeconds Int?
+  occurredAt       DateTime             @default(now())
+
+  @@index([userId, occurredAt])
+  @@index([tenantId, occurredAt])
+  @@index([courseId, occurredAt])
+  @@index([lessonId, occurredAt])
+  @@index([userId, lessonId, type, occurredAt])
 }

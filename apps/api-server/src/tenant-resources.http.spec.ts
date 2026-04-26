@@ -4,7 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ValidationPipe, type INestApplication } from '@nestjs/common';
 import type { NextFunction, Request, Response } from 'express';
 import { PassportModule } from '@nestjs/passport';
-import { EnrollmentStatus, ProgressStatus, Role } from '@repo/database';
+import { EnrollmentStatus, LearningActivityType, ProgressStatus, Role } from '@repo/database';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as bcrypt from 'bcrypt';
 import cookieParser from 'cookie-parser';
@@ -54,6 +54,10 @@ describe('Tenant resource HTTP flow', () => {
       findMany: ReturnType<typeof vi.fn>;
       findFirst: ReturnType<typeof vi.fn>;
       upsert: ReturnType<typeof vi.fn>;
+    };
+    learningActivity: {
+      findMany: ReturnType<typeof vi.fn>;
+      create: ReturnType<typeof vi.fn>;
     };
     courseEnrollment: {
       findFirst: ReturnType<typeof vi.fn>;
@@ -190,9 +194,20 @@ describe('Tenant resource HTTP flow', () => {
     status: ProgressStatus;
     updatedAt: Date;
   }>;
+  let activityRecords: Array<{
+    id: string;
+    userId: string;
+    tenantId: string;
+    courseId: string;
+    lessonId: string;
+    type: LearningActivityType;
+    timeSpentSeconds?: number;
+    occurredAt: Date;
+  }>;
 
   beforeEach(async () => {
     progressRecords = [];
+    activityRecords = [];
 
     prisma = {
       user: {
@@ -559,6 +574,58 @@ describe('Tenant resource HTTP flow', () => {
           },
         ),
       },
+      learningActivity: {
+        findMany: vi.fn().mockImplementation(
+          ({
+            where,
+            orderBy,
+          }: {
+            where: {
+              userId: string;
+              tenantId: string;
+              courseId: { in: string[] };
+            };
+            orderBy?: { occurredAt: 'asc' | 'desc' };
+          }) => {
+            const direction = orderBy?.occurredAt === 'asc' ? 1 : -1;
+            return Promise.resolve(
+              activityRecords
+                .filter(
+                  (record) =>
+                    record.userId === where.userId &&
+                    record.tenantId === where.tenantId &&
+                    where.courseId.in.includes(record.courseId),
+                )
+                .sort((a, b) => direction * (a.occurredAt.getTime() - b.occurredAt.getTime())),
+            );
+          },
+        ),
+        create: vi.fn().mockImplementation(
+          ({
+            data,
+          }: {
+            data: {
+              userId: string;
+              tenantId: string;
+              courseId: string;
+              lessonId: string;
+              type: LearningActivityType;
+              timeSpentSeconds?: number;
+            };
+          }) => {
+            const activity = {
+              id: `activity-${activityRecords.length + 1}`,
+              ...data,
+              occurredAt:
+                data.type === LearningActivityType.LESSON_COMPLETED
+                  ? new Date('2026-04-21T12:00:00.000Z')
+                  : new Date('2026-04-21T11:55:00.000Z'),
+            };
+            activityRecords.unshift(activity);
+            return Promise.resolve(activity);
+          },
+        ),
+      },
       courseEnrollment: {
         findFirst: vi.fn().mockResolvedValue(null),
         update: vi.fn(),
@@ -701,6 +768,49 @@ describe('Tenant resource HTTP flow', () => {
     await agent.get(`/lessons/${lessonOneId}`).set('x-tenant-id', tenantTwoId).expect(403);
   });
 
+  it('should record lesson activity and expose it through the progress summary', async () => {
+    await loginTenantOne();
+
+    const activityResponse = await agent
+      .post('/progress/activity')
+      .set('x-tenant-id', tenantOneId)
+      .send({
+        lessonId: lessonOneId,
+        type: LearningActivityType.LESSON_OPENED,
+      })
+      .expect(201);
+
+    expect(activityResponse.body).toEqual(
+      expect.objectContaining({
+        lessonId: lessonOneId,
+        courseId: courseOneId,
+        type: LearningActivityType.LESSON_OPENED,
+      }),
+    );
+
+    const summary = await agent
+      .get('/progress/summary')
+      .set('x-tenant-id', tenantOneId)
+      .expect(200);
+
+    expect(summary.body).toEqual(
+      expect.objectContaining({
+        activeCourse: expect.objectContaining({
+          course: expect.objectContaining({ id: courseOneId }),
+          continueLesson: expect.objectContaining({ id: lessonOneId }),
+          lastAccessedLesson: expect.objectContaining({ id: lessonOneId }),
+        }),
+        totals: expect.objectContaining({
+          courses: 1,
+          lessons: 1,
+          completedLessons: 0,
+          currentStreak: 0,
+          completionPercentage: 0,
+        }),
+      }),
+    );
+  });
+
   it('should update and read course progress inside the authenticated tenant', async () => {
     await loginTenantOne();
 
@@ -757,6 +867,7 @@ describe('Tenant resource HTTP flow', () => {
           courses: 1,
           lessons: 1,
           completedLessons: 1,
+          currentStreak: 0,
           completionPercentage: 100,
         }),
       }),
