@@ -1,6 +1,6 @@
 # Backlog Kỹ Thuật Và Theo Dõi Tiến Độ
 
-Cập nhật lần cuối: 2026-04-25
+Cập nhật lần cuối: 2026-04-26
 
 ## Mục tiêu
 
@@ -14,23 +14,23 @@ Nguyên tắc:
 
 ## Trạng thái tổng quan
 
-| Hạng mục                               | Trạng thái | Ghi chú                                                                      |
-| -------------------------------------- | ---------- | ---------------------------------------------------------------------------- |
-| Cookie-first auth cho browser flow     | Đã làm     | Không còn coi `localStorage` là authority chính                              |
-| Tenant-aware auth + business API tests | Đã làm     | Có HTTP integration tests cho auth/course/lesson/progress                    |
-| Student E2E flow thực tế               | Đã làm     | Đã thay test giả bằng register/login/lesson/progress                         |
-| Local release verification             | Đã làm     | Có `build:stable`, `smoke:api`, `test:e2e`, cleanup port                     |
-| Health/readiness có DB + Redis check   | Đã làm     | Có `live`, `ready` và smoke runtime thật                                     |
-| CI release-grade checks                | Đã làm     | Đã tách fast/build/e2e/api smoke trong workflow                              |
-| Migration hygiene production-safe      | Đã làm     | Có runbook baseline, `db:status`, `db:resolve`, guard `db:push` production   |
-| Enrollment / access model              | Đang làm   | Đã có DB/API/UI access control, shared policy, DB constraints; còn reporting |
-| Student dashboard / continue learning  | Đang làm   | Đã có dashboard shell + activity-backed summary; còn streak/chart UI         |
-| Content hierarchy                      | Chưa làm   | Cần `Unit/Chapter` trước khi nội dung lớn                                    |
-| Practice engine                        | Chưa làm   | Cần question bank/exercise attempt                                           |
-| Quiz attempt / grading                 | Chưa làm   | Nên đi sau progress/enrollment                                               |
-| Activation / license code              | Chưa làm   | Phục vụ flow nhập mã kích hoạt                                               |
-| AI conversation                        | Chưa làm   | Làm sau usage/reporting                                                      |
-| Media storage / background jobs        | Chưa làm   | Chỉ nên làm sau hạ tầng release ổn định                                      |
+| Hạng mục                               | Trạng thái | Ghi chú                                                                       |
+| -------------------------------------- | ---------- | ----------------------------------------------------------------------------- |
+| Cookie-first auth cho browser flow     | Đã làm     | Không còn coi `localStorage` là authority chính                               |
+| Tenant-aware auth + business API tests | Đã làm     | Có HTTP integration tests cho auth/course/lesson/progress                     |
+| Student E2E flow thực tế               | Đã làm     | Đã thay test giả bằng register/login/lesson/progress                          |
+| Local release verification             | Đã làm     | Có `build:stable`, `smoke:api`, `test:e2e`, cleanup port                      |
+| Health/readiness có DB + Redis check   | Đã làm     | Có `live`, `ready` và smoke runtime thật                                      |
+| CI release-grade checks                | Đã làm     | Đã tách fast/build/e2e/api smoke trong workflow                               |
+| Migration hygiene production-safe      | Đã làm     | Có runbook baseline, `db:status`, `db:resolve`, guard `db:push` production    |
+| Enrollment / access model              | Đang làm   | Đã có DB/API/UI access control, shared policy, DB constraints; còn reporting  |
+| Student dashboard / continue learning  | Đang làm   | Đã có dashboard shell, streak UI, session count; còn chart và admin reporting |
+| Content hierarchy                      | Chưa làm   | Cần `Unit/Chapter` trước khi nội dung lớn                                     |
+| Practice engine                        | Chưa làm   | Cần question bank/exercise attempt                                            |
+| Quiz attempt / grading                 | Chưa làm   | Nên đi sau progress/enrollment                                                |
+| Activation / license code              | Chưa làm   | Phục vụ flow nhập mã kích hoạt                                                |
+| AI conversation                        | Chưa làm   | Làm sau usage/reporting                                                       |
+| Media storage / background jobs        | Chưa làm   | Chỉ nên làm sau hạ tầng release ổn định                                       |
 
 ## Những gì đã hoàn thành
 
@@ -155,9 +155,9 @@ Task:
 - [x] Resume learning / continue lesson summary
 - [x] Student dashboard V1 shell trên trang home khi đã login
 - [x] Last accessed lesson event chi tiết qua `LearningActivity`
-- [ ] Time spent hoặc session count
+- [x] Time spent hoặc session count
 - [x] Daily learning streak foundation trong summary API
-- [ ] Daily learning streak hiển thị trên UI
+- [x] Daily learning streak hiển thị trên UI
 - [ ] Admin dashboard cơ bản theo tiến độ
 
 ### Epic F. Content Hierarchy

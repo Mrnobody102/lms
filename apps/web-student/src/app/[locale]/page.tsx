@@ -6,13 +6,15 @@ import {
   BarChart3,
   BookOpen,
   CheckCircle2,
+  Clock3,
+  Flame,
   Loader2,
   PlayCircle,
   Trophy,
   User as UserIcon,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useAuthStore } from '../../features/auth/auth.store';
 import { StudentNav } from '../../components/layout/student-nav';
 import { useProgressSummary } from '../../hooks/use-progress';
@@ -127,10 +129,17 @@ export default function Home() {
 }
 
 function LearningDashboard() {
+  const locale = useLocale();
   const t = useTranslations('Student');
   const { data: summary, isLoading } = useProgressSummary();
   const activeCourse = summary?.activeCourse;
   const totals = summary?.totals;
+  const formattedLastActivity = activeCourse?.lastActivityAt
+    ? new Intl.DateTimeFormat(locale, {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      }).format(new Date(activeCourse.lastActivityAt))
+    : null;
 
   return (
     <div className="min-h-screen bg-background font-sans">
@@ -202,12 +211,33 @@ function LearningDashboard() {
                     total: activeCourse.totalLessons,
                   })}
                 </span>
+                {activeCourse.activitySessions > 0 && (
+                  <span>
+                    {t('dashboard.sessionValue', { count: activeCourse.activitySessions })}
+                  </span>
+                )}
                 {activeCourse.continueLesson && (
                   <span>
                     {t('dashboard.duration', { minutes: activeCourse.continueLesson.duration })}
                   </span>
                 )}
               </div>
+
+              {activeCourse.lastAccessedLesson && (
+                <div className="mt-5 rounded-md border border-dashed bg-muted/30 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {t('dashboard.lastOpened')}
+                  </p>
+                  <p className="mt-2 text-sm font-semibold">
+                    {activeCourse.lastAccessedLesson.title}
+                  </p>
+                  {formattedLastActivity && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {t('dashboard.lastActivityAt', { value: formattedLastActivity })}
+                    </p>
+                  )}
+                </div>
+              )}
 
               <Link
                 href={
@@ -222,7 +252,7 @@ function LearningDashboard() {
               </Link>
             </section>
 
-            <section className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+            <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
               <DashboardStat
                 icon={BookOpen}
                 label={t('dashboard.enrolledCourses')}
@@ -234,9 +264,19 @@ function LearningDashboard() {
                 value={totals?.completedLessons ?? 0}
               />
               <DashboardStat
+                icon={Clock3}
+                label={t('dashboard.studySessions')}
+                value={t('dashboard.sessionValue', { count: totals?.activitySessions ?? 0 })}
+              />
+              <DashboardStat
                 icon={BarChart3}
                 label={t('dashboard.overallProgress')}
                 value={`${totals?.completionPercentage ?? 0}%`}
+              />
+              <DashboardStat
+                icon={Flame}
+                label={t('dashboard.currentStreak')}
+                value={t('dashboard.streakValue', { days: totals?.currentStreak ?? 0 })}
               />
             </section>
           </div>

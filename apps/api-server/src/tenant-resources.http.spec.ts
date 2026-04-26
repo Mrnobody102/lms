@@ -798,12 +798,14 @@ describe('Tenant resource HTTP flow', () => {
         activeCourse: expect.objectContaining({
           course: expect.objectContaining({ id: courseOneId }),
           continueLesson: expect.objectContaining({ id: lessonOneId }),
+          activitySessions: 1,
           lastAccessedLesson: expect.objectContaining({ id: lessonOneId }),
         }),
         totals: expect.objectContaining({
           courses: 1,
           lessons: 1,
           completedLessons: 0,
+          activitySessions: 1,
           currentStreak: 0,
           completionPercentage: 0,
         }),
@@ -867,6 +869,7 @@ describe('Tenant resource HTTP flow', () => {
           courses: 1,
           lessons: 1,
           completedLessons: 1,
+          activitySessions: 0,
           currentStreak: 0,
           completionPercentage: 100,
         }),

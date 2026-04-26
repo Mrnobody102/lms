@@ -181,6 +181,9 @@ export class ProgressService {
 
     const courseSummaries = courses.map((course) => {
       const courseActivities = activities.filter((activity) => activity.courseId === course.id);
+      const activitySessions = courseActivities.filter(
+        (activity) => activity.type === LearningActivityType.LESSON_OPENED,
+      ).length;
       const completedLessons = course.lessons.filter(
         (lesson) => lesson.progress[0]?.status === ProgressStatus.COMPLETED,
       ).length;
@@ -204,6 +207,7 @@ export class ProgressService {
         },
         totalLessons,
         completedLessons,
+        activitySessions,
         completionPercentage,
         lastActivityAt: latestActivity?.occurredAt ?? null,
         lastAccessedLesson: lastAccessedLesson
@@ -238,6 +242,10 @@ export class ProgressService {
       (sum, course) => sum + course.completedLessons,
       0,
     );
+    const activitySessions = courseSummaries.reduce(
+      (sum, course) => sum + course.activitySessions,
+      0,
+    );
     const currentStreak = this.calculateCurrentStreak(
       activities.map((activity) => activity.occurredAt),
     );
@@ -249,6 +257,7 @@ export class ProgressService {
         courses: courseSummaries.length,
         lessons: totalLessons,
         completedLessons,
+        activitySessions,
         currentStreak,
         completionPercentage:
           totalLessons === 0 ? 0 : Math.round((completedLessons / totalLessons) * 100),

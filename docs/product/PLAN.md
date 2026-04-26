@@ -1,6 +1,6 @@
 # Kế Hoạch Triển Khai LMS Platform
 
-Cập nhật lần cuối: 2026-04-25
+Cập nhật lần cuối: 2026-04-26
 
 ## Định hướng sản phẩm
 
@@ -107,6 +107,7 @@ Trạng thái: đã có bước đầu.
 - Trang home của student khi đã login hiển thị dashboard học tập thay vì hero marketing.
 - E2E cover register/login/lesson/progress và dashboard summary.
 - `LearningActivity` event foundation cho `lastAccessedLesson`, `lastActivityAt` và reporting về sau.
+- Dashboard summary hiển thị current streak, study session count và latest opened lesson.
 
 Phạm vi:
 
@@ -119,8 +120,7 @@ Phạm vi:
 
 Data cần bổ sung:
 
-- Time spent hoặc session duration đủ tin cậy.
-- Streak/activity visualization trên UI.
+- Time spent đủ tin cậy.
 - Aggregate/reporting query cho admin theo enrollment.
 
 ### P3. Content Hierarchy

@@ -139,6 +139,7 @@ async function installStudentApiMocks(page: Page) {
           },
           totalLessons: course.lessons.length,
           completedLessons,
+          activitySessions: activities.filter((item) => item.type === 'LESSON_OPENED').length,
           completionPercentage: Math.round((completedLessons / course.lessons.length) * 100),
           lastActivityAt: latestActivity?.occurredAt ?? null,
           lastAccessedLesson: latestActivity
@@ -161,6 +162,7 @@ async function installStudentApiMocks(page: Page) {
           courses: 1,
           lessons: course.lessons.length,
           completedLessons,
+          activitySessions: activities.filter((item) => item.type === 'LESSON_OPENED').length,
           currentStreak: 0,
           completionPercentage: Math.round((completedLessons / course.lessons.length) * 100),
         },
@@ -281,4 +283,5 @@ test('student can view the learning dashboard summary', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Continue your course' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'HSK 1 Basics' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Resume lesson' })).toBeVisible();
+  await expect(page.getByText('0 sessions')).toBeVisible();
 });

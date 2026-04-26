@@ -25,6 +25,7 @@ export interface CourseProgressSummary {
   };
   totalLessons: number;
   completedLessons: number;
+  activitySessions: number;
   completionPercentage: number;
   lastActivityAt: string | null;
   lastAccessedLesson: {
@@ -48,6 +49,7 @@ export interface LearningProgressSummary {
     courses: number;
     lessons: number;
     completedLessons: number;
+    activitySessions: number;
     currentStreak: number;
     completionPercentage: number;
   };

@@ -29,10 +29,16 @@
       "continueLearning": "Tiếp tục học",
       "completedCount": "Đã hoàn thành {completed} / {total} bài học",
       "duration": "{minutes} phút",
+      "lastOpened": "Bài học mở gần nhất",
+      "lastActivityAt": "Hoạt động gần nhất: {value}",
       "resume": "Học tiếp",
       "enrolledCourses": "Khóa đã enroll",
       "completedLessons": "Bài đã hoàn thành",
-      "overallProgress": "Tiến độ tổng"
+      "studySessions": "Lượt học",
+      "sessionValue": "{count, plural, =0 {0 lượt} one {# lượt} other {# lượt}}",
+      "overallProgress": "Tiến độ tổng",
+      "currentStreak": "Chuỗi ngày học",
+      "streakValue": "{days, plural, =0 {0 ngày} one {# ngày} other {# ngày}}"
     },
     "features": {
       "whyUs": "Tại sao chọn chúng tôi?",
