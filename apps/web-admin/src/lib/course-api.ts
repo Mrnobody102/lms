@@ -36,6 +36,42 @@ export interface CourseEnrollment {
   };
 }
 
+export interface CourseEnrollmentReportStudent {
+  enrollmentId: string;
+  userId: string;
+  fullName: string;
+  email: string;
+  isActive: boolean;
+  enrolledAt: string;
+  totalLessons: number;
+  completedLessons: number;
+  completionPercentage: number;
+  status: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
+  lastActivityAt: string | null;
+  activitySessions: number;
+  totalTimeSpentSeconds: number;
+}
+
+export interface CourseEnrollmentReport {
+  course: {
+    id: string;
+    title: string;
+  };
+  totals: {
+    enrolledStudents: number;
+    completedStudents: number;
+    inProgressStudents: number;
+    notStartedStudents: number;
+    totalLessons: number;
+    completedLessons: number;
+    activitySessions: number;
+    totalTimeSpentSeconds: number;
+    averageCompletionPercentage: number;
+    completionRate: number;
+  };
+  students: CourseEnrollmentReportStudent[];
+}
+
 interface PaginatedResponse<T> {
   data: T[];
   meta: { page: number; limit: number; total: number; totalPages: number };
@@ -88,6 +124,10 @@ export const courseApi = {
     return api
       .delete(`/courses/${courseId}/enrollments/${userId}`)
       .then((r) => r.data as CourseEnrollment);
+  },
+
+  getCourseReport(courseId: string) {
+    return api.get(`/courses/${courseId}/report`).then((r) => r.data as CourseEnrollmentReport);
   },
 
   createLesson(courseId: string, data: Partial<Lesson>) {

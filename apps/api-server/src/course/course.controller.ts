@@ -60,6 +60,17 @@ export class CourseController {
     return this.courseService.findOne(id, getScopedTenantId(req), req.user);
   }
 
+  @Get(':id/report')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get enrollment progress report for a course' })
+  getEnrollmentReport(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.courseService.getEnrollmentReport(id, getScopedTenantId(req));
+  }
+
   @Post(':id/enrollments')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)

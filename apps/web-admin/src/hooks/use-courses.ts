@@ -18,6 +18,15 @@ export function useCourse(id: string) {
   });
 }
 
+export function useCourseReport(id: string) {
+  return useQuery({
+    queryKey: ['course-report', id],
+    queryFn: () => courseApi.getCourseReport(id),
+    enabled: !!id,
+    staleTime: 60 * 1000,
+  });
+}
+
 export function useLessons(courseId: string, params?: { page?: number; limit?: number }) {
   return useQuery({
     queryKey: ['lessons', courseId, params],
@@ -67,6 +76,7 @@ export function useEnrollStudent() {
       courseApi.enrollStudent(courseId, userId),
     onSuccess: (_data, vars) => {
       queryClient.invalidateQueries({ queryKey: ['course', vars.courseId] });
+      queryClient.invalidateQueries({ queryKey: ['course-report', vars.courseId] });
       queryClient.invalidateQueries({ queryKey: ['courses'] });
     },
   });
@@ -79,6 +89,7 @@ export function useUnenrollStudent() {
       courseApi.unenrollStudent(courseId, userId),
     onSuccess: (_data, vars) => {
       queryClient.invalidateQueries({ queryKey: ['course', vars.courseId] });
+      queryClient.invalidateQueries({ queryKey: ['course-report', vars.courseId] });
       queryClient.invalidateQueries({ queryKey: ['courses'] });
     },
   });

@@ -14,7 +14,31 @@ interface PaginatedResponse<T> {
   meta: { page: number; limit: number; total: number; totalPages: number };
 }
 
+export interface AdminOverview {
+  totals: {
+    totalStudents: number;
+    newStudents7d: number;
+    pendingStudents: number;
+    activeCourses: number;
+    activeEnrollments: number;
+    trackedSessions: number;
+    completionRate: number;
+  };
+  recentRegistrations: Array<{
+    id: string;
+    email: string;
+    fullName: string | null;
+    isActive: boolean;
+    createdAt: string;
+    latestCourseTitle: string | null;
+  }>;
+}
+
 export const adminUserApi = {
+  getOverview() {
+    return api.get('/admin/overview').then((r) => r.data as AdminOverview);
+  },
+
   getStudents(params?: { page?: number; limit?: number; search?: string; isActive?: boolean }) {
     return api
       .get('/admin/users', {

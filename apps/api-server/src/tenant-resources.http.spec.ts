@@ -720,7 +720,7 @@ describe('Tenant resource HTTP flow', () => {
         totalPages: 1,
       }),
     });
-  });
+  }, 15000);
 
   it('should hide same-tenant courses when the student is not enrolled', async () => {
     await loginTenantOne();

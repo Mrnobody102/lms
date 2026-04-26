@@ -91,7 +91,7 @@ Trạng thái: đang làm, backend/API/UI core đã có.
 
 Còn cần:
 
-- Reporting theo enrollment.
+- Reporting theo enrollment ở mức course detail đã có; dashboard tổng hợp theo tenant đã có bước đầu, còn thiếu phần theo class/cohort và filtering nâng cao.
 - Admin UX quản lý học viên tốt hơn: filter, bulk enroll, class/cohort.
 - Xem trạng thái học viên trong từng course.
 

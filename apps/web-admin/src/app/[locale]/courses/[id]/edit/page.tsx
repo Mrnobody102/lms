@@ -7,6 +7,7 @@ import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
 import {
   useCourse,
+  useCourseReport,
   useUpdateCourse,
   useCreateLesson,
   useUpdateLesson,
@@ -19,6 +20,7 @@ import { LessonList } from '@/features/courses/lesson-list';
 import { AddLessonDialog } from '@/features/courses/add-lesson-form';
 import { EditLessonDialog } from '@/features/courses/edit-lesson-form';
 import { CourseStats } from '@/features/courses/course-stats';
+import { CourseReportPanel } from '@/features/courses/course-report-panel';
 import { EnrollmentPanel } from '@/features/courses/enrollment-panel';
 import { Lesson } from '@/lib/course-api';
 import { Button, Alert, AlertDescription } from '@/components/ui';
@@ -31,6 +33,7 @@ export default function CourseEditorPage() {
   const courseId = params.id as string;
 
   const { data: course, isLoading } = useCourse(courseId);
+  const { data: report, isLoading: reportLoading } = useCourseReport(courseId);
   const updateCourse = useUpdateCourse();
   const createLesson = useCreateLesson();
   const updateLesson = useUpdateLesson();
@@ -235,6 +238,9 @@ export default function CourseEditorPage() {
               <div className="space-y-4">
                 <div className="bg-card border rounded-xl p-5">
                   <CourseStats lessons={lessons} />
+                </div>
+                <div className="bg-card border rounded-xl p-5">
+                  <CourseReportPanel report={report} loading={reportLoading} />
                 </div>
                 <div className="bg-card border rounded-xl p-5">
                   <EnrollmentPanel
