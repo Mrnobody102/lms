@@ -46,7 +46,7 @@ const authUser: AuthUser = {
 
 beforeEach(() => {
   const storage = new MemoryStorage();
-  vi.stubGlobal('window', {} as Window & typeof globalThis);
+  vi.stubGlobal('window', {} as Window);
   vi.stubGlobal('localStorage', storage);
 });
 

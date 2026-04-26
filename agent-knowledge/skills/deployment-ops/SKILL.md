@@ -38,7 +38,7 @@ Skip when:
 
 1. Copy environment files: `cp .env.example .env` and fill in values.
 2. Start infrastructure: `pnpm db:up`
-3. Run migrations: `pnpm db:push`
+3. Run committed migrations: `pnpm db:deploy`
 4. Seed database: `pnpm db:seed`
 5. Start services: `pnpm dev` (or individual apps with `pnpm --filter web-student dev`)
 

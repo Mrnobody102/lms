@@ -135,6 +135,7 @@ curl -X POST http://localhost:4000/api/auth/logout \
 | `AUTH_COOKIE_SAME_SITE` | Chính sách SameSite cho cookie auth (`lax`, `strict`, `none`)                    |
 | `AUTH_COOKIE_DOMAIN`    | Cookie domain khi deploy frontend/API trên subdomain chung                       |
 | `MCP_ENABLED`           | Bật MCP có chủ đích, mặc định nên là `false`                                     |
+| `MCP_TENANT_ID`         | Tenant UUID bắt buộc cho các MCP tool có đọc dữ liệu tenant                      |
 
 ## Scripts thường dùng
 
@@ -161,6 +162,7 @@ curl -X POST http://localhost:4000/api/auth/logout \
 - Learning access is enforced both in service policy and tenant-scoped database constraints.
 - Dependencies are pinned in package manifests; run `pnpm install --frozen-lockfile` in CI/release flows.
 - MCP is optional and should remain disabled unless a deployment explicitly configures `MCP_ENABLED=true` and `MCP_API_KEY`.
+- If tenant-scoped MCP data tools are enabled, also configure `MCP_TENANT_ID` so the server cannot read across tenants by default.
 
 ## Roadmap feature hiện tại
 

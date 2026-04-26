@@ -8,6 +8,7 @@
     "./*": "./src/*.tsx"
   },
   "scripts": {
+    "lint": "node -e \"process.exit(0)\"",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },

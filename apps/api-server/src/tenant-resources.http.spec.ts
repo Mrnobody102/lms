@@ -91,6 +91,7 @@ describe('Tenant resource HTTP flow', () => {
       id: courseOneId,
       title: 'HSK 1 Basics',
       slug: 'hsk-1-basics',
+      isActive: true,
       totalDuration: 30,
       tenantId: tenantOneId,
       createdAt: new Date('2026-04-21T00:00:00.000Z'),
@@ -101,6 +102,7 @@ describe('Tenant resource HTTP flow', () => {
       id: courseTwoId,
       title: 'Tenant Two Course',
       slug: 'tenant-two-course',
+      isActive: true,
       totalDuration: 45,
       tenantId: tenantTwoId,
       createdAt: new Date('2026-04-21T00:00:00.000Z'),
@@ -111,6 +113,7 @@ describe('Tenant resource HTTP flow', () => {
       id: unenrolledCourseId,
       title: 'Unenrolled Tenant One Course',
       slug: 'unenrolled-tenant-one-course',
+      isActive: true,
       totalDuration: 20,
       tenantId: tenantOneId,
       createdAt: new Date('2026-04-21T00:00:00.000Z'),
@@ -283,9 +286,11 @@ describe('Tenant resource HTTP flow', () => {
             ({
               where,
               include,
+              select,
             }: {
               where: Record<string, unknown>;
               include?: Record<string, unknown>;
+              select?: Record<string, unknown>;
             }) => {
               const scopedCourses = courses
                 .filter((course) => {
@@ -303,7 +308,10 @@ describe('Tenant resource HTTP flow', () => {
                     );
 
                   return (
-                    course.tenantId === where.tenantId && course.deletedAt === null && isEnrolled
+                    course.tenantId === where.tenantId &&
+                    course.deletedAt === null &&
+                    (!('isActive' in where) || course.isActive === where.isActive) &&
+                    isEnrolled
                   );
                 })
                 .map((course) => ({
@@ -313,7 +321,7 @@ describe('Tenant resource HTTP flow', () => {
                       (lesson) => lesson.courseId === course.id && lesson.deletedAt === null,
                     ).length,
                   },
-                  ...(include?.lessons
+                  ...(include?.lessons || select?.lessons
                     ? {
                         lessons: lessons
                           .filter(
@@ -361,7 +369,12 @@ describe('Tenant resource HTTP flow', () => {
                     enrollment.status === enrollmentFilter.some?.status,
                 );
 
-              return course.tenantId === where.tenantId && course.deletedAt === null && isEnrolled;
+              return (
+                course.tenantId === where.tenantId &&
+                course.deletedAt === null &&
+                (!('isActive' in where) || course.isActive === where.isActive) &&
+                isEnrolled
+              );
             }).length,
           );
         }),
@@ -384,6 +397,7 @@ describe('Tenant resource HTTP flow', () => {
               entry.id === where.id &&
               entry.tenantId === where.tenantId &&
               entry.deletedAt === where.deletedAt &&
+              (!('isActive' in where) || entry.isActive === where.isActive) &&
               isEnrolled
             );
           });
@@ -738,13 +752,7 @@ describe('Tenant resource HTTP flow', () => {
 
     expect(summary.body).toEqual(
       expect.objectContaining({
-        activeCourse: expect.objectContaining({
-          course: expect.objectContaining({ id: courseOneId }),
-          totalLessons: 1,
-          completedLessons: 1,
-          completionPercentage: 100,
-          continueLesson: expect.objectContaining({ id: lessonOneId }),
-        }),
+        activeCourse: null,
         totals: expect.objectContaining({
           courses: 1,
           lessons: 1,

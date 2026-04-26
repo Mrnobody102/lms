@@ -1,13 +1,12 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { DiscoveryService, MetadataScanner, Reflector } from '@nestjs/core';
-import { McpService } from './mcp.service';
+import { McpRegisteredTool, McpService } from './mcp.service';
 import { MCP_TOOL_METADATA, McpToolOptions } from './mcp.decorators';
-import { zodToJsonSchema } from 'zod-to-json-schema';
 
 @Injectable()
 export class McpRegistryService implements OnModuleInit {
   private readonly logger = new Logger(McpRegistryService.name);
-  private tools = new Map<string, { handler: Function; options: McpToolOptions }>();
+  private tools = new Map<string, McpRegisteredTool>();
 
   constructor(
     private readonly discoveryService: DiscoveryService,
@@ -18,7 +17,7 @@ export class McpRegistryService implements OnModuleInit {
 
   async onModuleInit() {
     this.explore();
-    await this.registerWithMcp();
+    this.mcpService.registerTools(this.tools);
   }
 
   private explore() {
@@ -34,51 +33,12 @@ export class McpRegistryService implements OnModuleInit {
 
         if (metadata) {
           this.tools.set(metadata.name, {
-            handler: method.bind(instance),
+            handler: method.bind(instance) as McpRegisteredTool['handler'],
             options: metadata,
           });
           this.logger.log(`Discovered MCP Tool: ${metadata.name}`);
         }
       });
-    });
-  }
-
-  private async registerWithMcp() {
-    const { CallToolRequestSchema } = await import('@modelcontextprotocol/sdk/types.js');
-    const server = this.mcpService.server;
-    if (!server) {
-      this.logger.warn('MCP Server not initialized yet, skipping registration');
-      return;
-    }
-
-    // Override list tools
-    server.setRequestHandler({ method: 'tools/list' } as any, async () => ({
-      tools: Array.from(this.tools.values()).map((t) => ({
-        name: t.options.name,
-        description: t.options.description,
-        inputSchema: zodToJsonSchema(t.options.schema),
-      })),
-    }));
-
-    // Handle tool execution
-    server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
-      const tool = this.tools.get(request.params.name);
-      if (!tool) {
-        throw new Error(`Tool not found: ${request.params.name}`);
-      }
-
-      try {
-        const args = tool.options.schema.parse(request.params.arguments);
-        const result = await tool.handler(args);
-        return {
-          content: [{ type: 'text', text: JSON.stringify(result) }],
-        };
-      } catch (error: any) {
-        return {
-          content: [{ type: 'text', text: `Error: ${error.message}` }],
-          isError: true,
-        };
-      }
     });
   }
 }

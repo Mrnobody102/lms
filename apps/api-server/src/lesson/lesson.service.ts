@@ -22,7 +22,9 @@ export class LessonService {
     tenantId: string;
   }) {
     const course = await this.prisma.course.findFirst({
-      where: this.learningAccess.courseWhere(data.tenantId, undefined, data.courseId),
+      where: this.learningAccess.courseWhere(data.tenantId, undefined, data.courseId, {
+        includeInactive: true,
+      }),
     });
     if (!course)
       throw new NotFoundException(`Course with ID ${data.courseId} not found in this tenant`);

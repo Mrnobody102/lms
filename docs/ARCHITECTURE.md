@@ -40,7 +40,7 @@ graph TD
 
 - **Chiến lược**: Database-per-tenant (mỗi khách một DB) quá tốn kém cho 1 triệu user. Chúng ta sử dụng **Schema-based Multi-tenancy** (Dùng chung Database, phân biệt bằng cột `tenantId`).
 - **Triển khai**: Mọi bảng (trừ các bảng config global) đều có cột `tenantId`.
-- **Cô lập**: `TenantMiddleware` trong NestJS sẽ tự động lọc các truy vấn theo `tenantId`.
+- **Cô lập**: `TenantMiddleware` resolve tenant context từ host/header. Service layer và database constraints mới là nơi thực thi tenant scoping cho từng query.
 
 ### 2. Single Codebase (Một bộ mã duy nhất)
 

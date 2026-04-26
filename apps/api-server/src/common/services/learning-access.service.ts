@@ -7,6 +7,10 @@ export interface LearningAccessUser {
   role: Role;
 }
 
+interface CourseWhereOptions {
+  includeInactive?: boolean;
+}
+
 @Injectable()
 export class LearningAccessService {
   constructor(private readonly prisma: PrismaService) {}
@@ -15,12 +19,16 @@ export class LearningAccessService {
     tenantId: string,
     user?: LearningAccessUser,
     courseId?: string,
+    options: CourseWhereOptions = {},
   ): Prisma.CourseWhereInput {
     const where: Prisma.CourseWhereInput = {
       tenantId,
       deletedAt: null,
-      isActive: true,
     };
+
+    if (!options.includeInactive) {
+      where.isActive = true;
+    }
 
     if (courseId) {
       where.id = courseId;

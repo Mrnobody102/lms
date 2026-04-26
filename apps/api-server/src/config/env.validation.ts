@@ -61,6 +61,7 @@ export const envSchema = z
     MCP_API_KEY: z.string().min(32).optional(),
     MCP_ALLOW_QUERY_API_KEY: booleanEnvSchema,
     MCP_PROJECT_ROOT: z.string().optional(),
+    MCP_TENANT_ID: z.string().uuid().optional(),
 
     // Throttler (optional overrides)
     THROTTLER_TTL: z.coerce.number().optional(),

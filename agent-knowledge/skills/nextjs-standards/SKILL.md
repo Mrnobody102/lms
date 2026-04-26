@@ -104,6 +104,8 @@ export default createApiClient({
 });
 ```
 
+`NEXT_PUBLIC_TENANT_ID` is a local/dev tenant hint. Production tenant resolution should come from the request host/domain unless a trusted deployment explicitly opts in to sending tenant headers.
+
 The client automatically handles token injection, tenant headers, and 401 redirects. Use React Query v5 hooks for data fetching.
 
 ## Layout Patterns

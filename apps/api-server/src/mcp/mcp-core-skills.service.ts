@@ -48,6 +48,27 @@ export class McpCoreSkillsService {
     return { targetPath };
   }
 
+  private async getTenantScope() {
+    const tenantId = this.configService.get<string>('MCP_TENANT_ID');
+    if (!tenantId) {
+      return { error: 'MCP_TENANT_ID is required for tenant-scoped data tools.' };
+    }
+
+    const tenant = await this.prismaService.tenant.findFirst({
+      where: {
+        id: tenantId,
+        isActive: true,
+      },
+      select: { id: true },
+    });
+
+    if (!tenant) {
+      return { error: 'Configured MCP_TENANT_ID does not match an active tenant.' };
+    }
+
+    return { tenantId: tenant.id };
+  }
+
   @McpTool({
     name: 'inspect_project',
     description: 'List files and folders under the configured MCP project root.',
@@ -81,8 +102,14 @@ export class McpCoreSkillsService {
   })
   async searchCourses(args: { keyword: string }) {
     try {
+      const tenantScope = await this.getTenantScope();
+      if (tenantScope.error || !tenantScope.tenantId) {
+        return { error: tenantScope.error };
+      }
+
       return this.prismaService.course.findMany({
         where: {
+          tenantId: tenantScope.tenantId,
           title: {
             contains: args.keyword,
             mode: 'insensitive',

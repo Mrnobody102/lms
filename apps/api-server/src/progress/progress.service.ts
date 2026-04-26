@@ -88,7 +88,11 @@ export class ProgressService {
   async getSummary(userId: string, tenantId: string, role: Role) {
     const courses = await this.prisma.course.findMany({
       where: this.learningAccess.courseWhere(tenantId, { id: userId, role }),
-      include: {
+      select: {
+        id: true,
+        title: true,
+        totalDuration: true,
+        createdAt: true,
         lessons: {
           where: { deletedAt: null },
           orderBy: { order: 'asc' },
@@ -120,17 +124,17 @@ export class ProgressService {
       const totalLessons = course.lessons.length;
       const completionPercentage =
         totalLessons === 0 ? 0 : Math.round((completedLessons / totalLessons) * 100);
-      const lastProgress = course.lessons
-        .flatMap((lesson) =>
-          lesson.progress.map((progress) => ({
-            lesson,
-            progress,
-          })),
-        )
-        .sort((a, b) => b.progress.updatedAt.getTime() - a.progress.updatedAt.getTime())[0];
+      let lastActivityAt: Date | null = null;
+
+      for (const lesson of course.lessons) {
+        const updatedAt = lesson.progress[0]?.updatedAt;
+        if (updatedAt && (!lastActivityAt || updatedAt > lastActivityAt)) {
+          lastActivityAt = updatedAt;
+        }
+      }
+
       const continueLesson =
         course.lessons.find((lesson) => lesson.progress[0]?.status !== ProgressStatus.COMPLETED) ??
-        course.lessons[0] ??
         null;
 
       return {
@@ -142,7 +146,7 @@ export class ProgressService {
         totalLessons,
         completedLessons,
         completionPercentage,
-        lastActivityAt: lastProgress?.progress.updatedAt ?? null,
+        lastActivityAt,
         continueLesson: continueLesson
           ? {
               id: continueLesson.id,

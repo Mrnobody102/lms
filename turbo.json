@@ -1,7 +1,16 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalDependencies": [".env", ".env.example"],
-  "globalEnv": ["CI", "PORT", "DATABASE_URL", "NODE_ENV", "CORS_ORIGINS", "JWT_SECRET"],
+  "globalEnv": [
+    "CI",
+    "PORT",
+    "DATABASE_URL",
+    "NODE_ENV",
+    "CORS_ORIGINS",
+    "JWT_SECRET",
+    "REDIS_URL",
+    "npm_package_version"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

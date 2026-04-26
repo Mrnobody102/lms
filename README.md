@@ -52,9 +52,10 @@ Hệ thống bao gồm 4 ứng dụng chính trong Monorepo:
 ## Production Readiness Snapshot
 
 - Browser auth is cookie-first with CSRF protection for state-changing requests.
-- Tenant isolation is enforced in auth guards, service policy, and tenant-scoped database constraints for learning records.
+- Tenant isolation is enforced in auth guards, explicit service-layer policy, and tenant-scoped database constraints for learning records.
 - Frontend tenant headers are local/dev hints by default; production should resolve tenants from domain/subdomain.
 - Package manifests avoid `"latest"` so CI and deployments use reproducible dependency versions.
+- MCP stays opt-in; tenant-scoped MCP data tools require `MCP_TENANT_ID` and should stay disabled unless the deployment intentionally exposes them.
 
 ## Cài đặt
 

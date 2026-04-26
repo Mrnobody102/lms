@@ -50,7 +50,7 @@ Skip when:
 3. Register the module in `apps/api-server/src/app.module.ts`
 4. Add Prisma schema fields in `packages/database/prisma/schema.prisma`
 5. Run: `pnpm --filter @repo/database prisma:generate`
-6. Run: `pnpm --filter @repo/database prisma:db:push` (dev) or `pnpm --filter @repo/database prisma:migrate` (create migration)
+6. Run: `pnpm --filter @repo/database prisma:migrate` for schema changes that should be committed, or `pnpm db:deploy` to apply committed migrations. Use `db:push` only for local throwaway prototyping.
 
 ### Implement a New Frontend Feature
 

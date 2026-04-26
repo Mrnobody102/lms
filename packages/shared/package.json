@@ -7,7 +7,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc -w",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint": "eslint \"src/**/*.ts\""
   },
   "peerDependencies": {
     "axios": "^1.7.9",

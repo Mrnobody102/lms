@@ -6,7 +6,8 @@
     "build": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\" && nest build",
     "start": "node dist/main",
     "dev": "nest start --watch",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint": "eslint \"src/**/*.ts\""
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.1",

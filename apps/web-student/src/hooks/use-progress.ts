@@ -17,6 +17,7 @@ export function useUpdateProgress() {
       progressApi.updateProgress(lessonId, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['course-progress'] });
+      queryClient.invalidateQueries({ queryKey: ['progress-summary'] });
     },
   });
 }

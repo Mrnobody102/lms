@@ -36,7 +36,9 @@ export class CourseService {
     const { page = 1, limit = 10, search } = options;
     const skip = (page - 1) * limit;
 
-    const where = this.learningAccess.courseWhere(tenantId, user);
+    const where = this.learningAccess.courseWhere(tenantId, user, undefined, {
+      includeInactive: user.role !== Role.STUDENT,
+    });
     if (search) {
       Object.assign(where, { title: { contains: search, mode: 'insensitive' as const } });
     }
@@ -76,8 +78,20 @@ export class CourseService {
     };
   }
 
-  async findOne(id: string, tenantId: string, user?: { id: string; role: Role }) {
-    const where = this.learningAccess.courseWhere(tenantId, user, id);
+  async findOne(
+    id: string,
+    tenantId: string,
+    user?: { id: string; role: Role },
+    options: { includeInactive?: boolean } = {},
+  ) {
+    const where = this.learningAccess.courseWhere(
+      tenantId,
+      user,
+      id,
+      options.includeInactive === undefined && user?.role !== Role.STUDENT
+        ? { includeInactive: true }
+        : options,
+    );
     const include: Prisma.CourseInclude = {
       lessons: {
         where: { deletedAt: null },
@@ -87,7 +101,7 @@ export class CourseService {
 
     if (user?.role !== Role.STUDENT) {
       include.enrollments = {
-        where: { status: EnrollmentStatus.ACTIVE },
+        where: { tenantId, status: EnrollmentStatus.ACTIVE },
         include: {
           user: {
             select: {
@@ -116,7 +130,7 @@ export class CourseService {
     data: { title?: string; slug?: string; description?: string; totalDuration?: number },
   ) {
     // Ensure course exists and belongs to tenant
-    await this.findOne(id, tenantId);
+    await this.findOne(id, tenantId, undefined, { includeInactive: true });
 
     return this.prisma.course.update({
       where: { id },
@@ -126,7 +140,7 @@ export class CourseService {
 
   async remove(id: string, tenantId: string) {
     // Ensure course exists and belongs to tenant
-    await this.findOne(id, tenantId);
+    await this.findOne(id, tenantId, undefined, { includeInactive: true });
 
     return this.prisma.course.update({
       where: { id },

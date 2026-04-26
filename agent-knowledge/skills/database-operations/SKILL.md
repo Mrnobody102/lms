@@ -38,7 +38,7 @@ Skip when:
 
 1. Modify `packages/database/prisma/schema.prisma`.
 2. Run `pnpm --filter @repo/database prisma:generate` to update types.
-3. Run `pnpm --filter @repo/database prisma:db:push` for fast iteration (no migration file created).
+3. Run `pnpm --filter @repo/database prisma:migrate` for committed schema changes. Use `prisma:db:push` only for local throwaway prototyping when you explicitly do not need a migration file.
 4. Or run `pnpm --filter @repo/database prisma:migrate` to create a named migration file.
 5. Restart the API server to pick up the new Prisma Client.
 

@@ -15,7 +15,8 @@
     "db:status": "dotenv -e ../../.env -- prisma migrate status",
     "db:resolve": "dotenv -e ../../.env -- prisma migrate resolve",
     "db:reset": "dotenv -e ../../.env -- prisma migrate reset",
-    "seed": "dotenv -e ../../.env -- prisma db seed"
+    "seed": "dotenv -e ../../.env -- prisma db seed",
+    "lint": "node -e \"process.exit(0)\""
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",

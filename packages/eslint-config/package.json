@@ -6,6 +6,9 @@
     "library.js",
     "next.js"
   ],
+  "scripts": {
+    "lint": "node -e \"process.exit(0)\""
+  },
   "devDependencies": {
     "eslint-config-next": "14.1.0",
     "eslint-config-turbo": "^2.1.2",

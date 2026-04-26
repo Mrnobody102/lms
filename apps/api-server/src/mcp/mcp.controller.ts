@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Res, Req, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Res,
+  Req,
+  ServiceUnavailableException,
+  UseGuards,
+} from '@nestjs/common';
 import type { Response, Request } from 'express';
 import { McpService } from './mcp.service';
 import { McpAuthGuard } from './guards/mcp-auth.guard';
@@ -17,9 +25,14 @@ export class McpController {
 
   @Get('sse')
   async handleSse(@Res() res: Response) {
+    const server = this.mcpService.server;
+    if (!server) {
+      throw new ServiceUnavailableException('MCP server is not ready');
+    }
+
     const { SSEServerTransport } = await import('@modelcontextprotocol/sdk/server/sse.js');
     const transport = new SSEServerTransport('/api/mcp/messages', res) as SseTransport;
-    await this.mcpService.server.connect(transport);
+    await server.connect(transport);
     this.transports.set(transport.sessionId, transport);
 
     res.on('close', () => {
