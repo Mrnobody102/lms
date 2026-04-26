@@ -15,14 +15,14 @@ interface PaginatedResponse<T> {
 }
 
 export const adminUserApi = {
-  getStudents(params?: { page?: number; limit?: number; email?: string; isActive?: boolean }) {
+  getStudents(params?: { page?: number; limit?: number; search?: string; isActive?: boolean }) {
     return api
       .get('/admin/users', {
         params: {
           page: params?.page ?? 1,
           limit: params?.limit ?? 100,
           role: 'STUDENT',
-          email: params?.email,
+          search: params?.search,
           isActive: params?.isActive ?? true,
         },
       })

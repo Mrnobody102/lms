@@ -17,6 +17,23 @@
       "roadmap": "View Roadmap",
       "watchVideo": "Watch Intro Video"
     },
+    "dashboard": {
+      "badge": "Learning dashboard",
+      "title": "Continue your course",
+      "subtitle": "Resume the next lesson and track completion across your enrolled courses.",
+      "allCourses": "All courses",
+      "loading": "Loading learning progress...",
+      "emptyTitle": "No learning progress yet",
+      "emptyDesc": "Open an enrolled course to start tracking progress.",
+      "browseCourses": "Browse courses",
+      "continueLearning": "Continue learning",
+      "completedCount": "{completed} / {total} lessons completed",
+      "duration": "{minutes} mins",
+      "resume": "Resume lesson",
+      "enrolledCourses": "Enrolled courses",
+      "completedLessons": "Completed lessons",
+      "overallProgress": "Overall progress"
+    },
     "features": {
       "whyUs": "Why Choose Us?",
       "whyUsDesc": "Modern learning methods combined with AI technology help you remember vocabulary 300% longer than traditional methods.",

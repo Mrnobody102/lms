@@ -12,6 +12,35 @@ export interface UserLessonProgress {
   updatedAt: string;
 }
 
+export interface CourseProgressSummary {
+  course: {
+    id: string;
+    title: string;
+    totalDuration?: number;
+  };
+  totalLessons: number;
+  completedLessons: number;
+  completionPercentage: number;
+  lastActivityAt: string | null;
+  continueLesson: {
+    id: string;
+    title: string;
+    courseId: string;
+    duration: number;
+  } | null;
+}
+
+export interface LearningProgressSummary {
+  activeCourse: CourseProgressSummary | null;
+  courses: CourseProgressSummary[];
+  totals: {
+    courses: number;
+    lessons: number;
+    completedLessons: number;
+    completionPercentage: number;
+  };
+}
+
 export const progressApi = {
   updateProgress: async (lessonId: string, status: ProgressStatus) => {
     const response = await api.post<UserLessonProgress>('/progress/update', {
@@ -28,6 +57,11 @@ export const progressApi = {
 
   getLessonProgress: async (lessonId: string) => {
     const response = await api.get<UserLessonProgress>(`/progress/lesson/${lessonId}`);
+    return response.data;
+  },
+
+  getSummary: async () => {
+    const response = await api.get<LearningProgressSummary>('/progress/summary');
     return response.data;
   },
 };

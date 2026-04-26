@@ -15,9 +15,10 @@ declare module 'axios' {
 }
 
 export interface ApiClientConfig {
-  tenantId?: string;
+  tenantId?: string | (() => string | undefined);
   baseURL?: string;
   onUnauthorized?: () => void;
+  sendTenantHeaderInProduction?: boolean;
 }
 
 function detectLocale(): string {
@@ -49,8 +50,19 @@ function readCookie(name: string): string | undefined {
     .join('=');
 }
 
+function isLocalBrowserHost(): boolean {
+  if (typeof window === 'undefined') return false;
+  const host = window.location.hostname;
+  return host === 'localhost' || host === '127.0.0.1' || host === '::1';
+}
+
+function resolveTenantHint(tenantId: ApiClientConfig['tenantId']): string | undefined {
+  const value = typeof tenantId === 'function' ? tenantId() : tenantId;
+  return value?.trim() || undefined;
+}
+
 export function createApiClient(config: ApiClientConfig = {}): AxiosInstance {
-  const { tenantId, onUnauthorized } = config;
+  const { tenantId, onUnauthorized, sendTenantHeaderInProduction = false } = config;
 
   const api = axios.create({
     baseURL: config.baseURL ?? getDefaultBaseUrl(),
@@ -59,8 +71,9 @@ export function createApiClient(config: ApiClientConfig = {}): AxiosInstance {
   });
 
   api.interceptors.request.use((requestConfig: InternalAxiosRequestConfig) => {
-    if (tenantId) {
-      requestConfig.headers['x-tenant-id'] = tenantId;
+    const tenantHint = resolveTenantHint(tenantId);
+    if (tenantHint && (sendTenantHeaderInProduction || isLocalBrowserHost())) {
+      requestConfig.headers['x-tenant-id'] = tenantHint;
     }
 
     const csrfToken = readCookie(CSRF_COOKIE_NAME);

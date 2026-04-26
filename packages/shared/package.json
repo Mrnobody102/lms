@@ -15,7 +15,7 @@
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
-    "typescript": "latest",
-    "vitest": "^4.0.17"
+    "typescript": "5.9.3",
+    "vitest": "4.0.17"
   }
 }

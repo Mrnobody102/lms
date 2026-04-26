@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { EnrollmentStatus, Prisma, ProgressStatus, Role } from '@repo/database';
+import { ProgressStatus, Role } from '@repo/database';
+import { LearningAccessService } from '../common/services/learning-access.service';
 import { PrismaService } from '../common/services/prisma.service';
 
 @Injectable()
 export class ProgressService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly learningAccess: LearningAccessService,
+  ) {}
 
   /**
    * Update or create a progress record for a user and lesson.
@@ -18,7 +22,7 @@ export class ProgressService {
     role: Role,
   ) {
     const lesson = await this.prisma.lesson.findFirst({
-      where: this.lessonAccessWhere(lessonId, tenantId, userId, role),
+      where: this.learningAccess.lessonWhere(tenantId, { id: userId, role }, lessonId),
     });
     if (!lesson) throw new NotFoundException(`Lesson not found in this tenant`);
 
@@ -45,7 +49,7 @@ export class ProgressService {
    * Get all progress records for a user within a specific course.
    */
   async getProgress(userId: string, courseId: string, tenantId: string, role: Role) {
-    await this.ensureCourseAccess(courseId, tenantId, userId, role);
+    await this.learningAccess.ensureCourseAccess(courseId, tenantId, { id: userId, role });
 
     return this.prisma.userLessonProgress.findMany({
       where: {
@@ -70,7 +74,7 @@ export class ProgressService {
       where: {
         userId,
         lessonId,
-        lesson: this.lessonAccessWhere(lessonId, tenantId, userId, role),
+        lesson: this.learningAccess.lessonWhere(tenantId, { id: userId, role }, lessonId),
       },
     });
 
@@ -81,73 +85,99 @@ export class ProgressService {
     return progress;
   }
 
-  private async ensureCourseAccess(courseId: string, tenantId: string, userId: string, role: Role) {
-    const course = await this.prisma.course.findFirst({
-      where: this.courseAccessWhere(courseId, tenantId, userId, role),
-      select: { id: true },
-    });
-
-    if (!course) {
-      throw new NotFoundException(`Course with ID ${courseId} not found in this tenant`);
-    }
-  }
-
-  private courseAccessWhere(
-    courseId: string,
-    tenantId: string,
-    userId: string,
-    role: Role,
-  ): Prisma.CourseWhereInput {
-    const where: Prisma.CourseWhereInput = {
-      id: courseId,
-      tenantId,
-      deletedAt: null,
-      isActive: true,
-    };
-
-    if (role === Role.STUDENT) {
-      where.enrollments = {
-        some: {
-          userId,
-          tenantId,
-          status: EnrollmentStatus.ACTIVE,
-        },
-      };
-    }
-
-    return where;
-  }
-
-  private lessonAccessWhere(
-    lessonId: string,
-    tenantId: string,
-    userId: string,
-    role: Role,
-  ): Prisma.LessonWhereInput {
-    const where: Prisma.LessonWhereInput = {
-      id: lessonId,
-      tenantId,
-      deletedAt: null,
-      course: {
-        deletedAt: null,
-        isActive: true,
-      },
-    };
-
-    if (role === Role.STUDENT) {
-      where.course = {
-        deletedAt: null,
-        isActive: true,
-        enrollments: {
-          some: {
-            userId,
-            tenantId,
-            status: EnrollmentStatus.ACTIVE,
+  async getSummary(userId: string, tenantId: string, role: Role) {
+    const courses = await this.prisma.course.findMany({
+      where: this.learningAccess.courseWhere(tenantId, { id: userId, role }),
+      include: {
+        lessons: {
+          where: { deletedAt: null },
+          orderBy: { order: 'asc' },
+          select: {
+            id: true,
+            title: true,
+            courseId: true,
+            order: true,
+            duration: true,
+            progress: {
+              where: { userId, tenantId },
+              select: {
+                status: true,
+                updatedAt: true,
+              },
+              orderBy: { updatedAt: 'desc' },
+              take: 1,
+            },
           },
         },
-      };
-    }
+      },
+      orderBy: { createdAt: 'desc' },
+    });
 
-    return where;
+    const courseSummaries = courses.map((course) => {
+      const completedLessons = course.lessons.filter(
+        (lesson) => lesson.progress[0]?.status === ProgressStatus.COMPLETED,
+      ).length;
+      const totalLessons = course.lessons.length;
+      const completionPercentage =
+        totalLessons === 0 ? 0 : Math.round((completedLessons / totalLessons) * 100);
+      const lastProgress = course.lessons
+        .flatMap((lesson) =>
+          lesson.progress.map((progress) => ({
+            lesson,
+            progress,
+          })),
+        )
+        .sort((a, b) => b.progress.updatedAt.getTime() - a.progress.updatedAt.getTime())[0];
+      const continueLesson =
+        course.lessons.find((lesson) => lesson.progress[0]?.status !== ProgressStatus.COMPLETED) ??
+        course.lessons[0] ??
+        null;
+
+      return {
+        course: {
+          id: course.id,
+          title: course.title,
+          totalDuration: course.totalDuration,
+        },
+        totalLessons,
+        completedLessons,
+        completionPercentage,
+        lastActivityAt: lastProgress?.progress.updatedAt ?? null,
+        continueLesson: continueLesson
+          ? {
+              id: continueLesson.id,
+              title: continueLesson.title,
+              courseId: continueLesson.courseId,
+              duration: continueLesson.duration,
+            }
+          : null,
+      };
+    });
+
+    const activeCourse = courseSummaries
+      .filter((course) => course.continueLesson)
+      .sort((a, b) => {
+        const aTime = a.lastActivityAt?.getTime() ?? 0;
+        const bTime = b.lastActivityAt?.getTime() ?? 0;
+        return bTime - aTime;
+      })[0];
+
+    const totalLessons = courseSummaries.reduce((sum, course) => sum + course.totalLessons, 0);
+    const completedLessons = courseSummaries.reduce(
+      (sum, course) => sum + course.completedLessons,
+      0,
+    );
+
+    return {
+      activeCourse: activeCourse ?? null,
+      courses: courseSummaries,
+      totals: {
+        courses: courseSummaries.length,
+        lessons: totalLessons,
+        completedLessons,
+        completionPercentage:
+          totalLessons === 0 ? 0 : Math.round((completedLessons / totalLessons) * 100),
+      },
+    };
   }
 }

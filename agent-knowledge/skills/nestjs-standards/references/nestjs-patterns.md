@@ -8,9 +8,9 @@ Deep-dive reference for NestJS patterns used in the LMS API server.
 
 ```typescript
 // src/lesson/lesson.module.ts
-import { Module } from "@nestjs/common";
-import { LessonController } from "./lesson.controller";
-import { LessonService } from "./lesson.service";
+import { Module } from '@nestjs/common';
+import { LessonController } from './lesson.controller';
+import { LessonService } from './lesson.service';
 
 @Module({
   controllers: [LessonController],
@@ -24,37 +24,35 @@ export class LessonModule {}
 
 ```typescript
 // src/app.module.ts
-import { Module, MiddlewareConsumer, RequestMethod } from "@nestjs/common";
-import { ConfigModule } from "@nestjs/config";
-import { ThrottlerModule } from "@nestjs/throttler";
-import { APP_GUARD } from "@nestjs/core";
-import { TenantMiddleware } from "./common/middleware/tenant.middleware";
-import { AppThrottlerGuard } from "./common/guards/throttler.guard";
-import { PrismaModule } from "./common/prisma.module";
+import { Module, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
+import { TenantMiddleware } from './common/middleware/tenant.middleware';
+import { AppThrottlerGuard } from './common/guards/throttler.guard';
+import { PrismaModule } from './common/prisma.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true, envFilePath: "../../.env" }),
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: '../../.env' }),
     ThrottlerModule.forRoot([
-      { name: "default", ttl: 60000, limit: 100 },
-      { name: "auth", ttl: 60000, limit: 10 },
+      { name: 'default', ttl: 60000, limit: 100 },
+      { name: 'auth', ttl: 60000, limit: 10 },
     ]),
     PrismaModule,
     // Feature modules...
   ],
-  providers: [
-    { provide: APP_GUARD, useClass: AppThrottlerGuard },
-  ],
+  providers: [{ provide: APP_GUARD, useClass: AppThrottlerGuard }],
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(TenantMiddleware)
       .exclude(
-        { path: "admin/tenants/(.*)", method: RequestMethod.ALL },
-        { path: "auth/(.*)", method: RequestMethod.ALL },
+        { path: 'admin/tenants/(.*)', method: RequestMethod.ALL },
+        { path: 'auth/(.*)', method: RequestMethod.ALL },
       )
-      .forRoutes("*");
+      .forRoutes('*');
   }
 }
 ```
@@ -63,8 +61,8 @@ export class AppModule {
 
 ```typescript
 // src/common/prisma.module.ts
-import { Global, Module } from "@nestjs/common";
-import { PrismaService } from "./services/prisma.service";
+import { Global, Module } from '@nestjs/common';
+import { PrismaService } from './services/prisma.service';
 
 @Global()
 @Module({
@@ -80,36 +78,42 @@ export class PrismaModule {}
 
 ```typescript
 // src/auth/dto/register.dto.ts
-import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  IsEmail, IsNotEmpty, IsString, MinLength, MaxLength, IsUUID, IsOptional,
-} from "class-validator";
+  IsEmail,
+  IsNotEmpty,
+  IsString,
+  MinLength,
+  MaxLength,
+  IsUUID,
+  IsOptional,
+} from 'class-validator';
 
 export class RegisterDto {
-  @ApiProperty({ example: "user@example.com" })
-  @IsEmail({}, { message: "Invalid email format" })
+  @ApiProperty({ example: 'user@example.com' })
+  @IsEmail({}, { message: 'Invalid email format' })
   @IsNotEmpty()
   email: string;
 
-  @ApiProperty({ example: "password123", description: "Min 8, max 128 characters" })
+  @ApiProperty({ example: 'password123', description: 'Min 8, max 128 characters' })
   @IsString()
-  @MinLength(8, { message: "Password must be at least 8 characters long" })
-  @MaxLength(128, { message: "Password must be at most 128 characters" })
+  @MinLength(8, { message: 'Password must be at least 8 characters long' })
+  @MaxLength(128, { message: 'Password must be at most 128 characters' })
   @IsNotEmpty()
   password: string;
 
-  @ApiProperty({ example: "John Doe" })
+  @ApiProperty({ example: 'John Doe' })
   @IsString()
   @IsNotEmpty()
   fullName: string;
 
-  @ApiPropertyOptional({ example: "+84 123 456 789" })
+  @ApiPropertyOptional({ example: '+84 123 456 789' })
   @IsString()
   @IsOptional()
   phoneNumber?: string;
 
-  @ApiProperty({ example: "uuid-of-tenant" })
-  @IsUUID({}, { message: "tenantId must be a valid UUID" })
+  @ApiProperty({ example: 'uuid-of-tenant' })
+  @IsUUID({}, { message: 'tenantId must be a valid UUID' })
   @IsNotEmpty()
   tenantId: string;
 }
@@ -119,8 +123,8 @@ export class RegisterDto {
 
 ```typescript
 // src/course/dto/update-course.dto.ts
-import { PartialType } from "@nestjs/swagger";
-import { CreateCourseDto } from "./create-course.dto";
+import { PartialType } from '@nestjs/swagger';
+import { CreateCourseDto } from './create-course.dto';
 
 export class UpdateCourseDto extends PartialType(CreateCourseDto) {}
 ```
@@ -129,9 +133,9 @@ export class UpdateCourseDto extends PartialType(CreateCourseDto) {}
 
 ```typescript
 // src/admin/dto/admin-user-query.dto.ts
-import { ApiPropertyOptional } from "@nestjs/swagger";
-import { IsOptional, IsInt, Min, Max } from "class-validator";
-import { Type } from "class-transformer";
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsInt, Min, Max } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class AdminUserQueryDto {
   @ApiPropertyOptional({ example: 1 })
@@ -157,8 +161,8 @@ export class AdminUserQueryDto {
 
 ```typescript
 // src/common/filters/http-exception.filter.ts
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from "@nestjs/common";
-import { Response } from "express";
+import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
+import { Response } from 'express';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -167,13 +171,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let message = "Internal server error";
+    let message = 'Internal server error';
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
       message =
-        typeof exceptionResponse === "string"
+        typeof exceptionResponse === 'string'
           ? exceptionResponse
           : (exceptionResponse as any).message || message;
     } else if (exception instanceof Error) {
@@ -190,41 +194,19 @@ export class HttpExceptionFilter implements ExceptionFilter {
 }
 ```
 
-## Interceptors (Response Wrapping)
+## Global App Wiring
 
-### ResponseInterceptor
+Register filters and pipes globally in `main.ts`:
 
 ```typescript
-// src/common/interceptors/response.interceptor.ts
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from "@nestjs/common";
-import { Observable } from "rxjs";
-import { map } from "rxjs/operators";
-
-@Injectable()
-export class ResponseInterceptor<T> implements NestInterceptor<T, any> {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    return next.handle().pipe(
-      map((data) => {
-        // Skip wrapping if already wrapped or paginated
-        if (data && typeof data === "object" && ("success" in data || "meta" in data)) {
-          return data;
-        }
-        return { success: true, data };
-      }),
-    );
-  }
-}
-```
-
-Register globally in `main.ts`:
-```typescript
-app.useGlobalInterceptors(new ResponseInterceptor());
 app.useGlobalFilters(new HttpExceptionFilter());
-app.useGlobalPipes(new ValidationPipe({
-  whitelist: true,
-  forbidNonWhitelisted: true,
-  transform: true,
-}));
+app.useGlobalPipes(
+  new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+  }),
+);
 ```
 
 ## Guards
@@ -233,21 +215,21 @@ app.useGlobalPipes(new ValidationPipe({
 
 ```typescript
 // src/auth/guards/jwt-auth.guard.ts
-import { Injectable } from "@nestjs/common";
-import { AuthGuard } from "@nestjs/passport";
+import { Injectable } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 
 @Injectable()
-export class JwtAuthGuard extends AuthGuard("jwt") {}
+export class JwtAuthGuard extends AuthGuard('jwt') {}
 ```
 
 ### RolesGuard
 
 ```typescript
 // src/auth/guards/roles.guard.ts
-import { Injectable, CanActivate, ExecutionContext } from "@nestjs/common";
-import { Reflector } from "@nestjs/core";
-import { Role } from "@repo/database";
-import { ROLES_KEY } from "../decorators/roles.decorator";
+import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { Role } from '@repo/database';
+import { ROLES_KEY } from '../decorators/roles.decorator';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -269,47 +251,47 @@ export class RolesGuard implements CanActivate {
 
 ```typescript
 // src/common/guards/throttler.guard.ts
-import { Injectable } from "@nestjs/common";
-import { ThrottlerGuard, ThrottlerException } from "@nestjs/throttler";
-import { ExecutionContext } from "@nestjs/common";
+import { Injectable } from '@nestjs/common';
+import { ThrottlerGuard, ThrottlerException } from '@nestjs/throttler';
+import { ExecutionContext } from '@nestjs/common';
 
 @Injectable()
 export class AppThrottlerGuard extends ThrottlerGuard {
   protected throwThrottlingException(context: ExecutionContext): void {
-    throw new ThrottlerException("Too many requests, please slow down");
+    throw new ThrottlerException('Too many requests, please slow down');
   }
 }
 ```
 
 ## Swagger Decorators Catalog
 
-| Decorator | Use On | Purpose |
-|---|---|---|
-| `@ApiTags("name")` | Controller | Groups endpoints in Swagger UI |
-| `@ApiOperation({ summary: "..." })` | Handler | Endpoint description |
-| `@ApiBearerAuth()` | Controller/Handler | Shows lock icon, requires token |
-| `@ApiQuery({ name, required, type })` | Handler | Query parameter documentation |
-| `@ApiParam({ name, type })` | Handler | Path parameter documentation |
-| `@ApiProperty({ example, description })` | DTO field | Field documentation and example |
-| `@ApiPropertyOptional({ example, description })` | DTO field | Optional field documentation |
-| `@ApiUnauthorizedResponse({ description })` | Handler | Documents 401 response |
-| `@ApiForbiddenResponse({ description })` | Handler | Documents 403 response |
-| `@ApiNotFoundResponse({ description })` | Handler | Documents 404 response |
-| `@ApiBody({ type: DtoClass })` | Handler | Request body documentation |
+| Decorator                                        | Use On             | Purpose                         |
+| ------------------------------------------------ | ------------------ | ------------------------------- |
+| `@ApiTags("name")`                               | Controller         | Groups endpoints in Swagger UI  |
+| `@ApiOperation({ summary: "..." })`              | Handler            | Endpoint description            |
+| `@ApiBearerAuth()`                               | Controller/Handler | Shows lock icon, requires token |
+| `@ApiQuery({ name, required, type })`            | Handler            | Query parameter documentation   |
+| `@ApiParam({ name, type })`                      | Handler            | Path parameter documentation    |
+| `@ApiProperty({ example, description })`         | DTO field          | Field documentation and example |
+| `@ApiPropertyOptional({ example, description })` | DTO field          | Optional field documentation    |
+| `@ApiUnauthorizedResponse({ description })`      | Handler            | Documents 401 response          |
+| `@ApiForbiddenResponse({ description })`         | Handler            | Documents 403 response          |
+| `@ApiNotFoundResponse({ description })`          | Handler            | Documents 404 response          |
+| `@ApiBody({ type: DtoClass })`                   | Handler            | Request body documentation      |
 
 ## Tenant Middleware
 
 ```typescript
 // src/common/middleware/tenant.middleware.ts
-import { Injectable, BadRequestException } from "@nestjs/common";
-import { NestMiddleware, Request, Response, NextFunction } from "express";
+import { Injectable, BadRequestException } from '@nestjs/common';
+import { NestMiddleware, Request, Response, NextFunction } from 'express';
 
 @Injectable()
 export class TenantMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
-    if (req.method === "OPTIONS") return next();
-    const tenantId = req.headers["x-tenant-id"] || this.getTenantFromDomain(req);
-    if (!tenantId) throw new BadRequestException("Tenant ID is missing");
+    if (req.method === 'OPTIONS') return next();
+    const tenantId = req.headers['x-tenant-id'] || this.getTenantFromDomain(req);
+    if (!tenantId) throw new BadRequestException('Tenant ID is missing');
     (req as any).tenantId = tenantId;
     next();
   }
@@ -317,7 +299,7 @@ export class TenantMiddleware implements NestMiddleware {
   private getTenantFromDomain(req: Request): string | undefined {
     const host = req.headers.host;
     if (!host) return undefined;
-    const parts = host.split(".");
+    const parts = host.split('.');
     return parts.length > 2 ? parts[0] : undefined;
   }
 }

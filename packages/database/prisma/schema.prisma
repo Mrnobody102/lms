@@ -66,6 +66,7 @@ model User {
   updatedAt   DateTime             @updatedAt
 
   @@unique([tenantId, email])
+  @@unique([id, tenantId])
   @@index([tenantId, role])
   @@index([tenantId, isActive])
   @@index([deletedAt])
@@ -87,6 +88,7 @@ model Course {
   updatedAt     DateTime           @updatedAt
 
   @@unique([tenantId, slug])
+  @@unique([id, tenantId])
   @@index([tenantId, isActive])
   @@index([deletedAt])
 }
@@ -104,11 +106,12 @@ model Lesson {
   tenantId  String
   tenant    Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   courseId  String
-  course    Course               @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course    Course               @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
   progress  UserLessonProgress[]
   createdAt DateTime             @default(now())
   updatedAt DateTime             @updatedAt
 
+  @@unique([id, tenantId])
   @@index([courseId])
   @@index([tenantId, type])
   @@index([deletedAt])
@@ -117,9 +120,9 @@ model Lesson {
 model UserLessonProgress {
   id        String         @id @default(uuid())
   userId    String
-  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId, tenantId], references: [id, tenantId], onDelete: Cascade)
   lessonId  String
-  lesson    Lesson         @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  lesson    Lesson         @relation(fields: [lessonId, tenantId], references: [id, tenantId], onDelete: Cascade)
   tenantId  String // Denormalized tenantId for row-level isolation
   status    ProgressStatus @default(IN_PROGRESS)
   createdAt DateTime       @default(now())
@@ -134,9 +137,9 @@ model UserLessonProgress {
 model CourseEnrollment {
   id           String           @id @default(uuid())
   userId       String
-  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User             @relation(fields: [userId, tenantId], references: [id, tenantId], onDelete: Cascade)
   courseId     String
-  course       Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course       Course           @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
   tenantId     String
   tenant       Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   status       EnrollmentStatus @default(ACTIVE)

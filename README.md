@@ -49,6 +49,13 @@ Hệ thống bao gồm 4 ứng dụng chính trong Monorepo:
 - [Xem nhanh (Quick Start)](docs/quick-start.md)
 - [API Documentation](docs/api-documentation.md)
 
+## Production Readiness Snapshot
+
+- Browser auth is cookie-first with CSRF protection for state-changing requests.
+- Tenant isolation is enforced in auth guards, service policy, and tenant-scoped database constraints for learning records.
+- Frontend tenant headers are local/dev hints by default; production should resolve tenants from domain/subdomain.
+- Package manifests avoid `"latest"` so CI and deployments use reproducible dependency versions.
+
 ## Cài đặt
 
 ### 1. Yêu Cầu Tiên Quyết

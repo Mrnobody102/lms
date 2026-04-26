@@ -27,9 +27,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'pnpm exec next dev -p 3100',
-    url: 'http://127.0.0.1:3100',
+    command: 'pnpm exec next dev --webpack -H 127.0.0.1 -p 3100',
+    url: 'http://127.0.0.1:3100/en',
     reuseExistingServer: false,
-    timeout: 120 * 1000,
+    timeout: 240 * 1000,
   },
 });

@@ -33,7 +33,7 @@ Frontend environment variables:
 
 - `NEXT_PUBLIC_API_URL`
 - `NEXT_PUBLIC_WEB_STUDENT_URL`
-- `NEXT_PUBLIC_TENANT_ID` for tenant-specific frontend deployments
+- `NEXT_PUBLIC_TENANT_ID` for local/dev tenant hints only. Production should resolve tenant by domain/subdomain unless `sendTenantHeaderInProduction` is explicitly enabled for a trusted deployment.
 
 Backend environment variables:
 
@@ -53,6 +53,14 @@ pnpm --filter @repo/database db:deploy
 ```
 
 Do not run `db:push` against production databases.
+
+Current production hardening notes:
+
+- Dependencies are pinned; do not reintroduce `"latest"` in package manifests.
+- Browser apps use cookie-first auth and do not store JWT as client authority.
+- CSP keeps `unsafe-eval` out of production. It is enabled only in non-production Next dev so webpack dev hydration and Playwright E2E can run.
+- Learning access policy is centralized in `LearningAccessService`; new course/lesson/progress endpoints should use that service instead of duplicating enrollment checks.
+- MCP should stay disabled in production unless intentionally enabled with `MCP_ENABLED=true` and a strong `MCP_API_KEY`.
 
 ## 3. CI/CD
 

@@ -118,6 +118,37 @@ async function installStudentApiMocks(page: Page) {
       return json(200, progress);
     }
 
+    if (path.endsWith('/api/progress/summary') && method === 'GET') {
+      const completedLessons = progress.filter((item) => item.status === 'COMPLETED').length;
+
+      return json(200, {
+        activeCourse: {
+          course: {
+            id: course.id,
+            title: course.title,
+            totalDuration: course.totalDuration,
+          },
+          totalLessons: course.lessons.length,
+          completedLessons,
+          completionPercentage: Math.round((completedLessons / course.lessons.length) * 100),
+          lastActivityAt: progress[0]?.updatedAt ?? null,
+          continueLesson: {
+            id: course.lessons[0].id,
+            title: course.lessons[0].title,
+            courseId: course.id,
+            duration: course.lessons[0].duration,
+          },
+        },
+        courses: [],
+        totals: {
+          courses: 1,
+          lessons: course.lessons.length,
+          completedLessons,
+          completionPercentage: Math.round((completedLessons / course.lessons.length) * 100),
+        },
+      });
+    }
+
     if (path.endsWith('/api/progress/update') && method === 'POST') {
       progress = [
         {
@@ -150,10 +181,15 @@ async function openLessonPage(page: Page) {
   }
 }
 
+async function waitForHydratedForm(page: Page) {
+  await page.locator('form[data-hydrated="true"]').waitFor();
+}
+
 test('student can register, land on courses, and logout', async ({ page }) => {
   await installStudentApiMocks(page);
 
   await page.goto('/en/register');
+  await waitForHydratedForm(page);
   await page.locator('input[type="text"]').fill('Student User');
   await page.locator('input[type="email"]').fill('student@example.com');
   await page.locator('input[type="password"]').fill('Student@123');
@@ -171,6 +207,7 @@ test('student can login, open a lesson, and mark it completed', async ({ page })
   await installStudentApiMocks(page);
 
   await page.goto('/en/login');
+  await waitForHydratedForm(page);
   await page.locator('input[type="email"]').fill('student@example.com');
   await page.locator('input[type="password"]').fill('Student@123');
   await page.getByRole('button', { name: 'Login Now' }).click();
@@ -183,4 +220,21 @@ test('student can login, open a lesson, and mark it completed', async ({ page })
 
   await page.getByRole('button', { name: 'Mark as Complete' }).click();
   await expect(page.getByRole('button', { name: 'Completed' })).toBeDisabled();
+});
+
+test('student can view the learning dashboard summary', async ({ page }) => {
+  await installStudentApiMocks(page);
+
+  await page.goto('/en/login');
+  await waitForHydratedForm(page);
+  await page.locator('input[type="email"]').fill('student@example.com');
+  await page.locator('input[type="password"]').fill('Student@123');
+  await page.getByRole('button', { name: 'Login Now' }).click();
+
+  await expect(page).toHaveURL(/\/en\/courses$/, { timeout: 15000 });
+  await page.goto('/en');
+
+  await expect(page.getByRole('heading', { name: 'Continue your course' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'HSK 1 Basics' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Resume lesson' })).toBeVisible();
 });

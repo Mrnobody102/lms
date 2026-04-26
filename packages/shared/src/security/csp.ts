@@ -10,9 +10,14 @@ function getOrigin(value: string | undefined): string | null {
 
 export function buildContentSecurityPolicy(
   connectSources: Array<string | undefined> = [],
-  options: { includeLocalhost?: boolean } = {},
+  options: { includeLocalhost?: boolean; allowUnsafeEval?: boolean } = {},
 ) {
   const allowedConnectSources = new Set(["'self'"]);
+  const scriptSources = ["'self'", "'unsafe-inline'"];
+
+  if (options.allowUnsafeEval) {
+    scriptSources.push("'unsafe-eval'");
+  }
 
   if (options.includeLocalhost) {
     [
@@ -29,7 +34,7 @@ export function buildContentSecurityPolicy(
 
   return [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline'",
+    `script-src ${scriptSources.join(' ')}`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https:",
     "font-src 'self' data:",

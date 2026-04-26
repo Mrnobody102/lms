@@ -27,24 +27,14 @@ export function EnrollmentPanel({
 }: EnrollmentPanelProps) {
   const t = useTranslations('Admin');
   const [search, setSearch] = useState('');
-  const { data, isLoading } = useStudents();
+  const { data, isLoading } = useStudents({ search: search.trim() || undefined });
 
   const enrolledUserIds = useMemo(
     () => new Set(enrollments.map((enrollment) => enrollment.userId)),
     [enrollments],
   );
 
-  const students = useMemo(() => {
-    const rawStudents = data?.data ?? [];
-    const keyword = search.trim().toLowerCase();
-    if (!keyword) return rawStudents;
-
-    return rawStudents.filter(
-      (student) =>
-        student.fullName.toLowerCase().includes(keyword) ||
-        student.email.toLowerCase().includes(keyword),
-    );
-  }, [data?.data, search]);
+  const students = data?.data ?? [];
 
   return (
     <section className="space-y-4" aria-labelledby={`${courseId}-enrollments-heading`}>

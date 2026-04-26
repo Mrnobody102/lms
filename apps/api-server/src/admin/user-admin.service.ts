@@ -10,7 +10,7 @@ export class UserAdminService {
   constructor(private prisma: PrismaService) {}
 
   async getUserList(currentUser: AuthenticatedUser, query: AdminUserQueryDto) {
-    const { page = 1, limit = 10, email, role, isActive } = query;
+    const { page = 1, limit = 10, email, search, role, isActive } = query;
     const skip = (page - 1) * limit;
 
     const where: Prisma.UserWhereInput = {
@@ -23,6 +23,13 @@ export class UserAdminService {
 
     if (email) {
       where.email = { contains: email, mode: 'insensitive' };
+    }
+
+    if (search) {
+      where.OR = [
+        { email: { contains: search, mode: 'insensitive' } },
+        { fullName: { contains: search, mode: 'insensitive' } },
+      ];
     }
 
     if (role) {

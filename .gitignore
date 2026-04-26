@@ -61,5 +61,11 @@ apps/super-portal/next-env.d.ts
 apps/web-admin/next-env.d.ts
 apps/web-student/next-env.d.ts
 
+# Playwright artifacts
+playwright-report
+test-results
+apps/*/playwright-report
+apps/*/test-results
+
 # TypeScript build info
 *.tsbuildinfo

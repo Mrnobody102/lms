@@ -16,7 +16,7 @@ Standards and patterns for the `apps/api-server` NestJS application. The API ser
 - **modular_architecture**: Feature-based modules (Auth, User, Admin, Course, Lesson, Progress) with global PrismaModule.
 - **dto_validation**: Strict input validation via `class-validator` + `ValidationPipe` with `whitelist: true, forbidNonWhitelisted: true`.
 - **swagger_documentation**: All endpoints decorated with `@ApiTags`, `@ApiOperation`, `@ApiBearerAuth`.
-- **response_wrapping**: `ResponseInterceptor` wraps all responses as `{ success, data }`, skips already-wrapped or paginated responses.
+- **response_contracts**: Controllers/services return explicit DTOs or plain JSON contracts. Do not rely on a global response wrapper unless one is wired in `main.ts`.
 - **exception_filtering**: `HttpExceptionFilter` returns `{ success, message, statusCode, timestamp }`.
 - **auth_guards**: `JwtAuthGuard` via `@nestjs/passport`, `RolesGuard` via `@Reflector`.
 - **multi_tenancy**: `TenantMiddleware` extracts `tenantId` from `x-tenant-id` header or subdomain. All services accept `tenantId` for data isolation.
@@ -25,11 +25,13 @@ Standards and patterns for the `apps/api-server` NestJS application. The API ser
 ## When to Use
 
 Use when:
+
 - Creating a new NestJS module, controller, service, or DTO in the API server.
 - Adding validation decorators, Swagger docs, or guards.
 - Implementing tenant-aware queries.
 
 Skip when:
+
 - Working purely on Next.js frontend apps (use `nextjs-standards`).
 - Writing tests (use `test-suite-builder` or `testing-strategy`).
 
@@ -56,17 +58,17 @@ All DTOs must use `class-validator` decorators AND `@ApiProperty()`:
 
 ```typescript
 export class CreateLessonDto {
-  @ApiProperty({ example: "Bai 1: Gioi thieu", description: "Lesson title" })
+  @ApiProperty({ example: 'Bai 1: Gioi thieu', description: 'Lesson title' })
   @IsString()
   @IsNotEmpty()
   title: string;
 
-  @ApiPropertyOptional({ example: "video" })
+  @ApiPropertyOptional({ example: 'video' })
   @IsString()
   @IsOptional()
   type?: string;
 
-  @ApiProperty({ example: "uuid-of-course" })
+  @ApiProperty({ example: 'uuid-of-course' })
   @IsUUID()
   @IsNotEmpty()
   courseId: string;
@@ -80,20 +82,20 @@ Use `ValidationPipe` globally in `main.ts` with `whitelist: true, forbidNonWhite
 ```typescript
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
-@ApiTags("lessons")
-@Controller("lessons")
+@ApiTags('lessons')
+@Controller('lessons')
 export class LessonController {
   constructor(private readonly lessonService: LessonService) {}
 
   @Post()
-  @ApiOperation({ summary: "Tạo bài học mới" })
+  @ApiOperation({ summary: 'Tạo bài học mới' })
   create(@Body() createDto: CreateLessonDto, @Request() req: any) {
     return this.lessonService.create({ ...createDto, tenantId: req.tenantId });
   }
 
   @Get()
-  @ApiQuery({ name: "courseId", required: true })
-  findAll(@Query("courseId") courseId: string, @Request() req: any) {
+  @ApiQuery({ name: 'courseId', required: true })
+  findAll(@Query('courseId') courseId: string, @Request() req: any) {
     return this.lessonService.findAll(courseId, req.tenantId);
   }
 }
@@ -104,7 +106,7 @@ export class LessonController {
 - Inject `PrismaService` via constructor.
 - Always pass `tenantId` to Prisma `where` clauses for multi-tenancy.
 - Throw `NotFoundException` when entity not found (with tenant context in message).
-- Return raw Prisma results; let `ResponseInterceptor` handle wrapping.
+- Return explicit data contracts from services/controllers. Do not assume an interceptor will reshape the response.
 
 ```typescript
 @Injectable()
@@ -127,13 +129,13 @@ export class LessonService {
 
 ## Common Pitfalls
 
-| Pitfall | Fix |
-|---|---|
-| Missing `@ApiBearerAuth` on protected routes | Add decorator so Swagger shows the auth lock icon |
-| Forgetting `tenantId` in Prisma `where` | Always extract from `req.tenantId` and pass to service |
-| Returning nested `{ success, data }` objects | Service should return raw data; interceptor handles wrapping |
-| Not excluding auth routes from TenantMiddleware | Already excluded in `app.module.ts` for `/auth/*` and `/admin/tenants/*` |
-| Using `req.user` without type | Cast `req` as `any` or define `AuthenticatedRequest` interface |
+| Pitfall                                           | Fix                                                                                                                 |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Missing `@ApiBearerAuth` on protected routes      | Add decorator so Swagger shows the auth lock icon                                                                   |
+| Forgetting `tenantId` in Prisma `where`           | Always extract from `req.tenantId` and pass to service                                                              |
+| Returning nested or inconsistent response objects | Keep each endpoint contract explicit and documented; add a real interceptor only if it is globally wired and tested |
+| Not excluding auth routes from TenantMiddleware   | Already excluded in `app.module.ts` for `/auth/*` and `/admin/tenants/*`                                            |
+| Using `req.user` without type                     | Cast `req` as `any` or define `AuthenticatedRequest` interface                                                      |
 
 ## Best Practices
 
@@ -146,12 +148,12 @@ export class LessonService {
 
 ## Related Skills
 
-| Skill | Use When |
-|---|---|
-| testing-strategy | Planning overall test coverage for the API |
-| test-suite-builder | Writing Vitest + Supertest for NestJS endpoints |
-| auth-standards | Understanding JWT flow and token structure |
-| database-operations | Prisma schema and query patterns |
+| Skill               | Use When                                        |
+| ------------------- | ----------------------------------------------- |
+| testing-strategy    | Planning overall test coverage for the API      |
+| test-suite-builder  | Writing Vitest + Supertest for NestJS endpoints |
+| auth-standards      | Understanding JWT flow and token structure      |
+| database-operations | Prisma schema and query patterns                |
 
 ## Reference Documentation
 

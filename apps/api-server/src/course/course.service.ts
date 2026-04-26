@@ -1,10 +1,14 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { EnrollmentStatus, Prisma, Role } from '@repo/database';
+import { LearningAccessService } from '../common/services/learning-access.service';
 import { PrismaService } from '../common/services/prisma.service';
 
 @Injectable()
 export class CourseService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly learningAccess: LearningAccessService,
+  ) {}
 
   async create(data: {
     title: string;
@@ -32,18 +36,9 @@ export class CourseService {
     const { page = 1, limit = 10, search } = options;
     const skip = (page - 1) * limit;
 
-    const where: Prisma.CourseWhereInput = { tenantId, deletedAt: null, isActive: true };
+    const where = this.learningAccess.courseWhere(tenantId, user);
     if (search) {
       Object.assign(where, { title: { contains: search, mode: 'insensitive' as const } });
-    }
-    if (user.role === Role.STUDENT) {
-      where.enrollments = {
-        some: {
-          userId: user.id,
-          tenantId,
-          status: EnrollmentStatus.ACTIVE,
-        },
-      };
     }
 
     const [courses, total] = await Promise.all([
@@ -82,7 +77,7 @@ export class CourseService {
   }
 
   async findOne(id: string, tenantId: string, user?: { id: string; role: Role }) {
-    const where: Prisma.CourseWhereInput = { id, tenantId, deletedAt: null, isActive: true };
+    const where = this.learningAccess.courseWhere(tenantId, user, id);
     const include: Prisma.CourseInclude = {
       lessons: {
         where: { deletedAt: null },
@@ -90,15 +85,7 @@ export class CourseService {
       },
     };
 
-    if (user?.role === Role.STUDENT) {
-      where.enrollments = {
-        some: {
-          userId: user.id,
-          tenantId,
-          status: EnrollmentStatus.ACTIVE,
-        },
-      };
-    } else {
+    if (user?.role !== Role.STUDENT) {
       include.enrollments = {
         where: { status: EnrollmentStatus.ACTIVE },
         include: {

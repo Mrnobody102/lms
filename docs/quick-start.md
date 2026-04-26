@@ -124,17 +124,17 @@ curl -X POST http://localhost:4000/api/auth/logout \
 
 ## Biến môi trường chính
 
-| Biến                    | Ý nghĩa                                                       |
-| ----------------------- | ------------------------------------------------------------- |
-| `DATABASE_URL`          | Kết nối PostgreSQL                                            |
-| `JWT_SECRET`            | Secret để ký JWT                                              |
-| `PORT`                  | Port API server                                               |
-| `NODE_ENV`              | `development` hoặc `production`                               |
-| `CORS_ORIGINS`          | Danh sách origin được phép                                    |
-| `NEXT_PUBLIC_TENANT_ID` | Tenant mặc định cho từng frontend local/dev                   |
-| `AUTH_COOKIE_SAME_SITE` | Chính sách SameSite cho cookie auth (`lax`, `strict`, `none`) |
-| `AUTH_COOKIE_DOMAIN`    | Cookie domain khi deploy frontend/API trên subdomain chung    |
-| `MCP_ENABLED`           | Bật MCP có chủ đích, mặc định nên là `false`                  |
+| Biến                    | Ý nghĩa                                                                          |
+| ----------------------- | -------------------------------------------------------------------------------- |
+| `DATABASE_URL`          | Kết nối PostgreSQL                                                               |
+| `JWT_SECRET`            | Secret để ký JWT                                                                 |
+| `PORT`                  | Port API server                                                                  |
+| `NODE_ENV`              | `development` hoặc `production`                                                  |
+| `CORS_ORIGINS`          | Danh sách origin được phép                                                       |
+| `NEXT_PUBLIC_TENANT_ID` | Tenant hint cho frontend local/dev; production nên resolve theo domain/subdomain |
+| `AUTH_COOKIE_SAME_SITE` | Chính sách SameSite cho cookie auth (`lax`, `strict`, `none`)                    |
+| `AUTH_COOKIE_DOMAIN`    | Cookie domain khi deploy frontend/API trên subdomain chung                       |
+| `MCP_ENABLED`           | Bật MCP có chủ đích, mặc định nên là `false`                                     |
 
 ## Scripts thường dùng
 
@@ -152,6 +152,15 @@ curl -X POST http://localhost:4000/api/auth/logout \
 | `pnpm db:resolve` | Resolve baseline/recovery migration |
 | `pnpm db:seed`    | Seed dữ liệu mẫu                    |
 | `pnpm db:studio`  | Mở Prisma Studio                    |
+
+`pnpm test:e2e` build các shared workspace dependency trước khi mở Playwright để Next app không đọc nhầm artifact `dist` cũ.
+
+## Production-readiness notes
+
+- Do not use `db:push` outside local prototyping. Use `pnpm db:deploy` for committed migrations.
+- Learning access is enforced both in service policy and tenant-scoped database constraints.
+- Dependencies are pinned in package manifests; run `pnpm install --frozen-lockfile` in CI/release flows.
+- MCP is optional and should remain disabled unless a deployment explicitly configures `MCP_ENABLED=true` and `MCP_API_KEY`.
 
 ## Roadmap feature hiện tại
 

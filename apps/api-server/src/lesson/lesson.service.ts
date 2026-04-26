@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/services/prisma.service';
-import { EnrollmentStatus, Prisma, LessonType, Role } from '@repo/database';
+import { Prisma, LessonType, Role } from '@repo/database';
+import { LearningAccessService } from '../common/services/learning-access.service';
 
 @Injectable()
 export class LessonService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly learningAccess: LearningAccessService,
+  ) {}
 
   async create(data: {
     title: string;
@@ -17,9 +21,8 @@ export class LessonService {
     courseId: string;
     tenantId: string;
   }) {
-    // Ensure course belongs to tenant
     const course = await this.prisma.course.findFirst({
-      where: { id: data.courseId, tenantId: data.tenantId, deletedAt: null, isActive: true },
+      where: this.learningAccess.courseWhere(data.tenantId, undefined, data.courseId),
     });
     if (!course)
       throw new NotFoundException(`Course with ID ${data.courseId} not found in this tenant`);
@@ -47,7 +50,7 @@ export class LessonService {
   ) {
     const { page = 1, limit = 10 } = options;
     const skip = (page - 1) * limit;
-    await this.ensureCourseAccess(courseId, tenantId, user);
+    await this.learningAccess.ensureCourseAccess(courseId, tenantId, user);
 
     const [lessons, total] = await Promise.all([
       this.prisma.lesson.findMany({
@@ -71,20 +74,7 @@ export class LessonService {
   }
 
   async findOne(id: string, tenantId: string, user?: { id: string; role: Role }) {
-    const where: Prisma.LessonWhereInput = { id, tenantId, deletedAt: null };
-    if (user?.role === Role.STUDENT) {
-      where.course = {
-        deletedAt: null,
-        isActive: true,
-        enrollments: {
-          some: {
-            userId: user.id,
-            tenantId,
-            status: EnrollmentStatus.ACTIVE,
-          },
-        },
-      };
-    }
+    const where = this.learningAccess.lessonWhere(tenantId, user, id);
 
     const lesson = await this.prisma.lesson.findFirst({ where });
     if (!lesson) throw new NotFoundException(`Lesson with ID ${id} not found in this tenant`);
@@ -125,37 +115,5 @@ export class LessonService {
       where: { id },
       data: { deletedAt: new Date() },
     });
-  }
-
-  private async ensureCourseAccess(
-    courseId: string,
-    tenantId: string,
-    user: { id: string; role: Role },
-  ) {
-    const where: Prisma.CourseWhereInput = {
-      id: courseId,
-      tenantId,
-      deletedAt: null,
-      isActive: true,
-    };
-
-    if (user.role === Role.STUDENT) {
-      where.enrollments = {
-        some: {
-          userId: user.id,
-          tenantId,
-          status: EnrollmentStatus.ACTIVE,
-        },
-      };
-    }
-
-    const course = await this.prisma.course.findFirst({
-      where,
-      select: { id: true },
-    });
-
-    if (!course) {
-      throw new NotFoundException(`Course with ID ${courseId} not found in this tenant`);
-    }
   }
 }

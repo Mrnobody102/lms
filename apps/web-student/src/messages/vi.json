@@ -17,6 +17,23 @@
       "roadmap": "Xem Lộ Trình",
       "watchVideo": "Xem Video Giới Thiệu"
     },
+    "dashboard": {
+      "badge": "Bảng học tập",
+      "title": "Tiếp tục khóa học",
+      "subtitle": "Mở lại bài tiếp theo và theo dõi tiến độ các khóa học đã được enroll.",
+      "allCourses": "Tất cả khóa học",
+      "loading": "Đang tải tiến độ học tập...",
+      "emptyTitle": "Chưa có tiến độ học tập",
+      "emptyDesc": "Mở một khóa học đã được enroll để bắt đầu ghi nhận tiến độ.",
+      "browseCourses": "Xem khóa học",
+      "continueLearning": "Tiếp tục học",
+      "completedCount": "Đã hoàn thành {completed} / {total} bài học",
+      "duration": "{minutes} phút",
+      "resume": "Học tiếp",
+      "enrolledCourses": "Khóa đã enroll",
+      "completedLessons": "Bài đã hoàn thành",
+      "overallProgress": "Tiến độ tổng"
+    },
     "features": {
       "whyUs": "Tại sao chọn chúng tôi?",
       "whyUsDesc": "Phương pháp học hiện đại kết hợp công nghệ AI giúp bạn nhớ từ vựng lâu hơn 300% so với cách học truyền thống.",

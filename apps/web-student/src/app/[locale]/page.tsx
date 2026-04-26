@@ -1,14 +1,29 @@
 'use client';
 
 import { Link } from '../../navigation';
-import { BookOpen, PlayCircle, Trophy, User as UserIcon } from 'lucide-react';
+import {
+  ArrowRight,
+  BarChart3,
+  BookOpen,
+  CheckCircle2,
+  Loader2,
+  PlayCircle,
+  Trophy,
+  User as UserIcon,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useAuthStore } from '../../features/auth/auth.store';
 import { StudentNav } from '../../components/layout/student-nav';
+import { useProgressSummary } from '../../hooks/use-progress';
 
 export default function Home() {
   const t = useTranslations('Student');
   const { isAuthenticated } = useAuthStore();
+
+  if (isAuthenticated) {
+    return <LearningDashboard />;
+  }
 
   return (
     <div className="min-h-screen font-sans">
@@ -107,6 +122,146 @@ export default function Home() {
           <p className="font-medium">&copy; 2026 LMS Platform. All rights reserved.</p>
         </div>
       </footer>
+    </div>
+  );
+}
+
+function LearningDashboard() {
+  const t = useTranslations('Student');
+  const { data: summary, isLoading } = useProgressSummary();
+  const activeCourse = summary?.activeCourse;
+  const totals = summary?.totals;
+
+  return (
+    <div className="min-h-screen bg-background font-sans">
+      <StudentNav showLinks />
+
+      <main className="mx-auto max-w-7xl px-6 py-10">
+        <header className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-primary">{t('dashboard.badge')}</p>
+            <h1 className="mt-1 text-3xl font-bold tracking-tight">{t('dashboard.title')}</h1>
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+              {t('dashboard.subtitle')}
+            </p>
+          </div>
+          <Link
+            href="/courses"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-md border px-4 text-sm font-medium hover:bg-muted"
+          >
+            {t('dashboard.allCourses')}
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </header>
+
+        {isLoading ? (
+          <div className="flex items-center gap-2 rounded-md border p-4 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            {t('dashboard.loading')}
+          </div>
+        ) : !activeCourse ? (
+          <section className="rounded-md border p-6">
+            <h2 className="text-lg font-semibold">{t('dashboard.emptyTitle')}</h2>
+            <p className="mt-2 text-sm text-muted-foreground">{t('dashboard.emptyDesc')}</p>
+            <Link
+              href="/courses"
+              className="mt-5 inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90"
+            >
+              {t('dashboard.browseCourses')}
+            </Link>
+          </section>
+        ) : (
+          <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
+            <section className="rounded-md border p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-primary">
+                    {t('dashboard.continueLearning')}
+                  </p>
+                  <h2 className="mt-2 text-2xl font-bold">{activeCourse.course.title}</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {activeCourse.continueLesson?.title}
+                  </p>
+                </div>
+                <div className="rounded-md bg-primary/10 px-3 py-2 text-sm font-semibold text-primary">
+                  {activeCourse.completionPercentage}%
+                </div>
+              </div>
+
+              <div className="mt-6 h-2 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-primary"
+                  style={{ width: `${activeCourse.completionPercentage}%` }}
+                />
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-4 text-sm text-muted-foreground">
+                <span>
+                  {t('dashboard.completedCount', {
+                    completed: activeCourse.completedLessons,
+                    total: activeCourse.totalLessons,
+                  })}
+                </span>
+                {activeCourse.continueLesson && (
+                  <span>
+                    {t('dashboard.duration', { minutes: activeCourse.continueLesson.duration })}
+                  </span>
+                )}
+              </div>
+
+              <Link
+                href={
+                  activeCourse.continueLesson
+                    ? `/lessons/${activeCourse.continueLesson.id}`
+                    : '/courses'
+                }
+                className="mt-6 inline-flex h-11 items-center justify-center gap-2 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground hover:opacity-90"
+              >
+                <PlayCircle className="h-4 w-4" />
+                {t('dashboard.resume')}
+              </Link>
+            </section>
+
+            <section className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+              <DashboardStat
+                icon={BookOpen}
+                label={t('dashboard.enrolledCourses')}
+                value={totals?.courses ?? 0}
+              />
+              <DashboardStat
+                icon={CheckCircle2}
+                label={t('dashboard.completedLessons')}
+                value={totals?.completedLessons ?? 0}
+              />
+              <DashboardStat
+                icon={BarChart3}
+                label={t('dashboard.overallProgress')}
+                value={`${totals?.completionPercentage ?? 0}%`}
+              />
+            </section>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+function DashboardStat({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: number | string;
+}) {
+  return (
+    <div className="rounded-md border p-4">
+      <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary">
+        <Icon className="h-4 w-4" />
+      </div>
+      <p className="text-2xl font-bold">{value}</p>
+      <p className="mt-1 text-sm text-muted-foreground">{label}</p>
     </div>
   );
 }

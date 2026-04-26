@@ -13,7 +13,7 @@
   },
   "peerDependencies": {
     "@repo/shared": "workspace:*",
-    "next": "latest",
+    "next": ">=14.1.0 <17",
     "react": "^18",
     "react-dom": "^18"
   },
@@ -51,6 +51,6 @@
     "tailwindcss": "^3.3.0",
     "typescript": "^5",
     "vite": "^5.4.11",
-    "vitest": "^4.0.17"
+    "vitest": "4.0.17"
   }
 }

@@ -22,6 +22,7 @@ import { ProgressController } from './progress/progress.controller';
 import { ProgressService } from './progress/progress.service';
 import { PrismaService } from './common/services/prisma.service';
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
+import { LearningAccessService } from './common/services/learning-access.service';
 
 vi.mock('bcrypt', () => ({
   hash: vi.fn(),
@@ -276,35 +277,74 @@ describe('Tenant resource HTTP flow', () => {
         }),
       },
       course: {
-        findMany: vi.fn().mockImplementation(({ where }: { where: Record<string, unknown> }) => {
-          const scopedCourses = courses
-            .filter((course) => {
-              const enrollmentFilter = where.enrollments as
-                | { some?: { userId: string; tenantId: string; status: EnrollmentStatus } }
-                | undefined;
-              const isEnrolled =
-                !enrollmentFilter?.some ||
-                enrollments.some(
-                  (enrollment) =>
-                    enrollment.courseId === course.id &&
-                    enrollment.userId === enrollmentFilter.some?.userId &&
-                    enrollment.tenantId === enrollmentFilter.some?.tenantId &&
-                    enrollment.status === enrollmentFilter.some?.status,
-                );
+        findMany: vi
+          .fn()
+          .mockImplementation(
+            ({
+              where,
+              include,
+            }: {
+              where: Record<string, unknown>;
+              include?: Record<string, unknown>;
+            }) => {
+              const scopedCourses = courses
+                .filter((course) => {
+                  const enrollmentFilter = where.enrollments as
+                    | { some?: { userId: string; tenantId: string; status: EnrollmentStatus } }
+                    | undefined;
+                  const isEnrolled =
+                    !enrollmentFilter?.some ||
+                    enrollments.some(
+                      (enrollment) =>
+                        enrollment.courseId === course.id &&
+                        enrollment.userId === enrollmentFilter.some?.userId &&
+                        enrollment.tenantId === enrollmentFilter.some?.tenantId &&
+                        enrollment.status === enrollmentFilter.some?.status,
+                    );
 
-              return course.tenantId === where.tenantId && course.deletedAt === null && isEnrolled;
-            })
-            .map((course) => ({
-              ...course,
-              _count: {
-                lessons: lessons.filter(
-                  (lesson) => lesson.courseId === course.id && lesson.deletedAt === null,
-                ).length,
-              },
-            }));
+                  return (
+                    course.tenantId === where.tenantId && course.deletedAt === null && isEnrolled
+                  );
+                })
+                .map((course) => ({
+                  ...course,
+                  _count: {
+                    lessons: lessons.filter(
+                      (lesson) => lesson.courseId === course.id && lesson.deletedAt === null,
+                    ).length,
+                  },
+                  ...(include?.lessons
+                    ? {
+                        lessons: lessons
+                          .filter(
+                            (lesson) => lesson.courseId === course.id && lesson.deletedAt === null,
+                          )
+                          .sort((a, b) => a.order - b.order)
+                          .map((lesson) => ({
+                            id: lesson.id,
+                            title: lesson.title,
+                            courseId: lesson.courseId,
+                            order: lesson.order,
+                            duration: lesson.duration,
+                            progress: progressRecords
+                              .filter(
+                                (record) =>
+                                  record.userId === currentUser.id &&
+                                  record.tenantId === course.tenantId &&
+                                  record.lessonId === lesson.id,
+                              )
+                              .map((record) => ({
+                                status: record.status,
+                                updatedAt: record.updatedAt,
+                              })),
+                          })),
+                      }
+                    : {}),
+                }));
 
-          return Promise.resolve(scopedCourses);
-        }),
+              return Promise.resolve(scopedCourses);
+            },
+          ),
         count: vi.fn().mockImplementation(({ where }: { where: Record<string, unknown> }) => {
           return Promise.resolve(
             courses.filter((course) => {
@@ -528,6 +568,7 @@ describe('Tenant resource HTTP flow', () => {
         CourseService,
         LessonService,
         ProgressService,
+        LearningAccessService,
         JwtStrategy,
         JwtAuthGuard,
         RolesGuard,
@@ -687,6 +728,29 @@ describe('Tenant resource HTTP flow', () => {
       expect.objectContaining({
         lessonId: lessonOneId,
         status: ProgressStatus.COMPLETED,
+      }),
+    );
+
+    const summary = await agent
+      .get('/progress/summary')
+      .set('x-tenant-id', tenantOneId)
+      .expect(200);
+
+    expect(summary.body).toEqual(
+      expect.objectContaining({
+        activeCourse: expect.objectContaining({
+          course: expect.objectContaining({ id: courseOneId }),
+          totalLessons: 1,
+          completedLessons: 1,
+          completionPercentage: 100,
+          continueLesson: expect.objectContaining({ id: lessonOneId }),
+        }),
+        totals: expect.objectContaining({
+          courses: 1,
+          lessons: 1,
+          completedLessons: 1,
+          completionPercentage: 100,
+        }),
       }),
     );
   });

@@ -27,6 +27,10 @@ LMS Platform đang đi theo hướng nền tảng học tập multi-tenant, có 
 - Student E2E flow: register/login/course/lesson/progress.
 - Release checks, smoke API, health/readiness, request id, metrics.
 - Production-safe database migration flow.
+- Tenant-scoped database constraints for learning relations.
+- Centralized learning access policy for course/lesson/progress.
+- Production tenant resolution no longer relies on frontend hardcoded tenant headers.
+- Reproducible dependency policy without `"latest"` package specs.
 
 Chưa có hoặc mới ở mức sơ khai:
 
@@ -81,6 +85,8 @@ Trạng thái: đang làm, backend/API/UI core đã có.
 - Enrollment model.
 - Admin enroll/unenroll học viên vào course.
 - Student course list/detail/lesson/progress bị giới hạn theo enrollment.
+- Tenant integrity is enforced in the database for lesson, enrollment, and progress relations.
+- Admin enrollment search is server-side.
 
 Còn cần:
 
@@ -92,11 +98,18 @@ Còn cần:
 
 Mục tiêu: tạo màn hình học tập chính gần với sản phẩm mục tiêu.
 
+Trạng thái: đã có bước đầu.
+
+Đã làm:
+
+- `GET /api/progress/summary` cho active course, continue lesson, completion percentage.
+- Trang home của student khi đã login hiển thị dashboard học tập thay vì hero marketing.
+- E2E cover register/login/lesson/progress và dashboard summary.
+
 Phạm vi:
 
 - Course/program selector.
 - Continue learning card.
-- Last accessed lesson.
 - Completion percentage theo course.
 - Daily activity/streak.
 - Progress chart đơn giản.
@@ -105,7 +118,7 @@ Phạm vi:
 Data cần bổ sung:
 
 - `lastAccessedAt` hoặc learning activity event.
-- Course-level progress aggregate.
+- Learning activity event để streak/reporting chính xác hơn.
 - Streak/activity calculation.
 
 ### P3. Content Hierarchy

@@ -35,6 +35,14 @@ export class ProgressController {
     );
   }
 
+  @Get('summary')
+  @ApiOperation({ summary: 'Get learning progress summary for the current user' })
+  @ApiResponse({ status: 200, description: 'Progress summary retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getSummary(@Request() req: AuthenticatedRequest) {
+    return this.progressService.getSummary(req.user.id, req.user.tenantId, req.user.role);
+  }
+
   @Get('course/:courseId')
   @ApiOperation({ summary: 'Get user progress for a specific course' })
   @ApiResponse({ status: 200, description: 'Progress retrieved successfully' })

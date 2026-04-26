@@ -8,6 +8,8 @@ import type { Request, Response } from 'express';
 
 vi.mock('@modelcontextprotocol/sdk/server/sse.js', () => ({
   SSEServerTransport: class MockSSEServerTransport {
+    sessionId = 'session-1';
+
     constructor(_path: string, _res: Response) {}
 
     async handlePostMessage() {

@@ -19,6 +19,7 @@ Một số endpoint yêu cầu tenant context hợp lệ.
   2. domain hoặc subdomain
 - Tenant hint chỉ được dùng để resolve tenant đang active.
 - Sau khi đã authenticate, server sẽ tiếp tục đối chiếu tenant của session với tenant của request.
+- Browser clients only send `x-tenant-id` automatically on local hosts by default. Production tenant resolution should come from domain/subdomain unless a trusted deployment explicitly opts in to sending the tenant header.
 
 Ví dụ header:
 
@@ -242,6 +243,7 @@ Quy tắc access:
 
 - Student chỉ đọc được lesson của course đã enroll.
 - Admin mutation vẫn yêu cầu RBAC.
+- Course, lesson, enrollment, and lesson-progress relations are also protected by tenant-scoped database constraints, not only by service-layer filters.
 
 ## Progress
 
@@ -258,13 +260,15 @@ Content-Type: application/json
 ```http
 GET /api/progress/course/:courseId
 GET /api/progress/lesson/:lessonId
+GET /api/progress/summary
 ```
 
 Quy tắc:
 
 - Progress được tenant-scoped.
 - Student chỉ update/read progress của lesson thuộc course đã enroll.
-- Roadmap tiếp theo sẽ mở rộng progress từ trạng thái `IN_PROGRESS`/`COMPLETED` sang completion percentage, last accessed lesson, streak và reporting.
+- `GET /api/progress/summary` trả về aggregate cho dashboard: active course, continue lesson, completed lesson count, completion percentage và tổng tiến độ.
+- Roadmap tiếp theo sẽ mở rộng progress sang learning activity event, streak và reporting.
 - `PUT /api/admin/tenants/:tenantId`
 
 ## Ghi chú bảo mật
@@ -277,6 +281,7 @@ Quy tắc:
   - `Secure` trong production
 - Tenant bị disable sẽ không thể tiếp tục dùng session hợp lệ.
 - Non-super-admin không thể chuyển tenant bằng cách đổi `x-tenant-id`.
+- MCP API key comparison uses a timing-safe check, and SSE transports are tracked per session instead of as a singleton transport.
 
 ## Ví dụ test bằng curl với cookie jar
 
