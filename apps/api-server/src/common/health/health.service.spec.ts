@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { HealthService } from './health.service';
+import { buildRedisCommand, HealthService, parseRedisConnectionUrl } from './health.service';
 
 describe('HealthService', () => {
   let prisma: { $queryRaw: ReturnType<typeof vi.fn> };
@@ -56,6 +56,22 @@ describe('HealthService', () => {
           audience: 'human',
         }),
       ]),
+    );
+  });
+
+  it('should parse TLS Redis URLs with credentials for managed Redis', () => {
+    expect(parseRedisConnectionUrl('rediss://default:p%40ssword@redis.example.com:6380')).toEqual({
+      host: 'redis.example.com',
+      port: 6380,
+      tls: true,
+      username: 'default',
+      password: 'p@ssword',
+    });
+  });
+
+  it('should build Redis RESP commands with byte-safe lengths', () => {
+    expect(buildRedisCommand(['AUTH', 'default', 'päss'])).toBe(
+      '*3\r\n$4\r\nAUTH\r\n$7\r\ndefault\r\n$5\r\npäss\r\n',
     );
   });
 });

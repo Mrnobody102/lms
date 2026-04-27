@@ -108,12 +108,13 @@ Khuyến nghị: dùng `LearningActivity` nếu muốn báo cáo/streak chính x
 
 ### 2. Content hierarchy
 
-Hiện `Course -> Lesson` là đủ cho MVP nhưng chưa giống sản phẩm HSK/book/unit.
+Hiện hệ thống đã chuyển từ `Course -> Lesson` sang `Course -> CourseUnit -> Lesson`.
 
-Khuyến nghị phase gần:
+Đã chốt ở phase gần:
 
-- Thêm `Unit` hoặc `Chapter`.
-- `Lesson` thuộc `Unit`, `Unit` thuộc `Course`.
+- Thêm `CourseUnit` làm unit/chapter thuộc `Course`.
+- `Lesson` giữ `courseId` và có `unitId` nullable để migrate dữ liệu cũ an toàn.
+- Course detail API trả cả `units` grouped và `lessons` phẳng để giữ backward compatibility.
 - Sau đó mới cân nhắc `Program/Level` nếu cần HSK 1/2/3 rõ ràng.
 
 ### 3. Practice và exam

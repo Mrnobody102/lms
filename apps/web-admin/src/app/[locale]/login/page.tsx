@@ -1,17 +1,16 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useParams } from 'next/navigation';
 import { LoginForm } from '@/features/auth/components/login-form';
+import { useRouter } from '@/navigation';
 
 export default function AdminLoginPage() {
   const t = useTranslations('Admin');
-  const params = useParams();
-  const locale = (params.locale as string) || 'vi';
+  const router = useRouter();
 
   // Redirect to dashboard after successful login
   const handleLoginSuccess = () => {
-    window.location.href = `/${locale}/`;
+    router.replace('/');
   };
 
   return (

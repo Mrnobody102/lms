@@ -14,11 +14,10 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { usePathname, useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useState } from 'react';
 import { useAuthStore } from '@/features/auth/auth.store';
 import { cn } from '@/lib/utils';
+import { Link, usePathname, useRouter } from '@/navigation';
 import { LanguageToggle } from '@repo/ui';
 
 export function AdminSidebar() {
@@ -39,15 +38,14 @@ export function AdminSidebar() {
   ];
 
   const isActive = (href: string) => {
-    if (href === '/' && pathname.endsWith('/')) return true;
-    if (href !== '/' && pathname.includes(href)) return true;
+    if (href === '/' && pathname === '/') return true;
+    if (href !== '/' && pathname.startsWith(href)) return true;
     return false;
   };
 
   const handleLogout = async () => {
-    const locale = pathname.match(/^\/(en|vi)(?:\/|$)/)?.[1] || 'vi';
     await logout();
-    router.push(`/${locale}/login`);
+    router.push('/login');
   };
 
   const toggleTheme = () => {

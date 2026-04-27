@@ -3,6 +3,76 @@ import { EnrollmentStatus, ProgressStatus } from '@repo/database';
 import { CourseService } from './course.service';
 
 describe('CourseService', () => {
+  it('should create a unit after validating the course tenant scope', async () => {
+    const prisma = {
+      course: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: 'course-1',
+          title: 'HSK 1 Basics',
+        }),
+      },
+      courseUnit: {
+        create: vi.fn().mockResolvedValue({
+          id: 'unit-1',
+          title: 'Unit 1',
+          courseId: 'course-1',
+          tenantId: 'tenant-1',
+        }),
+      },
+    };
+    const learningAccess = {
+      courseWhere: vi.fn().mockReturnValue({ tenantId: 'tenant-1', id: 'course-1' }),
+    };
+    const service = new CourseService(prisma as never, learningAccess as never);
+
+    await expect(
+      service.createUnit('course-1', 'tenant-1', { title: 'Unit 1', order: 1 }),
+    ).resolves.toEqual(expect.objectContaining({ id: 'unit-1' }));
+    expect(prisma.courseUnit.create).toHaveBeenCalledWith({
+      data: {
+        title: 'Unit 1',
+        description: undefined,
+        order: 1,
+        courseId: 'course-1',
+        tenantId: 'tenant-1',
+      },
+    });
+  });
+
+  it('should soft-delete a unit and keep its lessons as ungrouped', async () => {
+    const prisma = {
+      courseUnit: {
+        findFirst: vi.fn().mockResolvedValue({ id: 'unit-1' }),
+      },
+      $transaction: vi.fn(
+        async (
+          callback: (tx: {
+            lesson: { updateMany: ReturnType<typeof vi.fn> };
+            courseUnit: { update: ReturnType<typeof vi.fn> };
+          }) => Promise<unknown>,
+        ) => {
+          return callback({
+            lesson: {
+              updateMany: vi.fn().mockResolvedValue({ count: 2 }),
+            },
+            courseUnit: {
+              update: vi.fn().mockResolvedValue({
+                id: 'unit-1',
+                deletedAt: new Date('2026-04-27T00:00:00.000Z'),
+              }),
+            },
+          });
+        },
+      ),
+    };
+    const service = new CourseService(prisma as never, {} as never);
+
+    await expect(service.removeUnit('course-1', 'unit-1', 'tenant-1')).resolves.toEqual(
+      expect.objectContaining({ id: 'unit-1' }),
+    );
+    expect(prisma.$transaction).toHaveBeenCalledOnce();
+  });
+
   it('should aggregate enrollment progress report per learner', async () => {
     const prisma = {
       course: {

@@ -76,6 +76,7 @@
       "duration": "{minutes} phút",
       "goals": "Mục tiêu bài học",
       "requirements": "Yêu cầu đạt được",
+      "ungrouped": "Bài học chưa xếp unit",
       "sampleDesc": "Trong bài học này, chúng ta sẽ bắt đầu những bước đầu tiên trên hành trình chinh phục tiếng Trung. Bạn sẽ được học cách phát âm các vận mẫu, thanh mẫu cơ bản và cách chào hỏi người khác một cách lịch sự nhất.",
       "goalItems": [
         "Nắm vững bảng chữ cái Pinyin cơ bản",

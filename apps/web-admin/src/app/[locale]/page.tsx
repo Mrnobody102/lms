@@ -1,7 +1,7 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import Link from 'next/link';
+import { Link } from '@/navigation';
 import { AdminHeader } from '@/components/layout/admin-header';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
@@ -35,7 +35,7 @@ export default function AdminHome() {
         {
           label: t('newStudents'),
           value: overview.totals.newStudents7d,
-          trend: t('pendingStudentsValue', { count: overview.totals.pendingStudents }),
+          trend: t('inactiveStudentsValue', { count: overview.totals.inactiveStudents }),
           icon: UserPlus,
           color: 'text-emerald-600 dark:text-emerald-400',
           bg: 'bg-emerald-100 dark:bg-emerald-900',
@@ -144,11 +144,14 @@ export default function AdminHome() {
                   <div className="bg-card border rounded-xl p-5 flex flex-col gap-4">
                     <h2 className="text-base font-semibold">{t('quickActions')}</h2>
 
-                    <Link href="/courses" className="block">
+                    <Link
+                      href={{ pathname: '/students', query: { status: 'inactive' } }}
+                      className="block"
+                    >
                       <div className="inline-flex w-full items-center justify-between rounded-lg border border-input bg-background px-4 py-3 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground">
                         <span className="text-sm">{t('approveStudents')}</span>
                         <Badge variant="destructive" className="text-[10px] ml-2 shrink-0">
-                          {overview.totals.pendingStudents}
+                          {overview.totals.inactiveStudents}
                         </Badge>
                       </div>
                     </Link>

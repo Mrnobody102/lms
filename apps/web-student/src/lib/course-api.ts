@@ -9,6 +9,7 @@ export interface Lesson {
   duration: number;
   order: number;
   courseId: string;
+  unitId?: string | null;
   quiz?: {
     questions: {
       question: string;
@@ -18,10 +19,20 @@ export interface Lesson {
   };
 }
 
+export interface CourseUnit {
+  id: string;
+  title: string;
+  description?: string | null;
+  order: number;
+  courseId: string;
+  lessons?: Lesson[];
+}
+
 export interface Course {
   id: string;
   title: string;
   lessons?: Lesson[];
+  units?: CourseUnit[];
   _count?: { lessons: number };
   description?: string | null;
   totalDuration?: number;

@@ -20,7 +20,7 @@ export class AdminOverviewService {
     const [
       totalStudents,
       newStudents7d,
-      pendingStudents,
+      inactiveStudents,
       activeCourses,
       activeEnrollments,
       trackedSessions,
@@ -103,7 +103,7 @@ export class AdminOverviewService {
       totals: {
         totalStudents,
         newStudents7d,
-        pendingStudents,
+        inactiveStudents,
         activeCourses,
         activeEnrollments,
         trackedSessions,

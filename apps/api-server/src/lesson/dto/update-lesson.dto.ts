@@ -8,6 +8,7 @@ import {
   IsUrl,
   Min,
   IsObject,
+  IsUUID,
 } from 'class-validator';
 import { LessonType } from '@repo/database';
 
@@ -36,6 +37,11 @@ export class UpdateLessonDto {
   @IsOptional()
   @Min(0)
   order?: number;
+
+  @ApiPropertyOptional({ description: 'Course unit ID' })
+  @IsUUID()
+  @IsOptional()
+  unitId?: string | null;
 
   @ApiPropertyOptional({ description: 'Lesson type' })
   @IsEnum(LessonType, { message: 'Type must be one of: video, text, quiz' })

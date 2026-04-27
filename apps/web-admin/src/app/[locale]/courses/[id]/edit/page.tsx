@@ -14,6 +14,9 @@ import {
   useDeleteLesson,
   useEnrollStudent,
   useUnenrollStudent,
+  useCreateCourseUnit,
+  useUpdateCourseUnit,
+  useDeleteCourseUnit,
 } from '@/hooks/use-courses';
 import { CourseForm } from '@/features/courses/course-form';
 import { LessonList } from '@/features/courses/lesson-list';
@@ -25,7 +28,7 @@ import { EnrollmentPanel } from '@/features/courses/enrollment-panel';
 import { Lesson } from '@/lib/course-api';
 import { Button, Alert, AlertDescription } from '@/components/ui';
 import { ArrowLeft, ExternalLink, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@/navigation';
 
 export default function CourseEditorPage() {
   const t = useTranslations('Admin');
@@ -40,8 +43,12 @@ export default function CourseEditorPage() {
   const deleteLesson = useDeleteLesson();
   const enrollStudent = useEnrollStudent();
   const unenrollStudent = useUnenrollStudent();
+  const createCourseUnit = useCreateCourseUnit();
+  const updateCourseUnit = useUpdateCourseUnit();
+  const deleteCourseUnit = useDeleteCourseUnit();
 
   const [showAddLesson, setShowAddLesson] = useState(false);
+  const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [localTitle, setLocalTitle] = useState('');
@@ -82,6 +89,11 @@ export default function CourseEditorPage() {
         },
       );
     });
+  };
+
+  const handleAddLessonClick = (unitId?: string | null) => {
+    setSelectedUnitId(unitId ?? null);
+    setShowAddLesson(true);
   };
 
   const handleUpdateLesson = (data: Partial<Lesson>): Promise<boolean> => {
@@ -134,7 +146,57 @@ export default function CourseEditorPage() {
     );
   };
 
+  const handleAddUnit = (data: { title: string; order?: number }): Promise<boolean> => {
+    return new Promise((resolve) => {
+      createCourseUnit.mutate(
+        { courseId, data },
+        {
+          onSuccess: () => {
+            showMsg('success', 'unitAdded');
+            resolve(true);
+          },
+          onError: () => {
+            showMsg('error', 'unitSaveError');
+            resolve(false);
+          },
+        },
+      );
+    });
+  };
+
+  const handleUpdateUnit = (
+    unitId: string,
+    data: { title?: string; order?: number },
+  ): Promise<boolean> => {
+    return new Promise((resolve) => {
+      updateCourseUnit.mutate(
+        { courseId, unitId, data },
+        {
+          onSuccess: () => {
+            showMsg('success', 'unitUpdated');
+            resolve(true);
+          },
+          onError: () => {
+            showMsg('error', 'unitSaveError');
+            resolve(false);
+          },
+        },
+      );
+    });
+  };
+
+  const handleDeleteUnit = (unitId: string) => {
+    deleteCourseUnit.mutate(
+      { courseId, unitId },
+      {
+        onSuccess: () => showMsg('success', 'unitDeleted'),
+        onError: () => showMsg('error', 'unitDeleteError'),
+      },
+    );
+  };
+
   const lessons = course?.lessons ?? [];
+  const units = course?.units ?? [];
   const enrollments = course?.enrollments ?? [];
   const studentBaseUrl = process.env.NEXT_PUBLIC_WEB_STUDENT_URL;
   const firstLessonPreviewUrl =
@@ -184,12 +246,17 @@ export default function CourseEditorPage() {
                 <p className="text-sm text-muted-foreground mt-0.5">ID: {course.id}</p>
               </div>
               {firstLessonPreviewUrl && (
-                <Link href={firstLessonPreviewUrl} target="_blank" className="shrink-0">
+                <a
+                  href={firstLessonPreviewUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="shrink-0"
+                >
                   <Button variant="outline" size="sm" className="gap-1.5">
                     <ExternalLink className="w-4 h-4" />
                     {t('previewFirstLesson')}
                   </Button>
-                </Link>
+                </a>
               )}
             </div>
 
@@ -227,9 +294,13 @@ export default function CourseEditorPage() {
                 <div className="bg-card border rounded-xl p-5">
                   <LessonList
                     lessons={lessons}
+                    units={units}
                     onEdit={(lesson) => setEditingLesson(lesson)}
                     onDelete={handleDeleteLesson}
-                    onAddClick={() => setShowAddLesson(true)}
+                    onAddClick={handleAddLessonClick}
+                    onAddUnit={handleAddUnit}
+                    onUpdateUnit={handleUpdateUnit}
+                    onDeleteUnit={handleDeleteUnit}
                   />
                 </div>
               </div>
@@ -259,6 +330,8 @@ export default function CourseEditorPage() {
 
         <AddLessonDialog
           existingLessonsCount={lessons.length}
+          units={units}
+          selectedUnitId={selectedUnitId}
           onSubmit={handleAddLesson}
           open={showAddLesson}
           onOpenChange={setShowAddLesson}
@@ -266,6 +339,7 @@ export default function CourseEditorPage() {
         />
         <EditLessonDialog
           lesson={editingLesson}
+          units={units}
           onSubmit={handleUpdateLesson}
           open={!!editingLesson}
           onOpenChange={(open) => {

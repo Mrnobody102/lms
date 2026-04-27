@@ -77,6 +77,25 @@ async function main() {
     },
   });
 
+  const defaultUnit = await prisma.courseUnit.upsert({
+    where: {
+      id: `default-unit-${course.id}`,
+    },
+    update: {
+      title: 'Nhap mon',
+      order: 0,
+      deletedAt: null,
+    },
+    create: {
+      id: `default-unit-${course.id}`,
+      title: 'Nhap mon',
+      description: 'Cac bai hoc nen tang dau tien.',
+      order: 0,
+      tenantId: tenant.id,
+      courseId: course.id,
+    },
+  });
+
   if (existingLessons === 0) {
     await prisma.lesson.createMany({
       data: [
@@ -86,6 +105,7 @@ async function main() {
           videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
           duration: 15,
           order: 1,
+          unitId: defaultUnit.id,
           tenantId: tenant.id,
           courseId: course.id,
         },
@@ -96,6 +116,7 @@ async function main() {
             '<h2>Chao hoi trong tieng Trung</h2><p>Ni hao (你好) - Xin chao</p><p>Zaijian (再见) - Tam biet</p>',
           duration: 10,
           order: 2,
+          unitId: defaultUnit.id,
           tenantId: tenant.id,
           courseId: course.id,
         },
@@ -104,6 +125,7 @@ async function main() {
           type: LessonType.quiz,
           duration: 5,
           order: 3,
+          unitId: defaultUnit.id,
           tenantId: tenant.id,
           courseId: course.id,
           quiz: {

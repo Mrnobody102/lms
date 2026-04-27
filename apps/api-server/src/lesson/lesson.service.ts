@@ -18,6 +18,7 @@ export class LessonService {
     duration?: number;
     quiz?: Prisma.JsonValue;
     order?: number;
+    unitId?: string | null;
     courseId: string;
     tenantId: string;
   }) {
@@ -29,6 +30,8 @@ export class LessonService {
     if (!course)
       throw new NotFoundException(`Course with ID ${data.courseId} not found in this tenant`);
 
+    const unitId = await this.resolveLessonUnit(data.courseId, data.tenantId, data.unitId);
+
     return this.prisma.lesson.create({
       data: {
         title: data.title,
@@ -39,6 +42,7 @@ export class LessonService {
         quiz: data.quiz ? data.quiz : undefined,
         order: data.order || 0,
         courseId: data.courseId,
+        unitId,
         tenantId: data.tenantId,
       },
     });
@@ -94,12 +98,18 @@ export class LessonService {
       duration?: number;
       quiz?: Prisma.JsonValue | null;
       order?: number;
+      unitId?: string | null;
     },
   ) {
-    await this.findOne(id, tenantId);
+    const lesson = await this.findOne(id, tenantId);
+    const unitId =
+      data.unitId === undefined
+        ? undefined
+        : await this.resolveLessonUnit(lesson.courseId, tenantId, data.unitId);
 
-    const updateData: Prisma.LessonUpdateInput = {
+    const updateData: Prisma.LessonUncheckedUpdateInput = {
       ...data,
+      unitId,
       quiz: data.quiz === null ? undefined : data.quiz,
     };
 
@@ -117,5 +127,45 @@ export class LessonService {
       where: { id },
       data: { deletedAt: new Date() },
     });
+  }
+
+  private async resolveLessonUnit(
+    courseId: string,
+    tenantId: string,
+    unitId: string | null | undefined,
+  ) {
+    if (unitId === null) {
+      return null;
+    }
+
+    if (unitId) {
+      const unit = await this.prisma.courseUnit.findFirst({
+        where: {
+          id: unitId,
+          courseId,
+          tenantId,
+          deletedAt: null,
+        },
+        select: { id: true },
+      });
+
+      if (!unit) {
+        throw new NotFoundException(`Unit with ID ${unitId} not found in this course`);
+      }
+
+      return unit.id;
+    }
+
+    const defaultUnit = await this.prisma.courseUnit.findFirst({
+      where: {
+        courseId,
+        tenantId,
+        deletedAt: null,
+      },
+      orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+      select: { id: true },
+    });
+
+    return defaultUnit?.id ?? null;
   }
 }

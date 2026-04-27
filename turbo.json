@@ -4,6 +4,7 @@
   "globalEnv": [
     "CI",
     "PORT",
+    "APP_PUBLIC_URL",
     "DATABASE_URL",
     "NODE_ENV",
     "CORS_ORIGINS",

@@ -2,14 +2,13 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AdminHeader } from '@/components/layout/admin-header';
 import { AuthGuard } from '@/components/layout/auth-guard';
 import { useCreateCourse } from '@/hooks/use-courses';
 import { Button, Input, Label, Alert, AlertDescription } from '@/components/ui';
 import { ArrowLeft, Plus, Loader2, AlertCircle, BookOpen } from 'lucide-react';
-import Link from 'next/link';
+import { Link, useRouter } from '@/navigation';
 
 export default function NewCoursePage() {
   const t = useTranslations('Admin');

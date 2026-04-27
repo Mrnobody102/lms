@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import * as net from 'node:net';
+import * as tls from 'node:tls';
 import { URL } from 'node:url';
 import { PrismaService } from '../services/prisma.service';
 
@@ -13,6 +14,40 @@ interface HealthEndpointDoc {
   path: string;
   audience: 'monitoring' | 'human';
   purpose: string;
+}
+
+type RedisSocket = net.Socket | tls.TLSSocket;
+
+interface RedisConnectionOptions {
+  host: string;
+  port: number;
+  tls: boolean;
+  username?: string;
+  password?: string;
+}
+
+export function parseRedisConnectionUrl(redisUrl: string): RedisConnectionOptions {
+  const parsedUrl = new URL(redisUrl);
+
+  if (!['redis:', 'rediss:'].includes(parsedUrl.protocol)) {
+    throw new Error('REDIS_URL must use redis:// or rediss://');
+  }
+
+  return {
+    host: parsedUrl.hostname,
+    port: Number(parsedUrl.port || 6379),
+    tls: parsedUrl.protocol === 'rediss:',
+    username: parsedUrl.username ? decodeURIComponent(parsedUrl.username) : undefined,
+    password: parsedUrl.password ? decodeURIComponent(parsedUrl.password) : undefined,
+  };
+}
+
+export function buildRedisCommand(parts: string[]): string {
+  return [
+    `*${parts.length}`,
+    ...parts.flatMap((part) => [`$${Buffer.byteLength(part)}`, part]),
+    '',
+  ].join('\r\n');
 }
 
 @Injectable()
@@ -127,11 +162,27 @@ export class HealthService {
 
   private pingRedis(redisUrl: string, timeoutMs: number): Promise<string> {
     return new Promise((resolve, reject) => {
-      const parsedUrl = new URL(redisUrl);
-      const socket = net.createConnection({
-        host: parsedUrl.hostname,
-        port: Number(parsedUrl.port || 6379),
-      });
+      const redisOptions = parseRedisConnectionUrl(redisUrl);
+      const authCommand = redisOptions.password
+        ? buildRedisCommand(
+            redisOptions.username
+              ? ['AUTH', redisOptions.username, redisOptions.password]
+              : ['AUTH', redisOptions.password],
+          )
+        : null;
+      const pingCommand = buildRedisCommand(['PING']);
+      const socket: RedisSocket = redisOptions.tls
+        ? tls.connect({
+            host: redisOptions.host,
+            port: redisOptions.port,
+            servername: redisOptions.host,
+          })
+        : net.createConnection({
+            host: redisOptions.host,
+            port: redisOptions.port,
+          });
+      let responseBuffer = '';
+      let waitingFor: 'auth' | 'ping' = authCommand ? 'auth' : 'ping';
 
       const cleanup = () => {
         socket.removeAllListeners();
@@ -140,14 +191,40 @@ export class HealthService {
 
       socket.setTimeout(timeoutMs);
 
-      socket.once('connect', () => {
-        socket.write('*1\r\n$4\r\nPING\r\n');
+      socket.once(redisOptions.tls ? 'secureConnect' : 'connect', () => {
+        socket.write(authCommand ?? pingCommand);
       });
 
-      socket.once('data', (buffer) => {
-        const response = buffer.toString('utf8').trim();
-        cleanup();
-        resolve(response);
+      socket.on('data', (buffer) => {
+        responseBuffer += buffer.toString('utf8');
+
+        while (responseBuffer.includes('\r\n')) {
+          const separatorIndex = responseBuffer.indexOf('\r\n');
+          const response = responseBuffer.slice(0, separatorIndex).trim();
+          responseBuffer = responseBuffer.slice(separatorIndex + 2);
+
+          if (response.startsWith('-')) {
+            cleanup();
+            reject(new Error(`Redis health check failed: ${response.slice(1)}`));
+            return;
+          }
+
+          if (waitingFor === 'auth') {
+            if (response !== '+OK') {
+              cleanup();
+              reject(new Error(`Unexpected Redis AUTH response: ${response}`));
+              return;
+            }
+
+            waitingFor = 'ping';
+            socket.write(pingCommand);
+            continue;
+          }
+
+          cleanup();
+          resolve(response);
+          return;
+        }
       });
 
       socket.once('timeout', () => {

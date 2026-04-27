@@ -76,6 +76,7 @@
       "duration": "{minutes} mins",
       "goals": "Lesson Goals",
       "requirements": "Requirements",
+      "ungrouped": "Ungrouped lessons",
       "sampleDesc": "In this lesson, we will take the first steps on the journey to master Chinese. You will learn how to pronounce basic initials and finals, and how to greet others politely.",
       "goalItems": [
         "Master the basic Pinyin alphabet",

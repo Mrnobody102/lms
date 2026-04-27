@@ -62,7 +62,7 @@ describe('AdminOverviewService', () => {
     expect(result.totals).toEqual({
       totalStudents: 12,
       newStudents7d: 4,
-      pendingStudents: 2,
+      inactiveStudents: 2,
       activeCourses: 3,
       activeEnrollments: 2,
       trackedSessions: 18,

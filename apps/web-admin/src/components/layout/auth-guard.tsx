@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/features/auth/auth.store';
+import { useRouter } from '@/navigation';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -12,8 +12,6 @@ interface AuthGuardProps {
 export function AuthGuard({ children, loaderMessage = 'Loading...' }: AuthGuardProps) {
   const { isAuthenticated, checkAuth, isInitialized } = useAuthStore();
   const router = useRouter();
-  const pathname = usePathname();
-  const locale = pathname.match(/^\/(en|vi)(?:\/|$)/)?.[1] || 'vi';
 
   useEffect(() => {
     void checkAuth();
@@ -21,9 +19,9 @@ export function AuthGuard({ children, loaderMessage = 'Loading...' }: AuthGuardP
 
   useEffect(() => {
     if (isInitialized && !isAuthenticated) {
-      router.push(`/${locale}/login`);
+      router.push('/login');
     }
-  }, [isInitialized, isAuthenticated, locale, router]);
+  }, [isInitialized, isAuthenticated, router]);
 
   if (!isInitialized || !isAuthenticated) {
     return (

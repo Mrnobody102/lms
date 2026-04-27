@@ -7,22 +7,48 @@ import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { LoggerService } from './common/services/logger.service';
 
+function parseCorsOrigin(origin: string): string {
+  try {
+    const parsed = new URL(origin);
+
+    if (
+      !['http:', 'https:'].includes(parsed.protocol) ||
+      parsed.pathname !== '/' ||
+      parsed.search ||
+      parsed.hash
+    ) {
+      throw new Error();
+    }
+
+    return parsed.origin;
+  } catch {
+    throw new Error(`Invalid CORS origin "${origin}". Use an exact http(s) origin.`);
+  }
+}
+
 function getCorsOrigins(): string[] {
   const configuredOrigins = process.env.CORS_ORIGINS
     ? process.env.CORS_ORIGINS.split(',')
         .map((origin) => origin.trim())
         .filter(Boolean)
+        .map(parseCorsOrigin)
     : [];
 
   if (process.env.NODE_ENV === 'production') {
-    return configuredOrigins;
+    if (configuredOrigins.length === 0) {
+      throw new Error('CORS_ORIGINS is required in production');
+    }
+
+    return [...new Set(configuredOrigins)];
   }
 
   return [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:3002',
-    ...configuredOrigins,
+    ...new Set([
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://localhost:3002',
+      ...configuredOrigins,
+    ]),
   ];
 }
 
@@ -79,8 +105,10 @@ async function bootstrap() {
     SwaggerModule.setup('api/docs', app, document);
   }
 
-  await app.listen(process.env.PORT || 4000);
-  logger.info(`Application is running on: http://localhost:${process.env.PORT || 4000}/api`, {
+  const port = process.env.PORT || 4000;
+  await app.listen(port);
+  const publicUrl = process.env.APP_PUBLIC_URL ?? `http://localhost:${port}`;
+  logger.info(`Application is running on: ${publicUrl}/api`, {
     context: 'Bootstrap',
   });
 }

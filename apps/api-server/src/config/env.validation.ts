@@ -22,13 +22,20 @@ const commaSeparatedUrlSchema = z.string().refine(
       .every((origin) => {
         try {
           const parsed = new URL(origin);
-          return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+          return (
+            (parsed.protocol === 'http:' || parsed.protocol === 'https:') &&
+            parsed.pathname === '/' &&
+            !parsed.search &&
+            !parsed.hash
+          );
         } catch {
           return false;
         }
       }),
-  { message: 'Must be a comma-separated list of http(s) origins' },
+  { message: 'Must be a comma-separated list of exact http(s) origins' },
 );
+
+const publicUrlSchema = z.string().url().optional();
 
 const booleanEnvSchema = z
   .union([z.boolean(), z.string()])
@@ -39,6 +46,7 @@ export const envSchema = z
   .object({
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
     PORT: z.coerce.number().min(1).max(65535).default(4000),
+    APP_PUBLIC_URL: publicUrlSchema,
     DATABASE_URL: z.string().min(1),
 
     // Auth

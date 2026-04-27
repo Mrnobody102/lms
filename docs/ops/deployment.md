@@ -42,6 +42,7 @@ Backend environment variables:
 - `JWT_SECRET`
 - `JWT_EXPIRES_IN`
 - `CORS_ORIGINS`
+- `APP_PUBLIC_URL`
 - `AUTH_COOKIE_SAME_SITE`
 - `AUTH_COOKIE_DOMAIN`
 - `MCP_ENABLED`
@@ -58,7 +59,9 @@ Current production hardening notes:
 
 - Dependencies are pinned; do not reintroduce `"latest"` in package manifests.
 - Browser apps use cookie-first auth and do not store JWT as client authority.
-- CSP keeps `unsafe-eval` out of production. It is enabled only in non-production Next dev so webpack dev hydration and Playwright E2E can run.
+- CSP keeps `unsafe-inline` scripts and `unsafe-eval` out of production. They are enabled only in non-production Next dev so webpack dev hydration and Playwright E2E can run.
+- `CORS_ORIGINS` must contain exact frontend origins only, for example `https://admin.example.com,https://student.example.com` without paths or query strings.
+- Redis readiness supports `redis://`, `rediss://`, and URL credentials such as `rediss://default:password@host:6380`.
 - Learning access policy is centralized in `LearningAccessService`; new course/lesson/progress endpoints should use that service instead of duplicating enrollment checks.
 - MCP should stay disabled in production unless intentionally enabled with `MCP_ENABLED=true` and a strong `MCP_API_KEY`.
 
@@ -87,7 +90,7 @@ See [monitoring.md](monitoring.md) for operational details.
 ## 5. Troubleshooting
 
 - Database connection errors: verify `DATABASE_URL`, firewall rules, and migration state.
-- Redis readiness errors: verify `REDIS_URL` and network access.
-- CORS errors: ensure all frontend origins are listed in `CORS_ORIGINS`.
+- Redis readiness errors: verify `REDIS_URL`, TLS mode (`rediss://` for managed TLS Redis), credentials, and network access.
+- CORS errors: ensure all frontend origins are listed as exact origins in `CORS_ORIGINS`.
 - Cookie auth across subdomains: configure `AUTH_COOKIE_DOMAIN`, `AUTH_COOKIE_SAME_SITE`, and HTTPS.
 - Build errors: run `pnpm install --frozen-lockfile`, `pnpm --filter @repo/database generate`, then the failing build command.

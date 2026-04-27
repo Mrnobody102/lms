@@ -19,12 +19,17 @@ export interface ApiClientConfig {
   baseURL?: string;
   onUnauthorized?: () => void;
   sendTenantHeaderInProduction?: boolean;
+  supportedLocales?: readonly string[];
+  defaultLocale?: string;
 }
 
-function detectLocale(): string {
-  if (typeof window === 'undefined') return 'vi';
-  const match = window.location.pathname.match(/^\/(en|vi)(?:\/|$)/);
-  return match?.[1] || 'vi';
+function detectLocale(
+  supportedLocales: readonly string[] = ['vi', 'en'],
+  defaultLocale = 'vi',
+): string {
+  if (typeof window === 'undefined') return defaultLocale;
+  const locale = window.location.pathname.split('/')[1];
+  return supportedLocales.includes(locale) ? locale : defaultLocale;
 }
 
 function getDefaultBaseUrl(): string {
@@ -62,7 +67,13 @@ function resolveTenantHint(tenantId: ApiClientConfig['tenantId']): string | unde
 }
 
 export function createApiClient(config: ApiClientConfig = {}): AxiosInstance {
-  const { tenantId, onUnauthorized, sendTenantHeaderInProduction = false } = config;
+  const {
+    tenantId,
+    onUnauthorized,
+    sendTenantHeaderInProduction = false,
+    supportedLocales,
+    defaultLocale,
+  } = config;
 
   const api = axios.create({
     baseURL: config.baseURL ?? getDefaultBaseUrl(),
@@ -115,9 +126,11 @@ export function createApiClient(config: ApiClientConfig = {}): AxiosInstance {
         if (onUnauthorized) {
           onUnauthorized();
         } else {
-          const locale = detectLocale();
+          const locale = detectLocale(supportedLocales, defaultLocale);
           const returnUrl = window.location.pathname;
-          window.location.href = `/${locale}/login${returnUrl !== `/${locale}/login` ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`;
+          window.location.assign(
+            `/${locale}/login${returnUrl !== `/${locale}/login` ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`,
+          );
         }
       }
 

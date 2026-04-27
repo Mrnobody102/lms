@@ -1,6 +1,6 @@
 # Backlog Kỹ Thuật Và Theo Dõi Tiến Độ
 
-Cập nhật lần cuối: 2026-04-26
+Cập nhật lần cuối: 2026-04-27
 
 ## Mục tiêu
 
@@ -25,7 +25,7 @@ Nguyên tắc:
 | Migration hygiene production-safe      | Đã làm     | Có runbook baseline, `db:status`, `db:resolve`, guard `db:push` production                                           |
 | Enrollment / access model              | Đang làm   | Đã có DB/API/UI access control, shared policy, DB constraints; đã có reporting theo course và tenant overview cơ bản |
 | Student dashboard / continue learning  | Đang làm   | Đã có dashboard shell, streak UI, session count; còn chart và admin reporting                                        |
-| Content hierarchy                      | Chưa làm   | Cần `Unit/Chapter` trước khi nội dung lớn                                                                            |
+| Content hierarchy                      | Đã có V1   | `CourseUnit` thuộc course, lesson gắn unit, admin/student UI grouped theo unit                                       |
 | Practice engine                        | Chưa làm   | Cần question bank/exercise attempt                                                                                   |
 | Quiz attempt / grading                 | Chưa làm   | Nên đi sau progress/enrollment                                                                                       |
 | Activation / license code              | Chưa làm   | Phục vụ flow nhập mã kích hoạt                                                                                       |
@@ -139,7 +139,7 @@ Task:
 - [x] Scope shared package tests to `src` to avoid duplicate `dist` test execution.
 - [x] Harden MCP auth and per-session SSE transport handling.
 - [x] Make frontend tenant header local/dev by default; production resolves by host/domain.
-- [x] Allow CSP `unsafe-eval` only in non-production Next dev so browser E2E can hydrate under webpack.
+- [x] Allow CSP `unsafe-inline` scripts and `unsafe-eval` only in non-production Next dev so browser E2E can hydrate under webpack.
 - [ ] Add cross-environment deployment guide with concrete domain examples.
 
 ### Epic E. Progress Và Learning Experience
@@ -164,11 +164,13 @@ Task:
 
 Task:
 
-- [ ] Thiết kế `Unit/Chapter` thuộc course
-- [ ] Lesson thuộc unit/chapter nhưng vẫn migrate được dữ liệu hiện tại
-- [ ] Admin UI quản lý unit/chapter
-- [ ] Student lesson sidebar theo unit/chapter
-- [ ] Test ordering và soft-delete
+- [x] Thiết kế `CourseUnit` thuộc course
+- [x] Lesson thuộc unit/chapter nhưng vẫn migrate được dữ liệu hiện tại
+- [x] Admin UI quản lý unit/chapter
+- [x] Student lesson sidebar theo unit/chapter
+- [x] Test ordering và soft-delete ở service level
+- [ ] Drag/drop reorder unit và lesson trong admin UI
+- [ ] Progress/reporting aggregate theo unit
 
 ### Epic G. Practice Engine
 
@@ -225,10 +227,10 @@ Task:
 
 Thứ tự nên làm tiếp:
 
-1. Mở rộng progress theo enrollment: completion percentage, last accessed lesson, resume learning.
-2. Làm Student Dashboard V1 giống màn hình tổng quan học tập.
-3. Thêm content hierarchy `Unit/Chapter`.
-4. Sau đó mới mở practice engine và exam/test engine.
+1. Làm Practice Engine MVP theo course/unit/skill.
+2. Sau đó mở Exam/Test Engine MVP.
+3. Bổ sung report nâng cao theo unit/practice/exam.
+4. Sau đó mới làm activation/license và AI conversation.
 
 ## Checklist xác minh gần nhất
 

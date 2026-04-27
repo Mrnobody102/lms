@@ -1,17 +1,15 @@
 'use client';
 
-import { useParams } from 'next/navigation';
 import { RegisterForm } from '../../../features/auth/components/register-form';
-import { Link } from '../../../navigation';
+import { Link, useRouter } from '../../../navigation';
 import { useTranslations } from 'next-intl';
 
 export default function RegisterPage() {
   const t = useTranslations('Student');
-  const params = useParams();
-  const locale = (params.locale as string) || 'vi';
+  const router = useRouter();
 
   const handleRegisterSuccess = () => {
-    window.location.href = `/${locale}/courses`;
+    router.replace('/courses');
   };
 
   return (

@@ -9,6 +9,16 @@ export interface Lesson {
   duration: number;
   order: number;
   courseId: string;
+  unitId?: string | null;
+}
+
+export interface CourseUnit {
+  id: string;
+  title: string;
+  description?: string | null;
+  order: number;
+  courseId: string;
+  lessons?: Lesson[];
 }
 
 export interface Course {
@@ -16,6 +26,7 @@ export interface Course {
   title: string;
   description?: string | null;
   lessons: Lesson[];
+  units?: CourseUnit[];
   enrollments?: CourseEnrollment[];
   _count?: { lessons: number };
 }
@@ -128,6 +139,24 @@ export const courseApi = {
 
   getCourseReport(courseId: string) {
     return api.get(`/courses/${courseId}/report`).then((r) => r.data as CourseEnrollmentReport);
+  },
+
+  createUnit(courseId: string, data: { title: string; description?: string; order?: number }) {
+    return api.post(`/courses/${courseId}/units`, data).then((r) => r.data as CourseUnit);
+  },
+
+  updateUnit(
+    courseId: string,
+    unitId: string,
+    data: { title?: string; description?: string; order?: number },
+  ) {
+    return api
+      .patch(`/courses/${courseId}/units/${unitId}`, data)
+      .then((r) => r.data as CourseUnit);
+  },
+
+  deleteUnit(courseId: string, unitId: string) {
+    return api.delete(`/courses/${courseId}/units/${unitId}`).then((r) => r.data as CourseUnit);
   },
 
   createLesson(courseId: string, data: Partial<Lesson>) {

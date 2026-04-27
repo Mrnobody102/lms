@@ -61,3 +61,12 @@ graph TD
 - **`packages/shared`**: Đảm bảo các DTOs được sử dụng trong API Controllers khớp chính xác với các types được gọi ở Frontend.
 - **`packages/api-client`**: Shared axios instance với interceptors cho authentication và response handling, tránh duplicate code giữa các apps.
 - **`packages/ui`**: Shared components (shadcn/ui) được dùng chung cho tất cả frontend apps.
+
+## Learning Domain Hiện Tại
+
+Luồng nội dung học tập chính hiện là `Course -> CourseUnit -> Lesson`.
+
+- `Course` là khóa/book chính để enrollment và entitlement bám vào.
+- `CourseUnit` là unit/chapter trong course, dùng để nhóm curriculum và là điểm neo cho practice/reporting theo unit về sau.
+- `Lesson` vẫn giữ `courseId` để backward compatibility và access check nhanh, đồng thời có `unitId` nullable để migrate dữ liệu cũ an toàn.
+- Course detail API trả cả `units` grouped và `lessons` phẳng; frontend mới nên ưu tiên `units`, còn `lessons` phẳng dùng cho continue/next-prev compatibility.

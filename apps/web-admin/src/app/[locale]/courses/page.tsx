@@ -9,7 +9,7 @@ import { useCourses, useDeleteCourse } from '@/hooks/use-courses';
 import { CourseCard } from '@/features/courses/course-card';
 import { Button, Input, Separator, Skeleton, Alert, AlertDescription } from '@/components/ui';
 import { BookOpen, AlertCircle, Search } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@/navigation';
 
 export default function CoursesPage() {
   const t = useTranslations('Admin');

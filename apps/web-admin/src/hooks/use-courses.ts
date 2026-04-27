@@ -136,3 +136,51 @@ export function useDeleteLesson() {
     },
   });
 }
+
+export function useCreateCourseUnit() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      courseId,
+      data,
+    }: {
+      courseId: string;
+      data: { title: string; description?: string; order?: number };
+    }) => courseApi.createUnit(courseId, data),
+    onSuccess: (_data, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['course', vars.courseId] });
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
+    },
+  });
+}
+
+export function useUpdateCourseUnit() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      courseId,
+      unitId,
+      data,
+    }: {
+      courseId: string;
+      unitId: string;
+      data: { title?: string; description?: string; order?: number };
+    }) => courseApi.updateUnit(courseId, unitId, data),
+    onSuccess: (_data, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['course', vars.courseId] });
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
+    },
+  });
+}
+
+export function useDeleteCourseUnit() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ courseId, unitId }: { courseId: string; unitId: string }) =>
+      courseApi.deleteUnit(courseId, unitId),
+    onSuccess: (_data, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['course', vars.courseId] });
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
+    },
+  });
+}

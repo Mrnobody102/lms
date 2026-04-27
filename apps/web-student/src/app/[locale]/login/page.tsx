@@ -1,17 +1,15 @@
 'use client';
 
-import { useParams } from 'next/navigation';
 import { LoginForm } from '../../../features/auth/components/login-form';
-import { Link } from '../../../navigation';
+import { Link, useRouter } from '../../../navigation';
 import { useTranslations } from 'next-intl';
 
 export default function LoginPage() {
   const t = useTranslations('Student');
-  const params = useParams();
-  const locale = (params.locale as string) || 'vi';
+  const router = useRouter();
 
   const handleLoginSuccess = () => {
-    window.location.href = `/${locale}/courses`;
+    router.replace('/courses');
   };
 
   return (

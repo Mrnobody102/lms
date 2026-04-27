@@ -41,6 +41,11 @@ export class CreateLessonDto {
   @IsUUID()
   courseId: string;
 
+  @ApiPropertyOptional({ example: 'uuid-of-unit', description: 'Course unit ID' })
+  @IsUUID()
+  @IsOptional()
+  unitId?: string;
+
   @ApiPropertyOptional({ example: 'video', description: 'Lesson type' })
   @IsEnum(LessonType, { message: 'Type must be one of: video, text, quiz' })
   @IsOptional()

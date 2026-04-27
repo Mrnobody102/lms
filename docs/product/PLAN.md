@@ -1,6 +1,6 @@
 # Kế Hoạch Triển Khai LMS Platform
 
-Cập nhật lần cuối: 2026-04-26
+Cập nhật lần cuối: 2026-04-27
 
 ## Định hướng sản phẩm
 
@@ -23,6 +23,7 @@ LMS Platform đang đi theo hướng nền tảng học tập multi-tenant, có 
 - Cookie-first auth cho browser flow.
 - Tenant-aware auth và access checks.
 - Course/lesson CRUD cơ bản.
+- Course unit/chapter V1: schema/API/admin UI/student sidebar theo `CourseUnit`.
 - Enrollment DB/API/UI: admin enroll/unenroll, student chỉ thấy course được enroll.
 - Student E2E flow: register/login/course/lesson/progress.
 - Release checks, smoke API, health/readiness, request id, metrics.
@@ -36,7 +37,7 @@ LMS Platform đang đi theo hướng nền tảng học tập multi-tenant, có 
 Chưa có hoặc mới ở mức sơ khai:
 
 - Dashboard học tập giống màn hình tổng quan: continue learning, streak, progress chart.
-- Content hierarchy rõ hơn cho program/level/book/unit/lesson.
+- Program/level hierarchy cao hơn `CourseUnit` nếu nội dung HSK cần nhiều cấp hơn.
 - Practice engine/question bank.
 - Exam/test attempt/grading đầy đủ.
 - Reporting theo enrollment/progress.
@@ -92,7 +93,7 @@ Trạng thái: đang làm, backend/API/UI core đã có.
 Còn cần:
 
 - Reporting theo enrollment ở mức course detail đã có; dashboard tổng hợp theo tenant đã có bước đầu, còn thiếu phần theo class/cohort và filtering nâng cao.
-- Admin UX quản lý học viên tốt hơn: filter, bulk enroll, class/cohort.
+- Admin UX quản lý học viên đã có search + active/inactive filter + status toggle; còn bulk enroll, class/cohort và bulk action.
 - Xem trạng thái học viên trong từng course.
 
 ### P2. Student Dashboard V1
@@ -127,18 +128,29 @@ Data cần bổ sung:
 
 Mục tiêu: tránh để mọi thứ chỉ là `Course -> Lesson` khi sản phẩm có HSK/book/unit.
 
-Mô hình đề xuất:
+Trạng thái: đã có nền V1.
+
+Đã làm:
+
+- Thêm model `CourseUnit` thuộc `Course`, có tenant-scoped relation và soft-delete.
+- `Lesson` có thể thuộc `CourseUnit`; migration backfill lesson hiện tại vào unit mặc định.
+- Course detail API trả cả `units` grouped và `lessons` phẳng để giữ backward compatibility.
+- Admin course editor tạo/sửa/xóa unit và thêm/sửa lesson theo unit.
+- Student lesson sidebar hiển thị curriculum theo unit/chapter.
+- Unit soft-delete giữ lesson lại trong course dưới nhóm chưa xếp unit.
+
+Mô hình hiện tại:
 
 - `Program` hoặc `Track`: HSK, IELTS, Coding...
 - `Level`: HSK 1, HSK 2...
 - `Course` hoặc `Book`: khóa/chương trình cụ thể.
-- `Unit` hoặc `Chapter`.
+- `CourseUnit`: unit/chapter trong course.
 - `Lesson`.
 
-Quyết định cần chốt:
+Quyết định đã chốt:
 
-- Giữ `Course` làm book/course chính, thêm `Unit`.
-- Hay thêm `Program/Level` trước rồi course thuộc level.
+- Giữ `Course` làm book/course chính, thêm `CourseUnit` trước.
+- Chưa thêm `Program/Level`; để sau khi practice/exam/report cần phân cấp cao hơn.
 
 ### P4. Practice Engine
 
@@ -215,13 +227,12 @@ Phạm vi:
 
 ## Thứ tự làm tiếp đề xuất
 
-1. Student Dashboard V1: continue learning, completion percentage, last accessed lesson.
-2. Progress aggregate/reporting theo enrollment.
-3. Content hierarchy: thêm `Unit/Chapter` trước.
-4. Practice engine MVP.
-5. Exam/test engine MVP.
-6. Activation/license.
-7. AI conversation.
+1. Practice engine MVP theo course/unit/skill.
+2. Exam/test engine MVP.
+3. Reporting nâng cao theo unit/practice/exam.
+4. Activation/license.
+5. Program/level hierarchy nếu nội dung HSK cần nhiều cấp hơn.
+6. AI conversation.
 
 ## Definition Of Done Cấp Dự Án
 

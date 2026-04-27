@@ -13,7 +13,7 @@ import {
 } from '@/components/ui';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
+import { Link } from '@/navigation';
 
 interface CourseCardProps {
   course: Course;
@@ -60,14 +60,15 @@ export function CourseCard({ course, onDelete, deleting }: CourseCardProps) {
               </DropdownMenuItem>
               {previewUrl && (
                 <DropdownMenuItem asChild>
-                  <Link
+                  <a
                     href={previewUrl}
                     target="_blank"
+                    rel="noreferrer"
                     className="flex items-center gap-2 cursor-pointer"
                   >
                     <Eye className="w-4 h-4" />
                     {t('preview')}
-                  </Link>
+                  </a>
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />

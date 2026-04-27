@@ -10,10 +10,18 @@ function getOrigin(value: string | undefined): string | null {
 
 export function buildContentSecurityPolicy(
   connectSources: Array<string | undefined> = [],
-  options: { includeLocalhost?: boolean; allowUnsafeEval?: boolean } = {},
+  options: {
+    includeLocalhost?: boolean;
+    allowUnsafeEval?: boolean;
+    allowUnsafeInline?: boolean;
+  } = {},
 ) {
   const allowedConnectSources = new Set(["'self'"]);
-  const scriptSources = ["'self'", "'unsafe-inline'"];
+  const scriptSources = ["'self'"];
+
+  if (options.allowUnsafeInline) {
+    scriptSources.push("'unsafe-inline'");
+  }
 
   if (options.allowUnsafeEval) {
     scriptSources.push("'unsafe-eval'");

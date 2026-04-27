@@ -4,7 +4,7 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { useTenant } from '@/hooks/use-tenants';
 import { ArrowLeft, Building2, Globe, Settings, Activity } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@/navigation';
 import { format } from 'date-fns';
 import { useAuthStore } from '@/features/auth/auth.store';
 import { LoginModal } from '@/features/auth/components/login-modal';

@@ -23,6 +23,8 @@ import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { CourseQueryDto } from './dto/course-query.dto';
 import { EnrollStudentDto } from './dto/enroll-student.dto';
+import { CreateCourseUnitDto } from './dto/create-course-unit.dto';
+import { UpdateCourseUnitDto } from './dto/update-course-unit.dto';
 
 @ApiBearerAuth()
 @ApiTags('courses')
@@ -69,6 +71,43 @@ export class CourseController {
     @Request() req: AuthenticatedRequest,
   ) {
     return this.courseService.getEnrollmentReport(id, getScopedTenantId(req));
+  }
+
+  @Post(':id/units')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Create a unit/chapter inside a course' })
+  createUnit(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() createCourseUnitDto: CreateCourseUnitDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.courseService.createUnit(id, getScopedTenantId(req), createCourseUnitDto);
+  }
+
+  @Patch(':id/units/:unitId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Update a unit/chapter inside a course' })
+  updateUnit(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('unitId', ParseUUIDPipe) unitId: string,
+    @Body() updateCourseUnitDto: UpdateCourseUnitDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.courseService.updateUnit(id, unitId, getScopedTenantId(req), updateCourseUnitDto);
+  }
+
+  @Delete(':id/units/:unitId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Soft-delete a unit/chapter and keep its lessons ungrouped' })
+  removeUnit(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('unitId', ParseUUIDPipe) unitId: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.courseService.removeUnit(id, unitId, getScopedTenantId(req));
   }
 
   @Post(':id/enrollments')

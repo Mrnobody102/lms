@@ -1,13 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Lesson } from '@/lib/course-api';
-import { Button, Input, Label, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui';
+import { CourseUnit, Lesson } from '@/lib/course-api';
+import {
+  Button,
+  Input,
+  Label,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui';
 import { Loader2, Plus } from 'lucide-react';
 
 interface AddLessonDialogProps {
   existingLessonsCount: number;
+  units?: CourseUnit[];
+  selectedUnitId?: string | null;
   onSubmit: (data: Partial<Lesson>) => Promise<boolean>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -16,6 +27,8 @@ interface AddLessonDialogProps {
 
 export function AddLessonDialog({
   existingLessonsCount,
+  units = [],
+  selectedUnitId,
   onSubmit,
   open,
   onOpenChange,
@@ -26,6 +39,13 @@ export function AddLessonDialog({
   const [title, setTitle] = useState('');
   const [type, setType] = useState<'video' | 'text' | 'quiz'>('video');
   const [duration, setDuration] = useState(10);
+  const [unitId, setUnitId] = useState<string | null>(selectedUnitId ?? units[0]?.id ?? null);
+
+  useEffect(() => {
+    if (open) {
+      setUnitId(selectedUnitId ?? units[0]?.id ?? null);
+    }
+  }, [open, selectedUnitId, units]);
 
   const handleSubmit = async () => {
     if (!title.trim()) return;
@@ -34,11 +54,13 @@ export function AddLessonDialog({
       type,
       duration,
       order: existingLessonsCount + 1,
+      unitId,
     });
     if (success) {
       setTitle('');
       setType('video');
       setDuration(10);
+      setUnitId(selectedUnitId ?? units[0]?.id ?? null);
       onOpenChange(false);
     }
   };
@@ -48,6 +70,7 @@ export function AddLessonDialog({
       setTitle('');
       setType('video');
       setDuration(10);
+      setUnitId(selectedUnitId ?? units[0]?.id ?? null);
     }
     onOpenChange(isOpen);
   };
@@ -69,6 +92,24 @@ export function AddLessonDialog({
               autoFocus
             />
           </div>
+
+          {units.length > 0 && (
+            <div className="space-y-1.5">
+              <Label className="text-sm">{t('unit')}</Label>
+              <select
+                value={unitId ?? ''}
+                onChange={(event) => setUnitId(event.target.value || null)}
+                className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="">{t('ungroupedLessons')}</option>
+                {units.map((unit) => (
+                  <option key={unit.id} value={unit.id}>
+                    {unit.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <Label className="text-sm">{t('contentType')}</Label>

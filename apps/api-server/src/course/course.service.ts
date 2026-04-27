@@ -19,14 +19,27 @@ export class CourseService {
     description?: string;
     totalDuration?: number;
   }) {
-    return this.prisma.course.create({
-      data: {
-        title: data.title,
-        slug: data.slug,
-        description: data.description,
-        totalDuration: data.totalDuration,
-        tenantId: data.tenantId,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      const course = await tx.course.create({
+        data: {
+          title: data.title,
+          slug: data.slug,
+          description: data.description,
+          totalDuration: data.totalDuration,
+          tenantId: data.tenantId,
+        },
+      });
+
+      await tx.courseUnit.create({
+        data: {
+          title: 'General',
+          order: 0,
+          courseId: course.id,
+          tenantId: data.tenantId,
+        },
+      });
+
+      return course;
     });
   }
 
@@ -95,9 +108,19 @@ export class CourseService {
         : options,
     );
     const include: Prisma.CourseInclude = {
+      units: {
+        where: { deletedAt: null },
+        orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+        include: {
+          lessons: {
+            where: { deletedAt: null },
+            orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+          },
+        },
+      },
       lessons: {
         where: { deletedAt: null },
-        orderBy: { order: 'asc' },
+        orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
       },
     };
 
@@ -124,6 +147,59 @@ export class CourseService {
     });
     if (!course) throw new NotFoundException(`Course with ID ${id} not found in this tenant`);
     return course;
+  }
+
+  async createUnit(
+    courseId: string,
+    tenantId: string,
+    data: { title: string; description?: string; order?: number },
+  ) {
+    await this.findOne(courseId, tenantId, undefined, { includeInactive: true });
+
+    return this.prisma.courseUnit.create({
+      data: {
+        title: data.title,
+        description: data.description,
+        order: data.order ?? 0,
+        courseId,
+        tenantId,
+      },
+    });
+  }
+
+  async updateUnit(
+    courseId: string,
+    unitId: string,
+    tenantId: string,
+    data: { title?: string; description?: string; order?: number },
+  ) {
+    await this.ensureUnit(courseId, unitId, tenantId);
+
+    return this.prisma.courseUnit.update({
+      where: { id: unitId },
+      data,
+    });
+  }
+
+  async removeUnit(courseId: string, unitId: string, tenantId: string) {
+    await this.ensureUnit(courseId, unitId, tenantId);
+
+    return this.prisma.$transaction(async (tx) => {
+      await tx.lesson.updateMany({
+        where: {
+          courseId,
+          tenantId,
+          unitId,
+          deletedAt: null,
+        },
+        data: { unitId: null },
+      });
+
+      return tx.courseUnit.update({
+        where: { id: unitId },
+        data: { deletedAt: new Date() },
+      });
+    });
   }
 
   async update(
@@ -441,5 +517,23 @@ export class CourseService {
     }
 
     return 'NOT_STARTED';
+  }
+
+  private async ensureUnit(courseId: string, unitId: string, tenantId: string) {
+    const unit = await this.prisma.courseUnit.findFirst({
+      where: {
+        id: unitId,
+        courseId,
+        tenantId,
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+
+    if (!unit) {
+      throw new NotFoundException(`Unit with ID ${unitId} not found in this course`);
+    }
+
+    return unit;
   }
 }

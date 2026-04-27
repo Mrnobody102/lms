@@ -1,6 +1,7 @@
-"use client";
+'use client';
 
-import React, { Component, ReactNode } from "react";
+import { defaultLocale, locales } from '@repo/shared';
+import React, { Component, ReactNode } from 'react';
 
 interface Props {
   children: ReactNode;
@@ -10,6 +11,15 @@ interface Props {
 interface State {
   hasError: boolean;
   error?: Error;
+}
+
+function getLocalizedHomePath() {
+  if (typeof window === 'undefined') {
+    return `/${defaultLocale}`;
+  }
+
+  const locale = window.location.pathname.split('/')[1];
+  return (locales as readonly string[]).includes(locale) ? `/${locale}` : `/${defaultLocale}`;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
@@ -23,7 +33,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error("ErrorBoundary caught:", error, errorInfo);
+    console.error('ErrorBoundary caught:', error, errorInfo);
   }
 
   handleReset = () => {
@@ -38,11 +48,9 @@ export class ErrorBoundary extends Component<Props, State> {
           <div className="max-w-md w-full text-center space-y-6">
             <div className="space-y-2">
               <h1 className="text-6xl font-black text-destructive">!</h1>
-              <h2 className="text-2xl font-bold text-foreground">
-                Something went wrong
-              </h2>
+              <h2 className="text-2xl font-bold text-foreground">Something went wrong</h2>
               <p className="text-sm text-muted-foreground">
-                {this.state.error?.message || "An unexpected error occurred"}
+                {this.state.error?.message || 'An unexpected error occurred'}
               </p>
             </div>
             <div className="flex gap-3 justify-center">
@@ -53,7 +61,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 Try Again
               </button>
               <button
-                onClick={() => (window.location.href = "/")}
+                onClick={() => window.location.assign(getLocalizedHomePath())}
                 className="px-6 py-3 border border-border text-foreground font-bold rounded-2xl hover:bg-muted transition-colors"
               >
                 Go Home

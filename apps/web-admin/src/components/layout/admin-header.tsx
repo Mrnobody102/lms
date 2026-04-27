@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { Plus } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@/navigation';
 
 interface AdminHeaderProps {
   title: string;

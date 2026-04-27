@@ -129,8 +129,10 @@ curl -X POST http://localhost:4000/api/auth/logout \
 | `DATABASE_URL`          | Kết nối PostgreSQL                                                               |
 | `JWT_SECRET`            | Secret để ký JWT                                                                 |
 | `PORT`                  | Port API server                                                                  |
+| `APP_PUBLIC_URL`        | Public API host cho log/runbook; local dev có thể bỏ trống                       |
 | `NODE_ENV`              | `development` hoặc `production`                                                  |
-| `CORS_ORIGINS`          | Danh sách origin được phép                                                       |
+| `CORS_ORIGINS`          | Exact frontend origins, phân tách bằng dấu phẩy; production bắt buộc             |
+| `REDIS_URL`             | URL `redis://` hoặc `rediss://`; production readiness bắt buộc                   |
 | `NEXT_PUBLIC_TENANT_ID` | Tenant hint cho frontend local/dev; production nên resolve theo domain/subdomain |
 | `AUTH_COOKIE_SAME_SITE` | Chính sách SameSite cho cookie auth (`lax`, `strict`, `none`)                    |
 | `AUTH_COOKIE_DOMAIN`    | Cookie domain khi deploy frontend/API trên subdomain chung                       |
@@ -160,6 +162,7 @@ curl -X POST http://localhost:4000/api/auth/logout \
 
 - Do not use `db:push` outside local prototyping. Use `pnpm db:deploy` for committed migrations.
 - Learning access is enforced both in service policy and tenant-scoped database constraints.
+- Learning content hierarchy is `Course -> CourseUnit -> Lesson`; existing lessons are backfilled into a default unit by migration.
 - Dependencies are pinned in package manifests; run `pnpm install --frozen-lockfile` in CI/release flows.
 - MCP is optional and should remain disabled unless a deployment explicitly configures `MCP_ENABLED=true` and `MCP_API_KEY`.
 - If tenant-scoped MCP data tools are enabled, also configure `MCP_TENANT_ID` so the server cannot read across tenants by default.
@@ -174,8 +177,8 @@ Trạng thái sản phẩm và lộ trình chi tiết nằm ở:
 
 Thứ tự làm tiếp hiện tại:
 
-1. Student Dashboard V1: continue learning, completion percentage, last accessed lesson.
-2. Progress/reporting theo enrollment.
-3. Content hierarchy `Unit/Chapter`.
-4. Practice engine.
-5. Exam/test engine.
+1. Practice engine MVP theo course/unit/skill.
+2. Exam/test engine.
+3. Reporting nâng cao theo unit/practice/exam.
+4. Activation/license.
+5. Program/level hierarchy nếu nội dung cần nhiều cấp hơn.

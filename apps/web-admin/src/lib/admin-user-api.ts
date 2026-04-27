@@ -3,10 +3,17 @@ import api from './api';
 export interface AdminUser {
   id: string;
   email: string;
-  fullName: string;
+  fullName: string | null;
   role: 'SUPER_ADMIN' | 'ADMIN' | 'INSTRUCTOR' | 'STUDENT';
   isActive: boolean;
   tenantId: string;
+  createdAt?: string;
+  updatedAt?: string;
+  tenant?: {
+    id: string;
+    name: string;
+    slug: string;
+  };
 }
 
 interface PaginatedResponse<T> {
@@ -18,7 +25,7 @@ export interface AdminOverview {
   totals: {
     totalStudents: number;
     newStudents7d: number;
-    pendingStudents: number;
+    inactiveStudents: number;
     activeCourses: number;
     activeEnrollments: number;
     trackedSessions: number;
@@ -51,5 +58,11 @@ export const adminUserApi = {
         },
       })
       .then((r) => r.data as PaginatedResponse<AdminUser>);
+  },
+
+  updateUserStatus(userId: string, isActive: boolean) {
+    return api
+      .patch(`/admin/users/${userId}/status`, { isActive })
+      .then((r) => r.data as AdminUser);
   },
 };
