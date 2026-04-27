@@ -196,10 +196,10 @@ Trạng thái: backend MVP, admin template UI và student exam UI đã có.
 - Admin UI `/exams` tạo và list exam template theo course/unit.
 - Student UI `/exams` start attempt, submit answers và review score/pass-fail.
 - Student-facing exam reads không lộ đáp án hoặc giải thích trước khi submit.
+- Timer enforcement ở mức attempt đã có; backend reject submit quá hạn và UI hiển thị countdown/resume attempt còn hạn.
 
 Còn cần:
 
-- Timer enforcement.
 - Question types mở rộng: matching, ordering, listening.
 - Attempt history UI cho student.
 

@@ -202,6 +202,7 @@ Task:
 - [x] Student UI làm exam và review kết quả
 - [x] Student-facing exam reads không lộ đáp án/giải thích trước submit
 - [x] Demo seed IDs tương thích UUID route validation
+- [x] Timer enforcement cho exam attempt và resume attempt còn hạn
 
 ### Epic I. Reporting
 
@@ -239,7 +240,7 @@ Thứ tự nên làm tiếp:
 
 1. Bổ sung Practice/Exam report theo unit/skill từ dữ liệu attempt.
 2. Sau đó mở activation/license nếu cần kiểm soát entitlement.
-3. Bổ sung timer enforcement cho exam attempt.
+3. Bổ sung attempt history UI cho exam attempt.
 4. Mở rộng question types: matching, ordering, listening.
 
 ## Checklist xác minh gần nhất

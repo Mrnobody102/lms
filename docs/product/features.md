@@ -70,12 +70,13 @@ Cần làm tiếp:
 - Review result.
 - Authorization theo enrollment/license.
 - Student-facing reads không lộ đáp án/giải thích trước submit.
+- Timer enforcement với countdown/resume attempt còn hạn.
 - Admin UI quản lý exam template.
 - Student UI làm exam và review kết quả.
 
 Cần làm tiếp:
 
-- Timer enforcement.
+- Attempt history UI.
 
 ### Báo cáo cá nhân
 

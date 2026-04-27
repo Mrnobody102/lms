@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { ArrowLeft, CheckCircle2, Loader2, RotateCcw, XCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -27,6 +27,7 @@ export default function ExamAttemptPage() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [result, setResult] = useState<ExamAttemptResult | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [remainingMs, setRemainingMs] = useState<number | null>(null);
   const submitAttempt = useSubmitExamAttempt(attempt?.id);
 
   const visibleExam = activeExam ?? exam;
@@ -44,6 +45,31 @@ export default function ExamAttemptPage() {
       const answer = answers[question.id];
       return answer !== undefined && answer.trim() !== '';
     });
+  const timeExpired = attempt ? remainingMs !== null && remainingMs <= 0 : false;
+
+  useEffect(() => {
+    if (!attempt || result) {
+      setRemainingMs(null);
+      return;
+    }
+
+    const syncRemaining = () => {
+      const nextRemaining = new Date(attempt.deadlineAt).getTime() - Date.now();
+      setRemainingMs(Math.max(nextRemaining, 0));
+    };
+
+    syncRemaining();
+    const timer = window.setInterval(syncRemaining, 1000);
+    return () => window.clearInterval(timer);
+  }, [attempt, result]);
+
+  useEffect(() => {
+    if (!timeExpired || result) {
+      return;
+    }
+
+    setMessage((current) => current ?? t('exam.expiredMessage'));
+  }, [result, t, timeExpired]);
 
   const handleStart = () => {
     setMessage(null);
@@ -53,6 +79,10 @@ export default function ExamAttemptPage() {
         setActiveExam(data.exam);
         setAnswers({});
         setResult(null);
+        setRemainingMs(new Date(data.attempt.deadlineAt).getTime() - Date.now());
+        if (data.resumed) {
+          setMessage(t('exam.resumeMessage'));
+        }
       },
       onError: () => setMessage(t('exam.startError')),
     });
@@ -70,6 +100,10 @@ export default function ExamAttemptPage() {
       setMessage(t('exam.answerRequired'));
       return;
     }
+    if (timeExpired) {
+      setMessage(t('exam.expiredMessage'));
+      return;
+    }
 
     submitAttempt.mutate(
       questions.map((question) => ({
@@ -82,9 +116,11 @@ export default function ExamAttemptPage() {
       {
         onSuccess: (data) => {
           setResult(data);
+          setAttempt(data.attempt);
+          setRemainingMs(0);
           window.scrollTo({ top: 0, behavior: 'smooth' });
         },
-        onError: () => setMessage(t('exam.submitError')),
+        onError: (error) => setMessage(getSubmitErrorMessage(error, t)),
       },
     );
   };
@@ -95,6 +131,7 @@ export default function ExamAttemptPage() {
     setAnswers({});
     setResult(null);
     setMessage(null);
+    setRemainingMs(null);
   };
 
   return (
@@ -140,6 +177,21 @@ export default function ExamAttemptPage() {
                 {visibleExam.passingScore !== null && visibleExam.passingScore !== undefined && (
                   <span className="rounded-md border px-2 py-1">
                     {t('exam.passingScoreValue', { value: visibleExam.passingScore })}
+                  </span>
+                )}
+                {attempt && !result && (
+                  <span
+                    className={`rounded-md border px-2 py-1 ${
+                      timeExpired
+                        ? 'border-destructive/30 bg-destructive/5 text-destructive'
+                        : 'border-primary/20 bg-primary/5 text-primary'
+                    }`}
+                  >
+                    {timeExpired
+                      ? t('exam.expiredBadge')
+                      : t('exam.timeRemainingValue', {
+                          value: formatRemainingTime(remainingMs),
+                        })}
                   </span>
                 )}
               </div>
@@ -211,7 +263,7 @@ export default function ExamAttemptPage() {
                   {!result && (
                     <button
                       type="submit"
-                      disabled={submitAttempt.isPending}
+                      disabled={submitAttempt.isPending || timeExpired}
                       className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {submitAttempt.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -382,4 +434,30 @@ function formatAnswer(question: ExamQuestion | undefined, value: unknown) {
   }
 
   return String(value ?? '');
+}
+
+function formatRemainingTime(remainingMs: number | null) {
+  const totalSeconds = Math.max(0, Math.ceil((remainingMs ?? 0) / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+function getSubmitErrorMessage(error: unknown, t: ReturnType<typeof useTranslations<'Student'>>) {
+  const message =
+    typeof error === 'object' &&
+    error !== null &&
+    'response' in error &&
+    typeof error.response === 'object' &&
+    error.response !== null &&
+    'data' in error.response &&
+    typeof error.response.data === 'object' &&
+    error.response.data !== null &&
+    'message' in error.response.data
+      ? String(error.response.data.message)
+      : '';
+
+  return message.includes('time has expired')
+    ? t('exam.expiredSubmitError')
+    : t('exam.submitError');
 }

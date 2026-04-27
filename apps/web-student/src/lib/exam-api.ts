@@ -44,6 +44,8 @@ export interface ExamAttempt {
   totalPoints: number;
   status: 'STARTED' | 'SUBMITTED';
   startedAt: string;
+  deadlineAt: string;
+  isExpired: boolean;
   submittedAt?: string | null;
 }
 
@@ -80,7 +82,7 @@ export const examApi = {
   startAttempt(id: string) {
     return api
       .post(`/exams/${id}/attempts`)
-      .then((response) => response.data as { attempt: ExamAttempt; exam: Exam });
+      .then((response) => response.data as { attempt: ExamAttempt; exam: Exam; resumed: boolean });
   },
 
   submitAttempt(attemptId: string, answers: Array<{ questionId: string; answer: unknown }>) {

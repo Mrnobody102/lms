@@ -27,6 +27,11 @@ interface ExamWithSections {
   sections: Array<{ questions: ExamQuestionForScoring[] }>;
 }
 
+interface TimedAttempt {
+  startedAt: Date;
+  submittedAt?: Date | null;
+}
+
 @Injectable()
 export class ExamService {
   constructor(
@@ -141,6 +146,24 @@ export class ExamService {
       throw new BadRequestException('Exam has no questions');
     }
 
+    const existingAttempt = await this.prisma.examAttempt.findFirst({
+      where: {
+        tenantId,
+        userId: user.id,
+        examId: exam.id,
+        status: ExamAttemptStatus.STARTED,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (existingAttempt && !this.isAttemptExpired(existingAttempt, exam.durationMinutes)) {
+      return {
+        attempt: this.withAttemptTiming(existingAttempt, exam.durationMinutes),
+        exam: this.hideAnswers(exam),
+        resumed: true,
+      };
+    }
+
     const attempt = await this.prisma.examAttempt.create({
       data: {
         tenantId,
@@ -153,8 +176,9 @@ export class ExamService {
     });
 
     return {
-      attempt,
+      attempt: this.withAttemptTiming(attempt, exam.durationMinutes),
       exam: this.hideAnswers(exam),
+      resumed: false,
     };
   }
 
@@ -179,6 +203,9 @@ export class ExamService {
 
     if (attempt.status === ExamAttemptStatus.SUBMITTED) {
       throw new BadRequestException('Exam attempt has already been submitted');
+    }
+    if (this.isAttemptExpired(attempt, attempt.exam.durationMinutes)) {
+      throw new BadRequestException('Exam attempt time has expired');
     }
 
     await this.learningAccess.ensureCourseAccess(attempt.courseId, tenantId, user);
@@ -231,7 +258,7 @@ export class ExamService {
     });
 
     return {
-      attempt: submittedAttempt,
+      attempt: this.withAttemptTiming(submittedAttempt, attempt.exam.durationMinutes),
       result: this.buildResult(score, totalPoints, attempt.exam.passingScore, results),
     };
   }
@@ -259,6 +286,7 @@ export class ExamService {
             id: true,
             title: true,
             passingScore: true,
+            durationMinutes: true,
             course: { select: { id: true, title: true } },
             unit: { select: { id: true, title: true } },
           },
@@ -271,7 +299,11 @@ export class ExamService {
     }
 
     await this.learningAccess.ensureCourseAccess(attempt.courseId, tenantId, user);
-    return attempt;
+    return {
+      ...attempt,
+      deadlineAt: this.getAttemptDeadline(attempt, attempt.exam.durationMinutes),
+      isExpired: this.isAttemptExpired(attempt, attempt.exam.durationMinutes),
+    };
   }
 
   private async ensureCourse(tenantId: string, courseId: string) {
@@ -401,5 +433,25 @@ export class ExamService {
     return String(value ?? '')
       .trim()
       .toLocaleLowerCase();
+  }
+
+  private getAttemptDeadline(attempt: TimedAttempt, durationMinutes: number) {
+    return new Date(attempt.startedAt.getTime() + durationMinutes * 60_000);
+  }
+
+  private isAttemptExpired(attempt: TimedAttempt, durationMinutes: number) {
+    if (attempt.submittedAt) {
+      return false;
+    }
+
+    return this.getAttemptDeadline(attempt, durationMinutes).getTime() <= Date.now();
+  }
+
+  private withAttemptTiming<T extends TimedAttempt>(attempt: T, durationMinutes: number) {
+    return {
+      ...attempt,
+      deadlineAt: this.getAttemptDeadline(attempt, durationMinutes),
+      isExpired: this.isAttemptExpired(attempt, durationMinutes),
+    };
   }
 }

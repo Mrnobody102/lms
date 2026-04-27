@@ -87,3 +87,4 @@ Exam domain cũng đã tách khỏi `Lesson.quiz`:
 - Admin app quản lý exam template qua route `/exams`; student app làm bài và review kết quả qua route `/exams`.
 - Student exam APIs đi qua `LearningAccessService`, nên vẫn bị giới hạn bởi enrollment course hợp lệ.
 - Student exam reads không trả `correctAnswer` hoặc `explanation` trước khi submit.
+- Timer enforcement hiện được tính từ `startedAt + durationMinutes`; submit quá hạn bị reject và start attempt sẽ resume attempt `STARTED` còn hạn.
