@@ -27,7 +27,7 @@ Nguyên tắc:
 | Student dashboard / continue learning  | Đang làm             | Đã có dashboard shell, streak UI, session count; còn chart và admin reporting                                        |
 | Content hierarchy                      | Đã có V1             | `CourseUnit` thuộc course, lesson gắn unit, admin/student UI grouped theo unit                                       |
 | Practice engine                        | Đã có Student UI MVP | Question bank, exercise set, submit attempt/scoring, enrollment authorization, admin/student practice UI             |
-| Quiz / Exam attempt                    | Đã có Admin UI MVP   | Exam template, section/question, start/submit attempt, scoring, review, enrollment authorization, admin template UI  |
+| Quiz / Exam attempt                    | Đã có Student UI MVP | Exam template, section/question, start/submit attempt, scoring, review, enrollment authorization, admin/student UI   |
 | Activation / license code              | Chưa làm             | Phục vụ flow nhập mã kích hoạt                                                                                       |
 | AI conversation                        | Chưa làm             | Làm sau usage/reporting                                                                                              |
 | Media storage / background jobs        | Chưa làm             | Chỉ nên làm sau hạ tầng release ổn định                                                                              |
@@ -198,7 +198,7 @@ Task:
 - [x] Review kết quả attempt
 - [x] Test scoring + authorization ở service level
 - [x] Admin UI quản lý exam template
-- [ ] Student UI làm exam và review kết quả
+- [x] Student UI làm exam và review kết quả
 
 ### Epic I. Reporting
 
@@ -234,10 +234,10 @@ Task:
 
 Thứ tự nên làm tiếp:
 
-1. Nối Student UI làm exam và review kết quả.
-2. Bổ sung Practice/Exam report theo unit/skill từ dữ liệu attempt.
-3. Sau đó mở activation/license nếu cần kiểm soát entitlement.
-4. Bổ sung timer enforcement cho exam attempt.
+1. Bổ sung Practice/Exam report theo unit/skill từ dữ liệu attempt.
+2. Sau đó mở activation/license nếu cần kiểm soát entitlement.
+3. Bổ sung timer enforcement cho exam attempt.
+4. Mở rộng question types: matching, ordering, listening.
 
 ## Checklist xác minh gần nhất
 
@@ -258,6 +258,8 @@ Thứ tự nên làm tiếp:
 - [x] `pnpm --filter api-server build`
 - [x] `pnpm --filter web-admin lint`
 - [x] `pnpm --filter web-admin build`
+- [x] `pnpm --filter web-student lint`
+- [x] `pnpm --filter web-student build`
 
 Chưa xác minh xong:
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { BookOpen, Dumbbell, LogOut, User as UserIcon } from 'lucide-react';
+import { BookOpen, Dumbbell, FileCheck2, LogOut, User as UserIcon } from 'lucide-react';
 import { LanguageToggle, ThemeToggle } from '@repo/ui';
 import { useTranslations } from 'next-intl';
 import { Link } from '../../navigation';
@@ -39,6 +39,13 @@ export function StudentNav({ showLinks = false }: StudentNavProps) {
           >
             <Dumbbell className="h-3.5 w-3.5" />
             {t('nav.practice')}
+          </Link>
+          <Link
+            href="/exams"
+            className="inline-flex items-center gap-1.5 hover:text-primary transition-colors"
+          >
+            <FileCheck2 className="h-3.5 w-3.5" />
+            {t('nav.exams')}
           </Link>
           <Link href="#" className="hover:text-primary transition-colors">
             {t('nav.hsk')}

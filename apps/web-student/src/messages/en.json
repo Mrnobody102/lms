@@ -6,7 +6,8 @@
       "vocab": "Vocabulary",
       "blog": "Blog",
       "practice": "Practice",
-      "home": "Home"
+      "home": "Home",
+      "exams": "Exams"
     },
     "hero": {
       "badge": "Learn Chinese with HSK Standards",
@@ -164,6 +165,42 @@
       "percentageValue": "{value}% accuracy",
       "tryAgain": "Try again",
       "submit": "Submit answers"
+    },
+    "exam": {
+      "badge": "Exam",
+      "title": "Exams",
+      "subtitle": "Take published exams from your enrolled courses and review your result after submission.",
+      "loading": "Loading exams...",
+      "loadError": "Cannot load exams right now.",
+      "emptyTitle": "No exams yet",
+      "emptyDesc": "Your enrolled courses do not have published exams yet.",
+      "durationValue": "{minutes} mins",
+      "passingScoreValue": "Passing score: {value}%",
+      "noDescription": "No description",
+      "courseFallback": "Course",
+      "open": "Open exam",
+      "backToExams": "Back to exams",
+      "readyTitle": "Ready to start?",
+      "readyDesc": "Start the attempt when you are ready. Your answers will be graded after submission.",
+      "start": "Start exam",
+      "startError": "Cannot start this exam attempt.",
+      "startRequired": "Start the exam before submitting answers.",
+      "answerRequired": "Answer every question before submitting.",
+      "submitError": "Cannot submit this exam attempt.",
+      "multipleChoice": "Multiple choice",
+      "fillBlank": "Fill blank",
+      "fillBlankPlaceholder": "Type your answer",
+      "pointsValue": "{points, plural, one {# point} other {# points}}",
+      "correct": "Correct",
+      "incorrect": "Incorrect",
+      "correctAnswerValue": "Correct answer: {value}",
+      "result": "Result",
+      "scoreValue": "{score} / {total} points",
+      "percentageValue": "{value}% score",
+      "passed": "Passed",
+      "notPassed": "Not passed",
+      "tryAgain": "Try again",
+      "submit": "Submit exam"
     }
   }
 }
