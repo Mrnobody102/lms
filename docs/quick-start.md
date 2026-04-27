@@ -34,7 +34,7 @@ pnpm db:migrate
 pnpm db:seed
 ```
 
-Seed hiện tạo tenant demo, admin, student, course demo, lessons demo, enrollment cho student demo, practice exercise set mẫu và exam mẫu.
+Seed hiện tạo tenant demo, admin, student, course demo, lessons demo, enrollment cho student demo, practice exercise set mẫu và exam mẫu. Demo content IDs are UUID-compatible so they work with API route validation.
 
 ### 5. Chạy app ở chế độ dev
 
@@ -165,6 +165,7 @@ curl -X POST http://localhost:4000/api/auth/logout \
 - Learning content hierarchy is `Course -> CourseUnit -> Lesson`; existing lessons are backfilled into a default unit by migration.
 - Practice MVP has question bank, exercise sets, submitted attempts, scoring, enrollment-based access checks, admin management UI at `/practice`, and student attempt UI at `/practice`.
 - Exam MVP has templates, sections/questions, started/submitted attempts, score/review, enrollment-based access checks, admin template UI at `/exams`, and student exam UI at `/exams`.
+- Student-facing practice/exam reads do not expose correct answers or explanations before submission.
 - Dependencies are pinned in package manifests; run `pnpm install --frozen-lockfile` in CI/release flows.
 - MCP is optional and should remain disabled unless a deployment explicitly configures `MCP_ENABLED=true` and `MCP_API_KEY`.
 - If tenant-scoped MCP data tools are enabled, also configure `MCP_TENANT_ID` so the server cannot read across tenants by default.

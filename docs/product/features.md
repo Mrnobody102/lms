@@ -50,6 +50,7 @@ Cần làm tiếp:
 - Practice attempt.
 - Feedback ngay sau câu trả lời.
 - Authorization theo enrollment.
+- Student-facing reads không lộ đáp án/giải thích trước submit.
 - Admin UI quản lý question bank/exercise set.
 - Student UI làm bài practice và xem feedback.
 
@@ -68,6 +69,7 @@ Cần làm tiếp:
 - Grading.
 - Review result.
 - Authorization theo enrollment/license.
+- Student-facing reads không lộ đáp án/giải thích trước submit.
 - Admin UI quản lý exam template.
 - Student UI làm exam và review kết quả.
 

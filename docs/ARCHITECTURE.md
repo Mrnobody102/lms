@@ -77,6 +77,7 @@ Practice domain đã tách khỏi `Lesson.quiz`:
 - `PracticeExerciseSet` nhóm question theo course/unit và chỉ publish mới hiển thị cho student.
 - `PracticeAttempt` và `PracticeAnswer` lưu snapshot bài làm, điểm số và feedback để làm reporting theo unit/skill về sau.
 - Student practice APIs đi qua `LearningAccessService`, nên vẫn bị giới hạn bởi enrollment course hợp lệ.
+- Student practice reads không trả `correctAnswer` hoặc `explanation` trước khi submit; feedback chỉ trả trong kết quả attempt.
 
 Exam domain cũng đã tách khỏi `Lesson.quiz`:
 
@@ -85,3 +86,4 @@ Exam domain cũng đã tách khỏi `Lesson.quiz`:
 - `ExamAttempt` và `ExamAnswer` lưu lifecycle `STARTED`/`SUBMITTED`, score, answer snapshot và review result.
 - Admin app quản lý exam template qua route `/exams`; student app làm bài và review kết quả qua route `/exams`.
 - Student exam APIs đi qua `LearningAccessService`, nên vẫn bị giới hạn bởi enrollment course hợp lệ.
+- Student exam reads không trả `correctAnswer` hoặc `explanation` trước khi submit.

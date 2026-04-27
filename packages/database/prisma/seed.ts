@@ -7,8 +7,70 @@ import {
   ExamQuestionType,
 } from '../.prisma/client';
 import * as bcrypt from 'bcrypt';
+import { createHash } from 'crypto';
 
 const prisma = new PrismaClient();
+
+function deterministicUuid(input: string) {
+  const hash = createHash('sha256').update(input).digest('hex');
+  const variant = ((parseInt(hash.slice(16, 18), 16) & 0x3f) | 0x80).toString(16).padStart(2, '0');
+
+  return [
+    hash.slice(0, 8),
+    hash.slice(8, 12),
+    `4${hash.slice(13, 16)}`,
+    `${variant}${hash.slice(18, 20)}`,
+    hash.slice(20, 32),
+  ].join('-');
+}
+
+async function migrateLegacyDemoIds(courseId: string, ids: Record<string, string>) {
+  const legacyIds = {
+    defaultUnit: `default-unit-${courseId}`,
+    practiceQuestion: `practice-question-${courseId}-hello`,
+    practiceSet: `practice-set-${courseId}-intro`,
+    exam: `exam-${courseId}-intro`,
+    examSection: `exam-section-${courseId}-intro`,
+    examQuestion: `exam-question-${courseId}-hello`,
+  };
+
+  if (!(await prisma.courseUnit.findUnique({ where: { id: ids.defaultUnit } }))) {
+    await prisma.courseUnit.updateMany({
+      where: { id: legacyIds.defaultUnit },
+      data: { id: ids.defaultUnit },
+    });
+  }
+  if (!(await prisma.practiceQuestion.findUnique({ where: { id: ids.practiceQuestion } }))) {
+    await prisma.practiceQuestion.updateMany({
+      where: { id: legacyIds.practiceQuestion },
+      data: { id: ids.practiceQuestion },
+    });
+  }
+  if (!(await prisma.practiceExerciseSet.findUnique({ where: { id: ids.practiceSet } }))) {
+    await prisma.practiceExerciseSet.updateMany({
+      where: { id: legacyIds.practiceSet },
+      data: { id: ids.practiceSet },
+    });
+  }
+  if (!(await prisma.exam.findUnique({ where: { id: ids.exam } }))) {
+    await prisma.exam.updateMany({
+      where: { id: legacyIds.exam },
+      data: { id: ids.exam },
+    });
+  }
+  if (!(await prisma.examSection.findUnique({ where: { id: ids.examSection } }))) {
+    await prisma.examSection.updateMany({
+      where: { id: legacyIds.examSection },
+      data: { id: ids.examSection },
+    });
+  }
+  if (!(await prisma.examQuestion.findUnique({ where: { id: ids.examQuestion } }))) {
+    await prisma.examQuestion.updateMany({
+      where: { id: legacyIds.examQuestion },
+      data: { id: ids.examQuestion },
+    });
+  }
+}
 
 async function main() {
   console.log('Start seeding...');
@@ -84,9 +146,19 @@ async function main() {
     },
   });
 
+  const demoIds = {
+    defaultUnit: deterministicUuid(`demo:${course.id}:default-unit`),
+    practiceQuestion: deterministicUuid(`demo:${course.id}:practice-question:hello`),
+    practiceSet: deterministicUuid(`demo:${course.id}:practice-set:intro`),
+    exam: deterministicUuid(`demo:${course.id}:exam:intro`),
+    examSection: deterministicUuid(`demo:${course.id}:exam-section:intro`),
+    examQuestion: deterministicUuid(`demo:${course.id}:exam-question:hello`),
+  };
+  await migrateLegacyDemoIds(course.id, demoIds);
+
   const defaultUnit = await prisma.courseUnit.upsert({
     where: {
-      id: `default-unit-${course.id}`,
+      id: demoIds.defaultUnit,
     },
     update: {
       title: 'Nhap mon',
@@ -94,7 +166,7 @@ async function main() {
       deletedAt: null,
     },
     create: {
-      id: `default-unit-${course.id}`,
+      id: demoIds.defaultUnit,
       title: 'Nhap mon',
       description: 'Cac bai hoc nen tang dau tien.',
       order: 0,
@@ -151,7 +223,7 @@ async function main() {
 
   const practiceQuestion = await prisma.practiceQuestion.upsert({
     where: {
-      id: `practice-question-${course.id}-hello`,
+      id: demoIds.practiceQuestion,
     },
     update: {
       prompt: "Tu 'Xin chao' trong tieng Trung la gi?",
@@ -161,7 +233,7 @@ async function main() {
       deletedAt: null,
     },
     create: {
-      id: `practice-question-${course.id}-hello`,
+      id: demoIds.practiceQuestion,
       tenantId: tenant.id,
       courseId: course.id,
       unitId: defaultUnit.id,
@@ -176,7 +248,7 @@ async function main() {
 
   const practiceSet = await prisma.practiceExerciseSet.upsert({
     where: {
-      id: `practice-set-${course.id}-intro`,
+      id: demoIds.practiceSet,
     },
     update: {
       title: 'Luyen tap tu vung nhap mon',
@@ -184,7 +256,7 @@ async function main() {
       deletedAt: null,
     },
     create: {
-      id: `practice-set-${course.id}-intro`,
+      id: demoIds.practiceSet,
       tenantId: tenant.id,
       courseId: course.id,
       unitId: defaultUnit.id,
@@ -212,7 +284,7 @@ async function main() {
 
   const exam = await prisma.exam.upsert({
     where: {
-      id: `exam-${course.id}-intro`,
+      id: demoIds.exam,
     },
     update: {
       title: 'Kiem tra nhanh nhap mon',
@@ -222,7 +294,7 @@ async function main() {
       deletedAt: null,
     },
     create: {
-      id: `exam-${course.id}-intro`,
+      id: demoIds.exam,
       tenantId: tenant.id,
       courseId: course.id,
       unitId: defaultUnit.id,
@@ -236,14 +308,14 @@ async function main() {
 
   const examSection = await prisma.examSection.upsert({
     where: {
-      id: `exam-section-${course.id}-intro`,
+      id: demoIds.examSection,
     },
     update: {
       title: 'Tu vung',
       order: 0,
     },
     create: {
-      id: `exam-section-${course.id}-intro`,
+      id: demoIds.examSection,
       tenantId: tenant.id,
       examId: exam.id,
       title: 'Tu vung',
@@ -253,7 +325,7 @@ async function main() {
 
   await prisma.examQuestion.upsert({
     where: {
-      id: `exam-question-${course.id}-hello`,
+      id: demoIds.examQuestion,
     },
     update: {
       prompt: "Tu 'Xin chao' trong tieng Trung la gi?",
@@ -263,7 +335,7 @@ async function main() {
       skillTags: ['vocabulary'],
     },
     create: {
-      id: `exam-question-${course.id}-hello`,
+      id: demoIds.examQuestion,
       tenantId: tenant.id,
       sectionId: examSection.id,
       type: ExamQuestionType.MULTIPLE_CHOICE,

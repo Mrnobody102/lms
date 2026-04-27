@@ -134,4 +134,37 @@ describe('PracticeService', () => {
       }),
     );
   });
+
+  it('should hide correct answers and explanations from student exercise set reads', async () => {
+    const prisma = {
+      practiceExerciseSet: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: 'set-1',
+          courseId: 'course-1',
+          questions: [
+            {
+              question: {
+                id: 'question-1',
+                prompt: 'Choose one',
+                correctAnswer: 1,
+                explanation: 'Option 2 is correct',
+              },
+            },
+          ],
+        }),
+      },
+    };
+    const learningAccess = {
+      ensureCourseAccess: vi.fn().mockResolvedValue(undefined),
+    };
+    const service = new PracticeService(prisma as never, learningAccess as never);
+
+    const result = await service.getExerciseSet('set-1', 'tenant-1', {
+      id: 'user-1',
+      role: Role.STUDENT,
+    });
+
+    expect(result.questions[0].question).not.toHaveProperty('correctAnswer');
+    expect(result.questions[0].question).not.toHaveProperty('explanation');
+  });
 });

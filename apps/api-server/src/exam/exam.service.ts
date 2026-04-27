@@ -329,10 +329,9 @@ export class ExamService {
               type: true,
               prompt: true,
               options: true,
-              explanation: true,
               points: true,
               skillTags: true,
-              ...(includeCorrectAnswers ? { correctAnswer: true } : {}),
+              ...(includeCorrectAnswers ? { correctAnswer: true, explanation: true } : {}),
             },
           },
         },
@@ -348,7 +347,11 @@ export class ExamService {
       sections: exam.sections.map((section) => ({
         ...section,
         questions: section.questions.map((rawQuestion) => {
-          const { correctAnswer: _correctAnswer, ...question } = rawQuestion;
+          const {
+            correctAnswer: _correctAnswer,
+            explanation: _explanation,
+            ...question
+          } = rawQuestion;
           return question;
         }),
       })),

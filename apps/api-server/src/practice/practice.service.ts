@@ -302,9 +302,8 @@ export class PracticeService {
               type: true,
               prompt: true,
               options: true,
-              explanation: true,
               skillTags: true,
-              ...(includeCorrectAnswers ? { correctAnswer: true } : {}),
+              ...(includeCorrectAnswers ? { correctAnswer: true, explanation: true } : {}),
             },
           },
         },
@@ -318,7 +317,11 @@ export class PracticeService {
     return {
       ...exerciseSet,
       questions: exerciseSet.questions.map((link) => {
-        const { correctAnswer: _correctAnswer, ...question } = link.question;
+        const {
+          correctAnswer: _correctAnswer,
+          explanation: _explanation,
+          ...question
+        } = link.question;
         return { ...link, question };
       }),
     };

@@ -184,6 +184,7 @@ Task:
 - [x] Test authorization theo enrollment ở service level
 - [x] Admin UI quản lý question bank/exercise set
 - [x] Student UI làm bài practice và xem feedback
+- [x] Student-facing practice reads không lộ đáp án/giải thích trước submit
 - [ ] Practice report theo unit/skill
 
 ### Epic H. Quiz / Exam Attempt Và Grading
@@ -199,6 +200,8 @@ Task:
 - [x] Test scoring + authorization ở service level
 - [x] Admin UI quản lý exam template
 - [x] Student UI làm exam và review kết quả
+- [x] Student-facing exam reads không lộ đáp án/giải thích trước submit
+- [x] Demo seed IDs tương thích UUID route validation
 
 ### Epic I. Reporting
 

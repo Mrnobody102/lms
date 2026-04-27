@@ -178,4 +178,40 @@ describe('ExamService', () => {
       }),
     );
   });
+
+  it('should hide correct answers and explanations from student exam reads', async () => {
+    const prisma = {
+      exam: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: 'exam-1',
+          courseId: 'course-1',
+          sections: [
+            {
+              questions: [
+                {
+                  id: 'question-1',
+                  prompt: 'Choose one',
+                  correctAnswer: 1,
+                  explanation: 'B is correct',
+                  points: 1,
+                },
+              ],
+            },
+          ],
+        }),
+      },
+    };
+    const learningAccess = {
+      ensureCourseAccess: vi.fn().mockResolvedValue(undefined),
+    };
+    const service = new ExamService(prisma as never, learningAccess as never);
+
+    const result = await service.getExam('exam-1', 'tenant-1', {
+      id: 'user-1',
+      role: Role.STUDENT,
+    });
+
+    expect(result.sections[0].questions[0]).not.toHaveProperty('correctAnswer');
+    expect(result.sections[0].questions[0]).not.toHaveProperty('explanation');
+  });
 });
