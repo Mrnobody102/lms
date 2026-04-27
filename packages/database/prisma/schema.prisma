@@ -36,42 +36,55 @@ enum LearningActivityType {
   LESSON_COMPLETED
 }
 
+enum PracticeQuestionType {
+  MULTIPLE_CHOICE
+  FILL_BLANK
+}
+
+enum PracticeAttemptStatus {
+  SUBMITTED
+}
+
 model Tenant {
-  id          String             @id @default(uuid())
-  name        String
-  slug        String             @unique // Ví dụ: "trung-tam-a"
-  domain      String?            @unique // Custom domain sau này
-  settings    Json // Lưu logo, màu sắc, config
-  users       User[]
-  courses     Course[]
-  units       CourseUnit[]
-  lessons     Lesson[]
-  enrollments CourseEnrollment[]
-  activities  LearningActivity[]
-  isActive    Boolean            @default(true)
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @default(now()) @updatedAt
+  id               String                @id @default(uuid())
+  name             String
+  slug             String                @unique // Ví dụ: "trung-tam-a"
+  domain           String?               @unique // Custom domain sau này
+  settings         Json // Lưu logo, màu sắc, config
+  users            User[]
+  courses          Course[]
+  units            CourseUnit[]
+  lessons          Lesson[]
+  enrollments      CourseEnrollment[]
+  activities       LearningActivity[]
+  questions        PracticeQuestion[]
+  exerciseSets     PracticeExerciseSet[]
+  practiceAttempts PracticeAttempt[]
+  isActive         Boolean               @default(true)
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @default(now()) @updatedAt
 
   @@index([isActive])
 }
 
 model User {
-  id          String               @id @default(uuid())
-  email       String
-  password    String
-  fullName    String
-  phoneNumber String?
-  avatarUrl   String?
-  role        Role                 @default(STUDENT)
-  isActive    Boolean              @default(true)
-  deletedAt   DateTime?
-  tenantId    String
-  tenant      Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  progress    UserLessonProgress[]
-  enrollments CourseEnrollment[]
-  activities  LearningActivity[]
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
+  id               String               @id @default(uuid())
+  email            String
+  password         String
+  fullName         String
+  phoneNumber      String?
+  avatarUrl        String?
+  role             Role                 @default(STUDENT)
+  isActive         Boolean              @default(true)
+  deletedAt        DateTime?
+  tenantId         String
+  tenant           Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  progress         UserLessonProgress[]
+  enrollments      CourseEnrollment[]
+  activities       LearningActivity[]
+  practiceAttempts PracticeAttempt[]
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
 
   @@unique([tenantId, email])
   @@unique([id, tenantId])
@@ -81,21 +94,24 @@ model User {
 }
 
 model Course {
-  id            String             @id @default(uuid())
-  title         String
-  slug          String? // SEO-friendly slug
-  description   String?
-  isActive      Boolean            @default(true)
-  deletedAt     DateTime?
-  tenantId      String
-  tenant        Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  units         CourseUnit[]
-  lessons       Lesson[]
-  enrollments   CourseEnrollment[]
-  activities    LearningActivity[]
-  totalDuration Int                @default(0)
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
+  id               String                @id @default(uuid())
+  title            String
+  slug             String? // SEO-friendly slug
+  description      String?
+  isActive         Boolean               @default(true)
+  deletedAt        DateTime?
+  tenantId         String
+  tenant           Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  units            CourseUnit[]
+  lessons          Lesson[]
+  enrollments      CourseEnrollment[]
+  activities       LearningActivity[]
+  questions        PracticeQuestion[]
+  exerciseSets     PracticeExerciseSet[]
+  practiceAttempts PracticeAttempt[]
+  totalDuration    Int                   @default(0)
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
 
   @@unique([tenantId, slug])
   @@unique([id, tenantId])
@@ -104,18 +120,20 @@ model Course {
 }
 
 model CourseUnit {
-  id          String    @id @default(uuid())
-  title       String
-  description String?
-  order       Int       @default(0)
-  deletedAt   DateTime?
-  tenantId    String
-  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  courseId    String
-  course      Course    @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
-  lessons     Lesson[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id           String                @id @default(uuid())
+  title        String
+  description  String?
+  order        Int                   @default(0)
+  deletedAt    DateTime?
+  tenantId     String
+  tenant       Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  courseId     String
+  course       Course                @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  lessons      Lesson[]
+  questions    PracticeQuestion[]
+  exerciseSets PracticeExerciseSet[]
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
 
   @@unique([id, tenantId])
   @@index([tenantId, courseId, deletedAt])
@@ -206,4 +224,106 @@ model LearningActivity {
   @@index([courseId, occurredAt])
   @@index([lessonId, occurredAt])
   @@index([userId, lessonId, type, occurredAt])
+}
+
+model PracticeQuestion {
+  id            String                        @id @default(uuid())
+  tenantId      String
+  tenant        Tenant                        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  courseId      String
+  course        Course                        @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  unitId        String?
+  unit          CourseUnit?                   @relation(fields: [unitId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
+  type          PracticeQuestionType          @default(MULTIPLE_CHOICE)
+  prompt        String
+  options       Json?
+  correctAnswer Json
+  explanation   String?
+  skillTags     String[]
+  deletedAt     DateTime?
+  createdAt     DateTime                      @default(now())
+  updatedAt     DateTime                      @updatedAt
+  exerciseLinks PracticeExerciseSetQuestion[]
+  answers       PracticeAnswer[]
+
+  @@unique([id, tenantId])
+  @@index([tenantId, courseId, deletedAt])
+  @@index([unitId])
+  @@index([type])
+}
+
+model PracticeExerciseSet {
+  id          String                        @id @default(uuid())
+  tenantId    String
+  tenant      Tenant                        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  courseId    String
+  course      Course                        @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  unitId      String?
+  unit        CourseUnit?                   @relation(fields: [unitId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
+  title       String
+  description String?
+  isPublished Boolean                       @default(false)
+  deletedAt   DateTime?
+  createdAt   DateTime                      @default(now())
+  updatedAt   DateTime                      @updatedAt
+  questions   PracticeExerciseSetQuestion[]
+  attempts    PracticeAttempt[]
+
+  @@unique([id, tenantId])
+  @@index([tenantId, courseId, isPublished, deletedAt])
+  @@index([unitId])
+}
+
+model PracticeExerciseSetQuestion {
+  id            String              @id @default(uuid())
+  tenantId      String
+  exerciseSetId String
+  exerciseSet   PracticeExerciseSet @relation(fields: [exerciseSetId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  questionId    String
+  question      PracticeQuestion    @relation(fields: [questionId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  order         Int                 @default(0)
+  createdAt     DateTime            @default(now())
+
+  @@unique([exerciseSetId, questionId])
+  @@index([tenantId, exerciseSetId, order])
+  @@index([questionId])
+}
+
+model PracticeAttempt {
+  id            String                @id @default(uuid())
+  tenantId      String
+  tenant        Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User                  @relation(fields: [userId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  courseId      String
+  course        Course                @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  exerciseSetId String
+  exerciseSet   PracticeExerciseSet   @relation(fields: [exerciseSetId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  status        PracticeAttemptStatus @default(SUBMITTED)
+  score         Int
+  totalPoints   Int
+  submittedAt   DateTime              @default(now())
+  createdAt     DateTime              @default(now())
+  answers       PracticeAnswer[]
+
+  @@unique([id, tenantId])
+  @@index([tenantId, userId, submittedAt])
+  @@index([exerciseSetId, submittedAt])
+  @@index([courseId, submittedAt])
+}
+
+model PracticeAnswer {
+  id         String           @id @default(uuid())
+  tenantId   String
+  attemptId  String
+  attempt    PracticeAttempt  @relation(fields: [attemptId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  questionId String
+  question   PracticeQuestion @relation(fields: [questionId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  answer     Json
+  isCorrect  Boolean
+  createdAt  DateTime         @default(now())
+
+  @@unique([attemptId, questionId])
+  @@index([tenantId, attemptId])
+  @@index([questionId])
 }

@@ -1,4 +1,10 @@
-import { PrismaClient, Role, LessonType, EnrollmentStatus } from '../.prisma/client';
+import {
+  PrismaClient,
+  Role,
+  LessonType,
+  EnrollmentStatus,
+  PracticeQuestionType,
+} from '../.prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -141,6 +147,67 @@ async function main() {
       ],
     });
   }
+
+  const practiceQuestion = await prisma.practiceQuestion.upsert({
+    where: {
+      id: `practice-question-${course.id}-hello`,
+    },
+    update: {
+      prompt: "Tu 'Xin chao' trong tieng Trung la gi?",
+      options: ['Zaijian', 'Ni hao', 'Xiexie', 'Bu keqi'],
+      correctAnswer: 1,
+      skillTags: ['vocabulary'],
+      deletedAt: null,
+    },
+    create: {
+      id: `practice-question-${course.id}-hello`,
+      tenantId: tenant.id,
+      courseId: course.id,
+      unitId: defaultUnit.id,
+      type: PracticeQuestionType.MULTIPLE_CHOICE,
+      prompt: "Tu 'Xin chao' trong tieng Trung la gi?",
+      options: ['Zaijian', 'Ni hao', 'Xiexie', 'Bu keqi'],
+      correctAnswer: 1,
+      explanation: "'Ni hao' la cach chao co ban trong tieng Trung.",
+      skillTags: ['vocabulary'],
+    },
+  });
+
+  const practiceSet = await prisma.practiceExerciseSet.upsert({
+    where: {
+      id: `practice-set-${course.id}-intro`,
+    },
+    update: {
+      title: 'Luyen tap tu vung nhap mon',
+      isPublished: true,
+      deletedAt: null,
+    },
+    create: {
+      id: `practice-set-${course.id}-intro`,
+      tenantId: tenant.id,
+      courseId: course.id,
+      unitId: defaultUnit.id,
+      title: 'Luyen tap tu vung nhap mon',
+      description: 'Bai luyen tap nhanh cho unit nhap mon.',
+      isPublished: true,
+    },
+  });
+
+  await prisma.practiceExerciseSetQuestion.upsert({
+    where: {
+      exerciseSetId_questionId: {
+        exerciseSetId: practiceSet.id,
+        questionId: practiceQuestion.id,
+      },
+    },
+    update: { order: 0 },
+    create: {
+      tenantId: tenant.id,
+      exerciseSetId: practiceSet.id,
+      questionId: practiceQuestion.id,
+      order: 0,
+    },
+  });
 
   await prisma.courseEnrollment.upsert({
     where: {

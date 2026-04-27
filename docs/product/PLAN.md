@@ -38,7 +38,7 @@ Chưa có hoặc mới ở mức sơ khai:
 
 - Dashboard học tập giống màn hình tổng quan: continue learning, streak, progress chart.
 - Program/level hierarchy cao hơn `CourseUnit` nếu nội dung HSK cần nhiều cấp hơn.
-- Practice engine/question bank.
+- Practice UI cho admin/student; backend practice engine/question bank đã có MVP.
 - Exam/test attempt/grading đầy đủ.
 - Reporting theo enrollment/progress.
 - Activation/license code.
@@ -156,14 +156,23 @@ Quyết định đã chốt:
 
 Mục tiêu: phục vụ menu "Luyện tập".
 
-Phạm vi:
+Trạng thái: backend MVP đã có.
+
+Đã làm:
 
 - Question bank.
-- Exercise set.
-- Question types: multiple choice, fill blank, matching, ordering, listening.
-- Practice attempt.
+- Exercise set theo course/unit.
+- Question types MVP: multiple choice, fill blank.
+- Submit practice attempt, lưu answer snapshot, chấm điểm và trả feedback ngay.
+- Authorization theo enrollment/license nền hiện tại.
+- Demo seed có một exercise set mẫu.
+
+Còn cần:
+
+- Admin UI quản lý question bank/exercise set.
+- Student UI làm bài practice.
+- Question types mở rộng: matching, ordering, listening.
 - Skill tags: vocabulary, grammar, reading, listening, writing.
-- Immediate feedback.
 
 Không nên nhét lâu dài vào `Lesson.quiz`; cần tách domain practice.
 
@@ -227,12 +236,13 @@ Phạm vi:
 
 ## Thứ tự làm tiếp đề xuất
 
-1. Practice engine MVP theo course/unit/skill.
-2. Exam/test engine MVP.
-3. Reporting nâng cao theo unit/practice/exam.
-4. Activation/license.
-5. Program/level hierarchy nếu nội dung HSK cần nhiều cấp hơn.
-6. AI conversation.
+1. Admin UI cho question bank/exercise set.
+2. Student UI làm bài practice và xem feedback.
+3. Exam/test engine MVP.
+4. Reporting nâng cao theo unit/practice/exam.
+5. Activation/license.
+6. Program/level hierarchy nếu nội dung HSK cần nhiều cấp hơn.
+7. AI conversation.
 
 ## Definition Of Done Cấp Dự Án
 

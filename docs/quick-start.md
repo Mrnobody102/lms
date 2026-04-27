@@ -163,6 +163,7 @@ curl -X POST http://localhost:4000/api/auth/logout \
 - Do not use `db:push` outside local prototyping. Use `pnpm db:deploy` for committed migrations.
 - Learning access is enforced both in service policy and tenant-scoped database constraints.
 - Learning content hierarchy is `Course -> CourseUnit -> Lesson`; existing lessons are backfilled into a default unit by migration.
+- Practice backend MVP has question bank, exercise sets, submitted attempts, scoring, and enrollment-based access checks.
 - Dependencies are pinned in package manifests; run `pnpm install --frozen-lockfile` in CI/release flows.
 - MCP is optional and should remain disabled unless a deployment explicitly configures `MCP_ENABLED=true` and `MCP_API_KEY`.
 - If tenant-scoped MCP data tools are enabled, also configure `MCP_TENANT_ID` so the server cannot read across tenants by default.
@@ -177,8 +178,8 @@ Trạng thái sản phẩm và lộ trình chi tiết nằm ở:
 
 Thứ tự làm tiếp hiện tại:
 
-1. Practice engine MVP theo course/unit/skill.
-2. Exam/test engine.
-3. Reporting nâng cao theo unit/practice/exam.
-4. Activation/license.
-5. Program/level hierarchy nếu nội dung cần nhiều cấp hơn.
+1. Admin UI cho question bank/exercise set.
+2. Student UI làm bài practice và xem feedback.
+3. Exam/test engine.
+4. Reporting nâng cao theo unit/practice/exam.
+5. Activation/license.

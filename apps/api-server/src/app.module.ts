@@ -18,6 +18,7 @@ import { McpModule } from './mcp/mcp.module';
 import { LessonModule } from './lesson/lesson.module';
 import { CourseModule } from './course/course.module';
 import { ProgressModule } from './progress/progress.module';
+import { PracticeModule } from './practice/practice.module';
 import { HealthModule } from './common/health/health.module';
 import { MetricsModule } from './common/metrics/metrics.module';
 
@@ -56,6 +57,7 @@ import { MetricsModule } from './common/metrics/metrics.module';
     LessonModule,
     CourseModule,
     ProgressModule,
+    PracticeModule,
     MetricsModule,
     HealthModule,
   ],

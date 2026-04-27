@@ -70,3 +70,10 @@ Luồng nội dung học tập chính hiện là `Course -> CourseUnit -> Lesson
 - `CourseUnit` là unit/chapter trong course, dùng để nhóm curriculum và là điểm neo cho practice/reporting theo unit về sau.
 - `Lesson` vẫn giữ `courseId` để backward compatibility và access check nhanh, đồng thời có `unitId` nullable để migrate dữ liệu cũ an toàn.
 - Course detail API trả cả `units` grouped và `lessons` phẳng; frontend mới nên ưu tiên `units`, còn `lessons` phẳng dùng cho continue/next-prev compatibility.
+
+Practice domain đã tách khỏi `Lesson.quiz`:
+
+- `PracticeQuestion` là question bank theo tenant/course/unit, hỗ trợ MVP `MULTIPLE_CHOICE` và `FILL_BLANK`.
+- `PracticeExerciseSet` nhóm question theo course/unit và chỉ publish mới hiển thị cho student.
+- `PracticeAttempt` và `PracticeAnswer` lưu snapshot bài làm, điểm số và feedback để làm reporting theo unit/skill về sau.
+- Student practice APIs đi qua `LearningAccessService`, nên vẫn bị giới hạn bởi enrollment course hợp lệ.
