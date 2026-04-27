@@ -16,6 +16,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
 import { getScopedTenantId } from '../common/utils/tenant-request.util';
+import { ExamAttemptQueryDto } from './dto/exam-attempt-query.dto';
 import { CreateExamDto } from './dto/create-exam.dto';
 import { ExamQueryDto } from './dto/exam-query.dto';
 import { SubmitExamAttemptDto } from './dto/submit-exam-attempt.dto';
@@ -50,6 +51,13 @@ export class ExamController {
     @Request() req: AuthenticatedRequest,
   ) {
     return this.examService.getAttempt(attemptId, getScopedTenantId(req), req.user);
+  }
+
+  @Get('attempts')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'List exam attempts visible to the current user' })
+  listAttempts(@Query() query: ExamAttemptQueryDto, @Request() req: AuthenticatedRequest) {
+    return this.examService.listAttempts(getScopedTenantId(req), req.user, query);
   }
 
   @Post('attempts/:attemptId/submit')

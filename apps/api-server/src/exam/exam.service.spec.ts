@@ -325,4 +325,93 @@ describe('ExamService', () => {
     expect(result.sections[0].questions[0]).not.toHaveProperty('correctAnswer');
     expect(result.sections[0].questions[0]).not.toHaveProperty('explanation');
   });
+
+  it('should list recent exam attempts with timing metadata for the current student', async () => {
+    const startedAt = new Date(Date.now() - 5 * 60_000);
+    const prisma = {
+      examAttempt: {
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: 'attempt-1',
+            userId: 'user-1',
+            courseId: 'course-1',
+            startedAt,
+            submittedAt: null,
+            exam: {
+              id: 'exam-1',
+              title: 'Midterm',
+              durationMinutes: 30,
+              passingScore: 60,
+              course: { id: 'course-1', title: 'HSK 1' },
+              unit: { id: 'unit-1', title: 'Unit 1' },
+            },
+          },
+        ]),
+      },
+    };
+    const learningAccess = {
+      courseWhere: vi.fn().mockReturnValue({ tenantId: 'tenant-1', userId: 'user-1' }),
+    };
+    const service = new ExamService(prisma as never, learningAccess as never);
+
+    const result = await service.listAttempts('tenant-1', { id: 'user-1', role: Role.STUDENT }, {});
+
+    expect(prisma.examAttempt.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ tenantId: 'tenant-1', userId: 'user-1' }),
+        take: 10,
+      }),
+    );
+    expect(result[0]).toHaveProperty('deadlineAt');
+    expect(result[0].isExpired).toBe(false);
+  });
+
+  it('should return exam attempt review with answer metadata and deadline state', async () => {
+    const startedAt = new Date(Date.now() - 5 * 60_000);
+    const prisma = {
+      examAttempt: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: 'attempt-1',
+          courseId: 'course-1',
+          startedAt,
+          submittedAt: new Date(),
+          answers: [
+            {
+              question: {
+                id: 'question-1',
+                prompt: 'Choose one',
+                correctAnswer: 1,
+                explanation: 'B is correct',
+              },
+            },
+          ],
+          exam: {
+            id: 'exam-1',
+            title: 'Midterm',
+            durationMinutes: 30,
+            passingScore: 60,
+            course: { id: 'course-1', title: 'HSK 1' },
+            unit: { id: 'unit-1', title: 'Unit 1' },
+          },
+        }),
+      },
+    };
+    const learningAccess = {
+      ensureCourseAccess: vi.fn().mockResolvedValue(undefined),
+    };
+    const service = new ExamService(prisma as never, learningAccess as never);
+
+    const result = await service.getAttempt('attempt-1', 'tenant-1', {
+      id: 'user-1',
+      role: Role.STUDENT,
+    });
+
+    expect(learningAccess.ensureCourseAccess).toHaveBeenCalledWith('course-1', 'tenant-1', {
+      id: 'user-1',
+      role: Role.STUDENT,
+    });
+    expect(result.exam.title).toBe('Midterm');
+    expect(result).toHaveProperty('deadlineAt');
+    expect(result.isExpired).toBe(false);
+  });
 });

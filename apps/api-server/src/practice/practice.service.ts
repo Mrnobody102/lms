@@ -153,6 +153,93 @@ export class PracticeService {
     return user.role === Role.STUDENT ? this.hideAnswers(exerciseSet) : exerciseSet;
   }
 
+  async listAttempts(
+    tenantId: string,
+    user: PracticeUser,
+    query: { courseId?: string; exerciseSetId?: string; limit?: number },
+  ) {
+    const where: Prisma.PracticeAttemptWhereInput = {
+      tenantId,
+      courseId: query.courseId,
+      exerciseSetId: query.exerciseSetId,
+    };
+
+    if (user.role === Role.STUDENT) {
+      where.userId = user.id;
+      where.course = this.learningAccess.courseWhere(tenantId, user, query.courseId);
+    }
+
+    const attempts = await this.prisma.practiceAttempt.findMany({
+      where,
+      include: {
+        exerciseSet: {
+          select: {
+            id: true,
+            title: true,
+            course: { select: { id: true, title: true } },
+            unit: { select: { id: true, title: true } },
+          },
+        },
+      },
+      orderBy: { submittedAt: 'desc' },
+      take: query.limit ?? 10,
+    });
+
+    if (user.role === Role.STUDENT) {
+      return attempts;
+    }
+
+    return Promise.all(
+      attempts.map(async (attempt) => {
+        await this.learningAccess.ensureCourseAccess(attempt.courseId, tenantId, user);
+        return attempt;
+      }),
+    );
+  }
+
+  async getAttempt(attemptId: string, tenantId: string, user: PracticeUser) {
+    const attempt = await this.prisma.practiceAttempt.findFirst({
+      where: {
+        id: attemptId,
+        tenantId,
+        ...(user.role === Role.STUDENT ? { userId: user.id } : {}),
+      },
+      include: {
+        answers: {
+          include: {
+            question: {
+              select: {
+                id: true,
+                prompt: true,
+                type: true,
+                options: true,
+                correctAnswer: true,
+                explanation: true,
+                skillTags: true,
+              },
+            },
+          },
+        },
+        exerciseSet: {
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            course: { select: { id: true, title: true } },
+            unit: { select: { id: true, title: true } },
+          },
+        },
+      },
+    });
+
+    if (!attempt) {
+      throw new NotFoundException(`Practice attempt with ID ${attemptId} not found`);
+    }
+
+    await this.learningAccess.ensureCourseAccess(attempt.courseId, tenantId, user);
+    return attempt;
+  }
+
   async submitAttempt(
     exerciseSetId: string,
     tenantId: string,

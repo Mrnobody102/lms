@@ -124,6 +124,57 @@ export class ExamService {
     return user.role === Role.STUDENT ? this.hideAnswers(exam) : exam;
   }
 
+  async listAttempts(
+    tenantId: string,
+    user: ExamUser,
+    query: { courseId?: string; examId?: string; limit?: number },
+  ) {
+    const where: Prisma.ExamAttemptWhereInput = {
+      tenantId,
+      courseId: query.courseId,
+      examId: query.examId,
+    };
+
+    if (user.role === Role.STUDENT) {
+      where.userId = user.id;
+      where.course = this.learningAccess.courseWhere(tenantId, user, query.courseId);
+    }
+
+    const attempts = await this.prisma.examAttempt.findMany({
+      where,
+      include: {
+        exam: {
+          select: {
+            id: true,
+            title: true,
+            durationMinutes: true,
+            passingScore: true,
+            course: { select: { id: true, title: true } },
+            unit: { select: { id: true, title: true } },
+          },
+        },
+      },
+      orderBy: { startedAt: 'desc' },
+      take: query.limit ?? 10,
+    });
+
+    const visibleAttempts =
+      user.role === Role.STUDENT
+        ? attempts
+        : await Promise.all(
+            attempts.map(async (attempt) => {
+              await this.learningAccess.ensureCourseAccess(attempt.courseId, tenantId, user);
+              return attempt;
+            }),
+          );
+
+    return visibleAttempts.map((attempt) => ({
+      ...attempt,
+      deadlineAt: this.getAttemptDeadline(attempt, attempt.exam.durationMinutes),
+      isExpired: this.isAttemptExpired(attempt, attempt.exam.durationMinutes),
+    }));
+  }
+
   async startAttempt(examId: string, tenantId: string, user: ExamUser) {
     const exam = await this.prisma.exam.findFirst({
       where: {

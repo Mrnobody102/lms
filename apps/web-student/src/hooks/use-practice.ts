@@ -18,6 +18,27 @@ export function usePracticeExerciseSet(id: string) {
   });
 }
 
+export function usePracticeAttempts(params?: {
+  courseId?: string;
+  exerciseSetId?: string;
+  limit?: number;
+}) {
+  return useQuery({
+    queryKey: ['practice-attempts', params],
+    queryFn: () => practiceApi.getAttempts(params),
+    staleTime: 30 * 1000,
+  });
+}
+
+export function usePracticeAttempt(id: string) {
+  return useQuery({
+    queryKey: ['practice-attempt', id],
+    queryFn: () => practiceApi.getAttempt(id),
+    enabled: Boolean(id),
+    staleTime: 30 * 1000,
+  });
+}
+
 export function useSubmitPracticeAttempt(id: string) {
   const queryClient = useQueryClient();
 
@@ -27,6 +48,7 @@ export function useSubmitPracticeAttempt(id: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['practice-exercise-sets'] });
       queryClient.invalidateQueries({ queryKey: ['practice-exercise-set', id] });
+      queryClient.invalidateQueries({ queryKey: ['practice-attempts'] });
     },
   });
 }

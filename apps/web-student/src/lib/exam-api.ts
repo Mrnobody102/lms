@@ -70,6 +70,28 @@ export interface ExamAttemptResult {
   };
 }
 
+export interface ExamAttemptSummary extends ExamAttempt {
+  exam: {
+    id: string;
+    title: string;
+    durationMinutes: number;
+    passingScore?: number | null;
+    course: { id: string; title: string };
+    unit?: { id: string; title: string } | null;
+  };
+}
+
+export interface ExamAttemptDetail extends ExamAttemptSummary {
+  answers: Array<{
+    id: string;
+    answer: unknown;
+    isCorrect: boolean;
+    pointsAwarded: number;
+    createdAt: string;
+    question: ExamQuestion & { correctAnswer: unknown };
+  }>;
+}
+
 export const examApi = {
   getExams(params?: { courseId?: string; unitId?: string }) {
     return api.get('/exams', { params }).then((response) => response.data as ExamSummary[]);
@@ -89,5 +111,15 @@ export const examApi = {
     return api
       .post(`/exams/attempts/${attemptId}/submit`, { answers })
       .then((response) => response.data as ExamAttemptResult);
+  },
+
+  getAttempts(params?: { courseId?: string; examId?: string; limit?: number }) {
+    return api
+      .get('/exams/attempts', { params })
+      .then((response) => response.data as ExamAttemptSummary[]);
+  },
+
+  getAttempt(id: string) {
+    return api.get(`/exams/attempts/${id}`).then((response) => response.data as ExamAttemptDetail);
   },
 };

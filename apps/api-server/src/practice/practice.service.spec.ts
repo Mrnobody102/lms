@@ -167,4 +167,87 @@ describe('PracticeService', () => {
     expect(result.questions[0].question).not.toHaveProperty('correctAnswer');
     expect(result.questions[0].question).not.toHaveProperty('explanation');
   });
+
+  it('should list recent practice attempts for the current student', async () => {
+    const prisma = {
+      practiceAttempt: {
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: 'attempt-1',
+            userId: 'user-1',
+            score: 2,
+            totalPoints: 3,
+            submittedAt: new Date(),
+            exerciseSet: {
+              id: 'set-1',
+              title: 'Vocabulary',
+              course: { id: 'course-1', title: 'HSK 1' },
+              unit: { id: 'unit-1', title: 'Unit 1' },
+            },
+          },
+        ]),
+      },
+    };
+    const learningAccess = {
+      courseWhere: vi.fn().mockReturnValue({ tenantId: 'tenant-1', userId: 'user-1' }),
+    };
+    const service = new PracticeService(prisma as never, learningAccess as never);
+
+    const result = await service.listAttempts('tenant-1', { id: 'user-1', role: Role.STUDENT }, {});
+
+    expect(prisma.practiceAttempt.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ tenantId: 'tenant-1', userId: 'user-1' }),
+        take: 10,
+      }),
+    );
+    expect(result).toHaveLength(1);
+    expect(result[0].exerciseSet.title).toBe('Vocabulary');
+  });
+
+  it('should return a practice attempt review with answers and question metadata', async () => {
+    const prisma = {
+      practiceAttempt: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: 'attempt-1',
+          courseId: 'course-1',
+          score: 1,
+          totalPoints: 2,
+          answers: [
+            {
+              question: {
+                id: 'question-1',
+                prompt: 'Choose one',
+                correctAnswer: 1,
+                explanation: 'Option 2 is correct',
+              },
+            },
+          ],
+          exerciseSet: {
+            id: 'set-1',
+            title: 'Vocabulary',
+            description: 'Basics',
+            course: { id: 'course-1', title: 'HSK 1' },
+            unit: { id: 'unit-1', title: 'Unit 1' },
+          },
+        }),
+      },
+    };
+    const learningAccess = {
+      ensureCourseAccess: vi.fn().mockResolvedValue(undefined),
+    };
+    const service = new PracticeService(prisma as never, learningAccess as never);
+
+    const result = await service.getAttempt('attempt-1', 'tenant-1', {
+      id: 'user-1',
+      role: Role.STUDENT,
+    });
+
+    expect(learningAccess.ensureCourseAccess).toHaveBeenCalledWith('course-1', 'tenant-1', {
+      id: 'user-1',
+      role: Role.STUDENT,
+    });
+    expect(result.exerciseSet.title).toBe('Vocabulary');
+    expect(result.answers[0].question.explanation).toBe('Option 2 is correct');
+  });
 });

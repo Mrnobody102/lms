@@ -53,6 +53,7 @@ Cần làm tiếp:
 - Student-facing reads không lộ đáp án/giải thích trước submit.
 - Admin UI quản lý question bank/exercise set.
 - Student UI làm bài practice và xem feedback.
+- Student UI xem recent attempts và review practice attempt đã nộp.
 
 Cần làm tiếp:
 
@@ -73,10 +74,11 @@ Cần làm tiếp:
 - Timer enforcement với countdown/resume attempt còn hạn.
 - Admin UI quản lý exam template.
 - Student UI làm exam và review kết quả.
+- Student UI xem recent attempts, resume exam đang dở và review exam attempt đã nộp.
 
 Cần làm tiếp:
 
-- Attempt history UI.
+- Reporting accuracy theo unit/skill và recent activity/reporting tổng hợp.
 
 ### Báo cáo cá nhân
 
@@ -195,4 +197,4 @@ Cần bổ sung theo thứ tự ưu tiên:
 1. Practice/reporting nâng cao theo unit/skill.
 2. Activation/license.
 3. Reporting nâng cao theo unit/practice/exam.
-4. Timer enforcement cho exam.
+4. Mở rộng question types: matching, ordering, listening.

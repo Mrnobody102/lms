@@ -185,6 +185,7 @@ Task:
 - [x] Admin UI quản lý question bank/exercise set
 - [x] Student UI làm bài practice và xem feedback
 - [x] Student-facing practice reads không lộ đáp án/giải thích trước submit
+- [x] Practice attempt history/review UI cho student
 - [ ] Practice report theo unit/skill
 
 ### Epic H. Quiz / Exam Attempt Và Grading
@@ -203,6 +204,7 @@ Task:
 - [x] Student-facing exam reads không lộ đáp án/giải thích trước submit
 - [x] Demo seed IDs tương thích UUID route validation
 - [x] Timer enforcement cho exam attempt và resume attempt còn hạn
+- [x] Exam attempt history/review UI cho student
 
 ### Epic I. Reporting
 
@@ -240,7 +242,7 @@ Thứ tự nên làm tiếp:
 
 1. Bổ sung Practice/Exam report theo unit/skill từ dữ liệu attempt.
 2. Sau đó mở activation/license nếu cần kiểm soát entitlement.
-3. Bổ sung attempt history UI cho exam attempt.
+3. Bổ sung reporting theo unit/skill và accuracy theo practice/exam.
 4. Mở rộng question types: matching, ordering, listening.
 
 ## Checklist xác minh gần nhất

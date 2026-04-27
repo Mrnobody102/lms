@@ -164,9 +164,11 @@ curl -X POST http://localhost:4000/api/auth/logout \
 - Learning access is enforced both in service policy and tenant-scoped database constraints.
 - Learning content hierarchy is `Course -> CourseUnit -> Lesson`; existing lessons are backfilled into a default unit by migration.
 - Practice MVP has question bank, exercise sets, submitted attempts, scoring, enrollment-based access checks, admin management UI at `/practice`, and student attempt UI at `/practice`.
+- Practice student flows now include recent-attempt history and review routes.
 - Exam MVP has templates, sections/questions, started/submitted attempts, score/review, enrollment-based access checks, admin template UI at `/exams`, and student exam UI at `/exams`.
 - Student-facing practice/exam reads do not expose correct answers or explanations before submission.
 - Exam attempts now enforce time from `startedAt + durationMinutes`; the student UI resumes an active attempt and blocks late submission.
+- Exam student flows now include recent-attempt history, resume links for active attempts, and dedicated review routes.
 - Dependencies are pinned in package manifests; run `pnpm install --frozen-lockfile` in CI/release flows.
 - MCP is optional and should remain disabled unless a deployment explicitly configures `MCP_ENABLED=true` and `MCP_API_KEY`.
 - If tenant-scoped MCP data tools are enabled, also configure `MCP_TENANT_ID` so the server cannot read across tenants by default.
@@ -184,4 +186,4 @@ Thứ tự làm tiếp hiện tại:
 1. Practice/Exam reporting theo unit/skill.
 2. Activation/license.
 3. Reporting nâng cao theo unit/practice/exam.
-4. Timer enforcement cho exam.
+4. Mở rộng question types cho practice/exam.

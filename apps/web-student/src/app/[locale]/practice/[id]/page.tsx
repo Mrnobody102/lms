@@ -116,7 +116,13 @@ export default function PracticeAttemptPage() {
               </div>
             </header>
 
-            {result && <ResultSummary result={result} onRetry={resetAttempt} />}
+            {result && (
+              <ResultSummary
+                result={result}
+                reviewHref={`/practice/attempts/${result.attempt.id}`}
+                onRetry={resetAttempt}
+              />
+            )}
 
             {message && (
               <div className="mb-5 rounded-md border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
@@ -287,9 +293,11 @@ function QuestionCard({
 
 function ResultSummary({
   result,
+  reviewHref,
   onRetry,
 }: {
   result: PracticeAttemptResult;
+  reviewHref: string;
   onRetry: () => void;
 }) {
   const t = useTranslations('Student');
@@ -309,14 +317,22 @@ function ResultSummary({
             {t('practice.percentageValue', { value: result.result.percentage })}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={onRetry}
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-md border px-4 text-sm font-semibold hover:bg-muted"
-        >
-          <RotateCcw className="h-4 w-4" />
-          {t('practice.tryAgain')}
-        </button>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href={reviewHref}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-md border px-4 text-sm font-semibold hover:bg-muted"
+          >
+            {t('practice.reviewAttempt')}
+          </Link>
+          <button
+            type="button"
+            onClick={onRetry}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-md border px-4 text-sm font-semibold hover:bg-muted"
+          >
+            <RotateCcw className="h-4 w-4" />
+            {t('practice.tryAgain')}
+          </button>
+        </div>
       </div>
     </section>
   );

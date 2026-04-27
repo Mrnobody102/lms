@@ -146,7 +146,7 @@ Không nên tiếp tục mở rộng `Lesson.quiz` thành mọi thứ.
 - `ExamAttempt`
 - `ExamAnswer`
 
-Practice ưu tiên feedback nhanh; exam ưu tiên attempt lifecycle, timer, score và review. Backend exam MVP đã có lifecycle `STARTED`/`SUBMITTED` và timer enforcement theo `startedAt + durationMinutes`; start attempt sẽ resume attempt còn hạn, submit quá hạn bị reject. Student-facing practice/exam reads không trả đáp án hoặc giải thích trước submit.
+Practice ưu tiên feedback nhanh; exam ưu tiên attempt lifecycle, timer, score và review. Backend exam MVP đã có lifecycle `STARTED`/`SUBMITTED` và timer enforcement theo `startedAt + durationMinutes`; start attempt sẽ resume attempt còn hạn, submit quá hạn bị reject. Student-facing practice/exam reads không trả đáp án hoặc giải thích trước submit. Cả hai domain đều đã có recent attempts/review route riêng để chuẩn bị cho reporting sâu hơn.
 
 ### 4. Activation/license
 

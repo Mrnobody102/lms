@@ -57,6 +57,32 @@ export interface PracticeAttemptResult {
   };
 }
 
+export interface PracticeAttemptSummary {
+  id: string;
+  score: number;
+  totalPoints: number;
+  submittedAt: string;
+  exerciseSet: {
+    id: string;
+    title: string;
+    course: { id: string; title: string };
+    unit?: { id: string; title: string } | null;
+  };
+}
+
+export interface PracticeAttemptDetail extends PracticeAttemptSummary {
+  answers: Array<{
+    id: string;
+    answer: unknown;
+    isCorrect: boolean;
+    createdAt: string;
+    question: PracticeQuestion & { correctAnswer: unknown };
+  }>;
+  exerciseSet: PracticeAttemptSummary['exerciseSet'] & {
+    description?: string | null;
+  };
+}
+
 export const practiceApi = {
   getExerciseSets(params?: { courseId?: string; unitId?: string }) {
     return api
@@ -74,5 +100,17 @@ export const practiceApi = {
     return api
       .post(`/practice/exercise-sets/${id}/attempts`, { answers })
       .then((response) => response.data as PracticeAttemptResult);
+  },
+
+  getAttempts(params?: { courseId?: string; exerciseSetId?: string; limit?: number }) {
+    return api
+      .get('/practice/attempts', { params })
+      .then((response) => response.data as PracticeAttemptSummary[]);
+  },
+
+  getAttempt(id: string) {
+    return api
+      .get(`/practice/attempts/${id}`)
+      .then((response) => response.data as PracticeAttemptDetail);
   },
 };

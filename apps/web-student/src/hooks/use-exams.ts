@@ -18,6 +18,23 @@ export function useExam(id: string) {
   });
 }
 
+export function useExamAttempts(params?: { courseId?: string; examId?: string; limit?: number }) {
+  return useQuery({
+    queryKey: ['exam-attempts', params],
+    queryFn: () => examApi.getAttempts(params),
+    staleTime: 30 * 1000,
+  });
+}
+
+export function useExamAttempt(id: string) {
+  return useQuery({
+    queryKey: ['exam-attempt', id],
+    queryFn: () => examApi.getAttempt(id),
+    enabled: Boolean(id),
+    staleTime: 30 * 1000,
+  });
+}
+
 export function useStartExamAttempt(id: string) {
   return useMutation({
     mutationFn: () => examApi.startAttempt(id),
@@ -36,6 +53,7 @@ export function useSubmitExamAttempt(attemptId?: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['exams'] });
+      queryClient.invalidateQueries({ queryKey: ['exam-attempts'] });
     },
   });
 }

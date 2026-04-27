@@ -169,6 +169,7 @@ Trạng thái: backend MVP, admin management UI và student attempt UI đã có.
 - Admin UI `/practice` quản lý question bank và exercise set theo course/unit.
 - Student UI `/practice` làm bài và xem feedback ngay sau khi nộp.
 - Student-facing practice reads không lộ đáp án hoặc giải thích trước khi submit.
+- Student có attempt history/review UI cho practice qua recent attempts và route review riêng.
 
 Còn cần:
 
@@ -197,11 +198,11 @@ Trạng thái: backend MVP, admin template UI và student exam UI đã có.
 - Student UI `/exams` start attempt, submit answers và review score/pass-fail.
 - Student-facing exam reads không lộ đáp án hoặc giải thích trước khi submit.
 - Timer enforcement ở mức attempt đã có; backend reject submit quá hạn và UI hiển thị countdown/resume attempt còn hạn.
+- Student có attempt history/review UI cho exam qua recent attempts, resume in-progress attempt và route review riêng.
 
 Còn cần:
 
 - Question types mở rộng: matching, ordering, listening.
-- Attempt history UI cho student.
 
 ### P6. Reporting
 
