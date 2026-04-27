@@ -1,6 +1,6 @@
 # Quick Start
 
-Cập nhật lần cuối: 2026-04-25
+Cập nhật lần cuối: 2026-04-27
 
 ## Yêu cầu
 
@@ -34,7 +34,7 @@ pnpm db:migrate
 pnpm db:seed
 ```
 
-Seed hiện tạo tenant demo, admin, student, course demo, lessons demo và enrollment cho student demo vào course demo.
+Seed hiện tạo tenant demo, admin, student, course demo, lessons demo, enrollment cho student demo và practice exercise set mẫu.
 
 ### 5. Chạy app ở chế độ dev
 
@@ -163,7 +163,7 @@ curl -X POST http://localhost:4000/api/auth/logout \
 - Do not use `db:push` outside local prototyping. Use `pnpm db:deploy` for committed migrations.
 - Learning access is enforced both in service policy and tenant-scoped database constraints.
 - Learning content hierarchy is `Course -> CourseUnit -> Lesson`; existing lessons are backfilled into a default unit by migration.
-- Practice backend MVP has question bank, exercise sets, submitted attempts, scoring, and enrollment-based access checks.
+- Practice backend MVP has question bank, exercise sets, submitted attempts, scoring, enrollment-based access checks, and an admin management UI at `/practice`.
 - Dependencies are pinned in package manifests; run `pnpm install --frozen-lockfile` in CI/release flows.
 - MCP is optional and should remain disabled unless a deployment explicitly configures `MCP_ENABLED=true` and `MCP_API_KEY`.
 - If tenant-scoped MCP data tools are enabled, also configure `MCP_TENANT_ID` so the server cannot read across tenants by default.
@@ -178,8 +178,7 @@ Trạng thái sản phẩm và lộ trình chi tiết nằm ở:
 
 Thứ tự làm tiếp hiện tại:
 
-1. Admin UI cho question bank/exercise set.
-2. Student UI làm bài practice và xem feedback.
-3. Exam/test engine.
-4. Reporting nâng cao theo unit/practice/exam.
-5. Activation/license.
+1. Student UI làm bài practice và xem feedback.
+2. Exam/test engine.
+3. Reporting nâng cao theo unit/practice/exam.
+4. Activation/license.
