@@ -164,7 +164,7 @@ curl -X POST http://localhost:4000/api/auth/logout \
 - Learning access is enforced both in service policy and tenant-scoped database constraints.
 - Learning content hierarchy is `Course -> CourseUnit -> Lesson`; existing lessons are backfilled into a default unit by migration.
 - Practice MVP has question bank, exercise sets, submitted attempts, scoring, enrollment-based access checks, admin management UI at `/practice`, and student attempt UI at `/practice`.
-- Exam backend MVP has templates, sections/questions, started/submitted attempts, score/review, and enrollment-based access checks.
+- Exam MVP has templates, sections/questions, started/submitted attempts, score/review, enrollment-based access checks, and admin template UI at `/exams`.
 - Dependencies are pinned in package manifests; run `pnpm install --frozen-lockfile` in CI/release flows.
 - MCP is optional and should remain disabled unless a deployment explicitly configures `MCP_ENABLED=true` and `MCP_API_KEY`.
 - If tenant-scoped MCP data tools are enabled, also configure `MCP_TENANT_ID` so the server cannot read across tenants by default.
@@ -179,7 +179,7 @@ Trạng thái sản phẩm và lộ trình chi tiết nằm ở:
 
 Thứ tự làm tiếp hiện tại:
 
-1. Admin UI quản lý exam template.
-2. Student UI làm exam và review kết quả.
-3. Practice/Exam reporting theo unit/skill.
-4. Activation/license.
+1. Student UI làm exam và review kết quả.
+2. Practice/Exam reporting theo unit/skill.
+3. Activation/license.
+4. Reporting nâng cao theo unit/practice/exam.

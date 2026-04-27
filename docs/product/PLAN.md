@@ -39,7 +39,7 @@ Chưa có hoặc mới ở mức sơ khai:
 - Dashboard học tập giống màn hình tổng quan: continue learning, streak, progress chart.
 - Program/level hierarchy cao hơn `CourseUnit` nếu nội dung HSK cần nhiều cấp hơn.
 - Practice backend, admin UI và student attempt UI MVP đã có.
-- Exam/test backend MVP đã có; còn admin/student UI.
+- Exam/test backend MVP và admin template UI đã có; còn student UI.
 - Reporting theo enrollment/progress.
 - Activation/license code.
 - AI conversation.
@@ -180,7 +180,7 @@ Không nên nhét lâu dài vào `Lesson.quiz`; cần tách domain practice.
 
 Mục tiêu: phục vụ menu "Kiểm tra".
 
-Trạng thái: backend MVP đã có.
+Trạng thái: backend MVP và admin template UI đã có.
 
 Đã làm:
 
@@ -192,10 +192,10 @@ Trạng thái: backend MVP đã có.
 - Score, pass/fail, review.
 - Authorization theo enrollment/license.
 - Demo seed có một exam mẫu.
+- Admin UI `/exams` tạo và list exam template theo course/unit.
 
 Còn cần:
 
-- Admin UI quản lý exam template.
 - Student UI làm exam và review kết quả.
 - Timer enforcement.
 - Question types mở rộng: matching, ordering, listening.
@@ -246,13 +246,12 @@ Phạm vi:
 
 ## Thứ tự làm tiếp đề xuất
 
-1. Admin UI quản lý exam template.
-2. Student UI làm exam và review kết quả.
-3. Practice/Exam report theo unit/skill từ attempt.
-4. Reporting nâng cao theo unit/practice/exam.
-5. Activation/license.
-6. Program/level hierarchy nếu nội dung HSK cần nhiều cấp hơn.
-7. AI conversation.
+1. Student UI làm exam và review kết quả.
+2. Practice/Exam report theo unit/skill từ attempt.
+3. Reporting nâng cao theo unit/practice/exam.
+4. Activation/license.
+5. Program/level hierarchy nếu nội dung HSK cần nhiều cấp hơn.
+6. AI conversation.
 
 ## Definition Of Done Cấp Dự Án
 

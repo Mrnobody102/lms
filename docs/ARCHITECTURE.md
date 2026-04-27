@@ -83,4 +83,5 @@ Exam domain cũng đã tách khỏi `Lesson.quiz`:
 - `Exam` là template theo tenant/course/unit, chỉ publish mới hiển thị cho student.
 - `ExamSection` và `ExamQuestion` lưu cấu trúc đề, hỗ trợ MVP `MULTIPLE_CHOICE` và `FILL_BLANK`.
 - `ExamAttempt` và `ExamAnswer` lưu lifecycle `STARTED`/`SUBMITTED`, score, answer snapshot và review result.
+- Admin app quản lý exam template qua route `/exams`.
 - Student exam APIs đi qua `LearningAccessService`, nên vẫn bị giới hạn bởi enrollment course hợp lệ.
