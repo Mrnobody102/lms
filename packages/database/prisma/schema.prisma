@@ -45,6 +45,16 @@ enum PracticeAttemptStatus {
   SUBMITTED
 }
 
+enum ExamQuestionType {
+  MULTIPLE_CHOICE
+  FILL_BLANK
+}
+
+enum ExamAttemptStatus {
+  STARTED
+  SUBMITTED
+}
+
 model Tenant {
   id               String                @id @default(uuid())
   name             String
@@ -60,6 +70,8 @@ model Tenant {
   questions        PracticeQuestion[]
   exerciseSets     PracticeExerciseSet[]
   practiceAttempts PracticeAttempt[]
+  exams            Exam[]
+  examAttempts     ExamAttempt[]
   isActive         Boolean               @default(true)
   createdAt        DateTime              @default(now())
   updatedAt        DateTime              @default(now()) @updatedAt
@@ -83,6 +95,7 @@ model User {
   enrollments      CourseEnrollment[]
   activities       LearningActivity[]
   practiceAttempts PracticeAttempt[]
+  examAttempts     ExamAttempt[]
   createdAt        DateTime             @default(now())
   updatedAt        DateTime             @updatedAt
 
@@ -109,6 +122,8 @@ model Course {
   questions        PracticeQuestion[]
   exerciseSets     PracticeExerciseSet[]
   practiceAttempts PracticeAttempt[]
+  exams            Exam[]
+  examAttempts     ExamAttempt[]
   totalDuration    Int                   @default(0)
   createdAt        DateTime              @default(now())
   updatedAt        DateTime              @updatedAt
@@ -132,6 +147,7 @@ model CourseUnit {
   lessons      Lesson[]
   questions    PracticeQuestion[]
   exerciseSets PracticeExerciseSet[]
+  exams        Exam[]
   createdAt    DateTime              @default(now())
   updatedAt    DateTime              @updatedAt
 
@@ -322,6 +338,106 @@ model PracticeAnswer {
   answer     Json
   isCorrect  Boolean
   createdAt  DateTime         @default(now())
+
+  @@unique([attemptId, questionId])
+  @@index([tenantId, attemptId])
+  @@index([questionId])
+}
+
+model Exam {
+  id              String         @id @default(uuid())
+  tenantId        String
+  tenant          Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  courseId        String
+  course          Course         @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  unitId          String?
+  unit            CourseUnit?    @relation(fields: [unitId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
+  title           String
+  description     String?
+  durationMinutes Int            @default(30)
+  passingScore    Int?
+  isPublished     Boolean        @default(false)
+  deletedAt       DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  sections        ExamSection[]
+  attempts        ExamAttempt[]
+
+  @@unique([id, tenantId])
+  @@index([tenantId, courseId, isPublished, deletedAt])
+  @@index([unitId])
+}
+
+model ExamSection {
+  id        String         @id @default(uuid())
+  tenantId  String
+  examId    String
+  exam      Exam           @relation(fields: [examId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  title     String
+  order     Int            @default(0)
+  createdAt DateTime       @default(now())
+  questions ExamQuestion[]
+
+  @@unique([id, tenantId])
+  @@index([tenantId, examId, order])
+}
+
+model ExamQuestion {
+  id            String           @id @default(uuid())
+  tenantId      String
+  sectionId     String
+  section       ExamSection      @relation(fields: [sectionId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  type          ExamQuestionType @default(MULTIPLE_CHOICE)
+  prompt        String
+  options       Json?
+  correctAnswer Json
+  explanation   String?
+  points        Int              @default(1)
+  skillTags     String[]
+  order         Int              @default(0)
+  createdAt     DateTime         @default(now())
+  answers       ExamAnswer[]
+
+  @@unique([id, tenantId])
+  @@index([tenantId, sectionId, order])
+  @@index([type])
+}
+
+model ExamAttempt {
+  id          String            @id @default(uuid())
+  tenantId    String
+  tenant      Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User              @relation(fields: [userId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  courseId    String
+  course      Course            @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  examId      String
+  exam        Exam              @relation(fields: [examId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  status      ExamAttemptStatus @default(STARTED)
+  score       Int               @default(0)
+  totalPoints Int               @default(0)
+  startedAt   DateTime          @default(now())
+  submittedAt DateTime?
+  createdAt   DateTime          @default(now())
+  answers     ExamAnswer[]
+
+  @@unique([id, tenantId])
+  @@index([tenantId, userId, startedAt])
+  @@index([examId, startedAt])
+  @@index([courseId, startedAt])
+}
+
+model ExamAnswer {
+  id            String       @id @default(uuid())
+  tenantId      String
+  attemptId     String
+  attempt       ExamAttempt  @relation(fields: [attemptId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  questionId    String
+  question      ExamQuestion @relation(fields: [questionId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  answer        Json
+  isCorrect     Boolean
+  pointsAwarded Int          @default(0)
+  createdAt     DateTime     @default(now())
 
   @@unique([attemptId, questionId])
   @@index([tenantId, attemptId])

@@ -27,7 +27,7 @@ Nguyên tắc:
 | Student dashboard / continue learning  | Đang làm             | Đã có dashboard shell, streak UI, session count; còn chart và admin reporting                                        |
 | Content hierarchy                      | Đã có V1             | `CourseUnit` thuộc course, lesson gắn unit, admin/student UI grouped theo unit                                       |
 | Practice engine                        | Đã có Student UI MVP | Question bank, exercise set, submit attempt/scoring, enrollment authorization, admin/student practice UI             |
-| Quiz attempt / grading                 | Chưa làm             | Nên đi sau progress/enrollment                                                                                       |
+| Quiz / Exam attempt                    | Đã có backend MVP    | Exam template, section/question, start/submit attempt, scoring, review, enrollment authorization                     |
 | Activation / license code              | Chưa làm             | Phục vụ flow nhập mã kích hoạt                                                                                       |
 | AI conversation                        | Chưa làm             | Làm sau usage/reporting                                                                                              |
 | Media storage / background jobs        | Chưa làm             | Chỉ nên làm sau hạ tầng release ổn định                                                                              |
@@ -190,11 +190,15 @@ Task:
 
 Task:
 
-- [ ] Tách lesson quiz config khỏi user attempt
-- [ ] Submit quiz attempt
-- [ ] Lưu score / answers / submittedAt
-- [ ] Review kết quả
-- [ ] Test scoring + authorization
+- [x] Tách exam template khỏi `Lesson.quiz`
+- [x] Thiết kế `Exam`, `ExamSection`, `ExamQuestion`, `ExamAttempt`, `ExamAnswer`
+- [x] Start exam attempt
+- [x] Submit exam attempt và chấm điểm
+- [x] Lưu score / answers / submittedAt
+- [x] Review kết quả attempt
+- [x] Test scoring + authorization ở service level
+- [ ] Admin UI quản lý exam template
+- [ ] Student UI làm exam và review kết quả
 
 ### Epic I. Reporting
 
@@ -230,9 +234,9 @@ Task:
 
 Thứ tự nên làm tiếp:
 
-1. Mở Exam/Test Engine MVP.
-2. Bổ sung Practice report theo unit/skill từ dữ liệu attempt.
-3. Bổ sung reporting nâng cao theo unit/practice/exam.
+1. Nối Admin UI quản lý exam template.
+2. Nối Student UI làm exam và review kết quả.
+3. Bổ sung Practice/Exam report theo unit/skill từ dữ liệu attempt.
 4. Sau đó mở activation/license nếu cần kiểm soát entitlement.
 
 ## Checklist xác minh gần nhất
@@ -248,6 +252,10 @@ Thứ tự nên làm tiếp:
 - [x] `pnpm --filter web-admin build`
 - [x] `pnpm --filter web-student lint`
 - [x] `pnpm --filter web-student build`
+- [x] `pnpm --filter @repo/database build`
+- [x] `pnpm --filter api-server test`
+- [x] `pnpm --filter api-server lint`
+- [x] `pnpm --filter api-server build`
 
 Chưa xác minh xong:
 

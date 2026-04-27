@@ -9,6 +9,8 @@
 @courseId = REPLACE_WITH_COURSE_ID
 @lessonId = REPLACE_WITH_LESSON_ID
 @userId = REPLACE_WITH_USER_ID
+@examId = REPLACE_WITH_EXAM_ID
+@examAttemptId = REPLACE_WITH_EXAM_ATTEMPT_ID
 
 ### Notes
 # 1. Browser flow hien tai uu tien cookie session (`access_token` httpOnly).
@@ -141,6 +143,41 @@ GET {{baseUrl}}/progress/lesson/{{lessonId}}
 Authorization: Bearer {{studentToken}}
 x-tenant-id: {{tenantId}}
 
+### List Published Exams
+GET {{baseUrl}}/exams?courseId={{courseId}}
+Authorization: Bearer {{studentToken}}
+x-tenant-id: {{tenantId}}
+
+### Get Published Exam
+GET {{baseUrl}}/exams/{{examId}}
+Authorization: Bearer {{studentToken}}
+x-tenant-id: {{tenantId}}
+
+### Start Exam Attempt
+POST {{baseUrl}}/exams/{{examId}}/attempts
+Authorization: Bearer {{studentToken}}
+x-tenant-id: {{tenantId}}
+
+### Submit Exam Attempt
+POST {{baseUrl}}/exams/attempts/{{examAttemptId}}/submit
+Authorization: Bearer {{studentToken}}
+x-tenant-id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "answers": [
+    {
+      "questionId": "REPLACE_WITH_EXAM_QUESTION_ID",
+      "answer": 1
+    }
+  ]
+}
+
+### Review Exam Attempt
+GET {{baseUrl}}/exams/attempts/{{examAttemptId}}
+Authorization: Bearer {{studentToken}}
+x-tenant-id: {{tenantId}}
+
 ###############################################
 # ADMIN APIS
 ###############################################
@@ -168,6 +205,36 @@ Content-Type: application/json
 
 {
   "isActive": false
+}
+
+### Create Exam Template
+POST {{baseUrl}}/exams
+Authorization: Bearer {{adminToken}}
+x-tenant-id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "courseId": "{{courseId}}",
+  "title": "Demo Exam",
+  "description": "Manual API test exam",
+  "durationMinutes": 15,
+  "passingScore": 60,
+  "isPublished": true,
+  "sections": [
+    {
+      "title": "Vocabulary",
+      "questions": [
+        {
+          "type": "MULTIPLE_CHOICE",
+          "prompt": "Choose the correct answer",
+          "options": ["A", "B", "C"],
+          "correctAnswer": 1,
+          "points": 1,
+          "skillTags": ["vocabulary"]
+        }
+      ]
+    }
+  ]
 }
 
 ###############################################

@@ -4,6 +4,7 @@ import {
   LessonType,
   EnrollmentStatus,
   PracticeQuestionType,
+  ExamQuestionType,
 } from '../.prisma/client';
 import * as bcrypt from 'bcrypt';
 
@@ -205,6 +206,73 @@ async function main() {
       tenantId: tenant.id,
       exerciseSetId: practiceSet.id,
       questionId: practiceQuestion.id,
+      order: 0,
+    },
+  });
+
+  const exam = await prisma.exam.upsert({
+    where: {
+      id: `exam-${course.id}-intro`,
+    },
+    update: {
+      title: 'Kiem tra nhanh nhap mon',
+      durationMinutes: 15,
+      passingScore: 60,
+      isPublished: true,
+      deletedAt: null,
+    },
+    create: {
+      id: `exam-${course.id}-intro`,
+      tenantId: tenant.id,
+      courseId: course.id,
+      unitId: defaultUnit.id,
+      title: 'Kiem tra nhanh nhap mon',
+      description: 'Bai kiem tra mau cho unit nhap mon.',
+      durationMinutes: 15,
+      passingScore: 60,
+      isPublished: true,
+    },
+  });
+
+  const examSection = await prisma.examSection.upsert({
+    where: {
+      id: `exam-section-${course.id}-intro`,
+    },
+    update: {
+      title: 'Tu vung',
+      order: 0,
+    },
+    create: {
+      id: `exam-section-${course.id}-intro`,
+      tenantId: tenant.id,
+      examId: exam.id,
+      title: 'Tu vung',
+      order: 0,
+    },
+  });
+
+  await prisma.examQuestion.upsert({
+    where: {
+      id: `exam-question-${course.id}-hello`,
+    },
+    update: {
+      prompt: "Tu 'Xin chao' trong tieng Trung la gi?",
+      options: ['Zaijian', 'Ni hao', 'Xiexie', 'Bu keqi'],
+      correctAnswer: 1,
+      points: 1,
+      skillTags: ['vocabulary'],
+    },
+    create: {
+      id: `exam-question-${course.id}-hello`,
+      tenantId: tenant.id,
+      sectionId: examSection.id,
+      type: ExamQuestionType.MULTIPLE_CHOICE,
+      prompt: "Tu 'Xin chao' trong tieng Trung la gi?",
+      options: ['Zaijian', 'Ni hao', 'Xiexie', 'Bu keqi'],
+      correctAnswer: 1,
+      explanation: "'Ni hao' la cach chao co ban trong tieng Trung.",
+      points: 1,
+      skillTags: ['vocabulary'],
       order: 0,
     },
   });
