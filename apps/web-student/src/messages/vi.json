@@ -5,6 +5,7 @@
       "hsk": "Lộ trình HSK",
       "vocab": "Từ vựng",
       "blog": "Blog",
+      "practice": "Luyện tập",
       "home": "Trang chủ"
     },
     "hero": {
@@ -136,6 +137,33 @@
       "loading": "Đang tải khóa học...",
       "empty": "Chưa có khóa học nào",
       "emptyDesc": "Hãy quay lại sau để khám phá các khóa học mới."
+    },
+    "practice": {
+      "badge": "Luyện tập",
+      "title": "Bài luyện tập",
+      "subtitle": "Làm các bộ bài đã xuất bản từ khóa học đã enroll và nhận feedback ngay.",
+      "loading": "Đang tải bài luyện tập...",
+      "loadError": "Không thể tải bài luyện tập lúc này.",
+      "emptyTitle": "Chưa có bài luyện tập",
+      "emptyDesc": "Các khóa học đã enroll chưa có bộ bài luyện tập được xuất bản.",
+      "questionCount": "{count, plural, =0 {Chưa có câu hỏi} one {# câu hỏi} other {# câu hỏi}}",
+      "noDescription": "Chưa có mô tả",
+      "courseFallback": "Khóa học",
+      "start": "Bắt đầu luyện tập",
+      "backToPractice": "Quay lại luyện tập",
+      "answerRequired": "Hãy trả lời tất cả câu hỏi trước khi nộp bài.",
+      "submitError": "Không thể nộp bài luyện tập này.",
+      "multipleChoice": "Trắc nghiệm",
+      "fillBlank": "Điền đáp án",
+      "fillBlankPlaceholder": "Nhập đáp án",
+      "correct": "Đúng",
+      "incorrect": "Sai",
+      "correctAnswerValue": "Đáp án đúng: {value}",
+      "result": "Kết quả",
+      "scoreValue": "Đúng {score} / {total}",
+      "percentageValue": "Độ chính xác {value}%",
+      "tryAgain": "Làm lại",
+      "submit": "Nộp bài"
     }
   }
 }

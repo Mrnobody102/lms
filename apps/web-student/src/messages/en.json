@@ -5,6 +5,7 @@
       "hsk": "HSK Roadmap",
       "vocab": "Vocabulary",
       "blog": "Blog",
+      "practice": "Practice",
       "home": "Home"
     },
     "hero": {
@@ -136,6 +137,33 @@
       "loading": "Loading courses...",
       "empty": "No courses available",
       "emptyDesc": "Check back later for new courses."
+    },
+    "practice": {
+      "badge": "Practice",
+      "title": "Practice exercises",
+      "subtitle": "Review published exercise sets from your enrolled courses and get instant feedback.",
+      "loading": "Loading practice exercises...",
+      "loadError": "Cannot load practice exercises right now.",
+      "emptyTitle": "No practice exercises yet",
+      "emptyDesc": "Your enrolled courses do not have published practice sets yet.",
+      "questionCount": "{count, plural, =0 {No questions} one {# question} other {# questions}}",
+      "noDescription": "No description",
+      "courseFallback": "Course",
+      "start": "Start practice",
+      "backToPractice": "Back to practice",
+      "answerRequired": "Answer every question before submitting.",
+      "submitError": "Cannot submit this practice attempt.",
+      "multipleChoice": "Multiple choice",
+      "fillBlank": "Fill blank",
+      "fillBlankPlaceholder": "Type your answer",
+      "correct": "Correct",
+      "incorrect": "Incorrect",
+      "correctAnswerValue": "Correct answer: {value}",
+      "result": "Result",
+      "scoreValue": "{score} / {total} correct",
+      "percentageValue": "{value}% accuracy",
+      "tryAgain": "Try again",
+      "submit": "Submit answers"
     }
   }
 }

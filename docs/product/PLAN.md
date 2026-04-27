@@ -38,7 +38,7 @@ Chưa có hoặc mới ở mức sơ khai:
 
 - Dashboard học tập giống màn hình tổng quan: continue learning, streak, progress chart.
 - Program/level hierarchy cao hơn `CourseUnit` nếu nội dung HSK cần nhiều cấp hơn.
-- Practice backend và admin UI MVP đã có; student practice UI là bước tiếp theo.
+- Practice backend, admin UI và student attempt UI MVP đã có.
 - Exam/test attempt/grading đầy đủ.
 - Reporting theo enrollment/progress.
 - Activation/license code.
@@ -156,7 +156,7 @@ Quyết định đã chốt:
 
 Mục tiêu: phục vụ menu "Luyện tập".
 
-Trạng thái: backend MVP và admin management UI đã có.
+Trạng thái: backend MVP, admin management UI và student attempt UI đã có.
 
 Đã làm:
 
@@ -167,10 +167,10 @@ Trạng thái: backend MVP và admin management UI đã có.
 - Authorization theo enrollment/license nền hiện tại.
 - Demo seed có một exercise set mẫu.
 - Admin UI `/practice` quản lý question bank và exercise set theo course/unit.
+- Student UI `/practice` làm bài và xem feedback ngay sau khi nộp.
 
 Còn cần:
 
-- Student UI làm bài practice.
 - Question types mở rộng: matching, ordering, listening.
 - Skill tags: vocabulary, grammar, reading, listening, writing.
 
@@ -236,8 +236,8 @@ Phạm vi:
 
 ## Thứ tự làm tiếp đề xuất
 
-1. Student UI làm bài practice và xem feedback.
-2. Exam/test engine MVP.
+1. Exam/test engine MVP.
+2. Practice report theo unit/skill từ attempt.
 3. Reporting nâng cao theo unit/practice/exam.
 4. Activation/license.
 5. Program/level hierarchy nếu nội dung HSK cần nhiều cấp hơn.
