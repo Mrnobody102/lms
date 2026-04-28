@@ -1,7 +1,8 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Header, HttpStatus, Res } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Response } from 'express';
 import { HealthService } from './health.service';
-import { MetricsService } from '../metrics/metrics.service';
+import { MetricsService, PROMETHEUS_CONTENT_TYPE } from '../metrics/metrics.service';
 
 @ApiTags('Health')
 @Controller('health')
@@ -13,8 +14,8 @@ export class HealthController {
 
   @Get()
   @ApiOperation({ summary: 'Backward-compatible readiness summary' })
-  async check() {
-    return this.healthService.getReadiness();
+  async check(@Res({ passthrough: true }) response: Response) {
+    return this.getReadinessResponse(response);
   }
 
   @Get('live')
@@ -25,8 +26,8 @@ export class HealthController {
 
   @Get('ready')
   @ApiOperation({ summary: 'Readiness check for dependencies' })
-  async getReadiness() {
-    return this.healthService.getReadiness();
+  async getReadiness(@Res({ passthrough: true }) response: Response) {
+    return this.getReadinessResponse(response);
   }
 
   @Get('metrics')
@@ -35,9 +36,26 @@ export class HealthController {
     return this.metricsService.getSnapshot();
   }
 
+  @Get('metrics/prometheus')
+  @Header('Content-Type', PROMETHEUS_CONTENT_TYPE)
+  @ApiOperation({ summary: 'Prometheus text exposition for request metrics' })
+  getPrometheusMetrics() {
+    return this.metricsService.getPrometheusSnapshot();
+  }
+
   @Get('docs')
   @ApiOperation({ summary: 'Human-readable health endpoint reference' })
   getDocs() {
     return this.healthService.getDocs();
+  }
+
+  private async getReadinessResponse(response: Response) {
+    const readiness = await this.healthService.getReadiness();
+
+    if (readiness.status !== 'ok') {
+      response.status(HttpStatus.SERVICE_UNAVAILABLE);
+    }
+
+    return readiness;
   }
 }

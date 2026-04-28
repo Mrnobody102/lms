@@ -102,6 +102,12 @@ export class HealthService {
           purpose: 'In-memory request counters and latency summary by API group.',
         },
         {
+          path: '/api/health/metrics/prometheus',
+          audience: 'monitoring',
+          purpose:
+            'Prometheus text exposition for per-instance request counters and latency summary.',
+        },
+        {
           path: '/api/health/docs',
           audience: 'human',
           purpose: 'Human-readable health and monitoring endpoint reference.',

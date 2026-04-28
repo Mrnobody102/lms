@@ -31,6 +31,8 @@ export interface RequestMetricsSnapshot {
   >;
 }
 
+const PROMETHEUS_CONTENT_TYPE = 'text/plain; version=0.0.4; charset=utf-8';
+
 @Injectable()
 export class MetricsService {
   private readonly buckets = new Map<string, RequestMetricBucket>();
@@ -83,6 +85,49 @@ export class MetricsService {
     };
   }
 
+  getPrometheusSnapshot(): string {
+    const snapshot = this.getSnapshot();
+    const lines = [
+      '# HELP lms_http_requests_total Total HTTP requests observed by this API instance.',
+      '# TYPE lms_http_requests_total counter',
+    ];
+
+    for (const [key, bucket] of Object.entries(snapshot.groups)) {
+      const [group, method] = key.split(':');
+      for (const [statusClass, count] of Object.entries(bucket.statusCounts)) {
+        lines.push(
+          `lms_http_requests_total{group="${this.escapeLabel(group)}",method="${this.escapeLabel(method)}",status_class="${this.escapeLabel(statusClass)}"} ${count}`,
+        );
+      }
+    }
+
+    lines.push(
+      '# HELP lms_http_request_duration_ms_sum Sum of HTTP request durations observed by this API instance.',
+      '# TYPE lms_http_request_duration_ms_sum counter',
+    );
+    for (const [key, bucket] of Array.from(this.buckets.entries()).sort(([left], [right]) =>
+      left.localeCompare(right),
+    )) {
+      const [group, method] = key.split(':');
+      lines.push(
+        `lms_http_request_duration_ms_sum{group="${this.escapeLabel(group)}",method="${this.escapeLabel(method)}"} ${bucket.totalDurationMs}`,
+      );
+    }
+
+    lines.push(
+      '# HELP lms_http_request_duration_ms_max Max HTTP request duration observed by this API instance.',
+      '# TYPE lms_http_request_duration_ms_max gauge',
+    );
+    for (const [key, bucket] of Object.entries(snapshot.groups)) {
+      const [group, method] = key.split(':');
+      lines.push(
+        `lms_http_request_duration_ms_max{group="${this.escapeLabel(group)}",method="${this.escapeLabel(method)}"} ${bucket.maxDurationMs}`,
+      );
+    }
+
+    return `${lines.join('\n')}\n`;
+  }
+
   reset(): void {
     this.buckets.clear();
   }
@@ -103,4 +148,10 @@ export class MetricsService {
         return 'other';
     }
   }
+
+  private escapeLabel(value = ''): string {
+    return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
+  }
 }
+
+export { PROMETHEUS_CONTENT_TYPE };

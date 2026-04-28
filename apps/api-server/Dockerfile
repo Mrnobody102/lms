@@ -1,4 +1,5 @@
 FROM node:20-alpine AS base
+RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 
 FROM base AS builder
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
@@ -6,7 +7,7 @@ RUN apk add --no-cache libc6-compat
 # Set working directory
 WORKDIR /app
 # Install turbo
-RUN npm install -g turbo
+RUN npm install -g turbo@2.7.5
 COPY . .
 # Prune the workspace for the api-server app
 RUN turbo prune --scan-imports api-server --docker
@@ -20,8 +21,7 @@ WORKDIR /app
 COPY .gitignore .gitignore
 COPY --from=builder /app/out/json/ .
 COPY --from=builder /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
-RUN npm install -g pnpm
-RUN pnpm install
+RUN pnpm install --frozen-lockfile
 
 # Build the project and its dependencies
 COPY --from=builder /app/out/full/ .
@@ -46,6 +46,7 @@ USER nestjs
 
 COPY --from=installer /app/apps/api-server/dist ./dist
 COPY --from=installer /app/node_modules ./node_modules
+COPY --from=installer /app/packages/database ./packages/database
 COPY --from=installer /app/package.json ./package.json
 
 CMD ["node", "dist/main.js"]

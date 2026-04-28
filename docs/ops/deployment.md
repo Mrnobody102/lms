@@ -90,12 +90,13 @@ CI jobs:
 
 ## 4. Monitoring
 
-| Endpoint                  | Use                                      |
-| ------------------------- | ---------------------------------------- |
-| `GET /api/health/live`    | Liveness probe                           |
-| `GET /api/health/ready`   | Readiness probe for database and Redis   |
-| `GET /api/health/metrics` | In-memory request metrics                |
-| `GET /api/health/docs`    | Human-readable health endpoint reference |
+| Endpoint                             | Use                                                                                         |
+| ------------------------------------ | ------------------------------------------------------------------------------------------- |
+| `GET /api/health/live`               | Liveness probe                                                                              |
+| `GET /api/health/ready`              | Readiness probe for database and Redis; returns HTTP 503 when a required dependency is down |
+| `GET /api/health/metrics`            | In-memory request metrics                                                                   |
+| `GET /api/health/metrics/prometheus` | Prometheus text metrics for scraping                                                        |
+| `GET /api/health/docs`               | Human-readable health endpoint reference                                                    |
 
 See [monitoring.md](monitoring.md) for operational details.
 

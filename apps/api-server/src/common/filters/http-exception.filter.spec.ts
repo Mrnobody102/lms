@@ -43,4 +43,45 @@ describe('HttpExceptionFilter', () => {
       expect.objectContaining({ requestId: 'req_abc', statusCode: 400 }),
     );
   });
+
+  it('should not expose unexpected internal error messages to clients', () => {
+    const logger = {
+      error: vi.fn(),
+    };
+    const filter = new HttpExceptionFilter(logger as never);
+    const json = vi.fn();
+    const status = vi.fn().mockReturnValue({ json });
+    const response = {
+      setHeader: vi.fn(),
+      status,
+    };
+    const request = {
+      method: 'GET',
+      originalUrl: '/api/internal',
+    };
+    const host = {
+      switchToHttp: () => ({
+        getResponse: () => response,
+        getRequest: () => request,
+      }),
+    } as unknown as ArgumentsHost;
+
+    filter.catch(new Error('database password is invalid'), host);
+
+    expect(status).toHaveBeenCalledWith(500);
+    expect(json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        message: 'Internal server error',
+        statusCode: 500,
+      }),
+    );
+    expect(logger.error).toHaveBeenCalledWith(
+      'Request error',
+      expect.objectContaining({
+        error: expect.stringContaining('database password is invalid'),
+        statusCode: 500,
+      }),
+    );
+  });
 });

@@ -15,12 +15,12 @@
     "build-storybook": "storybook build"
   },
   "peerDependencies": {
-    "@repo/shared": "workspace:*",
     "next": ">=14.1.0 <17",
     "react": "^18",
     "react-dom": "^18"
   },
   "dependencies": {
+    "@repo/shared": "workspace:*",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",

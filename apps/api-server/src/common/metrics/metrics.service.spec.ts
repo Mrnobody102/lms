@@ -45,4 +45,24 @@ describe('MetricsService', () => {
       },
     });
   });
+
+  it('should expose request metrics in Prometheus text format', () => {
+    const service = new MetricsService();
+
+    service.recordRequest({
+      method: 'GET',
+      path: '/api/courses',
+      statusCode: 200,
+      durationMs: 25,
+    });
+
+    const output = service.getPrometheusSnapshot();
+
+    expect(output).toContain('# TYPE lms_http_requests_total counter');
+    expect(output).toContain(
+      'lms_http_requests_total{group="courses",method="GET",status_class="2xx"} 1',
+    );
+    expect(output).toContain('lms_http_request_duration_ms_sum{group="courses",method="GET"} 25');
+    expect(output).toContain('lms_http_request_duration_ms_max{group="courses",method="GET"} 25');
+  });
 });

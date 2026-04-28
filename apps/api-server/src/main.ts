@@ -59,6 +59,7 @@ async function bootstrap() {
 
   const logger = app.get(LoggerService);
   app.useLogger(logger);
+  app.enableShutdownHooks();
 
   // Security and Performance middlewares
   app.use(cookieParser());
