@@ -86,8 +86,18 @@ CI jobs:
 1. `fast_checks`: install, generate Prisma client, typecheck, lint, unit/integration tests.
 2. `build`: sequential production builds for API, frontend apps, and database package.
 3. `e2e_chromium`: Chromium Playwright smoke for student, admin, and super portal.
-4. `docker_build`: validates all production Dockerfiles and the production compose file.
-5. `api_smoke`: PostgreSQL + Redis service containers, `migrate deploy`, API smoke script.
+4. `api_smoke`: PostgreSQL + Redis service containers, `migrate deploy`, API smoke script.
+
+Docker image validation is intentionally manual in `.github/workflows/docker-build.yml`.
+Run it before release candidates or Dockerfile changes. Full image builds are expensive on
+Windows and consume more GitHub Actions minutes than the regular CI path.
+
+For local Docker checks, prefer targeted builds:
+
+```bash
+docker compose -f deployment/production/docker-compose.prod.yml build api
+docker compose -f deployment/production/docker-compose.prod.yml build web-admin
+```
 
 Run the post-deploy smoke script after a release:
 

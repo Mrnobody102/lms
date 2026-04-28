@@ -1,0 +1,26 @@
+name: Docker Build
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  production_images:
+    name: Production Images
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      POSTGRES_PASSWORD: ci-docker-password
+      JWT_SECRET: ci-docker-jwt-secret-32-characters-min
+      CORS_ORIGINS: http://localhost:3000,http://localhost:3001,http://localhost:3002
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+      NEXT_PUBLIC_WEB_STUDENT_URL: http://localhost:3000
+      NEXT_PUBLIC_TENANT_ID: tenant-1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - run: docker compose -f deployment/production/docker-compose.prod.yml config --quiet
+      - run: docker compose -f deployment/production/docker-compose.prod.yml build api migrate web-student web-admin super-portal
