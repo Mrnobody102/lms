@@ -11,6 +11,50 @@ $studentEmail = 'student@lms.com'
 $studentPassword = 'admin123'
 $apiProcess = $null
 
+function Get-PowerShellExecutable {
+  $pwsh = Get-Command pwsh -ErrorAction SilentlyContinue
+  if ($pwsh) {
+    return @{
+      Path = $pwsh.Source
+      Args = @('-NoProfile')
+    }
+  }
+
+  $windowsPowerShell = Get-Command powershell -ErrorAction SilentlyContinue
+  if ($windowsPowerShell) {
+    return @{
+      Path = $windowsPowerShell.Source
+      Args = @('-NoProfile', '-ExecutionPolicy', 'Bypass')
+    }
+  }
+
+  throw 'Neither pwsh nor powershell is available'
+}
+
+function Get-PnpmExecutable {
+  $pnpm = Get-Command pnpm -ErrorAction SilentlyContinue
+  if (-not $pnpm) {
+    throw 'pnpm is not available on PATH'
+  }
+
+  return $pnpm.Source
+}
+
+function Start-ApiServerProcess {
+  $startArgs = @{
+    FilePath = (Get-PnpmExecutable)
+    ArgumentList = @('--filter', 'api-server', 'start')
+    WorkingDirectory = $repoRoot
+    PassThru = $true
+  }
+
+  if ($IsWindows -or $PSVersionTable.PSEdition -eq 'Desktop') {
+    $startArgs.WindowStyle = 'Hidden'
+  }
+
+  return Start-Process @startArgs
+}
+
 function Invoke-RepoCommand {
   param([string]$Command)
 
@@ -28,7 +72,13 @@ function Invoke-RepoCommand {
 function Free-RepoPorts {
   param([int[]]$Ports)
 
-  & powershell -ExecutionPolicy Bypass -File (Join-Path $repoRoot 'scripts/stop-project-processes.ps1') -Ports $Ports -Quiet
+  $powerShell = Get-PowerShellExecutable
+  $powerShellArgs = @($powerShell.Args) + @(
+    '-File',
+    (Join-Path $repoRoot 'scripts/stop-project-processes.ps1'),
+    '-Ports'
+  ) + $Ports + @('-Quiet')
+  & $powerShell.Path @powerShellArgs
   if ($LASTEXITCODE -ne 0) {
     throw "Failed to free repo ports: $($Ports -join ', ')"
   }
@@ -101,11 +151,7 @@ try {
   Invoke-RepoCommand 'pnpm --filter api-server build'
 
   Write-Host 'Starting api-server...'
-  $apiProcess = Start-Process -FilePath 'cmd.exe' `
-    -ArgumentList '/d', '/s', '/c', 'pnpm --filter api-server start' `
-    -WorkingDirectory $repoRoot `
-    -PassThru `
-    -WindowStyle Hidden
+  $apiProcess = Start-ApiServerProcess
 
   $health = Wait-ForApiHealth
   $live = Invoke-RestMethod -Uri "$baseUrl/health/live" -TimeoutSec 5

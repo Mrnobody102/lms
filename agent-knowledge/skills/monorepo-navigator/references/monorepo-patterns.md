@@ -151,6 +151,7 @@ pnpm changeset publish
 pnpm turbo run build --summarize
 
 # Clear local cache
-pnpm turbo prune
 rm -rf node_modules/.cache/turbo
 ```
+
+Do not use `turbo prune` as a cache cleanup command. In this LMS repo, production Dockerfiles currently use verified full workspace install/build stages.

@@ -13,7 +13,7 @@ Procedures for containerizing, automating, and deploying the LMS platform across
 
 ## Core Capabilities
 
-- **dockerization**: Multi-stage Docker builds for NestJS and Next.js apps using pinned Node 20 and `turbo prune` in a pnpm monorepo.
+- **dockerization**: Multi-stage Docker builds for NestJS and Next.js apps using pinned Node 20 and full workspace install/build stages in the pnpm monorepo.
 - **cicd_pipelines**: GitHub Actions workflows that typecheck, lint, test, build, and run smoke checks.
 - **env_management**: Per-environment secrets and configuration via `.env` files and Docker Compose overrides.
 - **infrastructure**: PostgreSQL 15 + Redis for the stack, deployable on Railway, AWS ECS, or any container host.
@@ -59,7 +59,7 @@ GitHub Actions workflows at `.github/workflows/` run on push/PR. Standard pipeli
 
 1. **Fast checks**: `pnpm run typecheck`, `pnpm run lint`, `pnpm run test`.
 2. **Build**: `pnpm turbo run build --concurrency=1 --filter=api-server --filter=web-admin --filter=web-student --filter=super-portal --filter=@repo/database`.
-3. **E2E**: Playwright Chromium smoke for `web-student`.
+3. **E2E**: Playwright Chromium smoke for `web-student`, `web-admin`, and `super-portal`.
 4. **API smoke**: PostgreSQL + Redis service containers, `db:deploy`, API smoke script.
 
 ## Docker Strategy
@@ -84,13 +84,13 @@ Environment file precedence: `.env.local` > `.env.production` > `.env`.
 
 ## Common Pitfalls
 
-| Pitfall                                | Fix                                                                            |
-| -------------------------------------- | ------------------------------------------------------------------------------ |
-| `turbo prune` produces empty `out/`    | Ensure `--filter=<app>` matches the app name in `turbo.json`                   |
-| Next.js standalone output missing      | Verify `output: 'standalone'` is set in `next.config.js`                       |
-| Non-root user cannot read static files | Use `--chown=nextjs:nodejs` on COPY for static dirs                            |
-| Frontend cannot reach API from browser | Use a browser-reachable `NEXT_PUBLIC_API_URL`, not an internal Docker hostname |
-| Stale lockfile in Docker cache         | Copy lockfile before `pnpm install` to leverage cache                          |
+| Pitfall                                       | Fix                                                                                            |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Reintroducing unsupported `turbo prune` flags | Keep current full workspace Docker build stages unless a verified prune strategy replaces them |
+| Next.js standalone output missing             | Verify `output: 'standalone'` is set in `next.config.js`                                       |
+| Non-root user cannot read static files        | Use `--chown=nextjs:nodejs` on COPY for static dirs                                            |
+| Frontend cannot reach API from browser        | Use a browser-reachable `NEXT_PUBLIC_API_URL`, not an internal Docker hostname                 |
+| Stale lockfile in Docker cache                | Copy lockfile before `pnpm install` to leverage cache                                          |
 
 ## Best Practices
 

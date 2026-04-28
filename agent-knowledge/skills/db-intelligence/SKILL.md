@@ -21,6 +21,7 @@ This skill enables deep understanding of the LMS project's data structure, perfo
 ## When to Use
 
 Use when:
+
 - Planning to add, modify, or delete models, fields, or relationships.
 - Reviewing the schema to understand how two features relate.
 - Auditing indexes or constraints for performance.
@@ -28,6 +29,7 @@ Use when:
 - Writing Prisma queries that span multiple models.
 
 Skip when:
+
 - You need to run migrations or generate Prisma Client (use `database-operations`).
 - Making read-only queries without schema modifications (just read the schema directly).
 - The task is purely about NestJS service implementation (use `nestjs-standards`).
@@ -50,14 +52,14 @@ Skip when:
 
 ## Common Pitfalls
 
-| Pitfall | Fix |
-|---|---|
-| Deleting a column still referenced in code | Search all source files for the field name before proposing deletion. |
-| Adding a required field to an existing model without a default | Use `@default()` or make the field optional first, then migrate data. |
-| Creating N:M relations without an explicit join model | Use explicit junction tables for extra fields; use `@relation` for simple many-to-many. |
-| Forgetting `@index` on foreign keys and filter fields | Add indexes for fields used in `where` clauses and `join` conditions. |
-| Not accounting for tenantId in new models | Every primary data model must include `tenantId String` and a `@relation` to Tenant. |
-| Renaming a field without using `@map()` | Use `@map("old_column_name")` to rename without dropping and recreating the column. |
+| Pitfall                                                        | Fix                                                                                     |
+| -------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Deleting a column still referenced in code                     | Search all source files for the field name before proposing deletion.                   |
+| Adding a required field to an existing model without a default | Use `@default()` or make the field optional first, then migrate data.                   |
+| Creating N:M relations without an explicit join model          | Use explicit junction tables for extra fields; use `@relation` for simple many-to-many. |
+| Forgetting `@index` on foreign keys and filter fields          | Add indexes for fields used in `where` clauses and `join` conditions.                   |
+| Not accounting for tenantId in new models                      | Every primary data model must include `tenantId String` and a `@relation` to Tenant.    |
+| Renaming a field without using `@map()`                        | Use `@map("old_column_name")` to rename without dropping and recreating the column.     |
 
 ## Best Practices
 
@@ -71,12 +73,12 @@ Skip when:
 
 ## Related Skills
 
-| Skill | Use When |
-|---|---|
+| Skill               | Use When                                                   |
+| ------------------- | ---------------------------------------------------------- |
 | database-operations | Running migrations, seeding data, generating Prisma Client |
-| nestjs-standards | Implementing database access in NestJS services |
-| api-design-reviewer | Reviewing API endpoints that expose database models |
-| testing-strategy | Writing database integration tests |
+| nestjs-standards    | Implementing database access in NestJS services            |
+| api-design-reviewer | Reviewing API endpoints that expose database models        |
+| testing-strategy    | Writing database integration tests                         |
 
 ## Reference Documentation
 

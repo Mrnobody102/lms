@@ -18,13 +18,13 @@ Bad Examples:
 
 ### HTTP Method Usage
 
-| Method | Use For | Safe | Idempotent |
-|---|---|---|---|
-| GET | Retrieve resources | Yes | Yes |
-| POST | Create new resources | No | No |
-| PUT | Replace entire resource | No | Yes |
-| PATCH | Partial resource updates | No | Varies |
-| DELETE | Remove resources | No | Yes |
+| Method | Use For                  | Safe | Idempotent |
+| ------ | ------------------------ | ---- | ---------- |
+| GET    | Retrieve resources       | Yes  | Yes        |
+| POST   | Create new resources     | No   | No         |
+| PUT    | Replace entire resource  | No   | Yes        |
+| PATCH  | Partial resource updates | No   | Varies     |
+| DELETE | Remove resources         | No   | Yes        |
 
 ### URL Structure Patterns
 
@@ -42,12 +42,14 @@ Pagination:            GET    /api/v1/users?offset=0&limit=20
 ### Swagger Documentation
 
 Every controller method must have:
+
 - `@ApiOperation({ summary: '...' })` with a clear action verb
 - `@ApiResponse({ status: 200/201/400/404, description: '...' })` for each expected status
-- `@ApiBearerAuth()` if the endpoint requires authentication
+- `@ApiBearerAuth()` if the endpoint requires authentication; LMS browser flows use cookies, but Swagger/API tools still use Bearer compatibility
 - `@ApiUnauthorizedResponse()` for guarded endpoints
 
 Every DTO field must have:
+
 - `@ApiProperty({ description: '...', example: '...' })` for required fields
 - `@ApiPropertyOptional({ description: '...' })` for optional fields
 - `@ApiHideProperty()` for internal fields that should not appear in docs
@@ -168,19 +170,20 @@ Use **URL versioning** (`/api/v1/`, `/api/v2/`) for the LMS project. Update the 
 
 ### Error Code Conventions
 
-| Code | Use When |
-|---|---|
-| VALIDATION_ERROR | DTO validation fails |
-| NOT_FOUND | Resource does not exist |
-| UNAUTHORIZED | Missing or invalid auth token |
-| FORBIDDEN | Authenticated but lacks permission |
-| CONFLICT | Duplicate resource (e.g., unique constraint) |
-| BAD_REQUEST | Malformed request body |
-| INTERNAL_ERROR | Unexpected server error |
+| Code             | Use When                                     |
+| ---------------- | -------------------------------------------- |
+| VALIDATION_ERROR | DTO validation fails                         |
+| NOT_FOUND        | Resource does not exist                      |
+| UNAUTHORIZED     | Missing or invalid auth token                |
+| FORBIDDEN        | Authenticated but lacks permission           |
+| CONFLICT         | Duplicate resource (e.g., unique constraint) |
+| BAD_REQUEST      | Malformed request body                       |
+| INTERNAL_ERROR   | Unexpected server error                      |
 
 ## Security Checklist
 
-- JWT Bearer token required for all non-public endpoints
+- Auth required for all non-public endpoints via the HttpOnly `access_token` cookie or Bearer compatibility for API tooling
+- CSRF token required for cookie-backed state-changing requests
 - All input validated via class-validator DTOs
 - RolesGuard applied to endpoints requiring specific roles
 - No raw SQL queries; use Prisma throughout

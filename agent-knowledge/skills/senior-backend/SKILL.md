@@ -20,7 +20,7 @@ Backend development skill for the LMS Platform. Covers NestJS REST API developme
 - **Prisma integration**: schema-first development with type-safe database access
 - **Multi-tenancy**: `tenantId` injection via middleware for data isolation
 - **Swagger documentation**: `@ApiOperation`, `@ApiResponse`, `@ApiProperty` decorators on every endpoint
-- **Security patterns**: JWT Bearer tokens, role-based guards, rate limiting, input sanitization
+- **Security patterns**: Cookie-backed JWT auth, Bearer compatibility for API tooling, role-based guards, CSRF protection, rate limiting, input sanitization
 
 ---
 

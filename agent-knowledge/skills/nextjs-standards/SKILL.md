@@ -15,7 +15,7 @@ Guidelines for developing the LMS `web-admin` (Next.js 16 admin dashboard), `web
 
 - **rsc_patterns**: Server Components for data fetching, Client Components only for interactivity.
 - **app_router_layouts**: `[locale]` dynamic segment for i18n, nested layouts for admin sidebar.
-- **zustand_auth**: `useAuthStore` in `features/auth/auth.store.ts` with localStorage persistence and JWT expiry checking. Auth state managed via Zustand; server state managed via React Query v5 (`@tanstack/react-query`).
+- **zustand_auth**: `useAuthStore` via `@repo/shared` with cookie-backed session restore through `/users/me`. Auth UX state is managed via Zustand; server state is managed via React Query v5 (`@tanstack/react-query`).
 - **tailwind_styling**: CSS variable-based design system (`hsl(var(--primary))`), rounded corners via `var(--radius)`, dark mode via `class` strategy.
 - **i18n_integration**: `next-intl` with `[locale]` routing, `useTranslations`, `getMessages`, `setRequestLocale`.
 - **lucide_icons**: All icons from `lucide-react` only.
@@ -86,7 +86,7 @@ export const useAuthStore = createAuthStore({
 });
 ```
 
-The `createAuthStore` factory handles login, register, logout, checkAuth, and localStorage persistence. For server state, use React Query v5 hooks instead of Zustand.
+The `createAuthStore` factory handles login, register, logout, checkAuth, and optional safe user persistence. The browser session itself is the HttpOnly `access_token` cookie set by the API; do not persist JWTs in frontend storage. For server state, use React Query v5 hooks instead of Zustand.
 
 ## API Client Pattern
 
@@ -106,7 +106,7 @@ export default createApiClient({
 
 `NEXT_PUBLIC_TENANT_ID` is a local/dev tenant hint. Production tenant resolution should come from the request host/domain unless a trusted deployment explicitly opts in to sending tenant headers.
 
-The client automatically handles token injection, tenant headers, and 401 redirects. Use React Query v5 hooks for data fetching.
+The client automatically handles `withCredentials`, CSRF header injection, local/dev tenant hints, and 401 redirects. Use React Query v5 hooks for data fetching.
 
 ## Layout Patterns
 
@@ -162,7 +162,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
 | ----------------------------------------------- | ----------------------------------------------------------------------- |
 | Using client features in Server Components      | Add `"use client"` at the top of the file                               |
 | Forgetting to `await params` in layouts         | Next.js 15+ / 16 requires `params: Promise<{ locale: string }>`         |
-| Storing tokens in plain state (lost on refresh) | Use localStorage with `checkAuth()` on mount                            |
+| Storing JWTs in browser state/localStorage      | Use API-set HttpOnly cookies and restore with `/users/me`               |
 | Missing `@repo/ui` in Tailwind content          | Ensure `../../packages/ui/src/**/*.{js,ts,jsx,tsx}` is in content array |
 | Mixing `lucide-react` with other icon libraries | Use only `lucide-react`                                                 |
 
@@ -171,7 +171,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
 1. Default to Server Components; only add `"use client"` when needed.
 2. Use `useTranslations("namespace")` for all UI strings (never hardcode Vietnamese text in components).
 3. Use Tailwind CSS variable colors (`bg-primary`, `text-muted-foreground`) for theming.
-4. Store auth token in `localStorage` and validate JWT expiry in `checkAuth()`.
+4. Never store auth tokens in `localStorage`; restore session state with `/users/me`.
 5. Use `next/image` for all images to enable optimization.
 6. Add `loading.tsx` and `error.tsx` for all main route segments.
 7. Extract reusable UI into `packages/ui` for cross-app sharing.

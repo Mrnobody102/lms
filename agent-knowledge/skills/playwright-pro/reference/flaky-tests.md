@@ -26,13 +26,13 @@ pnpm playwright test --headed --timeout=30000
 
 ### Step 3: Check for Common Causes
 
-| Symptom | Likely Cause | Fix |
-|---|---|---|
+| Symptom                                    | Likely Cause                        | Fix                                    |
+| ------------------------------------------ | ----------------------------------- | -------------------------------------- |
 | Test times out on `expect().toBeVisible()` | Element not loading, wrong selector | Use trace to find actual element state |
-| Login test fails randomly | Race condition in auth | Add `waitForURL` after login click |
-| Count assertion fails | Data not updated yet | Use `expect.poll()` for async updates |
-| Network-dependent test fails | API not ready | Use `page.waitForResponse()` |
-| i18n text not found | Wrong locale or regex | Check `page.url()` for locale segment |
+| Login test fails randomly                  | Race condition in auth              | Add `waitForURL` after login click     |
+| Count assertion fails                      | Data not updated yet                | Use `expect.poll()` for async updates  |
+| Network-dependent test fails               | API not ready                       | Use `page.waitForResponse()`           |
+| i18n text not found                        | Wrong locale or regex               | Check `page.url()` for locale segment  |
 
 ### Step 4: Use expect.poll() for Unstable Conditions
 
@@ -41,10 +41,15 @@ pnpm playwright test --headed --timeout=30000
 await expect(page.locator('.count')).toHaveText('5');
 
 // Good — polls until condition is met
-await expect.poll(async () => {
-  const text = await page.locator('.count').textContent();
-  return text?.trim();
-}, { timeout: 5000 }).toBe('5');
+await expect
+  .poll(
+    async () => {
+      const text = await page.locator('.count').textContent();
+      return text?.trim();
+    },
+    { timeout: 5000 },
+  )
+  .toBe('5');
 ```
 
 ### Step 5: Use Retry Config
@@ -75,7 +80,7 @@ await expect(page.getByRole('status')).toHaveText(/success|thành công/i);
 
 // Even better — wait for the network response
 const [response] = await Promise.all([
-  page.waitForResponse(resp => resp.url().includes('/api/courses')),
+  page.waitForResponse((resp) => resp.url().includes('/api/courses')),
   page.getByRole('button').click(),
 ]);
 expect(response.status()).toBe(200);
@@ -89,10 +94,15 @@ await expect(page.getByRole('listitem')).toHaveCount(5);
 
 // Fixed
 await expect(page.getByRole('listitem')).toHaveCount({ minimum: 1 });
-await expect.poll(async () => {
-  const count = await page.getByRole('listitem').count();
-  return count;
-}, { timeout: 10000 }).toBe(5);
+await expect
+  .poll(
+    async () => {
+      const count = await page.getByRole('listitem').count();
+      return count;
+    },
+    { timeout: 10000 },
+  )
+  .toBe(5);
 ```
 
 ### Dynamic Content Timing

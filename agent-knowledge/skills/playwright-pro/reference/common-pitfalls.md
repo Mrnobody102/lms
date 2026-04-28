@@ -10,7 +10,7 @@ await page.waitForTimeout(2000);
 
 // Good — wait for actual condition
 await expect(page.getByRole('button')).toBeVisible();
-await page.waitForResponse(response => response.url().includes('/api/'));
+await page.waitForResponse((response) => response.url().includes('/api/'));
 await page.waitForLoadState('networkidle');
 ```
 
@@ -86,7 +86,9 @@ await page.goto('/courses'); // might hit wrong tenant
 
 // Good — set tenant header via request context
 await context.route('**/api/**', async (route) => {
-  await route.continue({ headers: { ...route.request().headers(), 'x-tenant-id': 'trung-tam-demo' } });
+  await route.continue({
+    headers: { ...route.request().headers(), 'x-tenant-id': 'trung-tam-demo' },
+  });
 });
 ```
 

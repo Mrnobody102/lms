@@ -19,9 +19,7 @@ POST   /api/v1/courses/:id/lessons  # Create lesson in course
 ```typescript
 // Response interceptor
 @Injectable()
-export class TransformInterceptor<T>
-  implements NestInterceptor<T, ApiResponse<T>>
-{
+export class TransformInterceptor<T> implements NestInterceptor<T, ApiResponse<T>> {
   intercept(context: ExecutionContext, next: CallHandler): Observable<ApiResponse<T>> {
     return next.handle().pipe(
       map((data) => ({
@@ -30,7 +28,7 @@ export class TransformInterceptor<T>
           timestamp: new Date().toISOString(),
           requestId: context.switchToHttp().getRequest().id,
         },
-      }))
+      })),
     );
   }
 }

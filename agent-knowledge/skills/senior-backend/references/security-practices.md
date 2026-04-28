@@ -57,7 +57,7 @@ app.use(
     standardHeaders: true,
     legacyHeaders: false,
     message: { error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Too many requests' } },
-  })
+  }),
 );
 
 app.useGlobalPipes(
@@ -65,21 +65,21 @@ app.useGlobalPipes(
     whitelist: true,
     forbidNonWhitelisted: true,
     transform: true,
-  })
+  }),
 );
 ```
 
 ## OWASP Top 10 Checklist
 
-| # | Category | Mitigation |
-|---|---|---|
-| A01 | Broken Access Control | Role guards on every endpoint; verify tenantId on all queries |
-| A02 | Cryptographic Failures | Use bcrypt (cost 12); HTTPS everywhere; JWT RS256 preferred |
-| A03 | Injection | ValidationPipe with whitelist; Prisma parameterized queries |
-| A04 | Insecure Design | Threat model new features; principle of least privilege |
-| A05 | Security Misconfiguration | Helmet headers; rate limiting; disable stack traces in prod |
-| A06 | Vulnerable Components | Audit deps regularly (`pnpm audit`) |
-| A07 | Auth Failures | JWT expiry < 24h; refresh token rotation; password min 8 chars |
-| A08 | Software Integrity Failures | Verify npm package integrity; pin CI dependencies |
-| A09 | Logging Failures | Log all auth events; include requestId for traceability |
-| A10 | SSRF | Validate URLs; disallow internal IPs in user-provided URLs |
+| #   | Category                    | Mitigation                                                     |
+| --- | --------------------------- | -------------------------------------------------------------- |
+| A01 | Broken Access Control       | Role guards on every endpoint; verify tenantId on all queries  |
+| A02 | Cryptographic Failures      | Use bcrypt (cost 12); HTTPS everywhere; JWT RS256 preferred    |
+| A03 | Injection                   | ValidationPipe with whitelist; Prisma parameterized queries    |
+| A04 | Insecure Design             | Threat model new features; principle of least privilege        |
+| A05 | Security Misconfiguration   | Helmet headers; rate limiting; disable stack traces in prod    |
+| A06 | Vulnerable Components       | Audit deps regularly (`pnpm audit`)                            |
+| A07 | Auth Failures               | JWT expiry < 24h; refresh token rotation; password min 8 chars |
+| A08 | Software Integrity Failures | Verify npm package integrity; pin CI dependencies              |
+| A09 | Logging Failures            | Log all auth events; include requestId for traceability        |
+| A10 | SSRF                        | Validate URLs; disallow internal IPs in user-provided URLs     |

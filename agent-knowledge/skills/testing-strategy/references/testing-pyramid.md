@@ -64,6 +64,8 @@ describe('POST /lessons', () => {
 });
 ```
 
+Bearer headers are acceptable in API integration tests when the test is not exercising browser cookie and CSRF behavior. Browser-facing auth tests should assert `access_token` and `csrf_token` cookies and include `x-csrf-token` on state-changing requests.
+
 ### E2E Tests
 
 **Definition**: Tests complete user journeys across the entire application stack in a real browser.

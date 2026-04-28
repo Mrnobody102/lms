@@ -2,16 +2,16 @@
 
 ## Locator Priority (Strongest to Weakest)
 
-| Priority | Locator | When to Use | Example |
-|---|---|---|---|
-| 1 | `getByRole()` | Buttons, links, headings, form elements | `page.getByRole('button', { name: 'Submit' })` |
-| 2 | `getByLabel()` | Form fields with visible `<label>` | `page.getByLabel('Email address')` |
-| 3 | `getByText()` | Non-interactive visible text | `page.getByText('Welcome back')` |
-| 4 | `getByPlaceholder()` | Inputs with placeholder text | `page.getByPlaceholder('Search courses...')` |
-| 5 | `getByTestId()` | Explicit `data-testid` attributes | `page.getByTestId('course-card-1')` |
-| 6 | `getByTitle()` | Elements with `title` attribute | `page.getByTitle('Open menu')` |
-| 7 | `getByAltText()` | Images with alt text | `page.getByAltText('Course thumbnail')` |
-| 8 | `page.locator()` | CSS or XPath (last resort) | `page.locator('.btn.primary')` |
+| Priority | Locator              | When to Use                             | Example                                        |
+| -------- | -------------------- | --------------------------------------- | ---------------------------------------------- |
+| 1        | `getByRole()`        | Buttons, links, headings, form elements | `page.getByRole('button', { name: 'Submit' })` |
+| 2        | `getByLabel()`       | Form fields with visible `<label>`      | `page.getByLabel('Email address')`             |
+| 3        | `getByText()`        | Non-interactive visible text            | `page.getByText('Welcome back')`               |
+| 4        | `getByPlaceholder()` | Inputs with placeholder text            | `page.getByPlaceholder('Search courses...')`   |
+| 5        | `getByTestId()`      | Explicit `data-testid` attributes       | `page.getByTestId('course-card-1')`            |
+| 6        | `getByTitle()`       | Elements with `title` attribute         | `page.getByTitle('Open menu')`                 |
+| 7        | `getByAltText()`     | Images with alt text                    | `page.getByAltText('Course thumbnail')`        |
+| 8        | `page.locator()`     | CSS or XPath (last resort)              | `page.locator('.btn.primary')`                 |
 
 ## Common Examples for LMS
 
@@ -80,7 +80,7 @@ Add `data-testid` for components that are hard to target semantically:
 // In your component
 <div data-testid="course-card" className="course-card">
   <h3>{course.title}</h3>
-</div>
+</div>;
 
 // In test
 await page.getByTestId('course-card').first().click();

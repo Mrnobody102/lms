@@ -24,12 +24,12 @@ export const baseTest = base.extend<BaseFixtures>({
 ```typescript
 // fixtures/auth.ts
 import { baseTest, BaseFixtures } from './base';
-import { test as pwTest, Page, request } from '@playwright/test';
+import { APIRequestContext, Page, request } from '@playwright/test';
 
 type AuthFixtures = {
   studentPage: Page;
   adminPage: Page;
-  studentApi: Page;
+  studentApi: APIRequestContext;
 };
 
 export const test = baseTest.extend<AuthFixtures>({
@@ -41,11 +41,6 @@ export const test = baseTest.extend<AuthFixtures>({
     await page.getByLabel(/password|mật khẩu/i).fill('password123');
     await page.getByRole('button', /login|đăng nhập/i).click();
     await page.waitForURL(/\/(dashboard|courses)/);
-
-    // Set tenant ID in localStorage
-    await page.evaluate((id) => {
-      localStorage.setItem('tenantId', id);
-    }, tenantId);
 
     await use(page);
   },
@@ -69,12 +64,13 @@ export const test = baseTest.extend<AuthFixtures>({
       },
     });
 
-    const resp = await ctx.post('/api/v1/auth/login', {
+    const resp = await ctx.post('/api/auth/login', {
       data: { email: 'student@example.com', password: 'password123' },
     });
 
-    const { data } = await resp.json();
-    ctx.extraHTTPHeaders['Authorization'] = `Bearer ${data.token}`;
+    if (!resp.ok()) {
+      throw new Error(`API login failed with status ${resp.status()}`);
+    }
 
     await use(ctx);
   },
@@ -82,6 +78,8 @@ export const test = baseTest.extend<AuthFixtures>({
 
 export { expect } from '@playwright/test';
 ```
+
+For browser E2E, authenticate through the UI or seed cookies with Playwright storage state. Do not set app auth by writing JWTs or tenant IDs into localStorage. For API-only fixtures, read `csrf_token` from `storageState()` and pass `x-csrf-token` per state-changing request. Bearer headers are acceptable only for fixtures that intentionally bypass browser cookie behavior.
 
 ### Data Fixtures
 
@@ -133,7 +131,9 @@ dataTest('student can enroll in a course', async ({ studentPage, testCourse }) =
   await expect(studentPage.getByRole('heading')).toHaveText(testCourse.title);
   await studentPage.getByRole('button', { name: /enroll|ghi danh/i }).click();
 
-  await expect(studentPage.getByText(/enrolled successfully|đã ghi danh thành công/i)).toBeVisible();
+  await expect(
+    studentPage.getByText(/enrolled successfully|đã ghi danh thành công/i),
+  ).toBeVisible();
 });
 ```
 

@@ -26,7 +26,7 @@ Testing strategy for the LMS Platform monorepo: Vitest for unit/integration test
 - **Scope**: Pure business logic, standalone services, utilities, React components.
 - **Tool**: Vitest for backend, shared packages, and UI package tests.
 - **Speed**: < 10ms per test.
-- **Mock**: Mock external dependencies (email, external APIs). Use real Prisma for data layer.
+- **Mock**: Mock external dependencies (email, external APIs). For service unit tests, mock Prisma; use a real test database only for deeper integration/E2E coverage.
 
 ```typescript
 // Service unit test (Vitest)
@@ -49,7 +49,7 @@ describe('LessonService', () => {
 
 - **Scope**: Full user journeys across browser (Playwright).
 - **Speed**: slower than unit tests; keep journeys focused and deterministic.
-- **Mock**: Real backend, real database (test environment).
+- **Mock**: CI smoke E2E may route/mock LMS API responses in the browser to keep portal startup checks deterministic. Release/staging E2E should use the real backend and real test database for end-to-end dependency coverage.
 
 ## Test Organization
 
@@ -62,7 +62,11 @@ packages/ui/src/
   card.test.tsx                 # Vitest + Testing Library component test
 
 apps/web-student/e2e/
-  example.spec.ts               # Playwright E2E journeys
+  example.spec.ts               # Playwright portal smoke journeys
+apps/web-admin/e2e/
+  smoke.spec.ts                 # Playwright admin smoke journey
+apps/super-portal/e2e/
+  smoke.spec.ts                 # Playwright super portal smoke journey
 ```
 
 ## Coverage Targets
@@ -126,7 +130,9 @@ Tests should read as natural language specifications:
 ```typescript
 describe('AuthService', () => {
   describe('register', () => {
-    it('should create a new user and return token when email is unique');
+    it(
+      'should create a new user, set auth cookies, and return safe user data when email is unique',
+    );
     it('should throw ConflictException when email already exists');
     it('should throw ValidationException when password is too short');
   });
@@ -137,18 +143,18 @@ describe('AuthService', () => {
 
 - **Vitest** (API): configured in `apps/api-server/vitest.config.ts`, uses `environment: "node"`.
 - **Vitest** (UI): configured in `packages/ui/vitest.config.mts`, uses `jsdom`.
-- **Playwright**: configured in `apps/web-student/playwright.config.ts`.
+- **Playwright**: configured per web app in `apps/web-student`, `apps/web-admin`, and `apps/super-portal`.
 
 ## Common Pitfalls
 
-| Pitfall                        | Fix                                                                      |
-| ------------------------------ | ------------------------------------------------------------------------ |
-| Testing implementation details | Test behavior and public API, not internal method calls                  |
-| Over-mocking                   | Only mock external dependencies; real Prisma is preferred for data layer |
-| Shared mutable state           | Reset mocks and test database state in `beforeEach` / `afterEach`        |
-| Slow tests from real DB        | Use mock Prisma for unit tests; real DB only for E2E                     |
-| Not covering error paths       | Always test the failure cases (404, 401, 422, 500)                       |
-| Flaky async tests              | Always `await` or use `waitFor` from testing-library                     |
+| Pitfall                        | Fix                                                                                             |
+| ------------------------------ | ----------------------------------------------------------------------------------------------- |
+| Testing implementation details | Test behavior and public API, not internal method calls                                         |
+| Over-mocking                   | Unit tests can mock Prisma; browser smoke can mock API; staging E2E should cover the real stack |
+| Shared mutable state           | Reset mocks and test database state in `beforeEach` / `afterEach`                               |
+| Slow tests from real DB        | Use mock Prisma for unit tests; real DB only for E2E                                            |
+| Not covering error paths       | Always test the failure cases (404, 401, 422, 500)                                              |
+| Flaky async tests              | Always `await` or use `waitFor` from testing-library                                            |
 
 ## Best Practices
 

@@ -21,6 +21,7 @@ Standard workflow for managing multi-language support (Vietnamese and English) a
 ## Language Files
 
 Each app stores translations in:
+
 - `apps/web-student/src/messages/vi.json`
 - `apps/web-student/src/messages/en.json`
 - `apps/web-admin/src/messages/vi.json`
@@ -31,11 +32,13 @@ Each app stores translations in:
 ## When to Use
 
 Use when:
+
 - Adding new user-facing strings in any Next.js app
 - Creating new pages or UI components
 - Modifying existing translation keys
 
 Skip when:
+
 - Writing server-side logic (API routes, services) that does not render UI
 - Updating internal variable names or code comments
 
@@ -57,6 +60,7 @@ Use dot-notation with consistent scope prefixes:
 ```
 
 Examples:
+
 - `Student.hero.title` -- Hero section title on student home
 - `Admin.lesson.form.title` -- Form title in lesson admin
 - `Auth.login.button` -- Login button text
@@ -77,7 +81,7 @@ Use curly-brace syntax for dynamic values:
 
 ```typescript
 // In component
-t("Lesson.progress", { percent: 75 })
+t('Lesson.progress', { percent: 75 });
 ```
 
 ### Pluralization
@@ -94,13 +98,13 @@ Use ICU message syntax for plurals:
 
 ## Common Pitfalls
 
-| Pitfall | Fix |
-|---|---|
-| Missing key in one locale | Always update both `vi.json` and `en.json` in the same commit |
-| Hardcoded strings in JSX | Search for untranslated strings before marking i18n done |
-| Using wrong locale in `getTranslations` | Always pass the locale from `getLocale()` or props |
-| Mixing up translation namespaces | Use scoped `useTranslations("Scope")` to avoid key collisions |
-| Middleware blocking static assets | Ensure `favicon.ico`, fonts, and `/public/*` are excluded from locale routing |
+| Pitfall                                 | Fix                                                                           |
+| --------------------------------------- | ----------------------------------------------------------------------------- |
+| Missing key in one locale               | Always update both `vi.json` and `en.json` in the same commit                 |
+| Hardcoded strings in JSX                | Search for untranslated strings before marking i18n done                      |
+| Using wrong locale in `getTranslations` | Always pass the locale from `getLocale()` or props                            |
+| Mixing up translation namespaces        | Use scoped `useTranslations("Scope")` to avoid key collisions                 |
+| Middleware blocking static assets       | Ensure `favicon.ico`, fonts, and `/public/*` are excluded from locale routing |
 
 ## Best Practices
 
@@ -112,10 +116,10 @@ Use ICU message syntax for plurals:
 
 ## Related Skills
 
-| Skill | Use When |
-|---|---|
+| Skill                | Use When                                                    |
+| -------------------- | ----------------------------------------------------------- |
 | engineering-planning | Planning includes adding new pages with user-facing strings |
-| deployment-ops | i18n changes require rebuilding Next.js apps to take effect |
+| deployment-ops       | i18n changes require rebuilding Next.js apps to take effect |
 
 ## Reference Documentation
 

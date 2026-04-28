@@ -27,6 +27,7 @@ Navigate, manage, and optimize the LMS Platform monorepo. Covers pnpm workspaces
 ## When to Use
 
 Use when:
+
 - Modifying shared packages (`packages/database`, `packages/ui`, `packages/shared`)
 - Build times are slow because everything rebuilds when anything changes
 - Running tests or builds across the monorepo
@@ -34,6 +35,7 @@ Use when:
 - Teams work across multiple apps and need unified tooling
 
 Skip when:
+
 - Working exclusively within a single app (`apps/api-server` or `apps/web-admin`)
 - No shared code changes involved
 - Simple single-file edits within one package
@@ -82,14 +84,14 @@ echo "- packages/*" > pnpm-workspace.yaml
 
 ## Common Pitfalls
 
-| Pitfall | Fix |
-|---|---|
-| Running `turbo run build` without `--filter` on every PR | Always use `--filter=...[origin/main]` in CI |
-| All packages rebuild when unrelated file changes | Tune `inputs` in turbo.json to exclude docs, config files |
+| Pitfall                                                     | Fix                                                                   |
+| ----------------------------------------------------------- | --------------------------------------------------------------------- |
+| Running `turbo run build` without `--filter` on every PR    | Always use `--filter=...[origin/main]` in CI                          |
+| All packages rebuild when unrelated file changes            | Tune `inputs` in turbo.json to exclude docs, config files             |
 | Shared tsconfig causes one package to break all type-checks | Each package extends root tsconfig but overrides `rootDir` / `outDir` |
-| Changeset missing when publishing | Run `pnpm changeset` before every publish |
-| Remote cache not working in CI | Check `TURBO_TOKEN` and `TURBO_TEAM` env vars |
-| CLAUDE.md too generic — Claude modifies wrong package | Add explicit "When working on X, only touch files in apps/X" rules |
+| Changeset missing when publishing                           | Run `pnpm changeset` before every publish                             |
+| Remote cache not working in CI                              | Check `TURBO_TOKEN` and `TURBO_TEAM` env vars                         |
+| CLAUDE.md too generic — Claude modifies wrong package       | Add explicit "When working on X, only touch files in apps/X" rules    |
 
 ---
 
@@ -107,11 +109,11 @@ echo "- packages/*" > pnpm-workspace.yaml
 
 ## Related Skills
 
-| Skill | Use When |
-|---|---|
+| Skill             | Use When                                 |
+| ----------------- | ---------------------------------------- |
 | architecture-core | Understanding the LMS monorepo structure |
-| deployment-ops | Dockerizing the monorepo for production |
-| testing-strategy | Running tests across packages |
+| deployment-ops    | Dockerizing the monorepo for production  |
+| testing-strategy  | Running tests across packages            |
 
 ---
 

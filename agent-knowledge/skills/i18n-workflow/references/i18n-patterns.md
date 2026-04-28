@@ -10,15 +10,15 @@ The LMS uses Next.js App Router with `[locale]` dynamic segments. The next-intl 
 
 ```typescript
 // middleware.ts
-import createMiddleware from "next-intl/middleware";
+import createMiddleware from 'next-intl/middleware';
 
 export default createMiddleware({
-  locales: ["en", "vi"],
-  defaultLocale: "en",
+  locales: ['en', 'vi'],
+  defaultLocale: 'en',
 });
 
 export const config = {
-  matcher: ["/((?!api|_next|_vercel|.*\\..*).*)"],
+  matcher: ['/((?!api|_next|_vercel|.*\\..*).*)'],
 };
 ```
 
@@ -305,10 +305,10 @@ t("Lesson.progress", { percent: 75 })
 
 ```typescript
 // AVOID: Too deep
-t("Course.Detail.Sidebar.LessonList.Item.title")
+t('Course.Detail.Sidebar.LessonList.Item.title');
 
 // PREFER: Flat
-t("Course.lessonItem.title")
+t('Course.lessonItem.title');
 ```
 
 ### Mistake 5: Not Excluding Public Assets from Middleware
@@ -318,7 +318,7 @@ Ensure `next.config.js` or middleware does not apply locale routing to static fi
 ```typescript
 // middleware.ts - already configured correctly
 export const config = {
-  matcher: ["/((?!api|_next|_vercel|.*\\..*).*)"],
+  matcher: ['/((?!api|_next|_vercel|.*\\..*).*)'],
 };
 ```
 

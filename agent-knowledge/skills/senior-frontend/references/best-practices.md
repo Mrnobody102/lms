@@ -28,45 +28,31 @@
 
 ```typescript
 // lib/api.ts
-import axios from 'axios';
-import { useAuthStore } from '@/features/auth/auth.store';
+import { createApiClient } from '@repo/api-client';
 
-export const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
-  timeout: 10000,
+export const apiClient = createApiClient({
+  tenantId: process.env.NEXT_PUBLIC_TENANT_ID,
+  onUnauthorized: () => {
+    window.location.href = '/vi/login';
+  },
 });
-
-apiClient.interceptors.request.use((config) => {
-  const { token } = useAuthStore.getState();
-  const tenantId = localStorage.getItem('tenantId');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  if (tenantId) config.headers['x-tenant-id'] = tenantId;
-  return config;
-});
-
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      useAuthStore.getState().logout();
-      window.location.href = '/auth/login';
-    }
-    return Promise.reject(error);
-  }
-);
 ```
+
+The shared client sends cookie credentials, injects `x-csrf-token` from the CSRF cookie, handles local/dev tenant hints, and clears legacy auth state on 401. Do not inject Bearer tokens from browser localStorage.
 
 ## Responsive Design
 
 ```tsx
 // Mobile-first breakpoints
-<div className="
+<div
+  className="
   grid gap-4
   grid-cols-1        /* Default: mobile */
   sm:grid-cols-2     /* 640px+ */
   md:grid-cols-3     /* 768px+ */
   lg:grid-cols-4     /* 1024px+ */
-">
+"
+>
   {courses.map((course) => (
     <CourseCard key={course.id} course={course} />
   ))}

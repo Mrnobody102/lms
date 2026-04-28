@@ -82,7 +82,6 @@ interface User {
 
 interface AuthState {
   user: User | null;
-  token: string | null;
   isAuthenticated: boolean;
   isInitialized: boolean;
   loading: boolean;
@@ -96,7 +95,6 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  token: null,
   isAuthenticated: false,
   isInitialized: false,
   loading: false,
@@ -104,29 +102,19 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   clearError: () => set({ error: null }),
 
-  checkAuth: () => {
+  checkAuth: async () => {
     if (typeof window === 'undefined') return;
-    const token = localStorage.getItem('token');
-    const userStr = localStorage.getItem('user');
-    if (token && userStr) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        const now = Math.floor(Date.now() / 1000);
-        if (payload.exp && payload.exp < now) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          set({ token: null, user: null, isAuthenticated: false, isInitialized: true });
-          return;
-        }
-        const user = JSON.parse(userStr);
-        set({ token, user, isAuthenticated: true, isInitialized: true });
-      } catch {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        set({ isInitialized: true });
-      }
-    } else {
-      set({ isInitialized: true });
+    try {
+      const response = await api.get('/users/me', { skipUnauthorizedRedirect: true });
+      const user = response.data;
+      localStorage.removeItem('token');
+      localStorage.setItem('user', JSON.stringify(user));
+      set({ user, isAuthenticated: true, isInitialized: true });
+    } catch {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('tenantId');
+      set({ user: null, isAuthenticated: false, isInitialized: true });
     }
   },
 
@@ -134,10 +122,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ loading: true, error: null });
     try {
       const response = await api.post('/auth/login', { email, password });
-      const { token, user } = response.data.data;
-      localStorage.setItem('token', token);
+      const { user } = response.data;
+      localStorage.removeItem('token');
       localStorage.setItem('user', JSON.stringify(user));
-      set({ token, user, isAuthenticated: true, loading: false });
+      set({ user, isAuthenticated: true, loading: false });
       return true;
     } catch (error: any) {
       set({ error: error.response?.data?.message || 'Login failed', loading: false });
@@ -148,10 +136,13 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    set({ token: null, user: null, isAuthenticated: false });
+    localStorage.removeItem('tenantId');
+    set({ user: null, isAuthenticated: false });
   },
 }));
 ```
+
+In the actual LMS code, use `createAuthStore` from `@repo/shared` instead of copying this implementation. The session authority is the API-set HttpOnly cookie; localStorage is only a safe user cache.
 
 ### Feature Store Pattern
 
@@ -316,34 +307,16 @@ export default function Loading() {
 
 ```typescript
 // lib/api.ts (typical structure)
-import axios from 'axios';
+import { createApiClient } from '@repo/api-client';
 
-const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
-  timeout: 10000,
-});
-
-api.interceptors.request.use((config) => {
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-  }
-  return config;
-});
-
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
+const api = createApiClient({
+  tenantId: process.env.NEXT_PUBLIC_TENANT_ID,
+  onUnauthorized: () => {
+    window.location.href = '/vi/login';
   },
-);
+});
 
 export default api;
 ```
+
+The shared client enables `withCredentials`, sends `x-csrf-token` from the `csrf_token` cookie, and does not inject `Authorization` from localStorage for browser flows.

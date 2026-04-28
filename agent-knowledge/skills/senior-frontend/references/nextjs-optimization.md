@@ -2,14 +2,14 @@
 
 ## Server vs Client Component Decision
 
-| Need | Use |
-|---|---|
-| Database access, Prisma | Server Component |
-| Static content | Server Component |
-| Auth state, tokens | Client Component |
+| Need                        | Use              |
+| --------------------------- | ---------------- |
+| Database access, Prisma     | Server Component |
+| Static content              | Server Component |
+| Auth state, tokens          | Client Component |
 | Interactivity (click, form) | Client Component |
-| useState, useEffect | Client Component |
-| Browser APIs | Client Component |
+| useState, useEffect         | Client Component |
+| Browser APIs                | Client Component |
 
 ## Data Fetching Patterns
 
@@ -152,10 +152,7 @@ export default function Error({
   return (
     <div className="flex flex-col items-center justify-center p-8">
       <h2 className="text-xl font-semibold">Something went wrong</h2>
-      <button
-        onClick={() => reset()}
-        className="mt-4 rounded-lg bg-blue-500 px-4 py-2 text-white"
-      >
+      <button onClick={() => reset()} className="mt-4 rounded-lg bg-blue-500 px-4 py-2 text-white">
         Try again
       </button>
     </div>

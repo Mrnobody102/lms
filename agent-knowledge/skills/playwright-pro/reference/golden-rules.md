@@ -89,6 +89,7 @@ export default defineConfig({
 ```
 
 View traces:
+
 ```bash
 pnpm playwright show-trace
 ```
@@ -127,7 +128,7 @@ test('login flow works and shows dashboard and allows logout');
 
 ```typescript
 // Mock a payment gateway
-await page.route('https://api.stripe.com/**', route => {
+await page.route('https://api.stripe.com/**', (route) => {
   route.fulfill({ status: 200, body: '{}' });
 });
 

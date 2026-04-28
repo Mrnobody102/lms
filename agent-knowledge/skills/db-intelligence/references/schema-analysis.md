@@ -77,6 +77,7 @@ Run through this checklist when analyzing or planning changes to the Prisma sche
    ```
 
 3. **Update the Course model** to add the reverse relation:
+
    ```prisma
    model Course {
      // ... existing fields
@@ -124,6 +125,7 @@ Run through this checklist when analyzing or planning changes to the Prisma sche
 **Example:** Removing `legacyField` from `Course`.
 
 1. **Search for all usages:**
+
    ```bash
    grep -r "legacyField" --include="*.ts" --include="*.tsx"
    ```
@@ -131,6 +133,7 @@ Run through this checklist when analyzing or planning changes to the Prisma sche
 2. **If references exist:** remove them first, then propose the migration.
 
 3. **If no references:** safe to delete. Draft the migration:
+
    ```prisma
    // Remove the field from the model
    // Remove @@index entries that reference it
@@ -179,12 +182,12 @@ Every link in the chain carries `tenantId` for proper isolation.
 
 Add `@@index` to a field when:
 
-| Scenario | Example |
-|---|---|
+| Scenario                         | Example                             |
+| -------------------------------- | ----------------------------------- |
 | Field is used in `where` clauses | `@@index([tenantId])` on all models |
-| Field is a foreign key | `@@index([courseId])` on Lesson |
-| Field is used in `orderBy` | `@@index([createdAt])` on Course |
-| Field is used in `distinct` | `@@index([email])` on User |
-| Composite filter conditions | `@@index([tenantId, status])` |
+| Field is a foreign key           | `@@index([courseId])` on Lesson     |
+| Field is used in `orderBy`       | `@@index([createdAt])` on Course    |
+| Field is used in `distinct`      | `@@index([email])` on User          |
+| Composite filter conditions      | `@@index([tenantId, status])`       |
 
 Avoid over-indexing -- each index adds write overhead.

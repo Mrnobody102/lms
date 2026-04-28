@@ -30,18 +30,18 @@ export function Tabs({ children, defaultIndex = 0 }: TabsProps) {
 }
 
 Tabs.List = function TabList({ children }: { children: ReactNode }) {
-  return <div className="tabs-list" role="tablist">{children}</div>;
+  return (
+    <div className="tabs-list" role="tablist">
+      {children}
+    </div>
+  );
 };
 
 Tabs.Tab = function Tab({ index, children }: { index: number; children: ReactNode }) {
   const ctx = useContext(TabsContext);
   if (!ctx) throw new Error('Tab must be inside Tabs');
   return (
-    <button
-      role="tab"
-      aria-selected={ctx.active === index}
-      onClick={() => ctx.setActive(index)}
-    >
+    <button role="tab" aria-selected={ctx.active === index} onClick={() => ctx.setActive(index)}>
       {children}
     </button>
   );
@@ -136,38 +136,16 @@ export function AsyncData<T>({ url, children }: AsyncDataProps<T>) {
 
 ```typescript
 // features/auth/auth.store.ts
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createAuthStore } from '@repo/shared';
+import api from '../../lib/api';
 
-interface User {
-  id: string;
-  email: string;
-  fullName: string;
-  role: 'STUDENT' | 'ADMIN';
-  tenantId: string;
-}
-
-interface AuthState {
-  token: string | null;
-  user: User | null;
-  isAuthenticated: boolean;
-  login: (token: string, user: User) => void;
-  logout: () => void;
-}
-
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      token: null,
-      user: null,
-      isAuthenticated: false,
-      login: (token, user) => set({ token, user, isAuthenticated: true }),
-      logout: () => set({ token: null, user: null, isAuthenticated: false }),
-    }),
-    { name: 'lms-auth' }
-  )
-);
+export const useAuthStore = createAuthStore({
+  api,
+  persistUser: true,
+});
 ```
+
+LMS auth is cookie-backed. Zustand may persist safe user data for UX hydration, but it must not persist JWTs or tenant authority.
 
 ## Tailwind Glassmorphism Pattern
 
@@ -206,9 +184,11 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 // Usage
-<button className={cn(
-  'px-4 py-2 rounded-lg font-medium transition-colors',
-  isActive ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700',
-  disabled && 'opacity-50 cursor-not-allowed'
-)} />
+<button
+  className={cn(
+    'px-4 py-2 rounded-lg font-medium transition-colors',
+    isActive ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700',
+    disabled && 'opacity-50 cursor-not-allowed',
+  )}
+/>;
 ```

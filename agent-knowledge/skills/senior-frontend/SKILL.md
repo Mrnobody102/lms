@@ -81,7 +81,7 @@ Skip when:
 | Missing `loading.tsx` / `error.tsx`              | Add for all main routes to prevent blank screens                     |
 | Importing `next/link` instead of i18n-aware Link | Always import `Link` from `src/navigation.ts`                        |
 | Large client bundles from heavy imports          | Use `next/dynamic` or `next/image` for lazy loading                  |
-| Storing sensitive data in Zustand localStorage   | Never store passwords; tokens only with HTTPS                        |
+| Storing sensitive data in Zustand localStorage   | Never store passwords or JWTs; persist only safe UX state            |
 
 ---
 
