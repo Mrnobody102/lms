@@ -49,8 +49,8 @@ Skip when:
 2. Follow the existing module pattern: `module`, `controller`, `service`, `dto/`
 3. Register the module in `apps/api-server/src/app.module.ts`
 4. Add Prisma schema fields in `packages/database/prisma/schema.prisma`
-5. Run: `pnpm --filter @repo/database prisma:generate`
-6. Run: `pnpm --filter @repo/database prisma:migrate` for schema changes that should be committed, or `pnpm db:deploy` to apply committed migrations. Use `db:push` only for local throwaway prototyping.
+5. Run: `pnpm --filter @repo/database generate`
+6. Run: `pnpm --filter @repo/database db:migrate` for schema changes that should be committed, or `pnpm db:deploy` to apply committed migrations. Use `db:push` only for local throwaway prototyping.
 
 ### Implement a New Frontend Feature
 
@@ -69,14 +69,14 @@ Skip when:
 
 ## Common Pitfalls
 
-| Pitfall                                                                | Fix                                                                          |
-| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| Hardcoding user names instead of using `fullName`                      | Always use the `fullName` field from the User model                          |
-| Creating duplicate components instead of reusing from `packages/ui`    | Check `packages/ui/src` before creating new components                       |
-| Missing `tenantId` in Prisma create/update operations                  | Always set `tenantId` via middleware or service layer                        |
-| Using mixed icon libraries                                             | Only use `lucide-react` throughout the project                               |
-| Putting business logic in Next.js route handlers or NestJS controllers | Keep services for logic; controllers/routes only handle HTTP                 |
-| Forgetting to regenerate Prisma client after schema changes            | Run `pnpm --filter @repo/database prisma:generate` after every schema change |
+| Pitfall                                                                | Fix                                                                   |
+| ---------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Hardcoding user names instead of using `fullName`                      | Always use the `fullName` field from the User model                   |
+| Creating duplicate components instead of reusing from `packages/ui`    | Check `packages/ui/src` before creating new components                |
+| Missing `tenantId` in Prisma create/update operations                  | Always set `tenantId` via middleware or service layer                 |
+| Using mixed icon libraries                                             | Only use `lucide-react` throughout the project                        |
+| Putting business logic in Next.js route handlers or NestJS controllers | Keep services for logic; controllers/routes only handle HTTP          |
+| Forgetting to regenerate Prisma client after schema changes            | Run `pnpm --filter @repo/database generate` after every schema change |
 
 ## Best Practices
 
@@ -90,16 +90,16 @@ Skip when:
 
 ## Monorepo Structure
 
-| Path                  | Description                                                |
-| --------------------- | ---------------------------------------------------------- |
-| `apps/api-server`     | NestJS backend with modular structure under `src/modules/` |
-| `apps/web-admin`      | Next.js 15 admin dashboard                                 |
-| `apps/web-student`    | Next.js 15 student learning portal                         |
-| `apps/super-portal`   | Next.js 15 public/marketing portal                         |
-| `packages/database`   | Prisma schema and generated client                         |
-| `packages/ui`         | Shared React components, theme, language toggles           |
-| `packages/shared`     | Shared types, constants, and utilities                     |
-| `packages/api-client` | Shared Axios API client factory with interceptors          |
+| Path                  | Description                                               |
+| --------------------- | --------------------------------------------------------- |
+| `apps/api-server`     | NestJS backend with feature modules directly under `src/` |
+| `apps/web-admin`      | Next.js 16 admin dashboard                                |
+| `apps/web-student`    | Next.js 16 student learning portal                        |
+| `apps/super-portal`   | Next.js 16 super admin portal                             |
+| `packages/database`   | Prisma schema and generated client                        |
+| `packages/ui`         | Shared React components, theme, language toggles          |
+| `packages/shared`     | Shared types, constants, and utilities                    |
+| `packages/api-client` | Shared Axios API client factory with interceptors         |
 
 ## Related Skills
 

@@ -37,9 +37,9 @@ Skip when:
 ### Development Workflow
 
 1. Modify `packages/database/prisma/schema.prisma`.
-2. Run `pnpm --filter @repo/database prisma:generate` to update types.
-3. Run `pnpm --filter @repo/database prisma:migrate` for committed schema changes. Use `prisma:db:push` only for local throwaway prototyping when you explicitly do not need a migration file.
-4. Or run `pnpm --filter @repo/database prisma:migrate` to create a named migration file.
+2. Run `pnpm --filter @repo/database generate` to update types.
+3. Run `pnpm --filter @repo/database db:migrate` for committed schema changes.
+4. Use `pnpm db:push` only for local throwaway prototyping when you explicitly do not need a migration file.
 5. Restart the API server to pick up the new Prisma Client.
 
 ### Production Migration Workflow
@@ -58,13 +58,13 @@ Skip when:
 
 ## Common Pitfalls
 
-| Pitfall                                                     | Fix                                                                                             |
-| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| Using `--force` in production migrations                    | Never use `--force` or `--skip-generate` in production. Always run full migrations with backup. |
-| Forgetting to regenerate Prisma Client after schema changes | Always run `prisma generate` after any schema change, even if not running migrations.           |
-| Mixing `db push` and `migrate dev` on the same schema       | Use `db push` for dev iteration, `migrate dev` only when you want to create a migration file.   |
-| Seeding without a tenantId                                  | Always link seed data to a valid `tenantId` -- foreign key constraints will fail otherwise.     |
-| Running migrations without reviewing the SQL first          | Use `prisma migrate diff` or inspect the migration file before applying.                        |
+| Pitfall                                                     | Fix                                                                                                         |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Using `--force` in production migrations                    | Never use `--force` or `--skip-generate` in production. Always run full migrations with backup.             |
+| Forgetting to regenerate Prisma Client after schema changes | Always run `pnpm --filter @repo/database generate` after any schema change, even if not running migrations. |
+| Mixing `db push` and `migrate dev` on the same schema       | Use `db push` for dev iteration, `migrate dev` only when you want to create a migration file.               |
+| Seeding without a tenantId                                  | Always link seed data to a valid `tenantId` -- foreign key constraints will fail otherwise.                 |
+| Running migrations without reviewing the SQL first          | Use `prisma migrate diff` or inspect the migration file before applying.                                    |
 
 ## Best Practices
 

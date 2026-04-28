@@ -9,7 +9,7 @@
 
 ## Overview
 
-Guidelines for developing the LMS `web-admin` (Next.js 15 admin dashboard), `web-student` (Next.js 15 student portal), and `super-portal` (Next.js 15 super admin portal) applications. All three apps use the App Router, React Server Components, Zustand for auth state, React Query v5 for server state, Tailwind CSS with CSS variables, and `next-intl` for i18n.
+Guidelines for developing the LMS `web-admin` (Next.js 16 admin dashboard), `web-student` (Next.js 16 student portal), and `super-portal` (Next.js 16 super admin portal) applications. All three apps use the App Router, React Server Components, Zustand for auth state, React Query v5 for server state, Tailwind CSS with CSS variables, and `next-intl` for i18n.
 
 ## Core Capabilities
 
@@ -110,7 +110,7 @@ The client automatically handles token injection, tenant headers, and 401 redire
 
 ## Layout Patterns
 
-Root layout uses async params pattern (Next.js 15):
+Root layout uses async params pattern (Next.js 15+ / 16):
 
 ```typescript
 export default async function RootLayout(props: {
@@ -161,7 +161,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
 | Pitfall                                         | Fix                                                                     |
 | ----------------------------------------------- | ----------------------------------------------------------------------- |
 | Using client features in Server Components      | Add `"use client"` at the top of the file                               |
-| Forgetting to `await params` in layouts         | Next.js 15 requires `params: Promise<{ locale: string }>`               |
+| Forgetting to `await params` in layouts         | Next.js 15+ / 16 requires `params: Promise<{ locale: string }>`         |
 | Storing tokens in plain state (lost on refresh) | Use localStorage with `checkAuth()` on mount                            |
 | Missing `@repo/ui` in Tailwind content          | Ensure `../../packages/ui/src/**/*.{js,ts,jsx,tsx}` is in content array |
 | Mixing `lucide-react` with other icon libraries | Use only `lucide-react`                                                 |

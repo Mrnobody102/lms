@@ -9,7 +9,7 @@
 
 ## Overview
 
-Frontend development skill for the LMS Platform. Covers Next.js 15 App Router, React Server Components, TypeScript, Tailwind CSS, Zustand state management, and next-intl internationalization. Use when building student portals, admin dashboards, or shared UI components.
+Frontend development skill for the LMS Platform. Covers Next.js 16 App Router, React Server Components, TypeScript, Tailwind CSS, Zustand state management, and next-intl internationalization. Use when building student portals, admin dashboards, or shared UI components.
 
 ---
 
@@ -27,6 +27,7 @@ Frontend development skill for the LMS Platform. Covers Next.js 15 App Router, R
 ## When to Use
 
 Use when:
+
 - Building or modifying pages in `apps/web-admin` or `apps/web-student`
 - Creating React components (UI, layout, feature)
 - Adding or updating translations
@@ -34,6 +35,7 @@ Use when:
 - Reviewing frontend code quality
 
 Skip when:
+
 - Working on the NestJS backend (`apps/api-server`)
 - Writing database migrations or Prisma schema changes
 - API endpoint design or review
@@ -71,15 +73,15 @@ Skip when:
 
 ## Common Pitfalls
 
-| Pitfall | Fix |
-|---|---|
-| Using `'use client'` unnecessarily | Default to Server Components; only add directive when needed |
-| Hardcoded URLs in navigation | Use `src/navigation.ts` exports (`Link`, `usePathname`, `useRouter`) |
-| Forgetting to update both translation files | Always update `vi.json` AND `en.json` together |
-| Missing `loading.tsx` / `error.tsx` | Add for all main routes to prevent blank screens |
-| Importing `next/link` instead of i18n-aware Link | Always import `Link` from `src/navigation.ts` |
-| Large client bundles from heavy imports | Use `next/dynamic` or `next/image` for lazy loading |
-| Storing sensitive data in Zustand localStorage | Never store passwords; tokens only with HTTPS |
+| Pitfall                                          | Fix                                                                  |
+| ------------------------------------------------ | -------------------------------------------------------------------- |
+| Using `'use client'` unnecessarily               | Default to Server Components; only add directive when needed         |
+| Hardcoded URLs in navigation                     | Use `src/navigation.ts` exports (`Link`, `usePathname`, `useRouter`) |
+| Forgetting to update both translation files      | Always update `vi.json` AND `en.json` together                       |
+| Missing `loading.tsx` / `error.tsx`              | Add for all main routes to prevent blank screens                     |
+| Importing `next/link` instead of i18n-aware Link | Always import `Link` from `src/navigation.ts`                        |
+| Large client bundles from heavy imports          | Use `next/dynamic` or `next/image` for lazy loading                  |
+| Storing sensitive data in Zustand localStorage   | Never store passwords; tokens only with HTTPS                        |
 
 ---
 
@@ -97,13 +99,13 @@ Skip when:
 
 ## Related Skills
 
-| Skill | Use When |
-|---|---|
+| Skill            | Use When                                    |
+| ---------------- | ------------------------------------------- |
 | nextjs-standards | Detailed Next.js patterns and configuration |
-| i18n-workflow | Managing translations across the monorepo |
-| auth-standards | Zustand auth store and JWT handling |
-| testing-strategy | Unit tests for React components |
-| playwright-pro | End-to-end testing of frontend flows |
+| i18n-workflow    | Managing translations across the monorepo   |
+| auth-standards   | Zustand auth store and JWT handling         |
+| testing-strategy | Unit tests for React components             |
+| playwright-pro   | End-to-end testing of frontend flows        |
 
 ---
 

@@ -17,8 +17,8 @@ pnpm --filter @lms/api-server build
 pnpm --filter @lms/api-server test
 
 # Run Prisma commands for the database package
-pnpm --filter @repo/database prisma:generate
-pnpm --filter @repo/database prisma:migrate
+pnpm --filter @repo/database generate
+pnpm --filter @repo/database db:migrate
 pnpm --filter @repo/database prisma:studio
 
 # Run across all affected apps (based on changed deps)
@@ -80,7 +80,7 @@ import { <Feature> } from './entities/<feature>.entity';
 export class <Feature>Module {}
 ```
 
-## Next.js 15 App Router Structure
+## Next.js 16 App Router Structure
 
 ```
 apps/web-admin/

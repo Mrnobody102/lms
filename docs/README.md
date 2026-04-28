@@ -38,6 +38,14 @@ Nếu bạn mới tham gia dự án, hãy đọc theo thứ tự:
 1. **[docs/ops/deployment.md](ops/deployment.md)** — Hướng dẫn triển khai local và production (Vercel + Docker VPS).
 2. **[docs/troubleshooting.md](troubleshooting.md)** — Giải quyết các lỗi thường gặp (Docker, i18n, monorepo, Tailwind).
 
+### Người Dùng AI Agent / Coding Agent
+
+1. **[AGENTS.md](../AGENTS.md)** — Entry point cho mọi AI coding agent trong repo.
+2. **[CLAUDE.md](../CLAUDE.md)** — Memory entrypoint cho Claude Code, trỏ về `AGENTS.md`.
+3. **[docs/ai-agent/SOP.md](ai-agent/SOP.md)** — Quy trình làm việc chuẩn: intake, plan, implementation, validation, handoff.
+4. **[agent-knowledge/lms-platform/CONTEXT.md](../agent-knowledge/lms-platform/CONTEXT.md)** — Ngữ cảnh nghiệp vụ LMS.
+5. **[agent-knowledge/lms-platform/SKILL.md](../agent-knowledge/lms-platform/SKILL.md)** — Skill map để chọn đúng skill theo loại task.
+
 ## Cấu Trúc Thư Mục Tài Liệu
 
 ```
@@ -64,6 +72,7 @@ docs/
 │   └── architecture-plan.md # Production readiness roadmap
 │
 └── ai-agent/                 # Tài liệu AI Agent (nội bộ)
+    ├── SOP.md
     ├── ai-agent-architecture.md
     └── overnight-command-template.md
 ```
@@ -74,7 +83,9 @@ docs/
 | -------------------------------------------------- | ---------------------------------------------------------- |
 | [../CONTRIBUTING.md](../CONTRIBUTING.md)           | Quy tắc đóng góp (commit convention, code style, workflow) |
 | [../PROJECT_STRUCTURE.md](../PROJECT_STRUCTURE.md) | Cấu trúc code chi tiết (apps, packages, scripts)           |
-| [.agent/](../.agent/)                              | Cấu hình Claude Opus workspace                             |
+| [../AGENTS.md](../AGENTS.md)                       | Hướng dẫn chính cho AI coding agents                       |
+| [../CLAUDE.md](../CLAUDE.md)                       | Entrypoint cho Claude Code                                 |
+| [../agent-knowledge/](../agent-knowledge/)         | Knowledge base và skill files cho AI agents                |
 
 ## Đóng Góp Tài Liệu
 

@@ -74,6 +74,8 @@ jobs:
       - run: pnpm --filter @repo/database generate
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm --filter web-student test:e2e
+      - run: pnpm --filter web-admin test:e2e
+      - run: pnpm --filter super-portal test:e2e
 
   api_smoke:
     name: API Smoke

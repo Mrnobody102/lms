@@ -1,6 +1,6 @@
 # NextJS Patterns Reference
 
-Deep-dive reference for Next.js 15 patterns used in the LMS web portals.
+Deep-dive reference for Next.js 16 patterns used in the LMS web portals.
 
 ## Component Patterns
 
@@ -71,9 +71,14 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
 
 ```typescript
 // features/auth/auth.store.ts
-import { create } from "zustand";
+import { create } from 'zustand';
 
-interface User { id: string; email: string; name: string; role: string; }
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+}
 
 interface AuthState {
   user: User | null;
@@ -90,29 +95,34 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  user: null, token: null, isAuthenticated: false, isInitialized: false, loading: false, error: null,
+  user: null,
+  token: null,
+  isAuthenticated: false,
+  isInitialized: false,
+  loading: false,
+  error: null,
 
   clearError: () => set({ error: null }),
 
   checkAuth: () => {
-    if (typeof window === "undefined") return;
-    const token = localStorage.getItem("token");
-    const userStr = localStorage.getItem("user");
+    if (typeof window === 'undefined') return;
+    const token = localStorage.getItem('token');
+    const userStr = localStorage.getItem('user');
     if (token && userStr) {
       try {
-        const payload = JSON.parse(atob(token.split(".")[1]));
+        const payload = JSON.parse(atob(token.split('.')[1]));
         const now = Math.floor(Date.now() / 1000);
         if (payload.exp && payload.exp < now) {
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
           set({ token: null, user: null, isAuthenticated: false, isInitialized: true });
           return;
         }
         const user = JSON.parse(userStr);
         set({ token, user, isAuthenticated: true, isInitialized: true });
       } catch {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
         set({ isInitialized: true });
       }
     } else {
@@ -123,21 +133,21 @@ export const useAuthStore = create<AuthState>((set) => ({
   login: async (email, password) => {
     set({ loading: true, error: null });
     try {
-      const response = await api.post("/auth/login", { email, password });
+      const response = await api.post('/auth/login', { email, password });
       const { token, user } = response.data.data;
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
       set({ token, user, isAuthenticated: true, loading: false });
       return true;
     } catch (error: any) {
-      set({ error: error.response?.data?.message || "Login failed", loading: false });
+      set({ error: error.response?.data?.message || 'Login failed', loading: false });
       return false;
     }
   },
 
   logout: () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     set({ token: null, user: null, isAuthenticated: false });
   },
 }));
@@ -147,9 +157,12 @@ export const useAuthStore = create<AuthState>((set) => ({
 
 ```typescript
 // features/courses/course.store.ts
-import { create } from "zustand";
+import { create } from 'zustand';
 
-interface CourseFilters { search: string; category: string; }
+interface CourseFilters {
+  search: string;
+  category: string;
+}
 
 interface CourseState {
   filters: CourseFilters;
@@ -157,7 +170,7 @@ interface CourseState {
 }
 
 export const useCourseStore = create<CourseState>((set) => ({
-  filters: { search: "", category: "all" },
+  filters: { search: '', category: 'all' },
   setFilters: (newFilters) => set((state) => ({ filters: { ...state.filters, ...newFilters } })),
 }));
 ```
@@ -303,16 +316,16 @@ export default function Loading() {
 
 ```typescript
 // lib/api.ts (typical structure)
-import axios from "axios";
+import axios from 'axios';
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001",
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
   timeout: 10000,
 });
 
 api.interceptors.request.use((config) => {
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem("token");
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -324,12 +337,12 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      window.location.href = "/login";
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;

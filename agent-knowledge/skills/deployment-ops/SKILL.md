@@ -13,8 +13,8 @@ Procedures for containerizing, automating, and deploying the LMS platform across
 
 ## Core Capabilities
 
-- **dockerization**: Multi-stage Docker builds for NestJS and Next.js apps using `turbo prune` in a pnpm monorepo.
-- **cicd_pipelines**: GitHub Actions workflows that build, test, and deploy each service.
+- **dockerization**: Multi-stage Docker builds for NestJS and Next.js apps using pinned Node 20 and `turbo prune` in a pnpm monorepo.
+- **cicd_pipelines**: GitHub Actions workflows that typecheck, lint, test, build, and run smoke checks.
 - **env_management**: Per-environment secrets and configuration via `.env` files and Docker Compose overrides.
 - **infrastructure**: PostgreSQL 15 + Redis for the stack, deployable on Railway, AWS ECS, or any container host.
 
@@ -57,15 +57,16 @@ docker build -t lms-super-portal -f apps/super-portal/Dockerfile .
 
 GitHub Actions workflows at `.github/workflows/` run on push/PR. Standard pipeline stages:
 
-1. **Lint & Type Check**: `pnpm lint` and `pnpm build` across affected apps
-2. **Test**: Unit and integration tests via Vitest
-3. **Build**: Docker images for all changed apps
-4. **Deploy**: Push images and update services (Vercel for frontends, Railway/ECS for backend)
+1. **Fast checks**: `pnpm run typecheck`, `pnpm run lint`, `pnpm run test`.
+2. **Build**: `pnpm turbo run build --concurrency=1 --filter=api-server --filter=web-admin --filter=web-student --filter=super-portal --filter=@repo/database`.
+3. **E2E**: Playwright Chromium smoke for `web-student`.
+4. **API smoke**: PostgreSQL + Redis service containers, `db:deploy`, API smoke script.
 
 ## Docker Strategy
 
-- Base image: `node:18-alpine` for all services (reduced size).
-- Use `pnpm dlx turbo prune --scope=<app> --docker` to create isolated build context per app.
+- Base image: `node:20-alpine` for all services.
+- Pin Corepack/pnpm and Turbo versions in Dockerfiles.
+- Do not use `turbo prune --scan-imports`; Turbo `2.7.5` does not support that flag in this repo. Current production Dockerfiles use full workspace install/build stages and copy only runtime artifacts into final images.
 - NestJS (api-server): Run `node dist/main.js` directly (no standalone output needed).
 - Next.js apps (web-student, web-admin, super-portal): Set `output: 'standalone'` in `next.config.js` for efficient production serving. Copy `.next/standalone`, `.next/static`, and `public/` directories.
 - Always create a non-root user (`adduser --system --uid 1001`) in the runner stage.
@@ -83,21 +84,21 @@ Environment file precedence: `.env.local` > `.env.production` > `.env`.
 
 ## Common Pitfalls
 
-| Pitfall                                | Fix                                                                        |
-| -------------------------------------- | -------------------------------------------------------------------------- |
-| `turbo prune` produces empty `out/`    | Ensure `--filter=<app>` matches the app name in `turbo.json`               |
-| Next.js standalone output missing      | Verify `output: 'standalone'` is set in `next.config.js`                   |
-| Non-root user cannot read static files | Use `--chown=nextjs:nodejs` on COPY for static dirs                        |
-| Frontend cannot reach API in Docker    | Use Docker Compose service names (e.g., `http://api:4000`) not `localhost` |
-| Stale lockfile in Docker cache         | Copy lockfile before `pnpm install` to leverage cache                      |
+| Pitfall                                | Fix                                                                            |
+| -------------------------------------- | ------------------------------------------------------------------------------ |
+| `turbo prune` produces empty `out/`    | Ensure `--filter=<app>` matches the app name in `turbo.json`                   |
+| Next.js standalone output missing      | Verify `output: 'standalone'` is set in `next.config.js`                       |
+| Non-root user cannot read static files | Use `--chown=nextjs:nodejs` on COPY for static dirs                            |
+| Frontend cannot reach API from browser | Use a browser-reachable `NEXT_PUBLIC_API_URL`, not an internal Docker hostname |
+| Stale lockfile in Docker cache         | Copy lockfile before `pnpm install` to leverage cache                          |
 
 ## Best Practices
 
 1. Never commit `.env` files. Use `.env.example` as a template.
-2. Use `pnpm --filter` to build only affected apps in CI, not the entire monorepo.
+2. Use `pnpm --filter` and Turbo filters for focused local checks; CI should still cover shared-package blast radius.
 3. Tag Docker images with the Git commit SHA: `lms-api:${GITHUB_SHA}`.
 4. Keep database migrations in CI before deploying the new API image.
-5. Health-check endpoints (`/health`) on all services for container orchestrator readiness probes.
+5. Use `/api/health/live` for liveness and `/api/health/ready` for readiness. Readiness must return non-2xx when required dependencies are down.
 
 ## Related Skills
 

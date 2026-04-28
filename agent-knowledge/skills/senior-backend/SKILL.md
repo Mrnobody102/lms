@@ -58,7 +58,7 @@ src/course/
 ```
 
 1. Define Prisma model in `packages/database/prisma/schema.prisma`
-2. Run `pnpm --filter @repo/database prisma:generate` to generate client
+2. Run `pnpm --filter @repo/database generate` to generate client
 3. Create DTOs with `class-validator` decorators and `@ApiProperty`
 4. Write Service with business logic (not in Controller)
 5. Write Controller with proper HTTP methods and Swagger decorators
@@ -78,7 +78,7 @@ src/course/
 1. Identify slow queries via logs or `EXPLAIN ANALYZE`
 2. Check for missing indexes on filter/join columns
 3. Add `@@index` in `schema.prisma`
-4. Run `pnpm --filter @repo/database prisma:migrate --name add_course_indexes`
+4. Run `pnpm --filter @repo/database db:migrate -- --name add_course_indexes`
 5. Verify with `EXPLAIN ANALYZE` again
 
 ---

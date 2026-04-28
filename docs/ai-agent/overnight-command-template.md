@@ -1,31 +1,63 @@
-# 🌙 Overnight Agent Operational Command (Template 2026)
+# Long-Running Agent Task Template
 
-## Hướng Dẫn Kích Hoạt Chế Độ Vận Hành Tự Chủ
+Use this template when asking an AI coding agent to work for an extended period.
+Prefer bounded tasks with clear acceptance criteria over open-ended "work overnight" instructions.
 
-Sử dụng mẫu này để ra lệnh cho các Agent như **OpenClaw**, **OpenHands**, hoặc **Claude-Code** thực hiện công việc xuyên đêm cho dự án LMS Platform.
+## Prompt Template
 
-### 1. Câu Lệnh Kích Hoạt (System Prompt/Command)
+```text
+You are working in the LMS Platform repo.
 
-> "Chào Agent, tôi chuẩn bị đi ngủ. Từ giờ đến 8h sáng mai, hãy đóng vai trò là một **Senior Backend Engineer** để xử lý các tác vụ sau:
->
-> 1. **Mục tiêu**: Đọc các hạng mục còn trống trong task list thuộc Phase [X].
-> 2. **Kiến thức**: Hãy rà soát [ai-agent-architecture.md](ai-agent-architecture.md) để hiểu tri thức chuyên gia chúng tôi đang áp dụng.
-> 3. **Quy tắc Vàng**:
->    - Sau mỗi file thay đổi, PHẢI chạy `validate-ai-work.ps1`.
->    - Nếu lỗi Build/Test, hãy tự đọc logs và sửa lỗi cho đến khi pass. Không được dừng lại trừ khi không thể giải quyết được sau 5 lần thử.
-> 4. **Báo cáo**: Sáng mai, hãy để lại một file `MORNING_REPORT.md` tại thư mục docs, tóm tắt:
->    - Những gì bạn ĐÃ hoàn thành.
->    - Những lỗi bạn ĐÃ tự chữa (Self-healed).
->    - Những gì bạn CẦN tôi phê duyệt hoặc giải đáp.
->
-> Chúc bạn một đêm làm việc năng suất. Hẹn gặp lại vào buổi sáng!"
+Read first:
+- AGENTS.md
+- docs/ai-agent/SOP.md
+- agent-knowledge/lms-platform/CONTEXT.md
+- Relevant skill files for this task
 
-### 2. Cấu Hình Môi Trường (Recommended Settings)
+Goal:
+[Describe the concrete outcome.]
 
-- **Worker Session**: Đảm bảo bật tính năng `Persistent Session` trong cấu hình Agent.
-- **Auto-Approval**: Bật `auto-approve: true` cho các lệnh đọc file và chạy linter để AI không phải chờ bạn nhấn Enter.
-- **Safety**: Giới hạn AI trong thư mục dự án `lms-platform` và không cho phép lệnh xóa Database (`drop database`).
+Scope:
+- Allowed paths: [list paths]
+- Do not touch: [list paths or behaviors]
 
----
+Acceptance criteria:
+1. [Expected behavior]
+2. [Tests/docs/commands required]
+3. [Compatibility or migration requirement]
 
-_Mẫu lệnh này được thiết kế để tối ưu hóa sự phối hợp Người-Máy theo chuẩn Agentic 2026._
+Validation:
+- Run focused checks while iterating.
+- Before handoff, run:
+  pnpm install --frozen-lockfile
+  pnpm run typecheck
+  pnpm run lint
+  pnpm run test
+  pnpm run build
+
+Safety:
+- Do not push unless explicitly asked.
+- Do not run destructive database commands.
+- Do not rewrite git history.
+- Stop and report if the task requires a security, data-loss, public API, or migration decision.
+
+Handoff:
+- Summarize changes.
+- List commands run.
+- List skipped commands and why.
+- List remaining risks and recommended next task.
+```
+
+## Good Use Cases
+
+- Add a focused API feature with tests.
+- Improve one production-readiness area.
+- Build E2E coverage for one app.
+- Refactor one module with a clear public behavior boundary.
+
+## Avoid
+
+- "Fix everything" prompts without acceptance criteria.
+- Multi-domain changes that touch API, database, all frontends, deployment, and docs at once.
+- Auto-push workflows without human review.
+- Tasks that require production credentials or real user data.

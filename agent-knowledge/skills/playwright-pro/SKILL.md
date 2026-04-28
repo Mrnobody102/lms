@@ -36,7 +36,7 @@ Use when:
 
 Skip when:
 
-- Writing unit tests (use Jest/Vitest) or API integration tests (use Supertest)
+- Writing unit tests (use Vitest) or API integration tests (use Supertest)
 - Testing pure backend logic without UI
 - Quick one-off browser checks (use manual testing instead)
 

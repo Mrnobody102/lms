@@ -10,9 +10,10 @@ Deep-dive reference for the LMS testing pyramid: unit, integration, and E2E test
 
 **Scope**: Pure business logic, standalone services, utilities, individual React components.
 
-**Tool**: Jest (frontend), Vitest (backend).
+**Tool**: Vitest for backend, shared packages, and UI package tests.
 
 **Characteristics**:
+
 - Fast (< 10ms per test)
 - Deterministic and repeatable
 - No external dependencies (database, network)
@@ -20,11 +21,12 @@ Deep-dive reference for the LMS testing pyramid: unit, integration, and E2E test
 - One assertion concept per test
 
 **Example - Service Unit Test**:
+
 ```typescript
-describe("LessonService.findOne", () => {
-  it("should throw NotFoundException when lesson does not exist", async () => {
+describe('LessonService.findOne', () => {
+  it('should throw NotFoundException when lesson does not exist', async () => {
     prismaService.lesson.findFirst.mockResolvedValue(null);
-    await expect(service.findOne("invalid", "tenant-1")).rejects.toThrow(NotFoundException);
+    await expect(service.findOne('invalid', 'tenant-1')).rejects.toThrow(NotFoundException);
   });
 });
 ```
@@ -35,32 +37,34 @@ describe("LessonService.findOne", () => {
 
 **Scope**: Controller + service boundary, service + database boundary, API endpoint contracts.
 
-**Tool**: Vitest + Supertest (API), Jest + `@testing-library/react` (frontend).
+**Tool**: Vitest + Supertest (API), Vitest + Testing Library (React components).
 
 **Characteristics**:
+
 - Medium speed (< 100ms per test)
 - Mocked Prisma client at service boundary
 - Tests real HTTP request/response flow for API tests
 - Verifies JSON response shapes
 
 **Example - Controller Integration with Supertest**:
+
 ```typescript
-describe("POST /lessons", () => {
-  it("should return 201 with lesson data", async () => {
+describe('POST /lessons', () => {
+  it('should return 201 with lesson data', async () => {
     const response = await request(app.getHttpServer())
-      .post("/lessons")
-      .set("Authorization", `Bearer ${validToken}`)
-      .set("x-tenant-id", "tenant-1")
-      .send({ title: "New Lesson", courseId: "course-1" });
+      .post('/lessons')
+      .set('Authorization', `Bearer ${validToken}`)
+      .set('x-tenant-id', 'tenant-1')
+      .send({ title: 'New Lesson', courseId: 'course-1' });
 
     expect(response.status).toBe(201);
     expect(response.body.success).toBe(true);
-    expect(response.body.data.title).toBe("New Lesson");
+    expect(response.body.data.title).toBe('New Lesson');
   });
 });
 ```
 
-### E2E Tests (Future)
+### E2E Tests
 
 **Definition**: Tests complete user journeys across the entire application stack in a real browser.
 
@@ -69,6 +73,7 @@ describe("POST /lessons", () => {
 **Tool**: Playwright (planned).
 
 **Characteristics**:
+
 - Slowest (may take seconds per test)
 - Real browser, real server, real database
 - Tests the entire system as a user would experience it
@@ -76,16 +81,16 @@ describe("POST /lessons", () => {
 
 ## Coverage Targets by Layer
 
-| Layer | Coverage Target | Priority |
-|---|---|---|
+| Layer                              | Coverage Target        | Priority |
+| ---------------------------------- | ---------------------- | -------- |
 | Auth module (login, register, JWT) | 90%+ line, 95%+ branch | Critical |
-| Tenant middleware and guards | 95%+ line | Critical |
-| Validation DTOs (all decorators) | 85%+ line | High |
-| Controllers (all endpoints) | 80%+ line | High |
-| Services (all methods) | 80%+ line | High |
-| Frontend auth components | 70%+ line | Medium |
-| Frontend lesson components | 60%+ line | Medium |
-| i18n components | 50%+ line | Low |
+| Tenant middleware and guards       | 95%+ line              | Critical |
+| Validation DTOs (all decorators)   | 85%+ line              | High     |
+| Controllers (all endpoints)        | 80%+ line              | High     |
+| Services (all methods)             | 80%+ line              | High     |
+| Frontend auth components           | 70%+ line              | Medium   |
+| Frontend lesson components         | 60%+ line              | Medium   |
+| i18n components                    | 50%+ line              | Low      |
 
 ## Test Organization Patterns
 
@@ -118,6 +123,7 @@ apps/web-admin/src/
 ```
 
 Examples:
+
 - `LessonService.findOne should throw NotFoundException when lesson does not exist`
 - `AuthController POST /auth/login should return 401 when password is incorrect`
 - `LoginForm should display error message when login fails`
@@ -125,25 +131,25 @@ Examples:
 ### Describe Block Structure
 
 ```typescript
-describe("SubjectName", () => {
-  describe("methodName or route", () => {
-    describe("happy path", () => {
-      it("should ...");
+describe('SubjectName', () => {
+  describe('methodName or route', () => {
+    describe('happy path', () => {
+      it('should ...');
     });
 
-    describe("auth failures", () => {
-      it("should return 401 when no token provided");
-      it("should return 401 when token is expired");
+    describe('auth failures', () => {
+      it('should return 401 when no token provided');
+      it('should return 401 when token is expired');
     });
 
-    describe("validation failures", () => {
-      it("should return 422 when field is missing");
-      it("should return 422 when field has wrong type");
+    describe('validation failures', () => {
+      it('should return 422 when field is missing');
+      it('should return 422 when field has wrong type');
     });
 
-    describe("business logic edge cases", () => {
-      it("should handle empty list gracefully");
-      it("should cap pagination at maximum page size");
+    describe('business logic edge cases', () => {
+      it('should handle empty list gracefully');
+      it('should cap pagination at maximum page size');
     });
   });
 });
@@ -177,7 +183,7 @@ const prismaServiceMock = {
 };
 
 // Register in module
-providers: [{ provide: PrismaService, useValue: prismaServiceMock }]
+providers: [{ provide: PrismaService, useValue: prismaServiceMock }];
 ```
 
 ### Strategy 2: Partial Mock Per Test
@@ -185,12 +191,12 @@ providers: [{ provide: PrismaService, useValue: prismaServiceMock }]
 ```typescript
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(prismaService.lesson.findFirst).mockResolvedValue({ id: "1", title: "Test" });
+  vi.mocked(prismaService.lesson.findFirst).mockResolvedValue({ id: '1', title: 'Test' });
 });
 
-it("should return lesson when found", async () => {
-  const result = await service.findOne("1", "tenant-1");
-  expect(result.id).toBe("1");
+it('should return lesson when found', async () => {
+  const result = await service.findOne('1', 'tenant-1');
+  expect(result.id).toBe('1');
 });
 ```
 
@@ -207,7 +213,9 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
-  await prisma.lesson.create({ data: { id: "test-1", title: "Test", courseId: "course-1", tenantId: "tenant-1" } });
+  await prisma.lesson.create({
+    data: { id: 'test-1', title: 'Test', courseId: 'course-1', tenantId: 'tenant-1' },
+  });
 });
 
 afterEach(async () => {
@@ -222,18 +230,18 @@ afterAll(async () => {
 
 ### What to Mock vs. What to Use Real
 
-| Dependency | Mock in Unit | Use Real in Integration |
-|---|---|---|
-| PrismaService | Yes | No (mock instead) |
-| External APIs | Yes | Yes |
-| Email service | Yes | No |
-| File storage | Yes | No |
-| JWT library | No | No |
-| ValidationPipe | No | No (test via integration) |
+| Dependency     | Mock in Unit | Use Real in Integration   |
+| -------------- | ------------ | ------------------------- |
+| PrismaService  | Yes          | No (mock instead)         |
+| External APIs  | Yes          | Yes                       |
+| Email service  | Yes          | No                        |
+| File storage   | Yes          | No                        |
+| JWT library    | No           | No                        |
+| ValidationPipe | No           | No (test via integration) |
 
 ## Frontend Testing Patterns
 
-### React Component with Jest
+### React Component with Vitest
 
 ```typescript
 // login-form.spec.tsx
@@ -279,26 +287,26 @@ Create reusable factory functions for consistent test data:
 ```typescript
 // test/factories/lesson.factory.ts
 export const createMockLesson = (overrides = {}) => ({
-  id: "lesson-1",
-  title: "Test Lesson",
-  type: "text",
-  content: "Lesson content",
+  id: 'lesson-1',
+  title: 'Test Lesson',
+  type: 'text',
+  content: 'Lesson content',
   videoUrl: null,
   duration: 10,
   order: 1,
-  courseId: "course-1",
-  tenantId: "tenant-1",
+  courseId: 'course-1',
+  tenantId: 'tenant-1',
   createdAt: new Date(),
   updatedAt: new Date(),
   ...overrides,
 });
 
 export const createMockUser = (overrides = {}) => ({
-  id: "user-1",
-  email: "user@example.com",
-  fullName: "John Doe",
-  role: "STUDENT",
-  tenantId: "tenant-1",
+  id: 'user-1',
+  email: 'user@example.com',
+  fullName: 'John Doe',
+  role: 'STUDENT',
+  tenantId: 'tenant-1',
   ...overrides,
 });
 ```

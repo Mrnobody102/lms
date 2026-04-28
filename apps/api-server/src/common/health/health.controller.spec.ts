@@ -14,16 +14,18 @@ describe('HealthController', () => {
     const metricsService = {
       getSnapshot: vi.fn(),
       getPrometheusSnapshot: vi.fn(),
+      recordReadiness: vi.fn(),
     };
 
     return {
       controller: new HealthController(healthService as never, metricsService as never),
       healthService,
+      metricsService,
     };
   };
 
   it('should keep readiness probes HTTP 200 when dependencies are healthy', async () => {
-    const { controller } = createController('ok');
+    const { controller, metricsService } = createController('ok');
     const response = { status: vi.fn() };
 
     await expect(controller.getReadiness(response as never)).resolves.toEqual({
@@ -32,6 +34,11 @@ describe('HealthController', () => {
     });
 
     expect(response.status).not.toHaveBeenCalled();
+    expect(metricsService.recordReadiness).toHaveBeenCalledWith({
+      status: 'ok',
+      durationMs: expect.any(Number),
+      checks: {},
+    });
   });
 
   it('should return HTTP 503 when readiness dependencies are unhealthy', async () => {

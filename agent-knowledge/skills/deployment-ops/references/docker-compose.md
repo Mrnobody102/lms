@@ -7,14 +7,14 @@ This document provides concrete examples for containerizing, composing, and auto
 Located at `docker-compose.yml` at repo root. Spins up only infrastructure (no app builds) for local dev.
 
 ```yaml
-version: "3.8"
+version: '3.8'
 
 services:
   postgres:
     image: postgres:15-alpine
     container_name: lms_postgres
     ports:
-      - "5433:5432"
+      - '5433:5432'
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
@@ -28,7 +28,7 @@ services:
     image: redis:alpine
     container_name: lms_redis
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
       - redis_data:/data
     networks:
@@ -52,7 +52,7 @@ Start with: `docker compose up -d`
 Located at `deployment/production/docker-compose.prod.yml`. Builds and runs all four services with infrastructure.
 
 ```yaml
-version: "3.8"
+version: '3.8'
 
 services:
   postgres:
@@ -78,7 +78,7 @@ services:
       context: ../../
       dockerfile: apps/api-server/Dockerfile
     ports:
-      - "4000:4000"
+      - '4000:4000'
     environment:
       DATABASE_URL: postgresql://postgres:password@postgres:5432/lms_platform
       REDIS_URL: redis://redis:6379
@@ -94,7 +94,7 @@ services:
       context: ../../
       dockerfile: apps/web-student/Dockerfile
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:4000
     depends_on:
@@ -107,7 +107,7 @@ services:
       context: ../../
       dockerfile: apps/web-admin/Dockerfile
     ports:
-      - "3001:3000"
+      - '3001:3000'
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:4000
     depends_on:
@@ -120,7 +120,7 @@ services:
       context: ../../
       dockerfile: apps/super-portal/Dockerfile
     ports:
-      - "3002:3000"
+      - '3002:3000'
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:4000
     depends_on:
@@ -146,14 +146,16 @@ Start with: `docker compose -f deployment/production/docker-compose.prod.yml up 
 ### NestJS API Server
 
 ```dockerfile
-FROM node:18-alpine AS base
+FROM node:20-alpine AS base
+RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 
 FROM base AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
-RUN npm install -g turbo
+RUN npm install -g turbo@2.7.5
 COPY . .
-RUN turbo prune --scan-imports api-server --docker
+RUN pnpm install --frozen-lockfile
+RUN pnpm turbo build --filter=api-server...
 
 FROM base AS installer
 RUN apk add --no-cache libc6-compat
@@ -161,8 +163,7 @@ WORKDIR /app
 COPY .gitignore .gitignore
 COPY --from=builder /app/out/json/ .
 COPY --from=builder /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
-RUN npm install -g pnpm
-RUN pnpm install
+RUN pnpm install --frozen-lockfile
 COPY --from=builder /app/out/full/ .
 COPY turbo.json turbo.json
 RUN pnpm turbo build --filter=api-server...
@@ -181,14 +182,16 @@ CMD ["node", "dist/main.js"]
 ### Next.js Apps (web-student, web-admin, super-portal)
 
 ```dockerfile
-FROM node:18-alpine AS base
+FROM node:20-alpine AS base
+RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 
 FROM base AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
-RUN npm install -g turbo
+RUN npm install -g turbo@2.7.5
 COPY . .
-RUN turbo prune --scan-imports web-student --docker
+RUN pnpm install --frozen-lockfile
+RUN pnpm turbo build --filter=web-student...
 
 FROM base AS installer
 RUN apk add --no-cache libc6-compat
@@ -196,8 +199,7 @@ WORKDIR /app
 COPY .gitignore .gitignore
 COPY --from=builder /app/out/json/ .
 COPY --from=builder /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
-RUN npm install -g pnpm
-RUN pnpm install
+RUN pnpm install --frozen-lockfile
 COPY --from=builder /app/out/full/ .
 COPY turbo.json turbo.json
 RUN pnpm turbo build --filter=web-student...
@@ -230,14 +232,14 @@ on:
   push:
     branches: [main]
     paths:
-      - "apps/api-server/**"
-      - "packages/**"
-      - "turbo.json"
+      - 'apps/api-server/**'
+      - 'packages/**'
+      - 'turbo.json'
   pull_request:
     paths:
-      - "apps/api-server/**"
-      - "packages/**"
-      - "turbo.json"
+      - 'apps/api-server/**'
+      - 'packages/**'
+      - 'turbo.json'
 
 env:
   REGISTRY: ghcr.io
@@ -251,8 +253,8 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "18"
-          cache: "pnpm"
+          node-version: '18'
+          cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - run: pnpm turbo lint --filter=api-server...
       - run: pnpm turbo build --filter=api-server...
@@ -294,9 +296,9 @@ on:
   push:
     branches: [main]
     paths:
-      - "apps/web-student/**"
-      - "apps/web-admin/**"
-      - "apps/super-portal/**"
+      - 'apps/web-student/**'
+      - 'apps/web-admin/**'
+      - 'apps/super-portal/**'
   pull_request:
 
 jobs:
@@ -311,7 +313,7 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_STUDENT }}
-          vercel-args: "--prod"
+          vercel-args: '--prod'
 ```
 
 ---

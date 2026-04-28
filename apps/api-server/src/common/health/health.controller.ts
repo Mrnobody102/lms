@@ -50,7 +50,13 @@ export class HealthController {
   }
 
   private async getReadinessResponse(response: Response) {
+    const startedAt = Date.now();
     const readiness = await this.healthService.getReadiness();
+    this.metricsService.recordReadiness({
+      status: readiness.status === 'ok' ? 'ok' : 'unhealthy',
+      durationMs: Date.now() - startedAt,
+      checks: readiness.checks,
+    });
 
     if (readiness.status !== 'ok') {
       response.status(HttpStatus.SERVICE_UNAVAILABLE);

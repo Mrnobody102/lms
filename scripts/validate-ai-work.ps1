@@ -1,29 +1,28 @@
 # Validation script for AI Agent Work (Windows/PowerShell)
-# Purpose: Run this before finishing any task to ensure no regressions.
+# Purpose: Run before handoff or commit to mirror the CI fast checks.
 
 $ErrorActionPreference = "Stop"
 
 Write-Host "--- AI Validation Gate Started ---" -ForegroundColor Cyan
 
-# 1. Formatting Check (Prettier)
-Write-Host "[1/4] Checking formatting..." -ForegroundColor Yellow
-pnpm format
-if ($LASTEXITCODE -ne 0) { Write-Error "Formatting failed"; exit 1 }
+Write-Host "[1/5] Checking frozen install..." -ForegroundColor Yellow
+pnpm install --frozen-lockfile
+if ($LASTEXITCODE -ne 0) { Write-Error "Frozen install failed"; exit 1 }
 
-# 2. Linting (Bỏ qua lỗi monorepo cũ, tập trung vào api-server nếu cần)
-Write-Host "[2/4] Running lint (Focused skip for stable gate)..." -ForegroundColor Yellow
-# pnpm lint --filter api-server # Tạm thời bỏ qua vì api-server dùng global linting
+Write-Host "[2/5] Running typecheck..." -ForegroundColor Yellow
+pnpm run typecheck
+if ($LASTEXITCODE -ne 0) { Write-Error "Typecheck failed"; exit 1 }
 
-# 3. Running Tests (Vitest) - QUAN TRỌNG
-Write-Host "[3/4] Running unit tests for api-server..." -ForegroundColor Yellow
-cd apps/api-server
-pnpm test
+Write-Host "[3/5] Running lint..." -ForegroundColor Yellow
+pnpm run lint
+if ($LASTEXITCODE -ne 0) { Write-Error "Lint failed"; exit 1 }
+
+Write-Host "[4/5] Running tests..." -ForegroundColor Yellow
+pnpm run test
 if ($LASTEXITCODE -ne 0) { Write-Error "Tests failed"; exit 1 }
-cd ../..
 
-# 4. Global Build (Turbo) - BẮT BUỘC ĐỂ ĐẢM BẢO KHÔNG BREAK HỆ THỐNG
-Write-Host "[4/4] Final global build check..." -ForegroundColor Yellow
-pnpm build
+Write-Host "[5/5] Running production build..." -ForegroundColor Yellow
+pnpm run build
 if ($LASTEXITCODE -ne 0) { Write-Error "Build failed"; exit 1 }
 
-Write-Host "--- ✅ ALL CHECKS PASSED. SYSTEM STABLE. ---" -ForegroundColor Green
+Write-Host "--- ALL CHECKS PASSED. SYSTEM STABLE. ---" -ForegroundColor Green

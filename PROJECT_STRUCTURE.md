@@ -18,6 +18,7 @@ lms-platform/
 │
 ├── docs/                        # Tài liệu dự án
 │   ├── ai-agent/                # AI Agent architecture docs
+│   │   └── SOP.md               # Quy trình làm việc chuẩn cho AI agent
 │   ├── guides/                  # Hướng dẫn kỹ thuật
 │   ├── ops/                     # Vận hành & triển khai
 │   ├── product/                 # Tài liệu sản phẩm
@@ -47,6 +48,8 @@ lms-platform/
 │
 ├── .env                          # Environment variables
 ├── .env.example                  # Template env file
+├── AGENTS.md                     # Root instructions for AI coding agents
+├── CLAUDE.md                     # Claude Code project memory entrypoint
 ├── docker-compose.yml            # Docker dev services (PostgreSQL, Redis)
 ├── package.json                  # Monorepo root
 ├── turbo.json                   # Turborepo config
