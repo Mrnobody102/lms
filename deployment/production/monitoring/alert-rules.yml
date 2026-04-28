@@ -1,0 +1,40 @@
+groups:
+  - name: lms-api
+    rules:
+      - alert: LmsApiReadinessFailing
+        expr: increase(lms_health_readiness_checks_total{status="unhealthy"}[5m]) > 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: LMS API readiness is failing
+          description: One or more API readiness checks failed in the last 5 minutes.
+
+      - alert: LmsApiDependencyDown
+        expr: lms_health_dependency_status{status="down"} == 1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: LMS API dependency is not ready
+          description: Dependency {{ $labels.dependency }} last reported status {{ $labels.status }}.
+
+      - alert: LmsApiHighServerErrorRate
+        expr: |
+          sum(rate(lms_http_request_errors_total{status_class="5xx"}[5m]))
+            / clamp_min(sum(rate(lms_http_requests_total[5m])), 1) > 0.02
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: LMS API 5xx rate is above 2%
+          description: Server-side request error rate has been above 2% for 10 minutes.
+
+      - alert: LmsApiReadinessLatencyHigh
+        expr: lms_health_readiness_duration_ms_max > 2000
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: LMS API readiness check is slow
+          description: Readiness max duration has stayed above 2 seconds for 10 minutes.

@@ -85,8 +85,15 @@ CI jobs:
 
 1. `fast_checks`: install, generate Prisma client, typecheck, lint, unit/integration tests.
 2. `build`: sequential production builds for API, frontend apps, and database package.
-3. `e2e_chromium`: Chromium Playwright smoke for the student web app.
-4. `api_smoke`: PostgreSQL + Redis service containers, `migrate deploy`, API smoke script.
+3. `e2e_chromium`: Chromium Playwright smoke for student, admin, and super portal.
+4. `docker_build`: validates all production Dockerfiles and the production compose file.
+5. `api_smoke`: PostgreSQL + Redis service containers, `migrate deploy`, API smoke script.
+
+Run the post-deploy smoke script after a release:
+
+```bash
+pnpm smoke:deploy -- -ApiUrl https://api.example.com -WebStudentUrl https://learn.example.com -WebAdminUrl https://admin.example.com -SuperPortalUrl https://ops.example.com
+```
 
 ## 4. Monitoring
 
@@ -99,6 +106,9 @@ CI jobs:
 | `GET /api/health/docs`               | Human-readable health endpoint reference                                                    |
 
 See [monitoring.md](monitoring.md) for operational details.
+
+Prometheus and Alertmanager starter configs are in `deployment/production/monitoring/`.
+Mount them into your monitoring stack and update the receiver in `alertmanager.yml` before production use.
 
 ## 5. Troubleshooting
 

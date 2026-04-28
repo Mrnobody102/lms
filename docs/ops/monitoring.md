@@ -26,6 +26,12 @@ Recommended checks:
 
 ## Prometheus Alert Examples
 
+Starter config files are available in `deployment/production/monitoring/`:
+
+- `prometheus.yml` scrapes `/api/health/metrics/prometheus` from the API service.
+- `alert-rules.yml` contains readiness, dependency, server error rate, and readiness latency alerts.
+- `alertmanager.yml` is intentionally minimal; add Slack, email, PagerDuty, or webhook receivers before production use.
+
 ```yaml
 groups:
   - name: lms-api

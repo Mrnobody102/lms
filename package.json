@@ -8,6 +8,7 @@
     "typecheck": "turbo run typecheck",
     "build:verify": "pnpm run typecheck && pnpm test && pnpm lint && pnpm run build:stable",
     "smoke:api": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-api.ps1",
+    "smoke:deploy": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-deploy.ps1",
     "release:check": "pnpm run build:verify && pnpm run smoke:api && pnpm test:e2e",
     "dev": "turbo run dev --filter=api-server --filter=web-admin --filter=web-student --filter=super-portal",
     "dev:all": "turbo run dev",
