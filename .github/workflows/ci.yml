@@ -30,9 +30,9 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @repo/database generate
-      - run: pnpm turbo typecheck
+      - run: pnpm run typecheck
       - run: pnpm turbo lint
-      - run: pnpm test
+      - run: pnpm run test
 
   build:
     name: Build

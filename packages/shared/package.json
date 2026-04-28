@@ -8,7 +8,8 @@
     "build": "tsc",
     "dev": "tsc -w",
     "test": "vitest run",
-    "lint": "eslint \"src/**/*.ts\""
+    "lint": "eslint \"src/**/*.ts\"",
+    "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
     "axios": "^1.7.9",

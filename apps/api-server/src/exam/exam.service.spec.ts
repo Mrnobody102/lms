@@ -157,7 +157,7 @@ describe('ExamService', () => {
     });
     expect(prisma.examAttempt.update).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: 'attempt-1' },
+        where: { id_tenantId: { id: 'attempt-1', tenantId: 'tenant-1' } },
         data: expect.objectContaining({
           status: ExamAttemptStatus.SUBMITTED,
           score: 5,

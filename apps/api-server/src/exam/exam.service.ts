@@ -287,7 +287,7 @@ export class ExamService {
     const totalPoints = questions.reduce((sum, question) => sum + question.points, 0);
 
     const submittedAttempt = await this.prisma.examAttempt.update({
-      where: { id: attempt.id },
+      where: { id_tenantId: { id: attempt.id, tenantId } },
       data: {
         status: ExamAttemptStatus.SUBMITTED,
         score,

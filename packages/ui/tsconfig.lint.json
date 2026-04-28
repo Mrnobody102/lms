@@ -9,6 +9,7 @@
     ".storybook/**/*",
     ".eslintrc.js",
     "vitest.config.ts",
+    "vitest.config.mts",
     "*.config.ts"
   ]
 }

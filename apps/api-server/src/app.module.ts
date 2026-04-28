@@ -2,9 +2,11 @@ import { Module, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD, APP_FILTER } from '@nestjs/core';
+import { ConfigService } from '@nestjs/config';
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
 import { CsrfMiddleware } from './common/middleware/csrf.middleware';
 import { AppThrottlerGuard } from './common/guards/throttler.guard';
+import { RedisThrottlerStorage } from './common/throttling/redis-throttler.storage';
 import { LoggerService } from './common/services/logger.service';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { RequestLoggingMiddleware } from './common/middleware/request-logging.middleware';
@@ -38,18 +40,26 @@ import { MetricsModule } from './common/metrics/metrics.module';
         return result.data;
       },
     }),
-    ThrottlerModule.forRoot([
-      {
-        name: 'default',
-        ttl: 60000,
-        limit: 100,
-      },
-      {
-        name: 'auth',
-        ttl: 60000,
-        limit: 10,
-      },
-    ]),
+    ThrottlerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        storage: configService.get<string>('REDIS_URL')
+          ? new RedisThrottlerStorage(configService)
+          : undefined,
+        throttlers: [
+          {
+            name: 'default',
+            ttl: configService.get<number>('THROTTLER_TTL') ?? 60000,
+            limit: configService.get<number>('THROTTLER_LIMIT') ?? 100,
+          },
+          {
+            name: 'auth',
+            ttl: 60000,
+            limit: 10,
+          },
+        ],
+      }),
+    }),
     PrismaModule,
     AuthModule,
     UserModule,

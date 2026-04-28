@@ -10,6 +10,7 @@
     "db:studio": "dotenv -e ../../.env -- prisma studio",
     "generate": "prisma generate",
     "build": "tsc --outDir dist && prisma generate",
+    "typecheck": "tsc --noEmit",
     "db:migrate": "dotenv -e ../../.env -- prisma migrate dev",
     "db:deploy": "dotenv -e ../../.env -- prisma migrate deploy",
     "db:status": "dotenv -e ../../.env -- prisma migrate status",

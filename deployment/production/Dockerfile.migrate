@@ -1,0 +1,16 @@
+FROM node:20-alpine
+
+RUN apk add --no-cache libc6-compat
+
+WORKDIR /app
+
+RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/database/package.json ./packages/database/package.json
+
+RUN pnpm install --frozen-lockfile --filter @repo/database...
+
+COPY packages/database ./packages/database
+
+CMD ["pnpm", "--filter", "@repo/database", "exec", "prisma", "migrate", "deploy"]

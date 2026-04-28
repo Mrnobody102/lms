@@ -176,7 +176,7 @@ export class CourseService {
     await this.ensureUnit(courseId, unitId, tenantId);
 
     return this.prisma.courseUnit.update({
-      where: { id: unitId },
+      where: { id_tenantId: { id: unitId, tenantId } },
       data,
     });
   }
@@ -196,7 +196,7 @@ export class CourseService {
       });
 
       return tx.courseUnit.update({
-        where: { id: unitId },
+        where: { id_tenantId: { id: unitId, tenantId } },
         data: { deletedAt: new Date() },
       });
     });
@@ -211,7 +211,7 @@ export class CourseService {
     await this.findOne(id, tenantId, undefined, { includeInactive: true });
 
     return this.prisma.course.update({
-      where: { id },
+      where: { id_tenantId: { id, tenantId } },
       data,
     });
   }
@@ -221,7 +221,7 @@ export class CourseService {
     await this.findOne(id, tenantId, undefined, { includeInactive: true });
 
     return this.prisma.course.update({
-      where: { id },
+      where: { id_tenantId: { id, tenantId } },
       data: { deletedAt: new Date() },
     });
   }

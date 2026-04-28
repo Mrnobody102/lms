@@ -2,6 +2,7 @@
   "extends": "@repo/typescript-config/base.json",
   "compilerOptions": {
     "outDir": "dist",
+    "module": "ESNext",
     "jsx": "react-jsx"
   },
   "include": ["src/**/*", ".storybook/**/*", ".eslintrc.js"]

@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useLocale } from "next-intl";
-import { usePathname, useRouter } from "next/navigation";
-import { Languages } from "lucide-react";
-import { locales, localeNames, defaultLocale } from "@repo/shared";
+import { useLocale } from 'next-intl';
+import { usePathname, useRouter } from 'next/navigation';
+import { Languages } from 'lucide-react';
+import { locales, localeNames } from '@repo/shared';
 
 export function LanguageToggle() {
   const locale = useLocale();
@@ -14,7 +14,7 @@ export function LanguageToggle() {
     if (newLocale === locale) return;
 
     // Split pathname: "/vi/dashboard" -> ["", "vi", "dashboard"]
-    const pathParts = pathname.split("/");
+    const pathParts = pathname.split('/');
 
     // In our apps with localePrefix: "always", the URL starts with /locale/
     // segments[1] should be the current locale
@@ -25,7 +25,7 @@ export function LanguageToggle() {
       pathParts.splice(1, 0, newLocale);
     }
 
-    const newPath = pathParts.join("/") || "/";
+    const newPath = pathParts.join('/') || '/';
     router.replace(newPath);
     router.refresh(); // Important: clear client cache for translation changes
   };
@@ -44,14 +44,12 @@ export function LanguageToggle() {
             onClick={() => handleLanguageChange(loc)}
             className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-between ${
               locale === loc
-                ? "bg-primary/10 text-primary"
-                : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                ? 'bg-primary/10 text-primary'
+                : 'hover:bg-muted text-muted-foreground hover:text-foreground'
             }`}
           >
             <span>{localeNames[loc as keyof typeof localeNames]}</span>
-            {locale === loc && (
-              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-            )}
+            {locale === loc && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
           </button>
         ))}
       </div>

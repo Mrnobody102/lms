@@ -5,13 +5,14 @@
     "ports:free": "powershell -ExecutionPolicy Bypass -File ./scripts/stop-project-processes.ps1",
     "build": "turbo run build --filter=api-server --filter=web-admin --filter=web-student --filter=super-portal --filter=@repo/database",
     "build:stable": "pnpm run ports:free && turbo run build --concurrency=1 --filter=api-server --filter=web-admin --filter=web-student --filter=super-portal --filter=@repo/database",
-    "build:verify": "pnpm test && pnpm lint && pnpm run build:stable",
+    "typecheck": "turbo run typecheck",
+    "build:verify": "pnpm run typecheck && pnpm test && pnpm lint && pnpm run build:stable",
     "smoke:api": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-api.ps1",
     "release:check": "pnpm run build:verify && pnpm run smoke:api && pnpm test:e2e",
     "dev": "turbo run dev --filter=api-server --filter=web-admin --filter=web-student --filter=super-portal",
     "dev:all": "turbo run dev",
     "lint": "turbo run lint",
-    "test": "pnpm --filter api-server test && pnpm --filter @repo/shared test",
+    "test": "turbo run test",
     "test:e2e": "pnpm --filter @repo/shared build && pnpm --filter @repo/api-client build && pnpm run ports:free && pnpm --filter web-student test:e2e",
     "test:e2e:all": "pnpm --filter @repo/shared build && pnpm --filter @repo/api-client build && pnpm run ports:free && pnpm --filter web-student test:e2e:all",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
@@ -47,7 +48,7 @@
   },
   "packageManager": "pnpm@9.0.0",
   "engines": {
-    "node": ">=18"
+    "node": ">=20.9.0"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [

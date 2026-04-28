@@ -6,7 +6,7 @@ This guide covers local development, production deployment, CI checks, and runti
 
 Prerequisites:
 
-- Node.js >= 18
+- Node.js >= 20.9.0
 - pnpm
 - Docker Desktop
 
@@ -55,6 +55,17 @@ pnpm --filter @repo/database db:deploy
 
 Do not run `db:push` against production databases.
 
+For the Docker Compose production template, provide at least:
+
+- `POSTGRES_PASSWORD`
+- `JWT_SECRET`
+- `CORS_ORIGINS`
+- `NEXT_PUBLIC_API_URL`
+
+The compose template includes a one-shot `migrate` service that runs `prisma migrate deploy`
+before the API service starts. `NEXT_PUBLIC_API_URL` must be a browser-reachable URL, not the
+internal Docker service hostname.
+
 Current production hardening notes:
 
 - Dependencies are pinned; do not reintroduce `"latest"` in package manifests.
@@ -62,6 +73,7 @@ Current production hardening notes:
 - CSP keeps `unsafe-inline` scripts and `unsafe-eval` out of production. They are enabled only in non-production Next dev so webpack dev hydration and Playwright E2E can run.
 - `CORS_ORIGINS` must contain exact frontend origins only, for example `https://admin.example.com,https://student.example.com` without paths or query strings.
 - Redis readiness supports `redis://`, `rediss://`, and URL credentials such as `rediss://default:password@host:6380`.
+- API throttling uses Redis-backed storage when `REDIS_URL` is configured; local development without `REDIS_URL` falls back to the Nest in-memory throttler.
 - Learning access policy is centralized in `LearningAccessService`; new course/lesson/progress endpoints should use that service instead of duplicating enrollment checks.
 - MCP should stay disabled in production unless intentionally enabled with `MCP_ENABLED=true` and a strong `MCP_API_KEY`.
 

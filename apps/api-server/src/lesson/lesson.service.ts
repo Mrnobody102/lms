@@ -114,7 +114,7 @@ export class LessonService {
     };
 
     return this.prisma.lesson.update({
-      where: { id },
+      where: { id_tenantId: { id, tenantId } },
       data: updateData,
     });
   }
@@ -124,7 +124,7 @@ export class LessonService {
     await this.findOne(id, tenantId);
 
     return this.prisma.lesson.update({
-      where: { id },
+      where: { id_tenantId: { id, tenantId } },
       data: { deletedAt: new Date() },
     });
   }
