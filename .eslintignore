@@ -1,8 +1,0 @@
-node_modules
-.next
-dist
-build
-# Un-ignore dotfiles so they can be linted
-!.*.js
-!.*.ts
-!.storybook

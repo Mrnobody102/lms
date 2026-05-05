@@ -1,10 +1,12 @@
 import { Controller, Get, Header, HttpStatus, Res } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { SkipThrottle } from '@nestjs/throttler';
 import { Response } from 'express';
 import { HealthService } from './health.service';
 import { MetricsService, PROMETHEUS_CONTENT_TYPE } from '../metrics/metrics.service';
 
 @ApiTags('Health')
+@SkipThrottle()
 @Controller('health')
 export class HealthController {
   constructor(

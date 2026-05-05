@@ -61,7 +61,7 @@ Hệ thống bao gồm 4 ứng dụng chính trong Monorepo:
 
 ### 1. Yêu Cầu Tiên Quyết
 
-- **Node.js**: Phiên bản 18+
+- **Node.js**: Phiên bản >= 20.9.0 (khuyến nghị Node 20 LTS; `.nvmrc` pin 20.19.5)
 - **pnpm**: Cài đặt bằng `npm install -g pnpm`
 - **Docker**: Cần để chạy Database (PostgreSQL) và Redis.
 

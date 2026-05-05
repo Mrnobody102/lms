@@ -9,6 +9,7 @@
       "home": "Trang chủ",
       "exams": "Kiểm tra"
     },
+    "themeToggle": "Đổi giao diện",
     "hero": {
       "badge": "Học tiếng Trung chuẩn HSK",
       "title": "Chinh Phục",
@@ -95,7 +96,9 @@
       "endOfContent": "Kết thúc nội dung",
       "videoComingSoon": "Video sẽ sớm ra mắt",
       "notFound": "Không tìm thấy bài học",
-      "notFoundDesc": "Bài học bạn đang tìm kiếm không tồn tại hoặc đã bị gỡ bỏ."
+      "notFoundDesc": "Bài học bạn đang tìm kiếm không tồn tại hoặc đã bị gỡ bỏ.",
+      "openCurriculumSidebar": "Mở nội dung khóa học",
+      "closeCurriculumSidebar": "Đóng nội dung khóa học"
     },
     "quiz": {
       "finalAssessment": "Đánh giá cuối bài",

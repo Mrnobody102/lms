@@ -9,6 +9,7 @@
       "home": "Home",
       "exams": "Exams"
     },
+    "themeToggle": "Toggle theme",
     "hero": {
       "badge": "Learn Chinese with HSK Standards",
       "title": "Master",
@@ -95,7 +96,9 @@
       "endOfContent": "End of content",
       "videoComingSoon": "Video content coming soon",
       "notFound": "Lesson Not Found",
-      "notFoundDesc": "The lesson you are looking for does not exist or has been removed."
+      "notFoundDesc": "The lesson you are looking for does not exist or has been removed.",
+      "openCurriculumSidebar": "Open curriculum sidebar",
+      "closeCurriculumSidebar": "Close curriculum sidebar"
     },
     "quiz": {
       "finalAssessment": "Final Assessment",

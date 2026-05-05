@@ -1,10 +1,7 @@
-import { createAuthStore } from "@repo/shared";
-import api from "../../lib/api";
+import { createAuthStore } from '@repo/shared';
+import api from '../../lib/api';
 
 export const useAuthStore = createAuthStore({
   api,
   persistUser: false,
-  messages: {
-    loginError: "Login failed",
-  },
 });

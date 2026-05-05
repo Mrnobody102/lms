@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { Lesson } from '@/lib/course-api';
-import { BookOpen, Clock, Layers } from 'lucide-react';
+import { Clock, Layers } from 'lucide-react';
 
 interface CourseStatsProps {
   lessons: Lesson[];

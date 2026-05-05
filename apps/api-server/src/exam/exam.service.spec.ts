@@ -90,6 +90,7 @@ describe('ExamService', () => {
               id: 'question-1',
               type: ExamQuestionType.MULTIPLE_CHOICE,
               prompt: 'Choose one',
+              options: ['A', 'B'],
               correctAnswer: 1,
               explanation: 'B is correct',
               points: 2,
@@ -174,7 +175,7 @@ describe('ExamService', () => {
               expect.objectContaining({
                 tenantId: 'tenant-1',
                 questionId: 'question-2',
-                answer: ' Ni Hao ',
+                answer: 'Ni Hao',
                 isCorrect: true,
                 pointsAwarded: 3,
               }),
@@ -183,6 +184,57 @@ describe('ExamService', () => {
         }),
       }),
     );
+  });
+
+  it('should reject unsupported exam answer shapes before updating attempts', async () => {
+    const startedAt = new Date(Date.now() - 5 * 60_000);
+    const prisma = {
+      examAttempt: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: 'attempt-1',
+          tenantId: 'tenant-1',
+          userId: 'user-1',
+          courseId: 'course-1',
+          status: ExamAttemptStatus.STARTED,
+          startedAt,
+          submittedAt: null,
+          exam: {
+            id: 'exam-1',
+            courseId: 'course-1',
+            durationMinutes: 30,
+            passingScore: 60,
+            sections: [
+              {
+                questions: [
+                  {
+                    id: 'question-1',
+                    type: ExamQuestionType.MULTIPLE_CHOICE,
+                    prompt: 'Choose one',
+                    options: ['A', 'B'],
+                    correctAnswer: 1,
+                    explanation: 'B is correct',
+                    points: 1,
+                  },
+                ],
+              },
+            ],
+          },
+        }),
+        update: vi.fn(),
+      },
+    };
+    const learningAccess = {
+      ensureCourseAccess: vi.fn().mockResolvedValue(undefined),
+    };
+    const service = new ExamService(prisma as never, learningAccess as never);
+
+    await expect(
+      service.submitAttempt('attempt-1', 'tenant-1', { id: 'user-1', role: Role.STUDENT }, [
+        { questionId: 'question-1', answer: '1' },
+      ]),
+    ).rejects.toThrow('Multiple-choice answers must be integer option indexes');
+
+    expect(prisma.examAttempt.update).not.toHaveBeenCalled();
   });
 
   it('should resume an existing active started attempt instead of creating a new one', async () => {

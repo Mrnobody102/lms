@@ -69,6 +69,7 @@ describe('PracticeService', () => {
             id: 'question-1',
             type: PracticeQuestionType.MULTIPLE_CHOICE,
             prompt: 'Choose one',
+            options: ['A', 'B'],
             correctAnswer: 1,
             explanation: 'Option 2 is correct',
           },
@@ -133,6 +134,45 @@ describe('PracticeService', () => {
         }),
       }),
     );
+  });
+
+  it('should reject unsupported practice answer shapes before persisting attempts', async () => {
+    const prisma = {
+      practiceExerciseSet: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: 'set-1',
+          tenantId: 'tenant-1',
+          courseId: 'course-1',
+          questions: [
+            {
+              question: {
+                id: 'question-1',
+                type: PracticeQuestionType.MULTIPLE_CHOICE,
+                prompt: 'Choose one',
+                options: ['A', 'B'],
+                correctAnswer: 1,
+                explanation: null,
+              },
+            },
+          ],
+        }),
+      },
+      practiceAttempt: {
+        create: vi.fn(),
+      },
+    };
+    const learningAccess = {
+      ensureCourseAccess: vi.fn().mockResolvedValue(undefined),
+    };
+    const service = new PracticeService(prisma as never, learningAccess as never);
+
+    await expect(
+      service.submitAttempt('set-1', 'tenant-1', { id: 'user-1', role: Role.STUDENT }, [
+        { questionId: 'question-1', answer: '1' },
+      ]),
+    ).rejects.toThrow('Multiple-choice answers must be integer option indexes');
+
+    expect(prisma.practiceAttempt.create).not.toHaveBeenCalled();
   });
 
   it('should hide correct answers and explanations from student exercise set reads', async () => {

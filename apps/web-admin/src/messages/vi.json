@@ -13,6 +13,7 @@
     "settings": "Cài đặt",
     "auth": {
       "email": "Email",
+      "emailPlaceholder": "ten@trungtam.example",
       "password": "Mật khẩu",
       "loginButton": "Đăng nhập",
       "forgotPassword": "Quên mật khẩu?",
@@ -222,6 +223,9 @@
     "examCreated": "Đã tạo đề kiểm tra.",
     "examCreateError": "Không thể tạo đề kiểm tra.",
     "brandName": "Quản trị Trung tâm",
+    "themeToggle": "Đổi giao diện",
+    "profileNameFallback": "Quản trị viên",
+    "profileEmailFallback": "Chưa có email",
     "logout": "Đăng xuất",
     "footer": {
       "copyright": "© 2026 LMS Platform"

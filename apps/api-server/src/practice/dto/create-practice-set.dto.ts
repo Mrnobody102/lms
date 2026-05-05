@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  ArrayMaxSize,
   ArrayNotEmpty,
   IsArray,
   IsBoolean,
@@ -8,6 +9,7 @@ import {
   IsUUID,
   MaxLength,
 } from 'class-validator';
+import { ANSWER_LIMITS } from '../../common/utils/answer-validation.util';
 
 export class CreatePracticeSetDto {
   @ApiProperty({ description: 'Course ID that owns this exercise set' })
@@ -38,6 +40,7 @@ export class CreatePracticeSetDto {
   @ApiProperty({ type: [String], description: 'Question IDs in set order' })
   @IsArray()
   @ArrayNotEmpty()
+  @ArrayMaxSize(ANSWER_LIMITS.maxPracticeSetQuestions)
   @IsUUID(undefined, { each: true })
   questionIds: string[];
 }

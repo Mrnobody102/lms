@@ -1,18 +1,15 @@
-import "@repo/ui/styles.css";
-import type { Metadata } from "next";
-import { ThemeProvider } from "@repo/ui";
-import { Inter } from "next/font/google";
-import { QueryProvider } from "@/components/providers";
-
-const inter = Inter({ subsets: ["latin"] });
+import '@repo/ui/styles.css';
+import type { Metadata } from 'next';
+import { ThemeProvider } from '@repo/ui';
+import { QueryProvider } from '@/components/providers';
 
 export const metadata: Metadata = {
-  title: "LMS Admin",
-  description: "LMS Admin Portal",
+  title: 'LMS Admin',
+  description: 'LMS Admin Portal',
 };
 
-import { NextIntlClientProvider } from "next-intl";
-import { getMessages, setRequestLocale } from "next-intl/server";
+import { NextIntlClientProvider } from 'next-intl';
+import { getMessages, setRequestLocale } from 'next-intl/server';
 
 export default async function RootLayout(props: {
   children: React.ReactNode;
@@ -28,12 +25,10 @@ export default async function RootLayout(props: {
 
   return (
     <html lang={locale} suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className="font-sans">
         <NextIntlClientProvider messages={messages} locale={locale}>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <QueryProvider>
-              {children}
-            </QueryProvider>
+            <QueryProvider>{children}</QueryProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>

@@ -5,6 +5,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { McpTool } from './mcp.decorators';
 
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Unknown error';
+}
+
 @Injectable()
 export class McpDbSkillsService {
   private readonly logger = new Logger(McpDbSkillsService.name);
@@ -45,9 +49,10 @@ export class McpDbSkillsService {
           enums,
         },
       };
-    } catch (error: any) {
-      this.logger.error(`Schema review failed: ${error.message}`);
-      return { error: `Cannot read schema: ${error.message}` };
+    } catch (error: unknown) {
+      const message = getErrorMessage(error);
+      this.logger.error(`Schema review failed: ${message}`);
+      return { error: `Cannot read schema: ${message}` };
     }
   }
 

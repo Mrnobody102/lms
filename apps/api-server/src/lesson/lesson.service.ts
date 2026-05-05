@@ -38,9 +38,9 @@ export class LessonService {
         type: (data.type as LessonType) || 'text',
         content: data.content,
         videoUrl: data.videoUrl,
-        duration: data.duration || 10,
-        quiz: data.quiz ? data.quiz : undefined,
-        order: data.order || 0,
+        duration: data.duration ?? 10,
+        quiz: this.toNullableJsonInput(data.quiz),
+        order: data.order ?? 0,
         courseId: data.courseId,
         unitId,
         tenantId: data.tenantId,
@@ -110,7 +110,7 @@ export class LessonService {
     const updateData: Prisma.LessonUncheckedUpdateInput = {
       ...data,
       unitId,
-      quiz: data.quiz === null ? undefined : data.quiz,
+      quiz: this.toNullableJsonInput(data.quiz),
     };
 
     return this.prisma.lesson.update({
@@ -167,5 +167,13 @@ export class LessonService {
     });
 
     return defaultUnit?.id ?? null;
+  }
+
+  private toNullableJsonInput(value: Prisma.JsonValue | null | undefined) {
+    if (value === undefined) {
+      return undefined;
+    }
+
+    return value === null ? Prisma.DbNull : (value as Prisma.InputJsonValue);
   }
 }

@@ -7,13 +7,40 @@ export interface TenantAwareRequest extends Request {
   requestedTenantHint?: string;
 }
 
-export function extractTenantHint(req: Request): string | undefined {
+interface TenantHintOptions {
+  allowTenantHeaderInProduction?: boolean;
+  allowedOrigins?: string[];
+  nodeEnv?: string;
+}
+
+export function extractTenantHints(req: Request, options: TenantHintOptions = {}): string[] {
   const headerValue = req.headers['x-tenant-id'];
-  if (typeof headerValue === 'string' && headerValue.trim()) {
-    return headerValue.trim();
+  const isProduction = (options.nodeEnv ?? process.env.NODE_ENV) === 'production';
+  if (
+    typeof headerValue === 'string' &&
+    headerValue.trim() &&
+    (!isProduction || options.allowTenantHeaderInProduction)
+  ) {
+    return [headerValue.trim()];
   }
 
-  return extractTenantHintFromHost(req);
+  if (isProduction) {
+    const originHints = extractTenantHintsFromUrl(req.headers.origin, options.allowedOrigins);
+    if (originHints.length > 0) {
+      return originHints;
+    }
+
+    return [];
+  }
+
+  return extractTenantHintsFromHost(req);
+}
+
+export function extractTenantHint(
+  req: Request,
+  options: TenantHintOptions = {},
+): string | undefined {
+  return extractTenantHints(req, options)[0];
 }
 
 export function getScopedTenantId(request: {
@@ -30,19 +57,55 @@ export function getScopedTenantId(request: {
   return request.user.tenantId;
 }
 
-function extractTenantHintFromHost(req: Request): string | undefined {
-  const hostHeader = req.headers.host;
-  if (!hostHeader) return undefined;
+function extractTenantHintsFromHost(req: Request): string[] {
+  const hostHeader = req.hostname || req.headers.host;
+  if (!hostHeader) return [];
 
+  const host = normalizeHost(hostHeader);
+  if (!host) {
+    return [];
+  }
+
+  return buildTenantHintCandidates(host);
+}
+
+function extractTenantHintsFromUrl(
+  urlValue: string | string[] | undefined,
+  allowedOrigins: string[] | undefined,
+): string[] {
+  if (typeof urlValue !== 'string' || !urlValue.trim()) {
+    return [];
+  }
+
+  try {
+    const origin = new URL(urlValue.trim()).origin;
+    if (allowedOrigins && allowedOrigins.length > 0 && !allowedOrigins.includes(origin)) {
+      return [];
+    }
+
+    const parsed = new URL(origin);
+    const host = normalizeHost(parsed.hostname);
+    return host ? buildTenantHintCandidates(host) : [];
+  } catch {
+    return [];
+  }
+}
+
+function normalizeHost(hostHeader: string): string | undefined {
   const host = hostHeader.split(':')[0]?.trim().toLowerCase();
   if (!host || host === 'localhost' || host === '127.0.0.1' || host === '::1') {
     return undefined;
   }
 
+  return host;
+}
+
+function buildTenantHintCandidates(host: string): string[] {
+  const hints = [host];
   const parts = host.split('.');
   if (parts.length > 2) {
-    return parts[0];
+    hints.push(parts[0]);
   }
 
-  return parts.length === 2 ? host : undefined;
+  return [...new Set(hints)];
 }

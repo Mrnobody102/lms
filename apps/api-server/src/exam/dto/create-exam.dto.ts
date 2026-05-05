@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
   ArrayNotEmpty,
   IsArray,
   IsBoolean,
@@ -16,6 +17,7 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ExamQuestionType } from '@repo/database';
+import { ANSWER_LIMITS } from '../../common/utils/answer-validation.util';
 
 export class CreateExamQuestionDto {
   @ApiProperty({ enum: ExamQuestionType })
@@ -50,6 +52,7 @@ export class CreateExamQuestionDto {
 
   @ApiPropertyOptional({ type: [String], description: 'Skill tags such as vocabulary/grammar' })
   @IsArray()
+  @ArrayMaxSize(ANSWER_LIMITS.maxSkillTags)
   @IsString({ each: true })
   @IsOptional()
   skillTags?: string[];
@@ -70,6 +73,7 @@ export class CreateExamSectionDto {
   @ApiProperty({ type: [CreateExamQuestionDto] })
   @IsArray()
   @ArrayNotEmpty()
+  @ArrayMaxSize(ANSWER_LIMITS.maxExamSectionQuestions)
   @ValidateNested({ each: true })
   @Type(() => CreateExamQuestionDto)
   questions: CreateExamQuestionDto[];
@@ -118,6 +122,7 @@ export class CreateExamDto {
   @ApiProperty({ type: [CreateExamSectionDto] })
   @IsArray()
   @ArrayNotEmpty()
+  @ArrayMaxSize(ANSWER_LIMITS.maxExamSections)
   @ValidateNested({ each: true })
   @Type(() => CreateExamSectionDto)
   sections: CreateExamSectionDto[];

@@ -98,7 +98,7 @@ export function AdminSidebar() {
           <button
             onClick={toggleTheme}
             className="flex items-center justify-center w-8 h-8 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            title="Toggle theme"
+            title={t('themeToggle')}
           >
             {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
           </button>
@@ -112,10 +112,10 @@ export function AdminSidebar() {
             <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
               {user?.fullName?.charAt(0).toUpperCase() ||
                 user?.email?.charAt(0).toUpperCase() ||
-                'A'}
+                '?'}
             </div>
             <span className="text-sm font-medium truncate max-w-[100px] text-foreground">
-              {user?.fullName || user?.email || 'Admin'}
+              {user?.fullName || user?.email || t('profileNameFallback')}
             </span>
             <ChevronDown
               className={cn(
@@ -135,12 +135,14 @@ export function AdminSidebar() {
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-base">
                   {user?.fullName?.charAt(0).toUpperCase() ||
                     user?.email?.charAt(0).toUpperCase() ||
-                    'A'}
+                    '?'}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold truncate">{user?.fullName || 'Admin User'}</p>
+                  <p className="text-sm font-semibold truncate">
+                    {user?.fullName || t('profileNameFallback')}
+                  </p>
                   <p className="text-xs text-muted-foreground truncate">
-                    {user?.email || 'admin@lms.com'}
+                    {user?.email || t('profileEmailFallback')}
                   </p>
                 </div>
               </div>
@@ -171,7 +173,7 @@ export function AdminSidebar() {
                 className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-500/5 transition-colors"
               >
                 <LogOut className="w-4 h-4" />
-                {t('logout') || 'Logout'}
+                {t('logout')}
               </button>
             </div>
           </div>

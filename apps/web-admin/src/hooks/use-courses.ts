@@ -129,7 +129,7 @@ export function useUpdateLesson() {
 export function useDeleteLesson() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, courseId }: { id: string; courseId: string }) => courseApi.deleteLesson(id),
+    mutationFn: ({ id }: { id: string; courseId: string }) => courseApi.deleteLesson(id),
     onSuccess: (_data, vars) => {
       queryClient.invalidateQueries({ queryKey: ['lessons', vars.courseId] });
       queryClient.invalidateQueries({ queryKey: ['course', vars.courseId] });

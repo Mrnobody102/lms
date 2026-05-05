@@ -7,8 +7,10 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  ArrayMaxSize,
   MaxLength,
 } from 'class-validator';
+import { ANSWER_LIMITS } from '../../common/utils/answer-validation.util';
 
 export class CreatePracticeQuestionDto {
   @ApiProperty({ description: 'Course ID that owns this question' })
@@ -45,6 +47,7 @@ export class CreatePracticeQuestionDto {
 
   @ApiPropertyOptional({ type: [String], description: 'Skill tags such as vocabulary/grammar' })
   @IsArray()
+  @ArrayMaxSize(ANSWER_LIMITS.maxSkillTags)
   @IsString({ each: true })
   @IsOptional()
   skillTags?: string[];

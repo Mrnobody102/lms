@@ -5,6 +5,8 @@ import { PrismaService } from '../common/services/prisma.service';
 
 type EnrollmentLearnerStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
 
+const DEFAULT_COURSE_UNIT_TITLE = 'General';
+
 @Injectable()
 export class CourseService {
   constructor(
@@ -32,7 +34,7 @@ export class CourseService {
 
       await tx.courseUnit.create({
         data: {
-          title: 'General',
+          title: DEFAULT_COURSE_UNIT_TITLE,
           order: 0,
           courseId: course.id,
           tenantId: data.tenantId,

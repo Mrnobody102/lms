@@ -42,6 +42,23 @@ const booleanEnvSchema = z
   .optional()
   .transform((value) => value === true || value === 'true');
 
+const trustProxySchema = z.preprocess(
+  (value) => {
+    if (typeof value !== 'string') {
+      return value;
+    }
+
+    const normalized = value.trim().toLowerCase();
+    if (!normalized || normalized === 'false') return false;
+    if (normalized === 'true') return true;
+    if (/^\d+$/.test(normalized)) return Number(normalized);
+    return normalized;
+  },
+  z
+    .union([z.boolean(), z.number().int().min(0), z.enum(['loopback', 'linklocal', 'uniquelocal'])])
+    .default(false),
+);
+
 export const envSchema = z
   .object({
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
@@ -58,6 +75,8 @@ export const envSchema = z
 
     // CORS
     CORS_ORIGINS: commaSeparatedUrlSchema.optional(),
+    TRUST_PROXY: trustProxySchema,
+    ALLOW_TENANT_HEADER_IN_PRODUCTION: booleanEnvSchema,
     AUTH_COOKIE_SAME_SITE: z.enum(['lax', 'strict', 'none']).default('lax'),
     AUTH_COOKIE_DOMAIN: z.string().optional(),
 

@@ -13,6 +13,7 @@
     "settings": "Settings",
     "auth": {
       "email": "Email",
+      "emailPlaceholder": "name@center.example",
       "password": "Password",
       "loginButton": "Login",
       "forgotPassword": "Forgot password?",
@@ -222,6 +223,9 @@
     "examCreated": "Exam template created.",
     "examCreateError": "Cannot create exam template.",
     "brandName": "Center Admin",
+    "themeToggle": "Toggle theme",
+    "profileNameFallback": "Admin user",
+    "profileEmailFallback": "Email unavailable",
     "logout": "Logout",
     "footer": {
       "copyright": "© 2026 LMS Platform"

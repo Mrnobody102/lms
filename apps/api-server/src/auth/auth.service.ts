@@ -36,7 +36,7 @@ export class AuthService {
     });
 
     if (existingUser) {
-      this.logger.warn(`Registration failed - email already exists: ${registerDto.email}`);
+      this.logger.warn(`Registration failed - email already exists: tenantId=${tenantId}`);
       throw new ConflictException('Email already registered');
     }
 
@@ -73,7 +73,7 @@ export class AuthService {
       },
     });
 
-    this.logger.log(`User registered: id=${user.id}, email=${user.email}, role=${user.role}`);
+    this.logger.log(`User registered: id=${user.id}, role=${user.role}`);
 
     const token = this.generateToken(user);
     this.setAuthCookie(res, token);
@@ -98,13 +98,13 @@ export class AuthService {
     });
 
     if (!user) {
-      this.logger.warn(`Login failed - invalid tenant/email combination: ${loginDto.email}`);
-      throw new UnauthorizedException('Invalid credentials');
+      this.logger.warn(`Login failed - invalid credentials: tenantId=${tenantId}`);
+      throw this.invalidCredentials();
     }
 
     if (!user.isActive) {
       this.logger.warn(`Login failed - inactive account: id=${user.id}`);
-      throw new UnauthorizedException('Account is inactive');
+      throw this.invalidCredentials();
     }
 
     const tenant = await this.prisma.tenant.findFirst({
@@ -114,14 +114,14 @@ export class AuthService {
 
     if (!tenant) {
       this.logger.warn(`Login failed - inactive tenant: ${tenantId}`);
-      throw new UnauthorizedException('Tenant is inactive');
+      throw this.invalidCredentials();
     }
 
     const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
 
     if (!isPasswordValid) {
       this.logger.warn(`Login failed - invalid password: id=${user.id}`);
-      throw new UnauthorizedException('Invalid credentials');
+      throw this.invalidCredentials();
     }
 
     this.logger.log(`User logged in: id=${user.id}, role=${user.role}`);
@@ -130,7 +130,7 @@ export class AuthService {
     this.setAuthCookie(res, token);
     this.setCsrfCookie(res);
 
-    const { password, ...userWithoutPassword } = user;
+    const { password: _password, ...userWithoutPassword } = user;
 
     return {
       user: userWithoutPassword,
@@ -156,6 +156,10 @@ export class AuthService {
     };
 
     return this.jwtService.sign(payload);
+  }
+
+  private invalidCredentials(): UnauthorizedException {
+    return new UnauthorizedException('Invalid credentials');
   }
 
   private setAuthCookie(res: Response, token: string): void {

@@ -42,6 +42,8 @@ Backend environment variables:
 - `JWT_SECRET`
 - `JWT_EXPIRES_IN`
 - `CORS_ORIGINS`
+- `TRUST_PROXY`
+- `ALLOW_TENANT_HEADER_IN_PRODUCTION`
 - `APP_PUBLIC_URL`
 - `AUTH_COOKIE_SAME_SITE`
 - `AUTH_COOKIE_DOMAIN`
@@ -72,6 +74,8 @@ Current production hardening notes:
 - Browser apps use cookie-first auth and do not store JWT as client authority.
 - CSP keeps `unsafe-inline` scripts and `unsafe-eval` out of production. They are enabled only in non-production Next dev so webpack dev hydration and Playwright E2E can run.
 - `CORS_ORIGINS` must contain exact frontend origins only, for example `https://admin.example.com,https://student.example.com` without paths or query strings.
+- `TRUST_PROXY` must be enabled only behind a trusted reverse proxy. When enabled, tenant host resolution can use the proxy-forwarded host seen by Express.
+- `ALLOW_TENANT_HEADER_IN_PRODUCTION` should stay `false` unless a trusted edge explicitly injects `x-tenant-id`; normal production traffic should resolve tenants by domain/subdomain.
 - Redis readiness supports `redis://`, `rediss://`, and URL credentials such as `rediss://default:password@host:6380`.
 - API throttling uses Redis-backed storage when `REDIS_URL` is configured; local development without `REDIS_URL` falls back to the Nest in-memory throttler.
 - Learning access policy is centralized in `LearningAccessService`; new course/lesson/progress endpoints should use that service instead of duplicating enrollment checks.

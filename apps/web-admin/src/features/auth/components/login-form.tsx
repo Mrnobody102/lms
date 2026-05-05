@@ -15,6 +15,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const displayError = error ? t('auth.loginError') : null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,10 +27,10 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      {error && (
+      {displayError && (
         <div className="flex items-center gap-2.5 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">
           <AlertCircle className="w-4 h-4 shrink-0" />
-          <span>{error}</span>
+          <span>{displayError}</span>
         </div>
       )}
 
@@ -44,7 +45,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
             setEmail(e.target.value);
             if (error) clearError();
           }}
-          placeholder="admin@lms.com"
+          placeholder={t('auth.emailPlaceholder')}
           className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-zinc-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 transition-all"
         />
       </div>
@@ -69,7 +70,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
               setPassword(e.target.value);
               if (error) clearError();
             }}
-            placeholder="••••••••"
+            placeholder="********"
             className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3 pr-12 text-sm text-foreground placeholder:text-zinc-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 transition-all"
           />
           <button

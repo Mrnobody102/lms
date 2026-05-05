@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Button, Input, Label, Separator } from '@/components/ui';
+import { Button, Input, Label } from '@/components/ui';
 import { Save, Loader2 } from 'lucide-react';
 
 interface CourseFormProps {

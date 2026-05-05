@@ -1,11 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { LoggerService } from './common/services/logger.service';
+import type { EnvSchema } from './config/env.validation';
 
 function parseCorsOrigin(origin: string): string {
   try {
@@ -58,8 +60,16 @@ async function bootstrap() {
   });
 
   const logger = app.get(LoggerService);
+  const configService = app.get(ConfigService);
   app.useLogger(logger);
   app.enableShutdownHooks();
+  const expressInstance = app.getHttpAdapter().getInstance() as {
+    set: (setting: string, value: unknown) => void;
+  };
+  expressInstance.set(
+    'trust proxy',
+    configService.get<EnvSchema['TRUST_PROXY']>('TRUST_PROXY') ?? false,
+  );
 
   // Security and Performance middlewares
   app.use(cookieParser());

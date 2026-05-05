@@ -1,36 +1,41 @@
 {
   "SuperPortal": {
-    "title": "Hệ thống & Đối tác",
-    "subtitle": "Giám sát trạng thái hệ thống ngày {date}",
-    "newTenant": "Thêm Đối tác",
-    "loading": "Đang tải Super Portal...",
+    "title": "Systems & Tenants",
+    "subtitle": "Monitoring status of {date}",
+    "newTenant": "New Tenant",
+    "loading": "Loading Super Portal...",
+    "themeToggle": "Toggle theme",
+    "accountAvatar": "Account avatar",
     "footer": {
-      "rights": "© 2026 LMS Platform. Bảo lưu mọi quyền."
+      "rights": "© 2026 LMS Platform. All rights reserved."
     },
     "stats": {
-      "totalTenants": "Tổng số đối tác",
-      "active": "Đang hoạt động"
+      "totalTenants": "Total Active Tenants",
+      "active": "Active"
     },
     "tenants": {
-      "list": "Danh sách Đối tác",
-      "name": "Tên đối tác",
-      "domain": "Tên miền",
-      "status": "Trạng thái",
-      "actions": "Thao tác",
-      "active": "Hoạt động",
-      "inactive": "Đã khóa"
+      "list": "Tenant List",
+      "name": "Tenant Name",
+      "domain": "Domain",
+      "status": "Status",
+      "actions": "Actions",
+      "active": "Active",
+      "inactive": "Inactive"
     },
     "nav": {
-      "docs": "Tài liệu",
-      "logout": "Đăng xuất"
+      "docs": "Documentation",
+      "logout": "Logout"
     }
   },
   "Auth": {
-    "login": "Đăng nhập",
+    "portalTitle": "Super Portal",
+    "login": "Login",
     "email": "Email",
-    "password": "Mật khẩu",
-    "submitting": "Đang đăng nhập...",
-    "welcome": "Chào mừng quay lại",
-    "desc": "Vui lòng đăng nhập để quản trị hệ thống"
+    "emailPlaceholder": "admin@example.com",
+    "password": "Password",
+    "submitting": "Logging in...",
+    "welcome": "Welcome back",
+    "loginError": "Login failed. Please check your credentials.",
+    "desc": "Please login to manage the platform"
   }
 }

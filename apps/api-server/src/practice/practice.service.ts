@@ -2,6 +2,11 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { PracticeQuestionType, Prisma, Role } from '@repo/database';
 import { LearningAccessService } from '../common/services/learning-access.service';
 import { PrismaService } from '../common/services/prisma.service';
+import {
+  isNormalizedAnswerCorrect,
+  normalizeQuestionPayload,
+  normalizeSubmittedAnswer,
+} from '../common/utils/answer-validation.util';
 
 interface PracticeUser {
   id: string;
@@ -35,6 +40,11 @@ export class PracticeService {
   ) {
     await this.ensureCourse(tenantId, data.courseId);
     await this.ensureUnit(tenantId, data.courseId, data.unitId);
+    const questionPayload = normalizeQuestionPayload({
+      type: data.type,
+      options: data.options,
+      correctAnswer: data.correctAnswer,
+    });
 
     return this.prisma.practiceQuestion.create({
       data: {
@@ -43,8 +53,11 @@ export class PracticeService {
         unitId: data.unitId,
         type: data.type,
         prompt: data.prompt,
-        options: data.options === undefined ? undefined : (data.options as Prisma.InputJsonValue),
-        correctAnswer: data.correctAnswer as Prisma.InputJsonValue,
+        options:
+          questionPayload.options === undefined
+            ? undefined
+            : (questionPayload.options as Prisma.InputJsonValue),
+        correctAnswer: questionPayload.correctAnswer as Prisma.InputJsonValue,
         explanation: data.explanation,
         skillTags: data.skillTags ?? [],
       },
@@ -267,13 +280,29 @@ export class PracticeService {
       throw new BadRequestException('Practice exercise set has no questions');
     }
 
-    const answerByQuestion = new Map(answers.map((answer) => [answer.questionId, answer.answer]));
     const unknownQuestion = answers.find(
       (answer) => !questions.some((question) => question.id === answer.questionId),
     );
     if (unknownQuestion) {
       throw new BadRequestException(`Question ${unknownQuestion.questionId} is not in this set`);
     }
+    if (new Set(answers.map((answer) => answer.questionId)).size !== answers.length) {
+      throw new BadRequestException('Duplicate answers are not allowed');
+    }
+
+    const answerByQuestion = new Map(
+      answers.map((submittedAnswer) => {
+        const question = questions.find((entry) => entry.id === submittedAnswer.questionId)!;
+        return [
+          submittedAnswer.questionId,
+          normalizeSubmittedAnswer({
+            type: question.type,
+            answer: submittedAnswer.answer,
+            options: question.options,
+          }),
+        ];
+      }),
+    );
 
     const results = questions.map((question) => {
       const answer = answerByQuestion.get(question.id);
@@ -416,18 +445,12 @@ export class PracticeService {
 
   private scoreAnswer(
     question: { type: PracticeQuestionType; correctAnswer: unknown },
-    answer: unknown,
+    answer: number | string,
   ) {
-    if (question.type === PracticeQuestionType.FILL_BLANK) {
-      return this.normalizeText(answer) === this.normalizeText(question.correctAnswer);
-    }
-
-    return JSON.stringify(answer) === JSON.stringify(question.correctAnswer);
-  }
-
-  private normalizeText(value: unknown) {
-    return String(value ?? '')
-      .trim()
-      .toLocaleLowerCase();
+    return isNormalizedAnswerCorrect({
+      type: question.type,
+      answer,
+      correctAnswer: question.correctAnswer,
+    });
   }
 }

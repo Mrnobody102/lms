@@ -16,6 +16,10 @@ const SENSITIVE_FILE_NAMES = new Set([
 ]);
 const MAX_READ_BYTES = 200_000;
 
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Unknown error';
+}
+
 @Injectable()
 export class McpCoreSkillsService {
   private readonly logger = new Logger(McpCoreSkillsService.name);
@@ -88,8 +92,8 @@ export class McpCoreSkillsService {
         name: item.name,
         type: item.isDirectory() ? 'directory' : 'file',
       }));
-    } catch (error: any) {
-      return { error: `Cannot read directory: ${error.message}` };
+    } catch (error: unknown) {
+      return { error: `Cannot read directory: ${getErrorMessage(error)}` };
     }
   }
 
@@ -122,8 +126,8 @@ export class McpCoreSkillsService {
           title: true,
         },
       });
-    } catch (error: any) {
-      this.logger.error(`Course search failed: ${error.message}`);
+    } catch (error: unknown) {
+      this.logger.error(`Course search failed: ${getErrorMessage(error)}`);
       return { error: 'Cannot search courses right now.' };
     }
   }
@@ -154,8 +158,8 @@ export class McpCoreSkillsService {
         path: args.path,
         content: fs.readFileSync(resolved.targetPath, 'utf-8'),
       };
-    } catch (error: any) {
-      return { error: `Cannot read file: ${error.message}` };
+    } catch (error: unknown) {
+      return { error: `Cannot read file: ${getErrorMessage(error)}` };
     }
   }
 }

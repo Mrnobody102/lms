@@ -1,8 +1,8 @@
 'use client';
 
-import Image from 'next/image';
 import { useAuthStore } from '@/features/auth/auth.store';
 import { ThemeToggle, LanguageToggle } from '@repo/ui';
+import { UserCircle } from 'lucide-react';
 
 import { useTranslations } from 'next-intl';
 
@@ -25,7 +25,7 @@ export function Header() {
         <button className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors hidden md:block">
           {t('nav.docs')}
         </button>
-        <ThemeToggle />
+        <ThemeToggle label={t('themeToggle')} />
         <LanguageToggle />
         {isAuthenticated && (
           <button
@@ -37,14 +37,11 @@ export function Header() {
             {t('nav.logout')}
           </button>
         )}
-        <div className="w-8 h-8 rounded-full bg-muted border overflow-hidden relative">
-          <Image
-            src="https://ui-avatars.com/api/?name=Admin&background=blue&color=fff"
-            alt="Admin Avatar"
-            fill
-            sizes="32px"
-            unoptimized
-          />
+        <div
+          className="w-8 h-8 rounded-full bg-muted border flex items-center justify-center text-muted-foreground"
+          aria-label={t('accountAvatar')}
+        >
+          <UserCircle className="w-5 h-5" />
         </div>
       </div>
     </header>

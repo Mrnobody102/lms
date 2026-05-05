@@ -61,4 +61,8 @@ describe('HealthController', () => {
 
     expect(response.status).toHaveBeenCalledWith(503);
   });
+
+  it('should skip global throttling for monitoring probes', () => {
+    expect(Reflect.getMetadata('THROTTLER:SKIPdefault', HealthController)).toBe(true);
+  });
 });

@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException } from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as bcrypt from 'bcrypt';
 import type { Response } from 'express';
@@ -197,7 +197,29 @@ describe('AuthService', () => {
           'tenant-1',
           response,
         ),
-      ).rejects.toBeInstanceOf(UnauthorizedException);
+      ).rejects.toThrow('Invalid credentials');
+    });
+
+    it('should reject inactive users with the generic login failure message', async () => {
+      prisma.user.findFirst.mockResolvedValue({
+        id: 'user-1',
+        email: 'student@example.com',
+        password: 'hashed-password',
+        role: 'STUDENT',
+        tenantId: 'tenant-1',
+        isActive: false,
+      });
+
+      await expect(
+        service.login(
+          {
+            email: 'student@example.com',
+            password: 'Student@123',
+          },
+          'tenant-1',
+          response,
+        ),
+      ).rejects.toThrow('Invalid credentials');
     });
 
     it('should return the user without password and set the auth cookie', async () => {

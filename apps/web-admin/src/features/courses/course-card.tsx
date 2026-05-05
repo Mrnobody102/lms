@@ -1,6 +1,6 @@
 'use client';
 
-import { BookOpen, Edit2, ExternalLink, Trash2, MoreHorizontal, Eye } from 'lucide-react';
+import { BookOpen, Edit2, Trash2, MoreHorizontal, Eye } from 'lucide-react';
 import { Course } from '@/lib/course-api';
 import {
   Badge,

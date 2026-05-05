@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { BookOpen, Dumbbell, FileCheck2, LogOut, User as UserIcon } from 'lucide-react';
+import { Dumbbell, FileCheck2, LogOut, User as UserIcon } from 'lucide-react';
 import { LanguageToggle, ThemeToggle } from '@repo/ui';
 import { useTranslations } from 'next-intl';
 import { Link } from '../../navigation';
@@ -60,7 +60,7 @@ export function StudentNav({ showLinks = false }: StudentNavProps) {
       )}
 
       <div className="flex items-center gap-2">
-        <ThemeToggle />
+        <ThemeToggle label={t('themeToggle')} />
         <LanguageToggle />
         <div className="w-px h-5 bg-border" />
         {isAuthenticated ? (
@@ -77,7 +77,7 @@ export function StudentNav({ showLinks = false }: StudentNavProps) {
               }}
               className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-destructive transition-all rounded-lg hover:bg-destructive/5"
               aria-label={t('cta.logout')}
-              title={t('cta.logout') || 'Logout'}
+              title={t('cta.logout')}
             >
               <LogOut className="w-4 h-4" />
             </button>

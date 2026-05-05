@@ -4,7 +4,7 @@ Cập nhật lần cuối: 2026-04-27
 
 ## Yêu cầu
 
-- Node.js 18+
+- Node.js >= 20.9.0 (recommended Node 20 LTS; `.nvmrc` pins 20.19.5)
 - pnpm 9+
 - Docker
 

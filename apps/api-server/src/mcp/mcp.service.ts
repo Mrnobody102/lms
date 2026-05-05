@@ -11,12 +11,25 @@ export interface McpRegisteredTool {
   };
 }
 
+interface McpToolRequest {
+  params: {
+    name: string;
+    arguments?: unknown;
+  };
+}
+
+interface McpServerLike {
+  connect(transport: unknown): Promise<void> | void;
+  setRequestHandler(schema: unknown, handler: (request: McpToolRequest) => unknown): void;
+  onerror?: (error: unknown) => void;
+}
+
 @Injectable()
 export class McpService implements OnModuleInit {
   private readonly logger = new Logger(McpService.name);
-  private mcpServer: any = null;
-  private listToolsRequestSchema: any = null;
-  private callToolRequestSchema: any = null;
+  private mcpServer: McpServerLike | null = null;
+  private listToolsRequestSchema: unknown = null;
+  private callToolRequestSchema: unknown = null;
   private tools = new Map<string, McpRegisteredTool>();
 
   async onModuleInit() {
@@ -36,7 +49,7 @@ export class McpService implements OnModuleInit {
           prompts: {},
         },
       },
-    );
+    ) as McpServerLike;
     this.listToolsRequestSchema = ListToolsRequestSchema;
     this.callToolRequestSchema = CallToolRequestSchema;
     this.applyHandlers();
@@ -61,7 +74,7 @@ export class McpService implements OnModuleInit {
       })),
     }));
 
-    this.mcpServer.setRequestHandler(this.callToolRequestSchema, async (request: any) => {
+    this.mcpServer.setRequestHandler(this.callToolRequestSchema, async (request) => {
       const tool = this.tools.get(request.params.name);
       if (!tool) {
         throw new Error(`Tool not found: ${request.params.name}`);

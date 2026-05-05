@@ -10,6 +10,8 @@
     "CORS_ORIGINS",
     "JWT_SECRET",
     "REDIS_URL",
+    "TRUST_PROXY",
+    "ALLOW_TENANT_HEADER_IN_PRODUCTION",
     "npm_package_version"
   ],
   "tasks": {

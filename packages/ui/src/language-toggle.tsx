@@ -3,14 +3,14 @@
 import { useLocale } from 'next-intl';
 import { usePathname, useRouter } from 'next/navigation';
 import { Languages } from 'lucide-react';
-import { locales, localeNames } from '@repo/shared';
+import { isLocale, locales, localeNames, type Locale } from '@repo/shared';
 
 export function LanguageToggle() {
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
 
-  const handleLanguageChange = (newLocale: string) => {
+  const handleLanguageChange = (newLocale: Locale) => {
     if (newLocale === locale) return;
 
     // Split pathname: "/vi/dashboard" -> ["", "vi", "dashboard"]
@@ -18,7 +18,7 @@ export function LanguageToggle() {
 
     // In our apps with localePrefix: "always", the URL starts with /locale/
     // segments[1] should be the current locale
-    if (pathParts.length > 1 && locales.includes(pathParts[1] as any)) {
+    if (pathParts.length > 1 && isLocale(pathParts[1])) {
       pathParts[1] = newLocale;
     } else {
       // Fallback: prepend the new locale if it's missing
@@ -38,7 +38,7 @@ export function LanguageToggle() {
       </button>
 
       <div className="absolute right-0 mt-2 w-40 bg-card border rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 p-1">
-        {(locales as unknown as string[]).map((loc) => (
+        {locales.map((loc) => (
           <button
             key={loc}
             onClick={() => handleLanguageChange(loc)}
@@ -48,7 +48,7 @@ export function LanguageToggle() {
                 : 'hover:bg-muted text-muted-foreground hover:text-foreground'
             }`}
           >
-            <span>{localeNames[loc as keyof typeof localeNames]}</span>
+            <span>{localeNames[loc]}</span>
             {locale === loc && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
           </button>
         ))}

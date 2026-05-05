@@ -20,7 +20,7 @@ export function LoginModal() {
     if (success) {
       toast.success(t('welcome'));
     } else {
-      toast.error('Login failed. Please check your credentials.');
+      toast.error(t('loginError'));
     }
   };
 
@@ -31,8 +31,8 @@ export function LoginModal() {
           <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center font-bold text-primary-foreground shadow-lg shadow-primary/30 mx-auto mb-4">
             <KeyRound className="w-6 h-6" />
           </div>
-          <h2 className="text-2xl font-extrabold mb-1">Super Portal</h2>
-          <p className="text-sm text-muted-foreground font-medium">Đăng nhập tài khoản hệ thống</p>
+          <h2 className="text-2xl font-extrabold mb-1">{t('portalTitle')}</h2>
+          <p className="text-sm text-muted-foreground font-medium">{t('desc')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -42,7 +42,7 @@ export function LoginModal() {
               type="email"
               required
               className="w-full px-4 py-3 bg-background border rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium"
-              placeholder="admin@lms.com"
+              placeholder={t('emailPlaceholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
@@ -55,7 +55,7 @@ export function LoginModal() {
                 type={showPassword ? 'text' : 'password'}
                 required
                 className="w-full px-4 py-3 pr-12 bg-background border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium"
-                placeholder="••••••••"
+                placeholder="********"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />

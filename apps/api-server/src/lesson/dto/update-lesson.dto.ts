@@ -9,6 +9,7 @@ import {
   Min,
   IsObject,
   IsUUID,
+  ValidateIf,
 } from 'class-validator';
 import { LessonType } from '@repo/database';
 
@@ -55,7 +56,7 @@ export class UpdateLessonDto {
   duration?: number;
 
   @ApiPropertyOptional({ description: 'Quiz data' })
-  @IsOptional()
+  @ValidateIf((_object, value) => value !== undefined && value !== null)
   @IsObject()
-  quiz?: object;
+  quiz?: object | null;
 }

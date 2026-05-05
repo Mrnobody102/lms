@@ -23,12 +23,13 @@ export class McpRegistryService implements OnModuleInit {
   private explore() {
     const providers = this.discoveryService.getProviders();
 
-    providers.forEach((wrapper: any) => {
+    providers.forEach((wrapper) => {
       const { instance } = wrapper;
       if (!instance || !Object.getPrototypeOf(instance)) return;
 
       this.metadataScanner.getAllMethodNames(instance).forEach((methodName: string) => {
-        const method = instance[methodName];
+        const method = instance[methodName] as unknown;
+        if (typeof method !== 'function') return;
         const metadata = this.reflector.get<McpToolOptions>(MCP_TOOL_METADATA, method);
 
         if (metadata) {

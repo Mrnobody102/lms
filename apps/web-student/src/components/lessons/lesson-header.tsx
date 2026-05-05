@@ -40,13 +40,15 @@ export function LessonHeader({ course, isSidebarOpen, toggleSidebar }: LessonHea
 
       <div className="flex items-center gap-2">
         <div className="hidden sm:flex items-center gap-1 bg-muted/50 p-1 rounded-xl border">
-          <ThemeToggle />
+          <ThemeToggle label={t('themeToggle')} />
           <LanguageToggle />
         </div>
         <button
           onClick={toggleSidebar}
           className="p-2 hover:bg-muted rounded-xl transition-all active:scale-90 border border-transparent hover:border-border focus:outline-none focus:ring-2 focus:ring-primary/20"
-          aria-label={isSidebarOpen ? 'Close curriculum sidebar' : 'Open curriculum sidebar'}
+          aria-label={
+            isSidebarOpen ? t('lesson.closeCurriculumSidebar') : t('lesson.openCurriculumSidebar')
+          }
           aria-expanded={isSidebarOpen}
         >
           {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}

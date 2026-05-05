@@ -2,6 +2,11 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { ExamAttemptStatus, ExamQuestionType, Prisma, Role } from '@repo/database';
 import { LearningAccessService } from '../common/services/learning-access.service';
 import { PrismaService } from '../common/services/prisma.service';
+import {
+  isNormalizedAnswerCorrect,
+  normalizeQuestionPayload,
+  normalizeSubmittedAnswer,
+} from '../common/utils/answer-validation.util';
 import { CreateExamDto } from './dto/create-exam.dto';
 
 interface ExamUser {
@@ -18,6 +23,7 @@ interface ExamQuestionForScoring {
   id: string;
   type: ExamQuestionType;
   prompt: string;
+  options?: unknown;
   correctAnswer?: unknown;
   explanation?: string | null;
   points: number;
@@ -42,6 +48,17 @@ export class ExamService {
   async createExam(tenantId: string, data: CreateExamDto) {
     await this.ensureCourse(tenantId, data.courseId);
     await this.ensureUnit(tenantId, data.courseId, data.unitId);
+    const sections = data.sections.map((section) => ({
+      ...section,
+      questions: section.questions.map((question) => ({
+        ...question,
+        payload: normalizeQuestionPayload({
+          type: question.type,
+          options: question.options,
+          correctAnswer: question.correctAnswer,
+        }),
+      })),
+    }));
 
     return this.prisma.exam.create({
       data: {
@@ -54,7 +71,7 @@ export class ExamService {
         passingScore: data.passingScore,
         isPublished: data.isPublished ?? false,
         sections: {
-          create: data.sections.map((section, sectionIndex) => ({
+          create: sections.map((section, sectionIndex) => ({
             tenantId,
             title: section.title,
             order: section.order ?? sectionIndex,
@@ -64,10 +81,10 @@ export class ExamService {
                 type: question.type,
                 prompt: question.prompt,
                 options:
-                  question.options === undefined
+                  question.payload.options === undefined
                     ? undefined
-                    : (question.options as Prisma.InputJsonValue),
-                correctAnswer: question.correctAnswer as Prisma.InputJsonValue,
+                    : (question.payload.options as Prisma.InputJsonValue),
+                correctAnswer: question.payload.correctAnswer as Prisma.InputJsonValue,
                 explanation: question.explanation,
                 points: question.points ?? 1,
                 skillTags: question.skillTags ?? [],
@@ -262,13 +279,29 @@ export class ExamService {
     await this.learningAccess.ensureCourseAccess(attempt.courseId, tenantId, user);
 
     const questions = this.getQuestions(attempt.exam);
-    const answerByQuestion = new Map(answers.map((answer) => [answer.questionId, answer.answer]));
     const unknownQuestion = answers.find(
       (answer) => !questions.some((question) => question.id === answer.questionId),
     );
     if (unknownQuestion) {
       throw new BadRequestException(`Question ${unknownQuestion.questionId} is not in this exam`);
     }
+    if (new Set(answers.map((answer) => answer.questionId)).size !== answers.length) {
+      throw new BadRequestException('Duplicate answers are not allowed');
+    }
+
+    const answerByQuestion = new Map(
+      answers.map((submittedAnswer) => {
+        const question = questions.find((entry) => entry.id === submittedAnswer.questionId)!;
+        return [
+          submittedAnswer.questionId,
+          normalizeSubmittedAnswer({
+            type: question.type,
+            answer: submittedAnswer.answer,
+            options: question.options,
+          }),
+        ];
+      }),
+    );
 
     const results = questions.map((question) => {
       const answer = answerByQuestion.get(question.id);
@@ -447,13 +480,13 @@ export class ExamService {
 
   private scoreAnswer(
     question: { type: ExamQuestionType; correctAnswer?: unknown },
-    answer: unknown,
+    answer: number | string,
   ) {
-    if (question.type === ExamQuestionType.FILL_BLANK) {
-      return this.normalizeText(answer) === this.normalizeText(question.correctAnswer);
-    }
-
-    return JSON.stringify(answer) === JSON.stringify(question.correctAnswer);
+    return isNormalizedAnswerCorrect({
+      type: question.type,
+      answer,
+      correctAnswer: question.correctAnswer,
+    });
   }
 
   private buildResult(
@@ -478,12 +511,6 @@ export class ExamService {
       passed: passingScore === null ? null : percentage >= passingScore,
       answers,
     };
-  }
-
-  private normalizeText(value: unknown) {
-    return String(value ?? '')
-      .trim()
-      .toLocaleLowerCase();
   }
 
   private getAttemptDeadline(attempt: TimedAttempt, durationMinutes: number) {

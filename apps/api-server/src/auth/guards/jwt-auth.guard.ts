@@ -7,14 +7,33 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { Role } from '@repo/database';
 
+interface AuthenticatedUser {
+  tenantId: string;
+  role: Role;
+}
+
+interface TenantScopedRequest {
+  tenantId?: string;
+}
+
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
-  handleRequest(err: any, user: any, info: any, context: ExecutionContext) {
-    if (err || !user) {
-      throw err || new UnauthorizedException('Invalid or missing authentication token');
+  handleRequest<TUser = AuthenticatedUser>(
+    err: unknown,
+    user: AuthenticatedUser | false | null,
+    _info: unknown,
+    context: ExecutionContext,
+    _status?: unknown,
+  ): TUser {
+    if (err) {
+      throw err;
     }
 
-    const request = context.switchToHttp().getRequest();
+    if (!user) {
+      throw new UnauthorizedException('Invalid or missing authentication token');
+    }
+
+    const request = context.switchToHttp().getRequest<TenantScopedRequest>();
 
     // Enforce tenant isolation: Users can only access APIs matching their own tenant,
     // except SUPER_ADMINs who have universal access (if they choose to supply x-tenant-id).
@@ -26,6 +45,6 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       }
     }
 
-    return user;
+    return user as TUser;
   }
 }
