@@ -29,9 +29,11 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
 USER nestjs
 
-COPY --from=builder /app/apps/api-server/dist ./dist
+COPY --from=builder /app/apps/api-server/package.json ./apps/api-server/package.json
+COPY --from=builder /app/apps/api-server/dist ./apps/api-server/dist
+COPY --from=builder /app/apps/api-server/node_modules ./apps/api-server/node_modules
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages/database ./packages/database
 COPY --from=builder /app/package.json ./package.json
 
-CMD ["node", "dist/main.js"]
+CMD ["node", "apps/api-server/dist/main.js"]
