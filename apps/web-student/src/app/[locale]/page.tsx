@@ -32,7 +32,7 @@ export default function Home() {
       <StudentNav showLinks />
 
       {/* Hero Section */}
-      <section className="mx-auto max-w-7xl px-6 py-20 lg:py-32 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center bg-background">
+      <section className="mx-auto max-w-7xl px-6 py-20 lg:py-32 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
         <div>
           <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-bold mb-6">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
@@ -76,7 +76,7 @@ export default function Home() {
       </section>
 
       {/* Features Grid */}
-      <section className="bg-card/50 py-24 border-t border-b">
+      <section className="bg-card/50 py-24 border-t border-b transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-extrabold mb-4">{t('features.whyUs')}</h2>

@@ -13,14 +13,14 @@ interface StudentNavProps {
 
 export function StudentNav({ showLinks = false }: StudentNavProps) {
   const t = useTranslations('Student');
-  const { isAuthenticated, user, logout, checkAuth } = useAuthStore();
+  const { isAuthenticated, user, logout, checkAuth, isInitialized } = useAuthStore();
 
   useEffect(() => {
     void checkAuth();
   }, [checkAuth]);
 
   return (
-    <nav className="border-b bg-card/80 backdrop-blur-md px-6 py-3 flex items-center justify-between sticky top-0 z-10">
+    <nav className="border-b bg-card/80 backdrop-blur-md px-6 py-3 flex items-center justify-between sticky top-0 z-10 transition-colors duration-300">
       <Link href="/" className="flex items-center gap-2">
         <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold shadow-lg shadow-primary/20">
           L
@@ -63,7 +63,9 @@ export function StudentNav({ showLinks = false }: StudentNavProps) {
         <ThemeToggle label={t('themeToggle')} />
         <LanguageToggle />
         <div className="w-px h-5 bg-border" />
-        {isAuthenticated ? (
+        {!isInitialized ? (
+          <div className="w-20 h-8 animate-pulse bg-muted rounded-lg" />
+        ) : isAuthenticated ? (
           <div className="flex items-center gap-1.5">
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
               <UserIcon className="w-4 h-4" />

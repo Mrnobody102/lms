@@ -11,7 +11,7 @@ export default function CoursesPage() {
   const { data: courses = [], isLoading } = useCourses();
 
   return (
-    <div className="min-h-screen font-sans bg-background">
+    <div className="min-h-screen font-sans">
       <StudentNav />
 
       <main className="max-w-7xl mx-auto px-6 py-12">
