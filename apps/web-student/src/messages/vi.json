@@ -128,7 +128,9 @@
       "signInLink": "Đăng nhập tại đây",
       "terms": "Bằng cách đăng ký, bạn đồng ý với Điều khoản dịch vụ và Chính sách bảo mật của chúng tôi.",
       "loginTab": "Đăng nhập",
-      "registerTab": "Tham gia ngay"
+      "registerTab": "Tham gia ngay",
+      "showPassword": "Hiện mật khẩu",
+      "hidePassword": "Ẩn mật khẩu"
     },
     "courses": {
       "title": "Tất cả khóa học",

@@ -36,6 +36,8 @@
     "submitting": "Đang đăng nhập...",
     "welcome": "Chào mừng quay lại",
     "loginError": "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.",
-    "desc": "Vui lòng đăng nhập để quản trị hệ thống"
+    "desc": "Vui lòng đăng nhập để quản trị hệ thống",
+    "showPassword": "Hiện mật khẩu",
+    "hidePassword": "Ẩn mật khẩu"
   }
 }

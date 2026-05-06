@@ -47,13 +47,13 @@ export function EnrollmentPanel({
         </p>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+      <div className="flex h-10 items-center rounded-md border border-input bg-background text-foreground transition-colors focus-within:ring-2 focus-within:ring-primary/20">
+        <Search className="ml-3.5 h-4 w-4 shrink-0 text-muted-foreground pointer-events-none" />
         <Input
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder={t('searchStudents')}
-          className="pl-9"
+          className="h-full min-w-0 flex-1 border-0 bg-transparent px-3 py-0 shadow-none focus-visible:ring-0"
         />
       </div>
 

@@ -50,13 +50,13 @@ export default function CoursesPage() {
 
             {/* Search & Filter Bar */}
             <div className="flex flex-col sm:flex-row gap-3 mb-6">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              <div className="flex h-10 flex-1 items-center rounded-lg border border-input bg-background text-foreground transition-colors focus-within:ring-2 focus-within:ring-primary/20">
+                <Search className="ml-3.5 h-4 w-4 shrink-0 text-muted-foreground pointer-events-none" />
                 <Input
                   placeholder={t('searchCourses')}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9"
+                  className="h-full min-w-0 flex-1 border-0 bg-transparent px-3 py-0 shadow-none focus-visible:ring-0"
                 />
               </div>
               <div className="flex gap-2">

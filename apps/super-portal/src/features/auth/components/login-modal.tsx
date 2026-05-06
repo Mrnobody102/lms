@@ -50,11 +50,11 @@ export function LoginModal() {
 
           <div>
             <label className="block text-sm font-bold text-foreground mb-1">{t('password')}</label>
-            <div className="relative">
+            <div className="flex h-12 items-center rounded-xl border bg-background text-foreground transition-all focus-within:ring-2 focus-within:ring-primary/20">
               <input
                 type={showPassword ? 'text' : 'password'}
                 required
-                className="w-full px-4 py-3 pr-12 bg-background border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+                className="h-full min-w-0 flex-1 bg-transparent px-4 text-sm font-medium outline-none placeholder:text-muted-foreground"
                 placeholder="********"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -62,9 +62,10 @@ export function LoginModal() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors w-8 h-8 flex items-center justify-center rounded-lg hover:bg-accent"
+                className="flex h-full w-12 shrink-0 items-center justify-center rounded-r-xl text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                aria-label={showPassword ? t('hidePassword') : t('showPassword')}
               >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
           </div>

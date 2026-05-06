@@ -36,6 +36,8 @@
     "submitting": "Logging in...",
     "welcome": "Welcome back",
     "loginError": "Login failed. Please check your credentials.",
-    "desc": "Please login to manage the platform"
+    "desc": "Please login to manage the platform",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   }
 }

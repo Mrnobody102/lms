@@ -128,7 +128,9 @@
       "signInLink": "Sign in here",
       "terms": "By registering, you agree to our Terms of Service and Privacy Policy.",
       "loginTab": "Login",
-      "registerTab": "Join Now"
+      "registerTab": "Join Now",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password"
     },
     "courses": {
       "title": "All Courses",

@@ -20,7 +20,9 @@
       "adminPortal": "Admin Portal",
       "adminSubtitle": "Training Management System",
       "loginError": "Login failed. Please check your credentials.",
-      "loggingIn": "Logging in..."
+      "loggingIn": "Logging in...",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password"
     },
     "revenue": "Total Revenue",
     "totalStudents": "Total Students",

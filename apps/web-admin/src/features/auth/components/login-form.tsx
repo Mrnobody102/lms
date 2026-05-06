@@ -61,7 +61,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
             {t('auth.forgotPassword')}
           </button>
         </div>
-        <div className="relative">
+        <div className="flex h-12 items-center rounded-xl border border-zinc-200 bg-zinc-50 text-foreground transition-all focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:focus-within:border-blue-400 dark:focus-within:ring-blue-400/20">
           <input
             type={showPassword ? 'text' : 'password'}
             required
@@ -71,14 +71,15 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
               if (error) clearError();
             }}
             placeholder="********"
-            className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3 pr-12 text-sm text-foreground placeholder:text-zinc-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 transition-all"
+            className="h-full min-w-0 flex-1 bg-transparent px-4 text-sm outline-none placeholder:text-zinc-400"
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+            className="flex h-full w-12 shrink-0 items-center justify-center rounded-r-xl text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30"
+            aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
           >
-            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
       </div>

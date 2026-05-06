@@ -1,16 +1,10 @@
-"use client";
+'use client';
 
-import { useState, useMemo } from "react";
-import {
-  Search,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-} from "lucide-react";
-import { format } from "date-fns";
-import { TenantActions } from "./tenant-actions";
-import { Tenant } from "@/hooks/use-tenants";
+import { useState, useMemo } from 'react';
+import { Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { format } from 'date-fns';
+import { TenantActions } from './tenant-actions';
+import { Tenant } from '@/hooks/use-tenants';
 import {
   useReactTable,
   getCoreRowModel,
@@ -18,7 +12,7 @@ import {
   getPaginationRowModel,
   flexRender,
   createColumnHelper,
-} from "@tanstack/react-table";
+} from '@tanstack/react-table';
 
 interface TenantListProps {
   tenants: Tenant[];
@@ -26,27 +20,25 @@ interface TenantListProps {
 }
 
 export function TenantList({ tenants, loading }: TenantListProps) {
-  const [globalFilter, setGlobalFilter] = useState("");
+  const [globalFilter, setGlobalFilter] = useState('');
 
   const columnHelper = createColumnHelper<Tenant>();
 
   const columns = useMemo(
     () => [
-      columnHelper.accessor("name", {
-        header: "Tên trung tâm",
+      columnHelper.accessor('name', {
+        header: 'Tên trung tâm',
         cell: (info) => <span className="font-medium">{info.getValue()}</span>,
       }),
       columnHelper.accessor((row) => row.domain || `${row.slug}.lms.com`, {
-        id: "domain",
-        header: "Domain / Slug",
+        id: 'domain',
+        header: 'Domain / Slug',
         cell: (info) => (
-          <span className="text-muted-foreground font-mono text-xs">
-            {info.getValue()}
-          </span>
+          <span className="text-muted-foreground font-mono text-xs">{info.getValue()}</span>
         ),
       }),
-      columnHelper.accessor("isActive", {
-        header: "Trạng thái",
+      columnHelper.accessor('isActive', {
+        header: 'Trạng thái',
         cell: (info) =>
           info.getValue() ? (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-success/10 text-success border border-success/20">
@@ -60,16 +52,16 @@ export function TenantList({ tenants, loading }: TenantListProps) {
             </span>
           ),
       }),
-      columnHelper.accessor("createdAt", {
-        header: "Ngày tạo",
+      columnHelper.accessor('createdAt', {
+        header: 'Ngày tạo',
         cell: (info) => (
           <span className="text-muted-foreground">
-            {format(new Date(info.getValue()), "dd/MM/yyyy")}
+            {format(new Date(info.getValue()), 'dd/MM/yyyy')}
           </span>
         ),
       }),
       columnHelper.display({
-        id: "actions",
+        id: 'actions',
         header: () => <div className="text-right">Thao tác</div>,
         cell: (info) => (
           <div className="flex justify-end">
@@ -91,7 +83,7 @@ export function TenantList({ tenants, loading }: TenantListProps) {
     globalFilterFn: (row, columnId, filterValue) => {
       const search = String(filterValue).toLowerCase();
       const value = row.getValue(columnId);
-      if (columnId === "name" || columnId === "domain") {
+      if (columnId === 'name' || columnId === 'domain') {
         return value ? String(value).toLowerCase().includes(search) : false;
       }
       return false;
@@ -110,14 +102,14 @@ export function TenantList({ tenants, loading }: TenantListProps) {
     <div className="bg-card border rounded-2xl overflow-hidden shadow-sm flex flex-col">
       <div className="p-6 border-b flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center bg-card/50">
         <h3 className="font-semibold">Danh sách Trung tâm</h3>
-        <div className="relative">
-          <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+        <div className="flex h-10 items-center rounded-lg border border-input bg-background text-foreground transition-colors focus-within:ring-2 focus-within:ring-primary/20">
+          <Search className="ml-3.5 h-4 w-4 shrink-0 text-muted-foreground pointer-events-none" />
           <input
             type="text"
             placeholder="Tìm kiếm theo tên, slug..."
-            value={globalFilter ?? ""}
+            value={globalFilter ?? ''}
             onChange={(e) => setGlobalFilter(e.target.value)}
-            className="bg-background border text-sm rounded-lg pl-9 pr-4 py-2 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 w-full sm:w-72 transition-all"
+            className="h-full min-w-0 w-full sm:w-72 flex-1 border-0 bg-transparent px-3 py-0 text-sm text-foreground outline-none placeholder:text-muted-foreground/50 focus:ring-0"
           />
         </div>
       </div>
@@ -131,10 +123,7 @@ export function TenantList({ tenants, loading }: TenantListProps) {
                   <th key={header.id} className="px-6 py-4 whitespace-nowrap">
                     {header.isPlaceholder
                       ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
+                      : flexRender(header.column.columnDef.header, header.getContext())}
                   </th>
                 ))}
               </tr>
@@ -164,16 +153,10 @@ export function TenantList({ tenants, loading }: TenantListProps) {
               </tr>
             ) : (
               table.getRowModel().rows.map((row) => (
-                <tr
-                  key={row.id}
-                  className="hover:bg-muted/50 transition-colors"
-                >
+                <tr key={row.id} className="hover:bg-muted/50 transition-colors">
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id} className="px-6 py-4">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
                   ))}
                 </tr>
@@ -186,14 +169,11 @@ export function TenantList({ tenants, loading }: TenantListProps) {
       {table.getPageCount() > 1 && (
         <div className="px-6 py-4 border-t flex items-center justify-between bg-card/50">
           <div className="text-sm text-muted-foreground">
-            Hiển thị{" "}
-            <span className="text-foreground font-medium">
-              {table.getRowModel().rows.length}
-            </span>{" "}
-            /{" "}
+            Hiển thị{' '}
+            <span className="text-foreground font-medium">{table.getRowModel().rows.length}</span> /{' '}
             <span className="text-foreground font-medium">
               {table.getFilteredRowModel().rows.length}
-            </span>{" "}
+            </span>{' '}
             trung tâm
           </div>
           <div className="flex items-center gap-2">
@@ -212,10 +192,10 @@ export function TenantList({ tenants, loading }: TenantListProps) {
               <ChevronLeft className="w-5 h-5" />
             </button>
             <span className="text-muted-foreground text-sm px-2">
-              Trang{" "}
+              Trang{' '}
               <span className="text-foreground font-medium">
                 {table.getState().pagination.pageIndex + 1}
-              </span>{" "}
+              </span>{' '}
               / {table.getPageCount()}
             </span>
             <button
