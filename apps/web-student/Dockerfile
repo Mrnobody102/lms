@@ -1,10 +1,16 @@
+# syntax=docker/dockerfile:1.7
 FROM node:20.19.5-alpine3.22 AS base
 RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+RUN pnpm config set store-dir /pnpm/store
 
 FROM base AS builder
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_TENANT_ID
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_TENANT_ID=$NEXT_PUBLIC_TENANT_ID
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 COPY apps/api-server/package.json ./apps/api-server/package.json
 COPY apps/web-admin/package.json ./apps/web-admin/package.json
@@ -16,8 +22,12 @@ COPY packages/eslint-config/package.json ./packages/eslint-config/package.json
 COPY packages/shared/package.json ./packages/shared/package.json
 COPY packages/ts-config/package.json ./packages/ts-config/package.json
 COPY packages/ui/package.json ./packages/ui/package.json
-RUN pnpm install --frozen-lockfile
-COPY . .
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store pnpm install --frozen-lockfile
+COPY apps/web-student ./apps/web-student
+COPY packages/api-client ./packages/api-client
+COPY packages/shared ./packages/shared
+COPY packages/ts-config ./packages/ts-config
+COPY packages/ui ./packages/ui
 RUN pnpm turbo build --filter=web-student...
 
 FROM base AS runner

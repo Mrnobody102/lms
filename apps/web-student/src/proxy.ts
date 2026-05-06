@@ -20,7 +20,7 @@ export default function proxy(request: NextRequest) {
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
     'Content-Security-Policy': buildContentSecurityPolicy([process.env.NEXT_PUBLIC_API_URL], {
       includeLocalhost: process.env.NODE_ENV !== 'production',
-      allowUnsafeInline: process.env.NODE_ENV !== 'production',
+      allowUnsafeInline: true,
       allowUnsafeEval: process.env.NODE_ENV !== 'production',
     }),
   };

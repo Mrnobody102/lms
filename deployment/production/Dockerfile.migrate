@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 FROM node:20.19.5-alpine3.22
 
 RUN apk add --no-cache libc6-compat openssl
@@ -5,11 +6,12 @@ RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+RUN pnpm config set store-dir /pnpm/store
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/database/package.json ./packages/database/package.json
 
-RUN pnpm install --frozen-lockfile --filter @repo/database...
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store pnpm install --frozen-lockfile --filter @repo/database...
 
 COPY packages/database ./packages/database
 

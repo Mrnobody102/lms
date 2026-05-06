@@ -72,7 +72,7 @@ Current production hardening notes:
 
 - Dependencies are pinned; do not reintroduce `"latest"` in package manifests.
 - Browser apps use cookie-first auth and do not store JWT as client authority.
-- CSP keeps `unsafe-inline` scripts and `unsafe-eval` out of production. They are enabled only in non-production Next dev so webpack dev hydration and Playwright E2E can run.
+- CSP keeps `unsafe-eval` out of production. The Next.js Docker portals currently allow inline scripts because the App Router runtime emits inline bootstrap data; replace this with nonce-based CSP before a strict-security production launch.
 - `CORS_ORIGINS` must contain exact frontend origins only, for example `https://admin.example.com,https://student.example.com` without paths or query strings.
 - `TRUST_PROXY` must be enabled only behind a trusted reverse proxy. When enabled, tenant host resolution can use the proxy-forwarded host seen by Express.
 - `ALLOW_TENANT_HEADER_IN_PRODUCTION` should stay `false` unless a trusted edge explicitly injects `x-tenant-id`; normal production traffic should resolve tenants by domain/subdomain.
@@ -101,6 +101,14 @@ For local Docker checks, prefer targeted builds:
 ```bash
 docker compose -f deployment/production/docker-compose.prod.yml build api
 docker compose -f deployment/production/docker-compose.prod.yml build web-admin
+```
+
+On Windows developer machines, prefer the sequential helper to avoid BuildKit exporting multiple
+large Next.js images at the same time:
+
+```powershell
+pnpm docker:prod:build
+powershell -ExecutionPolicy Bypass -File ./scripts/build-prod-images.ps1 -Services web-admin
 ```
 
 Run the post-deploy smoke script after a release:
