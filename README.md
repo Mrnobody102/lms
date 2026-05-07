@@ -120,8 +120,8 @@ pnpm test --filter @repo/ui     # Test components
 
 ```bash
 # Cài đặt browsers cho lần đầu
-pnpm exec playwright install
+pnpm run playwright:install:chromium
 
 # Chạy E2E test cho Web Student
-pnpm test:e2e --filter web-student
+pnpm --filter web-student test:e2e
 ```

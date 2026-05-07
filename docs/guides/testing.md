@@ -58,6 +58,7 @@ Các test này:
 Chạy:
 
 ```bash
+pnpm run playwright:install:chromium
 pnpm test:e2e
 pnpm --filter web-student test:e2e
 pnpm --filter web-admin test:e2e

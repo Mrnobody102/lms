@@ -15,6 +15,7 @@
     "dev:all": "turbo run dev",
     "lint": "turbo run lint",
     "test": "turbo run test",
+    "playwright:install:chromium": "pnpm --filter web-student exec playwright install --with-deps chromium",
     "test:e2e": "pnpm --filter @repo/shared build && pnpm --filter @repo/api-client build && pnpm run ports:free && pnpm --filter web-student test:e2e && pnpm --filter web-admin test:e2e && pnpm --filter super-portal test:e2e",
     "test:e2e:all": "pnpm --filter @repo/shared build && pnpm --filter @repo/api-client build && pnpm run ports:free && pnpm --filter web-student test:e2e:all && pnpm --filter web-admin test:e2e:all && pnpm --filter super-portal test:e2e:all",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",

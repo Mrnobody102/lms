@@ -72,7 +72,7 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @repo/database generate
-      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm run playwright:install:chromium
       - run: pnpm --filter web-student test:e2e
       - run: pnpm --filter web-admin test:e2e
       - run: pnpm --filter super-portal test:e2e
