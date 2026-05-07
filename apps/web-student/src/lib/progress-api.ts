@@ -54,7 +54,6 @@ export interface LearningProgressSummary {
     completionPercentage: number;
   };
 }
-
 export interface LearningActivityRecord {
   id: string;
   lessonId: string;
@@ -62,6 +61,20 @@ export interface LearningActivityRecord {
   type: LearningActivityType;
   occurredAt: string;
   timeSpentSeconds?: number | null;
+}
+
+export interface PerformanceReport {
+  accuracyByUnit: {
+    id: string;
+    title: string;
+    accuracy: number;
+    totalQuestions: number;
+  }[];
+  accuracyBySkill: {
+    skill: string;
+    accuracy: number;
+    totalQuestions: number;
+  }[];
 }
 
 export const progressApi = {
@@ -98,6 +111,12 @@ export const progressApi = {
 
   getSummary: async () => {
     const response = await api.get<LearningProgressSummary>('/progress/summary');
+    return response.data;
+  },
+  getPerformance: async (courseId?: string) => {
+    const response = await api.get<PerformanceReport>('/progress/performance', {
+      params: { courseId },
+    });
     return response.data;
   },
 };

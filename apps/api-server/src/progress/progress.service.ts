@@ -282,4 +282,111 @@ export class ProgressService {
 
     return streak;
   }
+
+  async getPerformanceReport(userId: string, tenantId: string, role: Role, courseId?: string) {
+    if (courseId) {
+      await this.learningAccess.ensureCourseAccess(courseId, tenantId, { id: userId, role });
+    }
+
+    const practiceAnswers = await this.prisma.practiceAnswer.findMany({
+      where: {
+        tenantId,
+        attempt: {
+          userId,
+          courseId,
+          status: 'SUBMITTED',
+        },
+      },
+      include: {
+        question: {
+          select: {
+            unitId: true,
+            skillTags: true,
+            unit: { select: { title: true } },
+          },
+        },
+      },
+    });
+
+    const examAnswers = await this.prisma.examAnswer.findMany({
+      where: {
+        tenantId,
+        attempt: {
+          userId,
+          courseId,
+          status: 'SUBMITTED',
+        },
+      },
+      include: {
+        question: {
+          select: {
+            skillTags: true,
+            section: {
+              include: {
+                exam: {
+                  select: {
+                    unitId: true,
+                    unit: { select: { title: true } },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const unitStats: Record<string, { title: string; correct: number; total: number }> = {};
+    const skillStats: Record<string, { correct: number; total: number }> = {};
+
+    const process = (
+      isCorrect: boolean,
+      unitId: string | null,
+      unitTitle: string | null,
+      skillTags: string[],
+    ) => {
+      if (unitId) {
+        if (!unitStats[unitId]) {
+          unitStats[unitId] = { title: unitTitle || 'Unknown Unit', correct: 0, total: 0 };
+        }
+        unitStats[unitId].total += 1;
+        if (isCorrect) unitStats[unitId].correct += 1;
+      }
+
+      skillTags.forEach((tag) => {
+        if (!skillStats[tag]) {
+          skillStats[tag] = { correct: 0, total: 0 };
+        }
+        skillStats[tag].total += 1;
+        if (isCorrect) skillStats[tag].correct += 1;
+      });
+    };
+
+    practiceAnswers.forEach((a) => {
+      process(a.isCorrect, a.question.unitId, a.question.unit?.title || null, a.question.skillTags);
+    });
+
+    examAnswers.forEach((a) => {
+      process(
+        a.isCorrect,
+        a.question.section.exam.unitId,
+        a.question.section.exam.unit?.title || null,
+        a.question.skillTags,
+      );
+    });
+
+    return {
+      accuracyByUnit: Object.entries(unitStats).map(([id, stats]) => ({
+        id,
+        title: stats.title,
+        accuracy: Math.round((stats.correct / stats.total) * 100),
+        totalQuestions: stats.total,
+      })),
+      accuracyBySkill: Object.entries(skillStats).map(([skill, stats]) => ({
+        skill,
+        accuracy: Math.round((stats.correct / stats.total) * 100),
+        totalQuestions: stats.total,
+      })),
+    };
+  }
 }

@@ -18,6 +18,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useAuthStore } from '../../features/auth/auth.store';
 import { StudentNav } from '../../components/layout/student-nav';
 import { useProgressSummary } from '../../hooks/use-progress';
+import { PerformanceReport } from '../../components/dashboard/performance-report';
 
 export default function Home() {
   const t = useTranslations('Student');
@@ -281,6 +282,10 @@ function LearningDashboard() {
             </section>
           </div>
         )}
+
+        <div className="mt-12">
+          <PerformanceReport />
+        </div>
       </main>
     </div>
   );

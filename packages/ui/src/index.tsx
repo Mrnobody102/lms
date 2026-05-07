@@ -16,3 +16,4 @@ export * from './sheet';
 export * from './theme-provider';
 export * from './theme-toggle';
 export * from './language-toggle';
+export * from './lib/utils';

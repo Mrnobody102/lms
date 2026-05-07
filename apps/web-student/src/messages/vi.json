@@ -41,7 +41,13 @@
       "sessionValue": "{count, plural, =0 {0 lượt} one {# lượt} other {# lượt}}",
       "overallProgress": "Tiến độ tổng",
       "currentStreak": "Chuỗi ngày học",
-      "streakValue": "{days, plural, =0 {0 ngày} one {# ngày} other {# ngày}}"
+      "streakValue": "{days, plural, =0 {0 ngày} one {# ngày} other {# ngày}}",
+      "noPerformanceData": "Chưa có dữ liệu hiệu suất",
+      "noPerformanceDataDesc": "Hãy bắt đầu luyện tập hoặc làm bài kiểm tra để xem phân tích hiệu suất của bạn tại đây.",
+      "accuracyByUnit": "Độ chính xác theo Unit",
+      "accuracyByUnitDesc": "Mức độ hoàn thành chính xác của bạn trong từng chương học.",
+      "skillMastery": "Làm chủ kỹ năng",
+      "skillMasteryDesc": "Mức độ thành thạo dựa trên kết quả tất cả các bài làm của bạn."
     },
     "features": {
       "whyUs": "Tại sao chọn chúng tôi?",

@@ -13,10 +13,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center p-6">
-      <div className="w-full max-w-sm">
+    <div className="flex min-h-screen items-center justify-center bg-zinc-50 p-4 dark:bg-zinc-950 sm:p-6">
+      <div className="w-full max-w-sm sm:max-w-md">
         {/* Logo / Brand */}
-        <div className="text-center mb-10">
+        <div className="mb-8 text-center sm:mb-10">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary text-white mb-6 shadow-lg shadow-primary/25">
             <svg
               className="w-6 h-6"
@@ -37,7 +37,7 @@ export default function LoginPage() {
         </div>
 
         {/* Login Card */}
-        <div className="bg-card border border-border rounded-2xl p-8 shadow-2xl dark:shadow-black/50">
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-2xl dark:shadow-black/50 sm:p-8">
           <LoginForm onSuccess={handleLoginSuccess} />
         </div>
 
