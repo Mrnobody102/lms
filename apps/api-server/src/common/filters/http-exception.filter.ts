@@ -44,7 +44,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       method: request.method,
       path: getRequestPath(request),
       statusCode: status,
-      error: exception instanceof Error ? exception.stack : exception,
+      error: exception,
       requestId,
     });
 

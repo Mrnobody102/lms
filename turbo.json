@@ -26,7 +26,15 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "inputs": ["src/**", "prisma/**", "next.config.*", "tsconfig.json", "package.json"],
+      "inputs": [
+        "src/**",
+        "public/**",
+        "prisma/**",
+        "next.config.*",
+        "next-env.d.ts",
+        "tsconfig.json",
+        "package.json"
+      ],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**", ".turbo/**"]
     },
     "@repo/database#build": {
@@ -54,11 +62,11 @@
     },
     "test": {
       "inputs": ["**/*.ts", "**/*.tsx"],
-      "outputs": ["coverage/**"]
+      "outputs": []
     },
     "typecheck": {
       "dependsOn": ["^build"],
-      "inputs": ["src/**", "next.config.*", "tsconfig.json"],
+      "inputs": ["src/**", "next-env.d.ts", "next.config.*", "tsconfig.json"],
       "outputs": []
     }
   }

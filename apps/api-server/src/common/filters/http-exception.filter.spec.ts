@@ -83,7 +83,7 @@ describe('HttpExceptionFilter', () => {
     expect(logger.error).toHaveBeenCalledWith(
       'Request error',
       expect.objectContaining({
-        error: expect.stringContaining('database password is invalid'),
+        error: expect.any(Error),
         statusCode: 500,
       }),
     );

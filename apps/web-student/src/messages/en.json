@@ -47,7 +47,13 @@
       "accuracyByUnit": "Accuracy by unit",
       "accuracyByUnitDesc": "How well you're doing in each chapter of the course.",
       "skillMastery": "Skill mastery",
-      "skillMasteryDesc": "Mastery level based on your answers across all sessions."
+      "skillMasteryDesc": "Mastery level based on your answers across all sessions.",
+      "activityCalendar": "Activity calendar",
+      "activityCalendarDesc": "Daily study activity across your enrolled courses.",
+      "activityCalendarEmpty": "No activity recorded in the last 14 days.",
+      "activityOpened": "Opened",
+      "activityCompleted": "Completed",
+      "activitySpent": "Spent"
     },
     "features": {
       "whyUs": "Why Choose Us?",

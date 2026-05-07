@@ -19,6 +19,7 @@
       "domain": "Tên miền",
       "status": "Trạng thái",
       "actions": "Thao tác",
+      "createdAt": "Ngày tạo",
       "active": "Hoạt động",
       "inactive": "Đã khóa",
       "loading": "Đang tải danh sách trung tâm...",

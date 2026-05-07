@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { LearningActivityType, ProgressStatus, Role } from '@repo/database';
 import { LearningAccessService } from '../common/services/learning-access.service';
 import { PrismaService } from '../common/services/prisma.service';
+import { buildActivityCalendar } from '../common/utils/activity-calendar.util';
 
 @Injectable()
 export class ProgressService {
@@ -175,6 +176,7 @@ export class ProgressService {
               lessonId: true,
               type: true,
               occurredAt: true,
+              timeSpentSeconds: true,
             },
             orderBy: { occurredAt: 'desc' },
           });
@@ -249,10 +251,12 @@ export class ProgressService {
     const currentStreak = this.calculateCurrentStreak(
       activities.map((activity) => activity.occurredAt),
     );
+    const activityCalendar = buildActivityCalendar(activities, 14);
 
     return {
       activeCourse: activeCourse ?? null,
       courses: courseSummaries,
+      activityCalendar,
       totals: {
         courses: courseSummaries.length,
         lessons: totalLessons,

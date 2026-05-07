@@ -45,6 +45,12 @@ export interface CourseProgressSummary {
 export interface LearningProgressSummary {
   activeCourse: CourseProgressSummary | null;
   courses: CourseProgressSummary[];
+  activityCalendar: {
+    date: string;
+    sessions: number;
+    completedLessons: number;
+    timeSpentSeconds: number;
+  }[];
   totals: {
     courses: number;
     lessons: number;

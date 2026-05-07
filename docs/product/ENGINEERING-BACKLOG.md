@@ -14,23 +14,23 @@ Nguyên tắc:
 
 ## Trạng thái tổng quan
 
-| Hạng mục                               | Trạng thái           | Ghi chú                                                                                                              |
-| -------------------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| Cookie-first auth cho browser flow     | Đã làm               | Không còn coi `localStorage` là authority chính                                                                      |
-| Tenant-aware auth + business API tests | Đã làm               | Có HTTP integration tests cho auth/course/lesson/progress                                                            |
-| Student E2E flow thực tế               | Đã làm               | Đã thay test giả bằng register/login/lesson/progress                                                                 |
-| Local release verification             | Đã làm               | Có `build:stable`, `smoke:api`, `test:e2e`, cleanup port                                                             |
-| Health/readiness có DB + Redis check   | Đã làm               | Có `live`, `ready` và smoke runtime thật                                                                             |
-| CI release-grade checks                | Đã làm               | Đã tách fast/build/e2e/api smoke trong workflow                                                                      |
-| Migration hygiene production-safe      | Đã làm               | Có runbook baseline, `db:status`, `db:resolve`, guard `db:push` production                                           |
-| Enrollment / access model              | Đang làm             | Đã có DB/API/UI access control, shared policy, DB constraints; đã có reporting theo course và tenant overview cơ bản |
-| Student dashboard / continue learning  | Đang làm             | Đã có dashboard shell, streak UI, session count; còn chart và admin reporting                                        |
-| Content hierarchy                      | Đã có V1             | `CourseUnit` thuộc course, lesson gắn unit, admin/student UI grouped theo unit                                       |
-| Practice engine                        | Đã có Student UI MVP | Question bank, exercise set, submit attempt/scoring, enrollment authorization, admin/student practice UI             |
-| Quiz / Exam attempt                    | Đã có Student UI MVP | Exam template, section/question, start/submit attempt, scoring, review, enrollment authorization, admin/student UI   |
-| Activation / license code              | Chưa làm             | Phục vụ flow nhập mã kích hoạt                                                                                       |
-| AI conversation                        | Chưa làm             | Làm sau usage/reporting                                                                                              |
-| Media storage / background jobs        | Chưa làm             | Chỉ nên làm sau hạ tầng release ổn định                                                                              |
+| Hạng mục                               | Trạng thái           | Ghi chú                                                                                                                                  |
+| -------------------------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Cookie-first auth cho browser flow     | Đã làm               | Không còn coi `localStorage` là authority chính                                                                                          |
+| Tenant-aware auth + business API tests | Đã làm               | Có HTTP integration tests cho auth/course/lesson/progress                                                                                |
+| Student E2E flow thực tế               | Đã làm               | Đã thay test giả bằng register/login/lesson/progress                                                                                     |
+| Local release verification             | Đã làm               | Có `build:stable`, `smoke:api`, `test:e2e`, cleanup port                                                                                 |
+| Health/readiness có DB + Redis check   | Đã làm               | Có `live`, `ready` và smoke runtime thật                                                                                                 |
+| CI release-grade checks                | Đã làm               | Đã tách fast/build/e2e/api smoke trong workflow                                                                                          |
+| Migration hygiene production-safe      | Đã làm               | Có runbook baseline, `db:status`, `db:resolve`, guard `db:push` production                                                               |
+| Enrollment / access model              | Đang làm             | Đã có DB/API/UI access control, shared policy, DB constraints; đã có reporting theo course, tenant overview và accuracy/dashboard cơ bản |
+| Student dashboard / continue learning  | Đang làm             | Đã có dashboard shell, streak UI, session count, activity calendar và performance report                                                 |
+| Content hierarchy                      | Đã có V1             | `CourseUnit` thuộc course, lesson gắn unit, admin/student UI grouped theo unit                                                           |
+| Practice engine                        | Đã có Student UI MVP | Question bank, exercise set, submit attempt/scoring, enrollment authorization, admin/student practice UI                                 |
+| Quiz / Exam attempt                    | Đã có Student UI MVP | Exam template, section/question, start/submit attempt, scoring, review, enrollment authorization, admin/student UI                       |
+| Activation / license code              | Chưa làm             | Phục vụ flow nhập mã kích hoạt                                                                                                           |
+| AI conversation                        | Chưa làm             | Làm sau usage/reporting                                                                                                                  |
+| Media storage / background jobs        | Chưa làm             | Chỉ nên làm sau hạ tầng release ổn định                                                                                                  |
 
 ## Những gì đã hoàn thành
 
@@ -140,7 +140,7 @@ Task:
 - [x] Harden MCP auth and per-session SSE transport handling.
 - [x] Make frontend tenant header local/dev by default; production resolves by host/domain.
 - [x] Allow CSP `unsafe-inline` scripts and `unsafe-eval` only in non-production Next dev so browser E2E can hydrate under webpack.
-- [ ] Add cross-environment deployment guide with concrete domain examples.
+- [x] Add cross-environment deployment guide with concrete domain examples.
 
 ### Epic E. Progress Và Learning Experience
 
@@ -210,11 +210,11 @@ Task:
 
 Task:
 
-- [ ] Student activity calendar
-- [ ] Course completion report
-- [ ] Enrollment progress report
-- [ ] Practice/exam accuracy report
-- [ ] Admin report dashboard cơ bản
+- [x] Student activity calendar
+- [x] Course completion report
+- [x] Enrollment progress report
+- [x] Practice/exam accuracy report
+- [x] Admin report dashboard cơ bản
 
 ### Epic J. Activation Và License
 
@@ -240,10 +240,9 @@ Task:
 
 Thứ tự nên làm tiếp:
 
-1. Bổ sung Practice/Exam report theo unit/skill từ dữ liệu attempt.
-2. Sau đó mở activation/license nếu cần kiểm soát entitlement.
-3. Bổ sung reporting theo unit/skill và accuracy theo practice/exam.
-4. Mở rộng question types: matching, ordering, listening.
+1. Mở activation/license nếu cần kiểm soát entitlement.
+2. Bổ sung reporting theo unit/skill sâu hơn nếu cần drill-down chi tiết.
+3. Mở rộng question types: matching, ordering, listening.
 
 ## Checklist xác minh gần nhất
 
@@ -271,4 +270,4 @@ Chưa xác minh xong:
 
 - [x] CI workflow mới
 - [x] Production migration runbook
-- [ ] Cross-environment deploy guide end-to-end
+- [x] Cross-environment deploy guide end-to-end

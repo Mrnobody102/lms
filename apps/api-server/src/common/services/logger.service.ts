@@ -1,5 +1,6 @@
 import { Injectable, LoggerService as NestLoggerService } from '@nestjs/common';
 import pino, { Logger } from 'pino';
+import { redactLogMeta } from './log-redaction.util';
 
 export interface LogMeta {
   [key: string]: unknown;
@@ -34,15 +35,7 @@ export class LoggerService implements NestLoggerService {
   private sanitizeMeta(meta?: LogMeta): Record<string, unknown> | undefined {
     if (!meta) return undefined;
 
-    const safeMeta: Record<string, unknown> = { ...meta };
-    if (meta.error) {
-      safeMeta.error =
-        meta.error instanceof Error
-          ? { message: meta.error.message, stack: meta.error.stack }
-          : meta.error;
-    }
-
-    return safeMeta;
+    return redactLogMeta(meta);
   }
 
   log(message: string, meta?: LogMeta) {

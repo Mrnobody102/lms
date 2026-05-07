@@ -19,6 +19,7 @@
       "domain": "Domain",
       "status": "Status",
       "actions": "Actions",
+      "createdAt": "Created At",
       "active": "Active",
       "inactive": "Inactive",
       "loading": "Loading tenants...",

@@ -36,11 +36,11 @@ LMS Platform đang đi theo hướng nền tảng học tập multi-tenant, có 
 
 Chưa có hoặc mới ở mức sơ khai:
 
-- Dashboard học tập giống màn hình tổng quan: continue learning, streak, progress chart.
+- Dashboard học tập đã có continue learning, streak, activity calendar và performance report; còn chart nâng cao.
 - Program/level hierarchy cao hơn `CourseUnit` nếu nội dung HSK cần nhiều cấp hơn.
 - Practice backend, admin UI và student attempt UI MVP đã có.
 - Exam/test backend MVP, admin template UI và student exam UI đã có.
-- Reporting theo enrollment/progress.
+- Reporting theo enrollment/progress, activity calendar và practice/exam accuracy đã có nền.
 - Activation/license code.
 - AI conversation.
 - Media storage/background jobs.
@@ -73,7 +73,6 @@ Trạng thái: phần lớn đã hoàn thành.
 
 Còn cần theo dõi:
 
-- Cross-environment deploy guide end-to-end.
 - Build trace của Next standalone có thể chậm, cần theo dõi trong CI.
 
 ### P1. Course Builder Và Enrollment
@@ -208,6 +207,8 @@ Còn cần:
 
 Mục tiêu: phục vụ menu "Báo cáo" cho student và admin.
 
+Trạng thái: đã có nền cơ bản.
+
 Student reports:
 
 - Completion by course/unit.
@@ -221,6 +222,12 @@ Admin reports:
 - Student activity.
 - Enrollment progress.
 - Practice/exam performance.
+
+Còn cần:
+
+- Drill-down theo class/cohort nếu thêm model lớp.
+- Export/filter nâng cao nếu cần vận hành thật.
+- Reporting theo unit/skill sâu hơn cho admin.
 
 ### P7. Activation Và Licensing
 
@@ -250,11 +257,10 @@ Phạm vi:
 
 ## Thứ tự làm tiếp đề xuất
 
-1. Practice/Exam report theo unit/skill từ attempt.
-2. Reporting nâng cao theo unit/practice/exam.
-3. Activation/license.
-4. Program/level hierarchy nếu nội dung HSK cần nhiều cấp hơn.
-5. AI conversation.
+1. Activation/license.
+2. Reporting nâng cao theo unit/practice/exam nếu cần drill-down sâu hơn.
+3. Program/level hierarchy nếu nội dung HSK cần nhiều cấp hơn.
+4. AI conversation.
 
 ## Definition Of Done Cấp Dự Án
 

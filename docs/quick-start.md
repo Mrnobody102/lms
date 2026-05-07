@@ -157,6 +157,7 @@ curl -X POST http://localhost:4000/api/auth/logout \
 | `pnpm db:studio`  | Mở Prisma Studio                    |
 
 `pnpm test:e2e` build các shared workspace dependency trước khi mở Playwright để Next app không đọc nhầm artifact `dist` cũ.
+Đây là browser UI smoke với API mock; để kiểm API + DB + Redis thật, dùng `pnpm smoke:api`.
 
 ## Production-readiness notes
 

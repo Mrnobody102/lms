@@ -1,137 +1,123 @@
 # Project Structure
 
-```
+Tài liệu này là bản đồ thư mục thực tế của monorepo. Nếu thêm module lớn hoặc đổi boundary giữa apps/packages, cập nhật file này cùng PR.
+
+```text
 lms-platform/
-├── apps/                          # Các ứng dụng có thể deploy
-│   ├── api-server/               # NestJS API Server
-│   ├── web-student/              # Student Portal (Next.js)
-│   ├── web-admin/                # Admin Portal (Next.js)
-│   └── super-portal/             # Super Admin Portal (Next.js)
+├── apps/
+│   ├── api-server/                    # NestJS REST API, port 4000
+│   │   ├── Dockerfile
+│   │   ├── src/
+│   │   │   ├── admin/                 # Tenant/user/admin overview APIs
+│   │   │   ├── auth/                  # Cookie-first auth, JWT, guards, DTOs
+│   │   │   ├── common/
+│   │   │   │   ├── dto/
+│   │   │   │   ├── filters/           # Global exception response
+│   │   │   │   ├── guards/            # Global throttling guard
+│   │   │   │   ├── health/            # live/ready/metrics/docs endpoints
+│   │   │   │   ├── interfaces/
+│   │   │   │   ├── metrics/
+│   │   │   │   ├── middleware/        # request id, metrics, tenant, CSRF
+│   │   │   │   ├── services/          # Prisma, logger, learning access policy
+│   │   │   │   ├── throttling/
+│   │   │   │   ├── utils/
+│   │   │   │   └── validation/
+│   │   │   ├── course/                # Course, unit, enrollment, reports
+│   │   │   ├── exam/                  # Exam templates, attempts, review
+│   │   │   ├── lesson/
+│   │   │   ├── mcp/                   # Optional MCP tools, disabled by default
+│   │   │   ├── practice/              # Question bank, exercise sets, attempts
+│   │   │   ├── progress/              # Lesson progress, activity, summary
+│   │   │   ├── user/
+│   │   │   ├── app.module.ts
+│   │   │   └── main.ts
+│   │   └── tsconfig.json
+│   │
+│   ├── web-student/                   # Next.js student portal, port 3000
+│   │   ├── Dockerfile
+│   │   ├── e2e/
+│   │   ├── public/
+│   │   ├── src/
+│   │   │   ├── app/[locale]/
+│   │   │   ├── components/
+│   │   │   ├── features/
+│   │   │   ├── lib/
+│   │   │   ├── messages/
+│   │   │   ├── navigation.ts
+│   │   │   └── proxy.ts
+│   │   └── playwright.config.ts
+│   │
+│   ├── web-admin/                     # Center admin portal, port 3001
+│   │   ├── Dockerfile
+│   │   ├── e2e/
+│   │   ├── public/
+│   │   ├── src/
+│   │   │   ├── app/[locale]/
+│   │   │   ├── components/
+│   │   │   ├── features/
+│   │   │   ├── hooks/
+│   │   │   ├── lib/
+│   │   │   ├── messages/
+│   │   │   ├── navigation.ts
+│   │   │   └── proxy.ts
+│   │   └── playwright.config.ts
+│   │
+│   └── super-portal/                  # Platform owner portal, port 3002
+│       ├── Dockerfile
+│       ├── e2e/
+│       ├── src/
+│       │   ├── app/[locale]/
+│       │   ├── components/
+│       │   ├── lib/
+│       │   ├── messages/
+│       │   ├── navigation.ts
+│       │   └── proxy.ts
+│       └── playwright.config.ts
 │
-├── packages/                     # Shared packages
-│   ├── database/                # Prisma schema, migrations & seed
-│   ├── shared/                  # Shared utilities, types, auth store
-│   ├── api-client/              # Shared API client (axios instance)
-│   ├── ui/                     # Shared UI components (shadcn/ui)
-│   ├── eslint-config/          # Shared ESLint config
-│   └── ts-config/              # Shared TypeScript configs
+├── packages/
+│   ├── api-client/                    # Shared Axios client: cookies, CSRF, 401 handling
+│   ├── database/                      # Prisma schema, migrations, generated client, seed
+│   ├── eslint-config/
+│   ├── shared/                        # Shared constants, auth store, CSP/security helpers
+│   ├── ts-config/
+│   └── ui/                            # Shared React UI primitives
 │
-├── docs/                        # Tài liệu dự án
-│   ├── ai-agent/                # AI Agent architecture docs
-│   │   └── SOP.md               # Quy trình làm việc chuẩn cho AI agent
-│   ├── guides/                  # Hướng dẫn kỹ thuật
-│   ├── ops/                     # Vận hành & triển khai
-│   ├── product/                 # Tài liệu sản phẩm
-│   ├── ARCHITECTURE.md          # Tổng quan kiến trúc
-│   ├── tech-stack.md           # Công nghệ sử dụng
-│   ├── tech-analysis.md        # Phân tích kỹ thuật
-│   ├── quick-start.md          # Hướng dẫn bắt đầu nhanh
-│   ├── api-documentation.md    # Tài liệu API
-│   └── troubleshooting.md      # Xử lý sự cố
-│
-├── agent-knowledge/             # AI Agent knowledge base (BMAD)
-│   ├── lms-platform/
-│   │   ├── CONTEXT.md          # Project context
-│   │   └── SKILL.md           # Agent skills
-│   └── skills/                 # Shared AI skills
-│
-├── scripts/                     # Scripts tiện ích
-│   └── validate-ai-work.ps1    # AI work validation
-│
-├── tests/                       # API test collections
-│   ├── api-tests.http          # REST Client collection
-│   └── test-register.json      # Test data mẫu
-│
-├── deployment/                   # Cấu hình triển khai
-│   └── production/
-│       └── docker-compose.prod.yml
-│
-├── .env                          # Environment variables
-├── .env.example                  # Template env file
-├── AGENTS.md                     # Root instructions for AI coding agents
-├── CLAUDE.md                     # Claude Code project memory entrypoint
-├── docker-compose.yml            # Docker dev services (PostgreSQL, Redis)
-├── package.json                  # Monorepo root
-├── turbo.json                   # Turborepo config
-└── pnpm-lock.yaml
+├── deployment/
+│   └── production/                    # Production Docker Compose, migration image, monitoring
+├── docs/
+│   ├── ai-agent/
+│   ├── guides/
+│   ├── ops/
+│   └── product/
+├── scripts/                           # Validation, smoke, ports, Docker build helpers
+├── tests/                             # Manual HTTP collections
+├── agent-knowledge/                   # Local skill/context files for AI agents
+├── .github/workflows/                 # CI and manual Docker image checks
+├── docker-compose.yml                 # Local Postgres + Redis
+├── package.json
+├── pnpm-lock.yaml
+├── pnpm-workspace.yaml
+└── turbo.json
 ```
 
-## API Server Structure
+## Boundary Rules
 
-```
-apps/api-server/src/
-├── auth/                       # Authentication module
-│   ├── decorators/             # @CurrentUser(), @Roles()
-│   ├── dto/                    # Login, Register DTOs
-│   ├── guards/                 # JwtAuthGuard, RolesGuard
-│   ├── strategies/             # JWT strategy
-│   ├── auth.controller.ts
-│   ├── auth.module.ts
-│   └── auth.service.ts
-│
-├── user/                       # User profile module
-│   ├── dto/                    # Update, ChangePassword DTOs
-│   ├── user.controller.ts
-│   ├── user.module.ts
-│   └── user.service.ts
-│
-├── admin/                       # Admin management module
-│   ├── dto/                    # Admin query, status, tenant DTOs
-│   ├── admin.controller.ts
-│   ├── admin-tenant.controller.ts
-│   ├── admin.module.ts
-│   ├── user-admin.service.ts   # User management service
-│   └── tenant-admin.service.ts # Tenant management service
-│
-├── course/                      # Course management module
-│   ├── dto/
-│   ├── course.controller.ts
-│   ├── course.module.ts
-│   └── course.service.ts
-│
-├── lesson/                      # Lesson management module
-│   ├── dto/
-│   ├── lesson.controller.ts
-│   ├── lesson.module.ts
-│   └── lesson.service.ts
-│
-├── progress/                    # Learning progress module
-│   ├── dto/
-│   ├── progress.controller.ts
-│   ├── progress.module.ts
-│   └── progress.service.ts
-│
-└── common/                       # Shared resources
-    ├── dto/                     # Base response DTOs
-    ├── filters/                 # Exception filters
-    ├── interceptors/            # Response interceptors
-    ├── middleware/              # Tenant + request logging middleware
-    └── services/                # PrismaService, LoggerService
-```
+- API feature modules nằm trực tiếp dưới `apps/api-server/src/<module>/`.
+- Business logic ở service; controller chỉ nhận HTTP, auth/role, DTO.
+- Tenant-scoped Prisma read/write phải có tenant context hoặc dùng policy service sẵn có.
+- Frontend apps dùng `@repo/api-client` thay vì tạo axios client riêng.
+- `packages/shared`, `packages/ui`, `packages/api-client` không được import ngược từ `apps/*`.
+- User-facing text phải cập nhật cả `vi.json` và `en.json`.
+- Không commit `.next`, `dist`, coverage, `*.tsbuildinfo`, hay file secret.
 
-## Quick Commands
+## Common Commands
 
 ```bash
-# Development
-pnpm dev                # Chạy tất cả apps
-pnpm build              # Build toàn bộ
-pnpm lint               # Lint tất cả
-
-# Database
-pnpm db:up              # Bật PostgreSQL + Redis (Docker)
-pnpm db:down            # Tắt Docker
-pnpm db:migrate         # Chạy migration
-pnpm db:seed            # Tạo dữ liệu mẫu
-pnpm db:studio          # Mở Prisma Studio
-
-# Testing
-pnpm test               # Unit test (Vitest)
-pnpm test:e2e           # E2E test (Playwright)
+pnpm dev
+pnpm run typecheck
+pnpm run lint
+pnpm run test
+pnpm run build
+pnpm smoke:api
+pnpm test:e2e
 ```
-
-## Quick Links
-
-- [API Documentation](docs/api-documentation.md)
-- [Quick Start Guide](docs/quick-start.md)
-- [Troubleshooting](docs/troubleshooting.md)
-- [Deployment Guide](docs/ops/deployment.md)

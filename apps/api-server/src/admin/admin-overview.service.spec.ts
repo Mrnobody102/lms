@@ -1,9 +1,27 @@
-import { describe, expect, it, vi } from 'vitest';
-import { EnrollmentStatus, ProgressStatus } from '@repo/database';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  EnrollmentStatus,
+  ExamAttemptStatus,
+  LearningActivityType,
+  PracticeAttemptStatus,
+  ProgressStatus,
+} from '@repo/database';
 import { AdminOverviewService } from './admin-overview.service';
 
 describe('AdminOverviewService', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-05-08T12:00:00.000Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('should build tenant overview from real aggregates', async () => {
+    const today = new Date();
+    today.setUTCHours(12, 0, 0, 0);
+
     const prisma = {
       user: {
         count: vi.fn().mockResolvedValueOnce(12).mockResolvedValueOnce(4).mockResolvedValueOnce(2),
@@ -34,6 +52,30 @@ describe('AdminOverviewService', () => {
       },
       learningActivity: {
         count: vi.fn().mockResolvedValue(18),
+        findMany: vi.fn().mockResolvedValue([
+          {
+            type: LearningActivityType.LESSON_OPENED,
+            occurredAt: today,
+            timeSpentSeconds: 300,
+          },
+          {
+            type: LearningActivityType.LESSON_COMPLETED,
+            occurredAt: today,
+            timeSpentSeconds: null,
+          },
+        ]),
+      },
+      practiceAttempt: {
+        aggregate: vi.fn().mockResolvedValue({
+          _count: { id: 2 },
+          _sum: { score: 8, totalPoints: 10 },
+        }),
+      },
+      examAttempt: {
+        aggregate: vi.fn().mockResolvedValue({
+          _count: { id: 1 },
+          _sum: { score: 7, totalPoints: 10 },
+        }),
       },
       userLessonProgress: {
         findMany: vi.fn().mockResolvedValue([
@@ -74,11 +116,41 @@ describe('AdminOverviewService', () => {
         latestCourseTitle: 'HSK 1',
       }),
     ]);
+    expect(result.reporting.practiceAccuracy).toEqual({
+      attempts: 2,
+      score: 8,
+      totalPoints: 10,
+      accuracy: 80,
+    });
+    expect(result.reporting.examAccuracy).toEqual({
+      attempts: 1,
+      score: 7,
+      totalPoints: 10,
+      accuracy: 70,
+    });
+    expect(result.reporting.activityCalendar).toHaveLength(7);
+    expect(result.reporting.activityCalendar[result.reporting.activityCalendar.length - 1]).toEqual(
+      expect.objectContaining({
+        sessions: 1,
+        completedLessons: 1,
+        timeSpentSeconds: 300,
+      }),
+    );
     expect(prisma.courseEnrollment.count).toHaveBeenCalledWith({
       where: {
         tenantId: 'tenant-1',
         status: EnrollmentStatus.ACTIVE,
       },
     });
+    expect(prisma.practiceAttempt.aggregate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ status: PracticeAttemptStatus.SUBMITTED }),
+      }),
+    );
+    expect(prisma.examAttempt.aggregate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ status: ExamAttemptStatus.SUBMITTED }),
+      }),
+    );
   });
 });

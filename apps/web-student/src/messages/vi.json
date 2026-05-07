@@ -47,7 +47,13 @@
       "accuracyByUnit": "Độ chính xác theo Unit",
       "accuracyByUnitDesc": "Mức độ hoàn thành chính xác của bạn trong từng chương học.",
       "skillMastery": "Làm chủ kỹ năng",
-      "skillMasteryDesc": "Mức độ thành thạo dựa trên kết quả tất cả các bài làm của bạn."
+      "skillMasteryDesc": "Mức độ thành thạo dựa trên kết quả tất cả các bài làm của bạn.",
+      "activityCalendar": "Lịch hoạt động",
+      "activityCalendarDesc": "Hoạt động học hằng ngày trên các khóa đã enroll.",
+      "activityCalendarEmpty": "Chưa ghi nhận hoạt động nào trong 14 ngày gần nhất.",
+      "activityOpened": "Mở bài",
+      "activityCompleted": "Hoàn thành",
+      "activitySpent": "Thời gian"
     },
     "features": {
       "whyUs": "Tại sao chọn chúng tôi?",

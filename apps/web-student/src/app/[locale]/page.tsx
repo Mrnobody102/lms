@@ -18,6 +18,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useAuthStore } from '../../features/auth/auth.store';
 import { StudentNav } from '../../components/layout/student-nav';
 import { useProgressSummary } from '../../hooks/use-progress';
+import { ActivityCalendar } from '../../components/dashboard/activity-calendar';
 import { PerformanceReport } from '../../components/dashboard/performance-report';
 
 export default function Home() {
@@ -286,6 +287,10 @@ function LearningDashboard() {
         <div className="mt-12">
           <PerformanceReport />
         </div>
+
+        {summary?.activityCalendar && summary.activityCalendar.length > 0 && (
+          <ActivityCalendar activityCalendar={summary.activityCalendar} />
+        )}
       </main>
     </div>
   );

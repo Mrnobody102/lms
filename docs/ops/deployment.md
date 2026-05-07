@@ -1,141 +1,151 @@
 # Deployment Guide
 
-This guide covers local development, production deployment, CI checks, and runtime monitoring for the LMS Platform.
+Tài liệu này mô tả cách chạy local, cách deploy production, và cách kiểm tra hệ thống sau khi build.
 
 ## 1. Local Development
 
-Prerequisites:
+Yêu cầu:
 
-- Node.js >= 20.9.0
-- pnpm
+- Node.js 20.19.5
+- pnpm 9
 - Docker Desktop
 
-Run locally:
+Luồng local chuẩn:
 
 ```bash
-pnpm install
+pnpm install --frozen-lockfile
 pnpm db:up
 pnpm db:migrate
 pnpm db:seed
 pnpm dev
 ```
 
+Lưu ý:
+
+- `docker-compose.yml` local map PostgreSQL ra port `5433` và Redis ra `6379`.
+- `NEXT_PUBLIC_TENANT_ID` chỉ là tenant hint cho local/dev.
+- `pnpm test:e2e` là browser UI smoke; API thật được kiểm bằng `pnpm smoke:api`.
+
 ## 2. Production Strategy
 
-Recommended deployment split:
+### Topology A. All-in-Docker
 
-- Frontend apps (`web-student`, `web-admin`, `super-portal`): Vercel or equivalent Next.js hosting.
-- Backend API (`api-server`): Docker on VPS/container platform.
-- Database: managed PostgreSQL where possible.
-- Redis: managed Redis where possible.
+Phù hợp khi muốn tự host toàn bộ stack bằng một `docker-compose`:
 
-Frontend environment variables:
+- `api-server`
+- `web-student`
+- `web-admin`
+- `super-portal`
+- `postgres`
+- `redis`
+- `migrate`
 
-- `NEXT_PUBLIC_API_URL`
-- `NEXT_PUBLIC_WEB_STUDENT_URL`
-- `NEXT_PUBLIC_TENANT_ID` for local/dev tenant hints only. Production should resolve tenant by domain/subdomain unless `sendTenantHeaderInProduction` is explicitly enabled for a trusted deployment.
+File chính: [`deployment/production/docker-compose.prod.yml`](../../deployment/production/docker-compose.prod.yml)
 
-Backend environment variables:
+### Topology B. Frontend host riêng, API host riêng
+
+Phù hợp khi:
+
+- Frontend deploy trên Vercel hoặc hosting Next.js tương đương
+- API deploy trên VPS/container platform
+- Database và Redis dùng managed service
+
+Nguyên tắc:
+
+- `NEXT_PUBLIC_API_URL` phải là URL browser-reachable
+- `CORS_ORIGINS` phải là danh sách origin chính xác, không có path/query
+- Tenant production phải resolve từ host/domain, không dựa vào `NEXT_PUBLIC_TENANT_ID`
+
+### Mẫu domain production
+
+Ví dụ:
+
+- `https://api.example.com`
+- `https://student.example.com`
+- `https://admin.example.com`
+- `https://portal.example.com`
+
+Env tương ứng:
+
+```bash
+APP_PUBLIC_URL=https://api.example.com
+NEXT_PUBLIC_API_URL=https://api.example.com
+NEXT_PUBLIC_WEB_STUDENT_URL=https://student.example.com
+CORS_ORIGINS=https://student.example.com,https://admin.example.com,https://portal.example.com
+AUTH_COOKIE_DOMAIN=.example.com
+AUTH_COOKIE_SAME_SITE=lax
+TRUST_PROXY=true
+ALLOW_TENANT_HEADER_IN_PRODUCTION=false
+NEXT_PUBLIC_TENANT_ID=
+```
+
+### Env bắt buộc trong production
+
+API server:
 
 - `DATABASE_URL`
 - `REDIS_URL`
 - `JWT_SECRET`
 - `JWT_EXPIRES_IN`
 - `CORS_ORIGINS`
-- `TRUST_PROXY`
-- `ALLOW_TENANT_HEADER_IN_PRODUCTION`
 - `APP_PUBLIC_URL`
 - `AUTH_COOKIE_SAME_SITE`
 - `AUTH_COOKIE_DOMAIN`
-- `MCP_ENABLED`
+- `TRUST_PROXY`
+- `ALLOW_TENANT_HEADER_IN_PRODUCTION`
 
-Production database changes must use migrations:
+Frontend apps:
+
+- `NEXT_PUBLIC_API_URL`
+- `NEXT_PUBLIC_WEB_STUDENT_URL` cho `web-admin`
+- `NEXT_PUBLIC_TENANT_ID` chỉ dùng local/dev
+
+### Database
+
+Production database changes phải đi qua migration:
 
 ```bash
 pnpm --filter @repo/database db:deploy
 ```
 
-Do not run `db:push` against production databases.
-
-For the Docker Compose production template, provide at least:
-
-- `POSTGRES_PASSWORD`
-- `JWT_SECRET`
-- `CORS_ORIGINS`
-- `NEXT_PUBLIC_API_URL`
-
-The compose template includes a one-shot `migrate` service that runs `prisma migrate deploy`
-before the API service starts. `NEXT_PUBLIC_API_URL` must be a browser-reachable URL, not the
-internal Docker service hostname.
-
-Current production hardening notes:
-
-- Dependencies are pinned; do not reintroduce `"latest"` in package manifests.
-- Browser apps use cookie-first auth and do not store JWT as client authority.
-- CSP keeps `unsafe-eval` out of production. The Next.js Docker portals currently allow inline scripts because the App Router runtime emits inline bootstrap data; replace this with nonce-based CSP before a strict-security production launch.
-- `CORS_ORIGINS` must contain exact frontend origins only, for example `https://admin.example.com,https://student.example.com` without paths or query strings.
-- `TRUST_PROXY` must be enabled only behind a trusted reverse proxy. When enabled, tenant host resolution can use the proxy-forwarded host seen by Express.
-- `ALLOW_TENANT_HEADER_IN_PRODUCTION` should stay `false` unless a trusted edge explicitly injects `x-tenant-id`; normal production traffic should resolve tenants by domain/subdomain.
-- Redis readiness supports `redis://`, `rediss://`, and URL credentials such as `rediss://default:password@host:6380`.
-- API throttling uses Redis-backed storage when `REDIS_URL` is configured; local development without `REDIS_URL` falls back to the Nest in-memory throttler.
-- Learning access policy is centralized in `LearningAccessService`; new course/lesson/progress endpoints should use that service instead of duplicating enrollment checks.
-- MCP should stay disabled in production unless intentionally enabled with `MCP_ENABLED=true` and a strong `MCP_API_KEY`.
+Không dùng `db:push` trên production.
 
 ## 3. CI/CD
 
-The release-grade workflow lives in `.github/workflows/ci.yml`.
+Workflow chính:
 
-CI jobs:
+1. `fast_checks`: install, generate Prisma client, typecheck, lint, unit tests.
+2. `build`: build API, frontend apps, database package.
+3. `e2e_chromium`: Playwright UI smoke cho student/admin/super portal với API mock.
+4. `api_smoke`: PostgreSQL + Redis service containers, `db:deploy`, kiểm tra API runtime thật.
 
-1. `fast_checks`: install, generate Prisma client, typecheck, lint, unit/integration tests.
-2. `build`: sequential production builds for API, frontend apps, and database package.
-3. `e2e_chromium`: Chromium Playwright smoke for student, admin, and super portal.
-4. `api_smoke`: PostgreSQL + Redis service containers, `migrate deploy`, API smoke script.
+Docker image validation:
 
-Docker image validation is intentionally manual in `.github/workflows/docker-build.yml`.
-Run it before release candidates or Dockerfile changes. Full image builds are expensive on
-Windows and consume more GitHub Actions minutes than the regular CI path.
+- Workflow riêng: [`.github/workflows/docker-build.yml`](../../.github/workflows/docker-build.yml)
+- Dùng cho release candidate hoặc khi sửa Dockerfile / compose production
 
-For local Docker checks, prefer targeted builds:
-
-```bash
-docker compose -f deployment/production/docker-compose.prod.yml build api
-docker compose -f deployment/production/docker-compose.prod.yml build web-admin
-```
-
-On Windows developer machines, prefer the sequential helper to avoid BuildKit exporting multiple
-large Next.js images at the same time:
-
-```powershell
-pnpm docker:prod:build
-powershell -ExecutionPolicy Bypass -File ./scripts/build-prod-images.ps1 -Services web-admin
-```
-
-Run the post-deploy smoke script after a release:
+Smoke sau deploy:
 
 ```bash
-pnpm smoke:deploy -- -ApiUrl https://api.example.com -WebStudentUrl https://learn.example.com -WebAdminUrl https://admin.example.com -SuperPortalUrl https://ops.example.com
+pnpm smoke:deploy -- -ApiUrl https://api.example.com -WebStudentUrl https://student.example.com -WebAdminUrl https://admin.example.com -SuperPortalUrl https://portal.example.com
 ```
 
 ## 4. Monitoring
 
-| Endpoint                             | Use                                                                                         |
-| ------------------------------------ | ------------------------------------------------------------------------------------------- |
-| `GET /api/health/live`               | Liveness probe                                                                              |
-| `GET /api/health/ready`              | Readiness probe for database and Redis; returns HTTP 503 when a required dependency is down |
-| `GET /api/health/metrics`            | In-memory request metrics                                                                   |
-| `GET /api/health/metrics/prometheus` | Prometheus text metrics for scraping                                                        |
-| `GET /api/health/docs`               | Human-readable health endpoint reference                                                    |
+| Endpoint                             | Use                                           |
+| ------------------------------------ | --------------------------------------------- |
+| `GET /api/health/live`               | Liveness probe                                |
+| `GET /api/health/ready`              | Readiness probe cho database và Redis         |
+| `GET /api/health/metrics`            | In-memory request metrics                     |
+| `GET /api/health/metrics/prometheus` | Prometheus text metrics                       |
+| `GET /api/health/docs`               | Tài liệu human-readable cho health/monitoring |
 
-See [monitoring.md](monitoring.md) for operational details.
-
-Prometheus and Alertmanager starter configs are in `deployment/production/monitoring/`.
-Mount them into your monitoring stack and update the receiver in `alertmanager.yml` before production use.
+Xem thêm [monitoring.md](monitoring.md).
 
 ## 5. Troubleshooting
 
-- Database connection errors: verify `DATABASE_URL`, firewall rules, and migration state.
-- Redis readiness errors: verify `REDIS_URL`, TLS mode (`rediss://` for managed TLS Redis), credentials, and network access.
-- CORS errors: ensure all frontend origins are listed as exact origins in `CORS_ORIGINS`.
-- Cookie auth across subdomains: configure `AUTH_COOKIE_DOMAIN`, `AUTH_COOKIE_SAME_SITE`, and HTTPS.
-- Build errors: run `pnpm install --frozen-lockfile`, `pnpm --filter @repo/database generate`, then the failing build command.
+- CORS lỗi: kiểm tra `CORS_ORIGINS` có đúng origin không.
+- Cookie auth giữa subdomain: kiểm tra `AUTH_COOKIE_DOMAIN`, `AUTH_COOKIE_SAME_SITE`, HTTPS và reverse proxy.
+- Tenant mismatch: kiểm tra host/domain thật của tenant và `TRUST_PROXY`.
+- API không ready: kiểm tra `DATABASE_URL`, `REDIS_URL`, migration state.
+- Build lỗi: chạy `pnpm install --frozen-lockfile`, `pnpm --filter @repo/database generate`, rồi build lại.

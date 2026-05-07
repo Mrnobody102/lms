@@ -31,6 +31,26 @@ export interface AdminOverview {
     trackedSessions: number;
     completionRate: number;
   };
+  reporting?: {
+    activityCalendar: {
+      date: string;
+      sessions: number;
+      completedLessons: number;
+      timeSpentSeconds: number;
+    }[];
+    practiceAccuracy: {
+      attempts: number;
+      score: number;
+      totalPoints: number;
+      accuracy: number;
+    };
+    examAccuracy: {
+      attempts: number;
+      score: number;
+      totalPoints: number;
+      accuracy: number;
+    };
+  };
   recentRegistrations: Array<{
     id: string;
     email: string;

@@ -16,6 +16,7 @@ jobs:
       POSTGRES_PASSWORD: ci-docker-password
       JWT_SECRET: ci-docker-jwt-secret-32-characters-min
       CORS_ORIGINS: http://localhost:3000,http://localhost:3001,http://localhost:3002
+      APP_PUBLIC_URL: http://localhost:4000
       NEXT_PUBLIC_API_URL: http://localhost:4000
       NEXT_PUBLIC_WEB_STUDENT_URL: http://localhost:3000
       NEXT_PUBLIC_TENANT_ID: tenant-1

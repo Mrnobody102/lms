@@ -11,11 +11,15 @@ import {
   Activity,
   AlertCircle,
   BookOpen,
+  CalendarDays,
   CheckCircle2,
+  Dumbbell,
+  FileCheck2,
   Loader2,
   UserPlus,
   Users,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 export default function AdminHome() {
   const t = useTranslations('Admin');
@@ -196,6 +200,8 @@ export default function AdminHome() {
                     </div>
                   </div>
                 </div>
+
+                {overview.reporting && <DashboardReportSummary reporting={overview.reporting} />}
               </>
             )}
           </div>
@@ -210,4 +216,146 @@ function formatDateTime(value: string, locale: string) {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(value));
+}
+
+type ActivityCalendarEntry = {
+  date: string;
+  sessions: number;
+  completedLessons: number;
+  timeSpentSeconds: number;
+};
+
+type AccuracySummary = {
+  attempts: number;
+  score: number;
+  totalPoints: number;
+  accuracy: number;
+};
+
+type ReportingSummary = {
+  activityCalendar: ActivityCalendarEntry[];
+  practiceAccuracy: AccuracySummary;
+  examAccuracy: AccuracySummary;
+};
+
+function DashboardReportSummary({ reporting }: { reporting: ReportingSummary }) {
+  const t = useTranslations('Admin');
+
+  return (
+    <section className="mt-8 border-t pt-8">
+      <div className="mb-5">
+        <h2 className="text-base font-semibold">{t('reportSnapshot')}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t('reportSnapshotDesc')}</p>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
+        <ActivityTrend calendar={reporting.activityCalendar} />
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+          <AccuracyCard
+            icon={Dumbbell}
+            title={t('practiceAccuracy')}
+            metric={reporting.practiceAccuracy}
+          />
+          <AccuracyCard
+            icon={FileCheck2}
+            title={t('examAccuracy')}
+            metric={reporting.examAccuracy}
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ActivityTrend({ calendar }: { calendar: ActivityCalendarEntry[] }) {
+  const t = useTranslations('Admin');
+  const locale = useLocale();
+  const maxActivity = Math.max(
+    ...calendar.map((entry) => entry.sessions + entry.completedLessons),
+    1,
+  );
+
+  return (
+    <div className="rounded-xl border bg-card p-5">
+      <div className="flex items-start gap-3">
+        <div className="rounded-lg bg-primary/10 p-2 text-primary">
+          <CalendarDays className="h-5 w-5" />
+        </div>
+        <div>
+          <h3 className="text-sm font-semibold">{t('activityTrend')}</h3>
+          <p className="mt-1 text-xs text-muted-foreground">{t('activityTrendDesc')}</p>
+        </div>
+      </div>
+
+      <div className="mt-5 grid grid-cols-7 gap-2">
+        {calendar.map((entry) => {
+          const activityCount = entry.sessions + entry.completedLessons;
+          const barHeight = `${Math.max(12, Math.round((activityCount / maxActivity) * 72))}px`;
+
+          return (
+            <div key={entry.date} className="min-w-0">
+              <div className="flex h-20 items-end rounded-md bg-muted/40 px-1.5 pb-1.5">
+                <div
+                  className="w-full rounded-sm bg-primary"
+                  style={{ height: barHeight }}
+                  title={t('activityDayTooltip', {
+                    sessions: entry.sessions,
+                    completed: entry.completedLessons,
+                  })}
+                />
+              </div>
+              <p className="mt-2 truncate text-center text-[11px] font-medium">
+                {new Intl.DateTimeFormat(locale, {
+                  weekday: 'short',
+                }).format(new Date(`${entry.date}T00:00:00Z`))}
+              </p>
+              <p className="text-center text-[11px] text-muted-foreground">{activityCount}</p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function AccuracyCard({
+  icon: Icon,
+  title,
+  metric,
+}: {
+  icon: LucideIcon;
+  title: string;
+  metric: AccuracySummary;
+}) {
+  const t = useTranslations('Admin');
+
+  return (
+    <div className="rounded-xl border bg-card p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-sm font-semibold">{title}</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {t('attemptsValue', { count: metric.attempts })}
+          </p>
+        </div>
+        <div className="rounded-lg bg-primary/10 p-2 text-primary">
+          <Icon className="h-5 w-5" />
+        </div>
+      </div>
+
+      <div className="mt-5">
+        <p className="text-3xl font-bold tracking-tight">{metric.accuracy}%</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {t('reportPointsValue', { score: metric.score, total: metric.totalPoints })}
+        </p>
+        <div className="mt-3 h-2 rounded-full bg-muted">
+          <div
+            className="h-full rounded-full bg-primary"
+            style={{ width: `${metric.accuracy}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  );
 }

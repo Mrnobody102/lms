@@ -55,6 +55,29 @@ async function installAdminApiMocks(page: Page) {
           trackedSessions: 12,
           completionRate: 72,
         },
+        reporting: {
+          activityCalendar: [
+            { date: '2026-05-02', sessions: 0, completedLessons: 0, timeSpentSeconds: 0 },
+            { date: '2026-05-03', sessions: 1, completedLessons: 0, timeSpentSeconds: 300 },
+            { date: '2026-05-04', sessions: 2, completedLessons: 1, timeSpentSeconds: 480 },
+            { date: '2026-05-05', sessions: 1, completedLessons: 1, timeSpentSeconds: 360 },
+            { date: '2026-05-06', sessions: 3, completedLessons: 1, timeSpentSeconds: 720 },
+            { date: '2026-05-07', sessions: 2, completedLessons: 0, timeSpentSeconds: 420 },
+            { date: '2026-05-08', sessions: 4, completedLessons: 2, timeSpentSeconds: 960 },
+          ],
+          practiceAccuracy: {
+            attempts: 12,
+            score: 86,
+            totalPoints: 100,
+            accuracy: 86,
+          },
+          examAccuracy: {
+            attempts: 4,
+            score: 31,
+            totalPoints: 40,
+            accuracy: 78,
+          },
+        },
         recentRegistrations: [
           {
             id: 'student-1',
@@ -84,4 +107,5 @@ test('admin can login and view dashboard overview', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 60000 });
   await expect(page.getByText('Learner One')).toBeVisible();
   await expect(page.getByText('HSK 1 Basics')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Learning reports' })).toBeVisible();
 });

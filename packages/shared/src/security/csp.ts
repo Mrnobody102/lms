@@ -33,6 +33,18 @@ export function buildContentSecurityPolicy(
       'http://localhost:3000',
       'http://localhost:3001',
       'http://localhost:3002',
+      'http://127.0.0.1:4000',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:3001',
+      'http://127.0.0.1:3002',
+      'ws://localhost:4000',
+      'ws://localhost:3000',
+      'ws://localhost:3001',
+      'ws://localhost:3002',
+      'ws://127.0.0.1:4000',
+      'ws://127.0.0.1:3000',
+      'ws://127.0.0.1:3001',
+      'ws://127.0.0.1:3002',
     ].forEach((source) => allowedConnectSources.add(source));
   }
 
@@ -42,6 +54,10 @@ export function buildContentSecurityPolicy(
 
   return [
     "default-src 'self'",
+    "base-uri 'self'",
+    "object-src 'none'",
+    "frame-ancestors 'self'",
+    "form-action 'self'",
     `script-src ${scriptSources.join(' ')}`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https:",

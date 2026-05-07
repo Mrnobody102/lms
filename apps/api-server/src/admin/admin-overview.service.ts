@@ -1,6 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { EnrollmentStatus, ProgressStatus, Role } from '@repo/database';
+import {
+  EnrollmentStatus,
+  ExamAttemptStatus,
+  LearningActivityType,
+  PracticeAttemptStatus,
+  ProgressStatus,
+  Role,
+} from '@repo/database';
 import { PrismaService } from '../common/services/prisma.service';
+import { buildActivityCalendar } from '../common/utils/activity-calendar.util';
 
 @Injectable()
 export class AdminOverviewService {
@@ -26,6 +34,9 @@ export class AdminOverviewService {
       trackedSessions,
       recentRegistrations,
       enrollments,
+      recentActivities,
+      practiceAttemptStats,
+      examAttemptStats,
     ] = await Promise.all([
       this.prisma.user.count({
         where: studentWhere,
@@ -58,7 +69,7 @@ export class AdminOverviewService {
       this.prisma.learningActivity.count({
         where: {
           tenantId,
-          type: 'LESSON_OPENED',
+          type: LearningActivityType.LESSON_OPENED,
         },
       }),
       this.prisma.user.findMany({
@@ -95,9 +106,52 @@ export class AdminOverviewService {
           courseId: true,
         },
       }),
+      this.prisma.learningActivity.findMany({
+        where: {
+          tenantId,
+          occurredAt: {
+            gte: sevenDaysAgo,
+          },
+        },
+        select: {
+          occurredAt: true,
+          type: true,
+          timeSpentSeconds: true,
+        },
+        orderBy: {
+          occurredAt: 'desc',
+        },
+      }),
+      this.prisma.practiceAttempt.aggregate({
+        where: {
+          tenantId,
+          status: PracticeAttemptStatus.SUBMITTED,
+        },
+        _count: {
+          id: true,
+        },
+        _sum: {
+          score: true,
+          totalPoints: true,
+        },
+      }),
+      this.prisma.examAttempt.aggregate({
+        where: {
+          tenantId,
+          status: ExamAttemptStatus.SUBMITTED,
+        },
+        _count: {
+          id: true,
+        },
+        _sum: {
+          score: true,
+          totalPoints: true,
+        },
+      }),
     ]);
 
     const completionRate = await this.calculateEnrollmentCompletionRate(tenantId, enrollments);
+    const activityCalendar = buildActivityCalendar(recentActivities, 7);
 
     return {
       totals: {
@@ -109,6 +163,11 @@ export class AdminOverviewService {
         trackedSessions,
         completionRate,
       },
+      reporting: {
+        activityCalendar,
+        practiceAccuracy: this.buildAccuracySummary(practiceAttemptStats),
+        examAccuracy: this.buildAccuracySummary(examAttemptStats),
+      },
       recentRegistrations: recentRegistrations.map((student) => ({
         id: student.id,
         email: student.email,
@@ -117,6 +176,26 @@ export class AdminOverviewService {
         createdAt: student.createdAt,
         latestCourseTitle: student.enrollments[0]?.course.title ?? null,
       })),
+    };
+  }
+
+  private buildAccuracySummary(stats: {
+    _count: {
+      id: number;
+    };
+    _sum: {
+      score: number | null;
+      totalPoints: number | null;
+    };
+  }) {
+    const score = stats._sum.score ?? 0;
+    const totalPoints = stats._sum.totalPoints ?? 0;
+
+    return {
+      attempts: stats._count.id,
+      score,
+      totalPoints,
+      accuracy: totalPoints === 0 ? 0 : Math.round((score / totalPoints) * 100),
     };
   }
 
