@@ -37,10 +37,10 @@ export default function SuperAdminHome() {
     <div className="min-h-screen font-sans">
       <Header />
 
-      <div className="p-8 max-w-7xl mx-auto text-foreground">
-        <div className="flex justify-between items-end mb-10">
+      <div className="mx-auto max-w-7xl p-4 text-foreground sm:p-6 lg:p-8">
+        <div className="mb-8 flex flex-col gap-4 sm:mb-10 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-3xl font-extrabold mb-2">{t('title')}</h1>
+            <h1 className="mb-2 text-3xl font-extrabold">{t('title')}</h1>
             <p className="text-muted-foreground flex items-center gap-2">
               <Calendar className="w-4 h-4" />
               {t('subtitle', { date: format(new Date(), 'MMMM d, yyyy') })}
@@ -48,7 +48,7 @@ export default function SuperAdminHome() {
           </div>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="px-5 py-2.5 bg-primary hover:opacity-90 text-primary-foreground text-sm font-semibold rounded-lg flex items-center gap-2 transition-all shadow-md active:scale-95"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-all hover:opacity-90 active:scale-95"
           >
             <PlusCircle className="w-4 h-4" />
             {t('newTenant')}

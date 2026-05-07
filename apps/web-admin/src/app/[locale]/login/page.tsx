@@ -14,10 +14,10 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6">
-      <div className="w-full max-w-sm">
+    <div className="flex min-h-screen items-center justify-center bg-background p-4 sm:p-6">
+      <div className="w-full max-w-sm sm:max-w-md">
         {/* Logo / Brand */}
-        <div className="text-center mb-10">
+        <div className="mb-8 text-center sm:mb-10">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-600 text-white mb-6 shadow-lg shadow-blue-600/25">
             <svg
               className="w-6 h-6"
@@ -38,7 +38,7 @@ export default function AdminLoginPage() {
         </div>
 
         {/* Login Card */}
-        <div className="bg-card border border-border rounded-2xl p-8 shadow-2xl">
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-2xl sm:p-8">
           <LoginForm onSuccess={handleLoginSuccess} />
         </div>
 

@@ -24,6 +24,7 @@ export interface AuthState {
 export interface CreateAuthStoreOptions {
   api: AuthApiClient;
   persistUser?: boolean;
+  checkAuthTimeoutMs?: number;
   messages?: {
     loginError?: string;
     registerError?: string;
@@ -32,6 +33,7 @@ export interface CreateAuthStoreOptions {
 
 interface AuthRequestConfig {
   skipUnauthorizedRedirect?: boolean;
+  timeout?: number;
 }
 
 interface AuthApiResponse<T> {
@@ -54,7 +56,7 @@ function extractErrorMsg(err: unknown, fallback: string): string {
 }
 
 export function createAuthStore(options: CreateAuthStoreOptions) {
-  const { api, persistUser = true, messages = {} } = options;
+  const { api, persistUser = true, checkAuthTimeoutMs = 4000, messages = {} } = options;
 
   const {
     loginError = 'Login failed. Please check your credentials.',
@@ -105,6 +107,7 @@ export function createAuthStore(options: CreateAuthStoreOptions) {
       try {
         const response = await api.get<AuthUser>('/users/me', {
           skipUnauthorizedRedirect: true,
+          timeout: checkAuthTimeoutMs,
         });
         const user = response.data;
 

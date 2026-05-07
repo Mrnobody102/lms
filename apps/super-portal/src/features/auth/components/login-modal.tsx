@@ -25,23 +25,23 @@ export function LoginModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md">
-      <div className="w-full max-w-sm bg-card border rounded-3xl shadow-2xl overflow-hidden p-8">
-        <div className="mb-8 text-center text-foreground">
-          <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center font-bold text-primary-foreground shadow-lg shadow-primary/30 mx-auto mb-4">
-            <KeyRound className="w-6 h-6" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md">
+      <div className="w-full max-w-sm overflow-hidden rounded-3xl border bg-card p-6 shadow-2xl sm:p-8">
+        <div className="mb-6 text-center text-foreground sm:mb-8">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30">
+            <KeyRound className="h-6 w-6" />
           </div>
-          <h2 className="text-2xl font-extrabold mb-1">{t('portalTitle')}</h2>
+          <h2 className="mb-1 text-2xl font-extrabold">{t('portalTitle')}</h2>
           <p className="text-sm text-muted-foreground font-medium">{t('desc')}</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-bold text-foreground mb-1">{t('email')}</label>
+            <label className="mb-1 block text-sm font-bold text-foreground">{t('email')}</label>
             <input
               type="email"
               required
-              className="w-full px-4 py-3 bg-background border rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+              className="w-full rounded-xl border bg-background px-4 py-3 font-medium text-foreground transition-all focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
               placeholder={t('emailPlaceholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -49,7 +49,7 @@ export function LoginModal() {
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-foreground mb-1">{t('password')}</label>
+            <label className="mb-1 block text-sm font-bold text-foreground">{t('password')}</label>
             <div className="flex h-12 items-center rounded-xl border bg-background text-foreground transition-all focus-within:ring-2 focus-within:ring-primary/20">
               <input
                 type={showPassword ? 'text' : 'password'}
@@ -73,7 +73,7 @@ export function LoginModal() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-4 bg-primary hover:opacity-90 disabled:opacity-50 text-primary-foreground font-bold rounded-xl flex items-center justify-center gap-2 transition-all mt-6 shadow-lg shadow-primary/20 active:scale-95"
+            className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-4 font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:opacity-90 disabled:opacity-50 active:scale-95"
           >
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : t('login')}
           </button>

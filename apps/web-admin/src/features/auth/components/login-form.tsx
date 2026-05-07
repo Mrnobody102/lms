@@ -26,7 +26,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {displayError && (
         <div className="flex items-center gap-2.5 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">
           <AlertCircle className="w-4 h-4 shrink-0" />
@@ -35,7 +35,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
       )}
 
       {/* Email */}
-      <div className="space-y-2">
+      <div className="space-y-2.5">
         <label className="text-sm font-medium text-foreground">{t('auth.email')}</label>
         <input
           type="email"
@@ -46,17 +46,17 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
             if (error) clearError();
           }}
           placeholder={t('auth.emailPlaceholder')}
-          className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-zinc-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 transition-all"
+          className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-foreground placeholder:text-zinc-400 transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:placeholder:text-zinc-500 dark:focus:border-blue-400 dark:focus:ring-blue-400/20"
         />
       </div>
 
       {/* Password */}
-      <div className="space-y-2">
-        <div className="flex justify-between items-center">
+      <div className="space-y-2.5">
+        <div className="flex items-center justify-between gap-4">
           <label className="text-sm font-medium text-foreground">{t('auth.password')}</label>
           <button
             type="button"
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
           >
             {t('auth.forgotPassword')}
           </button>
@@ -71,7 +71,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
               if (error) clearError();
             }}
             placeholder="********"
-            className="h-full min-w-0 flex-1 bg-transparent px-4 text-sm outline-none placeholder:text-zinc-400"
+            className="h-full min-w-0 flex-1 bg-transparent px-4 text-sm outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
           />
           <button
             type="button"
@@ -88,7 +88,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-blue-600 hover:bg-blue-500 dark:bg-blue-600 dark:hover:bg-blue-500 disabled:bg-blue-600/50 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 mt-2"
+        className="mt-0 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 font-semibold text-white transition-colors hover:bg-blue-500 disabled:bg-blue-600/50 dark:bg-blue-600 dark:hover:bg-blue-500"
       >
         {loading ? (
           <>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { Dumbbell, FileCheck2, LogOut, User as UserIcon } from 'lucide-react';
+import { Dumbbell, FileCheck2, LogIn, LogOut, User as UserIcon, UserPlus } from 'lucide-react';
 import { LanguageToggle, ThemeToggle } from '@repo/ui';
 import { useTranslations } from 'next-intl';
 import { Link } from '../../navigation';
@@ -20,12 +20,12 @@ export function StudentNav({ showLinks = false }: StudentNavProps) {
   }, [checkAuth]);
 
   return (
-    <nav className="border-b bg-card/80 backdrop-blur-md px-6 py-3 flex items-center justify-between sticky top-0 z-10 transition-colors duration-300">
-      <Link href="/" className="flex items-center gap-2">
-        <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold shadow-lg shadow-primary/20">
+    <nav className="sticky top-0 z-10 flex items-center justify-between border-b bg-card/80 px-4 py-3 backdrop-blur-md transition-colors duration-300 sm:px-6">
+      <Link href="/" className="flex min-w-0 items-center gap-2">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary font-bold text-primary-foreground shadow-lg shadow-primary/20">
           L
         </div>
-        <span className="font-bold text-lg tracking-tight">LMS Learning</span>
+        <span className="truncate text-base font-bold tracking-tight sm:text-lg">LMS Learning</span>
       </Link>
 
       {showLinks && (
@@ -59,7 +59,7 @@ export function StudentNav({ showLinks = false }: StudentNavProps) {
         </div>
       )}
 
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
         <ThemeToggle label={t('themeToggle')} />
         <LanguageToggle />
         <div className="w-px h-5 bg-border" />
@@ -85,20 +85,36 @@ export function StudentNav({ showLinks = false }: StudentNavProps) {
             </button>
           </div>
         ) : (
-          <>
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <Link
               href="/login"
-              className="px-3.5 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all border border-transparent hover:border-border"
+              className="hidden rounded-lg border border-transparent px-3.5 py-2 text-sm font-medium text-muted-foreground transition-all hover:border-border hover:bg-muted hover:text-foreground sm:inline-flex"
             >
               {t('cta.login')}
             </Link>
             <Link
+              href="/login"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-border hover:bg-muted hover:text-foreground sm:hidden"
+              aria-label={t('cta.login')}
+              title={t('cta.login')}
+            >
+              <LogIn className="h-4 w-4" />
+            </Link>
+            <Link
               href="/register"
-              className="px-3.5 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-all hover:shadow-md"
+              className="hidden rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground transition-all hover:opacity-90 hover:shadow-md sm:inline-flex"
             >
               {t('cta.register')}
             </Link>
-          </>
+            <Link
+              href="/register"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-all hover:opacity-90 hover:shadow-md sm:hidden"
+              aria-label={t('cta.register')}
+              title={t('cta.register')}
+            >
+              <UserPlus className="h-4 w-4" />
+            </Link>
+          </div>
         )}
       </div>
     </nav>
