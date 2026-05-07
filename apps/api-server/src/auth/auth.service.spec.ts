@@ -13,7 +13,6 @@ describe('AuthService', () => {
   let service: AuthService;
   let prisma: {
     user: {
-      findUnique: ReturnType<typeof vi.fn>;
       findFirst: ReturnType<typeof vi.fn>;
       create: ReturnType<typeof vi.fn>;
     };
@@ -32,7 +31,6 @@ describe('AuthService', () => {
   beforeEach(() => {
     prisma = {
       user: {
-        findUnique: vi.fn(),
         findFirst: vi.fn(),
         create: vi.fn(),
       },
@@ -76,7 +74,8 @@ describe('AuthService', () => {
     });
 
     it('should reject registration when email already exists', async () => {
-      prisma.user.findUnique.mockResolvedValue({ id: 'existing-user' });
+      prisma.tenant.findFirst.mockResolvedValue({ id: 'tenant-1', isActive: true });
+      prisma.user.findFirst.mockResolvedValue({ id: 'existing-user' });
 
       await expect(
         service.register(
@@ -91,9 +90,9 @@ describe('AuthService', () => {
       ).rejects.toBeInstanceOf(ConflictException);
     });
 
-    it('should create the user, sign a token, and set the auth cookie', async () => {
-      prisma.user.findUnique.mockResolvedValue(null);
+    it('should normalize email before creating the user and sign a token', async () => {
       prisma.tenant.findFirst.mockResolvedValue({ id: 'tenant-1', isActive: true });
+      prisma.user.findFirst.mockResolvedValue(null);
       prisma.user.create.mockResolvedValue({
         id: 'user-1',
         email: 'student@example.com',
@@ -110,7 +109,7 @@ describe('AuthService', () => {
 
       const result = await service.register(
         {
-          email: 'student@example.com',
+          email: ' Student@Example.com ',
           password: 'Student@123',
           fullName: 'Student User',
         },
@@ -161,6 +160,25 @@ describe('AuthService', () => {
         }),
       });
     });
+
+    it('should map unique constraint errors to a conflict response', async () => {
+      prisma.tenant.findFirst.mockResolvedValue({ id: 'tenant-1', isActive: true });
+      prisma.user.findFirst.mockResolvedValue(null);
+      vi.mocked(bcrypt.hash).mockResolvedValue('hashed-password' as never);
+      prisma.user.create.mockRejectedValue({ code: 'P2002' });
+
+      await expect(
+        service.register(
+          {
+            email: 'student@example.com',
+            password: 'Student@123',
+            fullName: 'Student User',
+          },
+          'tenant-1',
+          response,
+        ),
+      ).rejects.toBeInstanceOf(ConflictException);
+    });
   });
 
   describe('login', () => {
@@ -178,14 +196,6 @@ describe('AuthService', () => {
     });
 
     it('should reject login when tenant is inactive', async () => {
-      prisma.user.findFirst.mockResolvedValue({
-        id: 'user-1',
-        email: 'student@example.com',
-        password: 'hashed-password',
-        role: 'STUDENT',
-        tenantId: 'tenant-1',
-        isActive: true,
-      });
       prisma.tenant.findFirst.mockResolvedValue(null);
 
       await expect(
@@ -200,7 +210,73 @@ describe('AuthService', () => {
       ).rejects.toThrow('Invalid credentials');
     });
 
+    it('should reject invalid passwords with the generic login failure message', async () => {
+      prisma.tenant.findFirst.mockResolvedValue({ id: 'tenant-1', isActive: true });
+      prisma.user.findFirst.mockResolvedValue({
+        id: 'user-1',
+        email: 'student@example.com',
+        password: 'hashed-password',
+        role: 'STUDENT',
+        tenantId: 'tenant-1',
+        isActive: true,
+      });
+      vi.mocked(bcrypt.compare).mockResolvedValue(false as never);
+
+      await expect(
+        service.login(
+          {
+            email: 'student@example.com',
+            password: 'Student@123',
+          },
+          'tenant-1',
+          response,
+        ),
+      ).rejects.toThrow('Invalid credentials');
+    });
+
+    it('should look up users with normalized email addresses', async () => {
+      prisma.tenant.findFirst.mockResolvedValue({ id: 'tenant-1', isActive: true });
+      prisma.user.findFirst.mockResolvedValue({
+        id: 'user-1',
+        email: 'student@example.com',
+        password: 'hashed-password',
+        role: 'STUDENT',
+        tenantId: 'tenant-1',
+        isActive: true,
+        fullName: 'Student User',
+        phoneNumber: null,
+        avatarUrl: null,
+        createdAt: new Date('2026-04-21T00:00:00.000Z'),
+        updatedAt: new Date('2026-04-21T00:00:00.000Z'),
+        deletedAt: null,
+      });
+      vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+
+      await service.login(
+        {
+          email: ' Student@Example.com ',
+          password: 'Student@123',
+        },
+        'tenant-1',
+        response,
+      );
+
+      expect(prisma.user.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            email: {
+              equals: 'student@example.com',
+              mode: 'insensitive',
+            },
+            tenantId: 'tenant-1',
+            deletedAt: null,
+          }),
+        }),
+      );
+    });
+
     it('should reject inactive users with the generic login failure message', async () => {
+      prisma.tenant.findFirst.mockResolvedValue({ id: 'tenant-1', isActive: true });
       prisma.user.findFirst.mockResolvedValue({
         id: 'user-1',
         email: 'student@example.com',
@@ -223,6 +299,7 @@ describe('AuthService', () => {
     });
 
     it('should return the user without password and set the auth cookie', async () => {
+      prisma.tenant.findFirst.mockResolvedValue({ id: 'tenant-1', isActive: true });
       prisma.user.findFirst.mockResolvedValue({
         id: 'user-1',
         email: 'student@example.com',
@@ -237,7 +314,6 @@ describe('AuthService', () => {
         updatedAt: new Date('2026-04-21T00:00:00.000Z'),
         deletedAt: null,
       });
-      prisma.tenant.findFirst.mockResolvedValue({ id: 'tenant-1' });
       vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
 
       const result = await service.login(

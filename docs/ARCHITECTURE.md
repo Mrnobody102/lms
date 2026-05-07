@@ -38,7 +38,7 @@ graph TD
 
 ### 1. Multi-Tenancy (Đa khách thuê)
 
-- **Chiến lược**: Database-per-tenant (mỗi khách một DB) quá tốn kém cho 1 triệu user. Chúng ta sử dụng **Schema-based Multi-tenancy** (Dùng chung Database, phân biệt bằng cột `tenantId`).
+- **Chiến lược**: Database-per-tenant (mỗi khách một DB) quá tốn kém cho 1 triệu user. Chúng ta dùng **shared database + row-level tenant scoping**: cùng một database, phân biệt dữ liệu bằng cột `tenantId`.
 - **Triển khai**: Mọi bảng (trừ các bảng config global) đều có cột `tenantId`.
 - **Cô lập**: `TenantMiddleware` resolve tenant context từ host/header. Service layer và database constraints mới là nơi thực thi tenant scoping cho từng query.
 

@@ -11,7 +11,7 @@ describe('RequestMetricsMiddleware', () => {
     const middleware = new RequestMetricsMiddleware(metricsService as any);
     const req = {
       method: 'PATCH',
-      originalUrl: '/api/lessons/lesson-1',
+      originalUrl: '/api/lessons/lesson-1?answer=secret',
     } as Request;
     const res = new EventEmitter() as Response & EventEmitter;
     res.statusCode = 204;

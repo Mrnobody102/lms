@@ -35,9 +35,9 @@ export function LoginModal() {
           <p className="text-sm text-muted-foreground font-medium">{t('desc')}</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="mb-1 block text-sm font-bold text-foreground">{t('email')}</label>
+            <label className="mb-2 block text-sm font-bold text-foreground">{t('email')}</label>
             <input
               type="email"
               required
@@ -49,7 +49,7 @@ export function LoginModal() {
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-bold text-foreground">{t('password')}</label>
+            <label className="mb-2 block text-sm font-bold text-foreground">{t('password')}</label>
             <div className="flex h-12 items-center rounded-xl border bg-background text-foreground transition-all focus-within:ring-2 focus-within:ring-primary/20">
               <input
                 type={showPassword ? 'text' : 'password'}
@@ -73,7 +73,7 @@ export function LoginModal() {
           <button
             type="submit"
             disabled={loading}
-            className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-4 font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:opacity-90 disabled:opacity-50 active:scale-95"
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-4 font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:opacity-90 disabled:opacity-50 active:scale-95"
           >
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : t('login')}
           </button>

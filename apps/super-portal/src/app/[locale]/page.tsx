@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Server, PlusCircle, Calendar } from 'lucide-react';
 import { useAuthStore } from '@/features/auth/auth.store';
 import { TenantStats } from '@/features/tenants/components/tenant-stats';
@@ -10,19 +10,14 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { LoginModal } from '@/features/auth/components/login-modal';
 import { useTenants } from '@/hooks/use-tenants';
-import { format } from 'date-fns';
-
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 export default function SuperAdminHome() {
   const t = useTranslations('SuperPortal');
-  const { isAuthenticated, checkAuth, isInitialized } = useAuthStore();
+  const locale = useLocale();
+  const { isAuthenticated, isInitialized } = useAuthStore();
   const { data: tenants = [], isLoading } = useTenants({ enabled: isAuthenticated });
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  useEffect(() => {
-    void checkAuth();
-  }, [checkAuth]);
 
   if (!isInitialized) {
     return (
@@ -43,7 +38,7 @@ export default function SuperAdminHome() {
             <h1 className="mb-2 text-3xl font-extrabold">{t('title')}</h1>
             <p className="text-muted-foreground flex items-center gap-2">
               <Calendar className="w-4 h-4" />
-              {t('subtitle', { date: format(new Date(), 'MMMM d, yyyy') })}
+              {t('subtitle', { date: formatDate(new Date(), locale) })}
             </p>
           </div>
           <button
@@ -65,4 +60,10 @@ export default function SuperAdminHome() {
       <Footer />
     </div>
   );
+}
+
+function formatDate(value: Date, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: 'long',
+  }).format(value);
 }

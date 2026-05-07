@@ -2,7 +2,7 @@
 
 import { ArrowLeft, CheckCircle2, Loader2, RotateCcw, XCircle } from 'lucide-react';
 import { useParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { StudentNav } from '@/components/layout/student-nav';
 import { usePracticeAttempt } from '@/hooks/use-practice';
 import { PracticeQuestion } from '@/lib/practice-api';
@@ -10,6 +10,7 @@ import { Link } from '@/navigation';
 
 export default function PracticeAttemptReviewPage() {
   const t = useTranslations('Student');
+  const locale = useLocale();
   const params = useParams();
   const attemptId =
     (Array.isArray(params.attemptId) ? params.attemptId[0] : params.attemptId) ?? '';
@@ -60,7 +61,7 @@ export default function PracticeAttemptReviewPage() {
                 )}
                 <span className="rounded-md border px-2 py-1">
                   {t('practice.attemptSubmittedAtValue', {
-                    value: formatDateTime(attempt.submittedAt),
+                    value: formatDateTime(attempt.submittedAt, locale),
                   })}
                 </span>
               </div>
@@ -165,8 +166,8 @@ export default function PracticeAttemptReviewPage() {
   );
 }
 
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat(undefined, {
+function formatDateTime(value: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(value));

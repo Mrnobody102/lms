@@ -64,9 +64,7 @@ export function LessonNavigation({
             className={`w-5 h-5 relative z-10 ${!isCompleted && 'group-hover:scale-110 transition-transform'}`}
           />
           <span className="relative z-10">
-            {isCompleted
-              ? t('lesson.completed', { defaultValue: 'Đã hoàn thành' })
-              : t('lesson.complete')}
+            {isCompleted ? t('lesson.completed') : t('lesson.complete')}
           </span>
         </button>
       </div>

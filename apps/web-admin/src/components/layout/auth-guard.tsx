@@ -10,12 +10,8 @@ interface AuthGuardProps {
 }
 
 export function AuthGuard({ children, loaderMessage = 'Loading...' }: AuthGuardProps) {
-  const { isAuthenticated, checkAuth, isInitialized } = useAuthStore();
+  const { isAuthenticated, isInitialized } = useAuthStore();
   const router = useRouter();
-
-  useEffect(() => {
-    void checkAuth();
-  }, [checkAuth]);
 
   useEffect(() => {
     if (isInitialized && !isAuthenticated) {

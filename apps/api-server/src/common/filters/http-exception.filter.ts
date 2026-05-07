@@ -1,6 +1,7 @@
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
 import { Response } from 'express';
 import { LoggerService } from '../services/logger.service';
+import { getRequestPath } from '../utils/request-path.util';
 import { REQUEST_ID_HEADER } from '../utils/request-id.util';
 
 type HttpExceptionResponse = {
@@ -41,7 +42,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     this.logger.error('Request error', {
       method: request.method,
-      path: request.originalUrl,
+      path: getRequestPath(request),
       statusCode: status,
       error: exception instanceof Error ? exception.stack : exception,
       requestId,

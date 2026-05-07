@@ -1,29 +1,27 @@
 'use client';
 
-import { Header } from '@/components/layout/header';
+import { use } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { Activity, ArrowLeft, Building2, Globe, Settings } from 'lucide-react';
 import { Footer } from '@/components/layout/footer';
-import { useTenant } from '@/hooks/use-tenants';
-import { ArrowLeft, Building2, Globe, Settings, Activity } from 'lucide-react';
-import { Link } from '@/navigation';
-import { format } from 'date-fns';
-import { useAuthStore } from '@/features/auth/auth.store';
+import { Header } from '@/components/layout/header';
 import { LoginModal } from '@/features/auth/components/login-modal';
-import { use, useEffect } from 'react';
+import { useAuthStore } from '@/features/auth/auth.store';
+import { useTenant } from '@/hooks/use-tenants';
+import { Link } from '@/navigation';
 
 export default function TenantDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const t = useTranslations('SuperPortal.tenantDetails');
+  const locale = useLocale();
   const { data: currentTenant, isLoading: tenantLoading } = useTenant(id);
-  const { isAuthenticated, checkAuth, isInitialized } = useAuthStore();
-
-  useEffect(() => {
-    void checkAuth();
-  }, [checkAuth]);
+  const { isAuthenticated, isInitialized } = useAuthStore();
 
   if (!isInitialized) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
         <Activity className="w-10 h-10 text-primary animate-pulse mb-4" />
-        <p className="text-muted-foreground font-medium">Loading Super Portal...</p>
+        <p className="text-muted-foreground font-medium">{t('loading')}</p>
       </div>
     );
   }
@@ -34,7 +32,7 @@ export default function TenantDetailsPage({ params }: { params: Promise<{ id: st
         <Header />
         <div className="flex-1 flex flex-col items-center justify-center">
           <Activity className="w-10 h-10 text-primary animate-pulse mb-4" />
-          <p className="text-muted-foreground font-medium">Đang tải thông tin chi tiết...</p>
+          <p className="text-muted-foreground font-medium">{t('loading')}</p>
         </div>
         <Footer />
         {!isAuthenticated && <LoginModal />}
@@ -47,9 +45,9 @@ export default function TenantDetailsPage({ params }: { params: Promise<{ id: st
       <div className="min-h-screen flex flex-col text-foreground">
         <Header />
         <div className="flex-1 flex flex-col items-center justify-center">
-          <p className="text-muted-foreground font-medium">Không tìm thấy trung tâm</p>
+          <p className="text-muted-foreground font-medium">{t('notFound')}</p>
           <Link href="/" className="mt-4 text-primary underline">
-            Quay lại danh sách
+            {t('backToList')}
           </Link>
         </div>
         <Footer />
@@ -67,7 +65,8 @@ export default function TenantDetailsPage({ params }: { params: Promise<{ id: st
             href="/"
             className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-all"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" /> Quay lại danh sách
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            {t('backToList')}
           </Link>
         </div>
 
@@ -85,63 +84,56 @@ export default function TenantDetailsPage({ params }: { params: Promise<{ id: st
           <div>
             {currentTenant.isActive ? (
               <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
-                <span className="w-2 h-2 rounded-full mr-2 bg-emerald-400"></span>
-                Đang hoạt động
+                <span className="w-2 h-2 rounded-full mr-2 bg-emerald-400" />
+                {t('active')}
               </span>
             ) : (
               <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border bg-red-500/10 text-red-400 border-red-500/20">
-                <span className="w-2 h-2 rounded-full mr-2 bg-red-400"></span>
-                Đã khóa
+                <span className="w-2 h-2 rounded-full mr-2 bg-red-400" />
+                {t('inactive')}
               </span>
             )}
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Info Card */}
           <div className="col-span-1 bg-card border rounded-2xl p-6 h-fit shadow-sm">
-            <h3 className="text-lg font-bold mb-4 border-b pb-2">Thông tin chung</h3>
+            <h3 className="text-lg font-bold mb-4 border-b pb-2">{t('generalInfo')}</h3>
             <div className="space-y-4">
               <div>
-                <p className="text-sm text-muted-foreground mb-1 font-medium">Tên trung tâm</p>
+                <p className="text-sm text-muted-foreground mb-1 font-medium">{t('nameLabel')}</p>
                 <p className="font-semibold">{currentTenant.name}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground mb-1 font-medium">Mã hệ thống (Slug)</p>
+                <p className="text-sm text-muted-foreground mb-1 font-medium">{t('slugLabel')}</p>
                 <p className="font-mono text-xs bg-muted p-1 rounded inline-block">
                   {currentTenant.slug}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground mb-1 font-medium">Tên miền tùy chỉnh</p>
-                <p className="font-semibold">{currentTenant.domain || 'Chưa thiết lập'}</p>
+                <p className="text-sm text-muted-foreground mb-1 font-medium">{t('domainLabel')}</p>
+                <p className="font-semibold">{currentTenant.domain || t('notSet')}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground mb-1 font-medium">Ngày tạo</p>
-                <p className="font-semibold">
-                  {format(new Date(currentTenant.createdAt), 'dd/MM/yyyy HH:mm')}
-                </p>
+                <p className="text-sm text-muted-foreground mb-1 font-medium">{t('createdAt')}</p>
+                <p className="font-semibold">{formatDateTime(currentTenant.createdAt, locale)}</p>
               </div>
             </div>
           </div>
 
-          {/* Settings / Configs Placeholder */}
           <div className="col-span-1 md:col-span-2 space-y-6">
             <div className="bg-card border rounded-2xl p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4 border-b pb-2">
                 <h3 className="text-lg font-bold flex items-center gap-2">
-                  <Settings className="w-5 h-5 text-primary" /> Cấu hình & Cài đặt
+                  <Settings className="w-5 h-5 text-primary" />
+                  {t('settingsTitle')}
                 </h3>
               </div>
               <div className="bg-muted/30 rounded-lg p-10 border border-dashed text-center">
                 <Settings className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-                <h4 className="text-lg font-bold mb-2">
-                  Các tính năng cấu hình đang được phát triển
-                </h4>
+                <h4 className="text-lg font-bold mb-2">{t('settingsWipTitle')}</h4>
                 <p className="text-muted-foreground max-w-md mx-auto font-medium">
-                  Tại đây sẽ bao gồm các tính năng mở rộng sau này như: Cài đặt giao diện, cấu hình
-                  thanh toán, phân quyền người dùng, giới hạn tài nguyên và nhiều mục chi tiết khác
-                  cho từng trung tâm.
+                  {t('settingsWipDesc')}
                 </p>
               </div>
             </div>
@@ -152,4 +144,11 @@ export default function TenantDetailsPage({ params }: { params: Promise<{ id: st
       <Footer />
     </div>
   );
+}
+
+function formatDateTime(value: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date(value));
 }

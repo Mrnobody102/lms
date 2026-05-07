@@ -358,9 +358,11 @@ export class ExamService {
                 id: true,
                 prompt: true,
                 type: true,
+                options: true,
                 correctAnswer: true,
                 explanation: true,
                 points: true,
+                skillTags: true,
               },
             },
           },
@@ -383,11 +385,17 @@ export class ExamService {
     }
 
     await this.learningAccess.ensureCourseAccess(attempt.courseId, tenantId, user);
-    return {
+    const attemptWithTiming = {
       ...attempt,
       deadlineAt: this.getAttemptDeadline(attempt, attempt.exam.durationMinutes),
       isExpired: this.isAttemptExpired(attempt, attempt.exam.durationMinutes),
     };
+
+    if (user.role === Role.STUDENT && attempt.status !== ExamAttemptStatus.SUBMITTED) {
+      return this.hideAttemptAnswerSecrets(attemptWithTiming);
+    }
+
+    return attemptWithTiming;
   }
 
   private async ensureCourse(tenantId: string, courseId: string) {
@@ -471,6 +479,22 @@ export class ExamService {
           return question;
         }),
       })),
+    };
+  }
+
+  private hideAttemptAnswerSecrets<
+    T extends { answers: Array<{ question: Record<string, unknown> }> },
+  >(attempt: T) {
+    return {
+      ...attempt,
+      answers: attempt.answers.map((answer) => {
+        const {
+          correctAnswer: _correctAnswer,
+          explanation: _explanation,
+          ...question
+        } = answer.question;
+        return { ...answer, question };
+      }),
     };
   }
 

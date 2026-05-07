@@ -3,6 +3,7 @@ import axios, { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 
 const TIMEOUT_MS = 15000;
 const CSRF_COOKIE_NAME = 'csrf_token';
 const CSRF_HEADER_NAME = 'x-csrf-token';
+const AUTH_UNAUTHORIZED_EVENT = 'lms:auth:unauthorized';
 
 declare module 'axios' {
   interface AxiosRequestConfig {
@@ -66,6 +67,29 @@ function resolveTenantHint(tenantId: ApiClientConfig['tenantId']): string | unde
   return value?.trim() || undefined;
 }
 
+function clearLegacyAuthState(): void {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  localStorage.removeItem('tenantId');
+}
+
+function dispatchUnauthorizedEvent(): void {
+  window.dispatchEvent(new Event(AUTH_UNAUTHORIZED_EVENT));
+}
+
+function getReturnUrl(): string {
+  return `${window.location.pathname}${window.location.search}`;
+}
+
+function buildLoginRedirectUrl(locale: string, returnUrl: string): string {
+  const loginPath = `/${locale}/login`;
+  if (window.location.pathname === loginPath) {
+    return loginPath;
+  }
+
+  return `${loginPath}?returnUrl=${encodeURIComponent(returnUrl)}`;
+}
+
 export function createApiClient(config: ApiClientConfig = {}): AxiosInstance {
   const {
     tenantId,
@@ -116,21 +140,18 @@ export function createApiClient(config: ApiClientConfig = {}): AxiosInstance {
       }
 
       if (axiosError.response?.status === 401 && typeof window !== 'undefined') {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        localStorage.removeItem('tenantId');
         if (axiosError.config?.skipUnauthorizedRedirect === true) {
           return Promise.reject(error);
         }
+
+        clearLegacyAuthState();
+        dispatchUnauthorizedEvent();
 
         if (onUnauthorized) {
           onUnauthorized();
         } else {
           const locale = detectLocale(supportedLocales, defaultLocale);
-          const returnUrl = window.location.pathname;
-          window.location.assign(
-            `/${locale}/login${returnUrl !== `/${locale}/login` ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`,
-          );
+          window.location.assign(buildLoginRedirectUrl(locale, getReturnUrl()));
         }
       }
 

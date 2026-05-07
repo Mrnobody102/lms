@@ -24,7 +24,7 @@ describe('RequestLoggingMiddleware', () => {
         'user-agent': 'vitest',
       },
       method: 'GET',
-      originalUrl: '/api/health/live',
+      originalUrl: '/api/health/live?token=secret',
     } as unknown as Request & { requestId?: string };
     const res = makeResponse();
     const next: NextFunction = vi.fn();
@@ -37,11 +37,15 @@ describe('RequestLoggingMiddleware', () => {
     expect(next).toHaveBeenCalledOnce();
     expect(logger.info).toHaveBeenCalledWith(
       'Incoming request',
-      expect.objectContaining({ requestId: 'req_123' }),
+      expect.objectContaining({ path: '/api/health/live', requestId: 'req_123' }),
     );
     expect(logger.info).toHaveBeenCalledWith(
       'Request completed',
-      expect.objectContaining({ requestId: 'req_123', statusCode: 200 }),
+      expect.objectContaining({
+        path: '/api/health/live',
+        requestId: 'req_123',
+        statusCode: 200,
+      }),
     );
   });
 

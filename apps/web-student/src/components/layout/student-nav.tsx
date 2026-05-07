@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
 import { Dumbbell, FileCheck2, LogIn, LogOut, User as UserIcon, UserPlus } from 'lucide-react';
 import { LanguageToggle, ThemeToggle } from '@repo/ui';
 import { useTranslations } from 'next-intl';
@@ -13,11 +12,7 @@ interface StudentNavProps {
 
 export function StudentNav({ showLinks = false }: StudentNavProps) {
   const t = useTranslations('Student');
-  const { isAuthenticated, user, logout, checkAuth, isInitialized } = useAuthStore();
-
-  useEffect(() => {
-    void checkAuth();
-  }, [checkAuth]);
+  const { isAuthenticated, user, logout, isInitialized } = useAuthStore();
 
   return (
     <nav className="sticky top-0 z-10 flex items-center justify-between border-b bg-card/80 px-4 py-3 backdrop-blur-md transition-colors duration-300 sm:px-6">

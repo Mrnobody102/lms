@@ -2,7 +2,7 @@
 
 import { ArrowLeft, CheckCircle2, Loader2, PlayCircle, RotateCcw, XCircle } from 'lucide-react';
 import { useParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { StudentNav } from '@/components/layout/student-nav';
 import { useExamAttempt } from '@/hooks/use-exams';
 import { ExamQuestion } from '@/lib/exam-api';
@@ -10,6 +10,7 @@ import { Link } from '@/navigation';
 
 export default function ExamAttemptReviewPage() {
   const t = useTranslations('Student');
+  const locale = useLocale();
   const params = useParams();
   const attemptId =
     (Array.isArray(params.attemptId) ? params.attemptId[0] : params.attemptId) ?? '';
@@ -49,13 +50,13 @@ export default function ExamAttemptReviewPage() {
                 )}
                 <span className="rounded-md border px-2 py-1">
                   {t('exam.attemptStartedAtValue', {
-                    value: formatDateTime(attempt.startedAt),
+                    value: formatDateTime(attempt.startedAt, locale),
                   })}
                 </span>
                 {attempt.submittedAt && (
                   <span className="rounded-md border px-2 py-1">
                     {t('exam.attemptSubmittedAtValue', {
-                      value: formatDateTime(attempt.submittedAt),
+                      value: formatDateTime(attempt.submittedAt, locale),
                     })}
                   </span>
                 )}
@@ -183,8 +184,8 @@ export default function ExamAttemptReviewPage() {
   );
 }
 
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat(undefined, {
+function formatDateTime(value: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(value));

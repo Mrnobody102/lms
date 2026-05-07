@@ -26,7 +26,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-7">
       {displayError && (
         <div className="flex items-center gap-2.5 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">
           <AlertCircle className="w-4 h-4 shrink-0" />
@@ -35,7 +35,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
       )}
 
       {/* Email */}
-      <div className="space-y-2.5">
+      <div className="space-y-3">
         <label className="text-sm font-medium text-foreground">{t('auth.email')}</label>
         <input
           type="email"
@@ -51,16 +51,8 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
       </div>
 
       {/* Password */}
-      <div className="space-y-2.5">
-        <div className="flex items-center justify-between gap-4">
-          <label className="text-sm font-medium text-foreground">{t('auth.password')}</label>
-          <button
-            type="button"
-            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-          >
-            {t('auth.forgotPassword')}
-          </button>
-        </div>
+      <div className="space-y-3">
+        <label className="text-sm font-medium text-foreground">{t('auth.password')}</label>
         <div className="flex h-12 items-center rounded-xl border border-zinc-200 bg-zinc-50 text-foreground transition-all focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:focus-within:border-blue-400 dark:focus-within:ring-blue-400/20">
           <input
             type={showPassword ? 'text' : 'password'}

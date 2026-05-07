@@ -24,13 +24,13 @@ Tài liệu này phân tích lý do tại sao bộ Tech Stack và Kiến trúc h
 
 - **Điểm mạnh**: Xử lý Multi-tenancy ở tầng sâu nhất (Middleware).
 - **Lợi ích**:
-  - **Bảo mật dữ liệu tuyệt đối**: Middleware tự động chặn việc truy cập chéo dữ liệu giữa các trung tâm. Developer không cần nhớ thêm `where: { tenantId }` ở mọi câu query, giảm rủi ro rò rỉ data.
+  - **Bảo mật dữ liệu**: Middleware chỉ resolve tenant context; service layer và database constraints vẫn phải scope mọi query bằng `tenantId` để tránh rò rỉ data.
   - **Hiệu năng**: Backend là Stateless, có thể mở rộng (scale) lên nhiều server dễ dàng khi số lượng trung tâm tăng đột biến.
 
 ### Database (Prisma + PostgreSQL)
 
-- **Điểm mạnh**: Schema-based Multi-tenancy.
-- **Lợi ích**: Chi phí vận hành cực thấp so với việc tạo mỗi khách hàng một Database riêng. Dễ dàng backup và migrate dữ liệu cho toàn bộ hệ thống.
+- **Điểm mạnh**: Shared database với row-level tenant scoping.
+- **Lợi ích**: Chi phí vận hành thấp hơn mô hình database-per-tenant, đồng thời vẫn có thể backup và migrate dữ liệu cho toàn bộ hệ thống một cách nhất quán.
 
 ## 2. Tối Ưu Cho Web Học Tiếng Trung (Chinese Learning)
 

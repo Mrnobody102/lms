@@ -88,8 +88,12 @@ describe('Auth HTTP flow', () => {
               select?: Record<string, unknown>;
             }) => {
               if (where.email) {
+                const email =
+                  typeof where.email === 'object' && where.email !== null && 'equals' in where.email
+                    ? (where.email.equals as string)
+                    : where.email;
                 const matchesLogin =
-                  where.email === currentUser.email &&
+                  email === currentUser.email &&
                   where.tenantId === currentUser.tenantId &&
                   where.deletedAt === null;
                 return Promise.resolve(matchesLogin ? currentUser : null);

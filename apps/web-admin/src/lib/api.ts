@@ -6,9 +6,14 @@ export default createApiClient({
   supportedLocales: locales,
   defaultLocale,
   onUnauthorized: () => {
-    const returnUrl = window.location.pathname;
-    const locale = returnUrl.split('/')[1];
+    const returnUrl = `${window.location.pathname}${window.location.search}`;
+    const locale = window.location.pathname.split('/')[1];
     const safeLocale = (locales as readonly string[]).includes(locale) ? locale : defaultLocale;
-    window.location.assign(`/${safeLocale}/login`);
+    const loginPath = `/${safeLocale}/login`;
+    window.location.assign(
+      window.location.pathname === loginPath
+        ? loginPath
+        : `${loginPath}?returnUrl=${encodeURIComponent(returnUrl)}`,
+    );
   },
 });

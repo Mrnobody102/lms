@@ -425,6 +425,7 @@ describe('ExamService', () => {
         findFirst: vi.fn().mockResolvedValue({
           id: 'attempt-1',
           courseId: 'course-1',
+          status: ExamAttemptStatus.SUBMITTED,
           startedAt,
           submittedAt: new Date(),
           answers: [
@@ -432,8 +433,10 @@ describe('ExamService', () => {
               question: {
                 id: 'question-1',
                 prompt: 'Choose one',
+                options: ['A', 'B'],
                 correctAnswer: 1,
                 explanation: 'B is correct',
+                skillTags: ['vocabulary'],
               },
             },
           ],
@@ -463,7 +466,59 @@ describe('ExamService', () => {
       role: Role.STUDENT,
     });
     expect(result.exam.title).toBe('Midterm');
+    expect(result.answers[0].question).toHaveProperty('correctAnswer');
+    expect(result.answers[0].question).toHaveProperty('explanation');
+    expect(result.answers[0].question).toHaveProperty('skillTags');
     expect(result).toHaveProperty('deadlineAt');
     expect(result.isExpired).toBe(false);
+  });
+
+  it('should not expose correct answers for started student attempt reviews', async () => {
+    const startedAt = new Date(Date.now() - 5 * 60_000);
+    const prisma = {
+      examAttempt: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: 'attempt-1',
+          courseId: 'course-1',
+          status: ExamAttemptStatus.STARTED,
+          startedAt,
+          submittedAt: null,
+          answers: [
+            {
+              question: {
+                id: 'question-1',
+                prompt: 'Choose one',
+                options: ['A', 'B'],
+                correctAnswer: 1,
+                explanation: 'B is correct',
+                skillTags: ['vocabulary'],
+              },
+            },
+          ],
+          exam: {
+            id: 'exam-1',
+            title: 'Midterm',
+            durationMinutes: 30,
+            passingScore: 60,
+            course: { id: 'course-1', title: 'HSK 1' },
+            unit: { id: 'unit-1', title: 'Unit 1' },
+          },
+        }),
+      },
+    };
+    const learningAccess = {
+      ensureCourseAccess: vi.fn().mockResolvedValue(undefined),
+    };
+    const service = new ExamService(prisma as never, learningAccess as never);
+
+    const result = await service.getAttempt('attempt-1', 'tenant-1', {
+      id: 'user-1',
+      role: Role.STUDENT,
+    });
+
+    expect(result.answers[0].question).toHaveProperty('options');
+    expect(result.answers[0].question).toHaveProperty('skillTags');
+    expect(result.answers[0].question).not.toHaveProperty('correctAnswer');
+    expect(result.answers[0].question).not.toHaveProperty('explanation');
   });
 });

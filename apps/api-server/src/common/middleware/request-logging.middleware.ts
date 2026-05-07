@@ -1,6 +1,7 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { LoggerService } from '../services/logger.service';
+import { getRequestPath } from '../utils/request-path.util';
 import { REQUEST_ID_HEADER, resolveRequestId } from '../utils/request-id.util';
 
 @Injectable()
@@ -18,7 +19,7 @@ export class RequestLoggingMiddleware implements NestMiddleware {
     // Log incoming request
     this.logger.info('Incoming request', {
       method: req.method,
-      path: req.originalUrl,
+      path: getRequestPath(req),
       requestId,
       userAgent: req.headers['user-agent'],
     });
@@ -30,7 +31,7 @@ export class RequestLoggingMiddleware implements NestMiddleware {
 
       this.logger[level]('Request completed', {
         method: req.method,
-        path: req.originalUrl,
+        path: getRequestPath(req),
         statusCode: res.statusCode,
         duration,
         requestId,

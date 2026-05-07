@@ -1,13 +1,14 @@
 'use client';
 
 import { ArrowRight, BookOpen, FileCheck2, History, Loader2 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { StudentNav } from '@/components/layout/student-nav';
 import { useExamAttempts, useExams } from '@/hooks/use-exams';
 import { Link } from '@/navigation';
 
 export default function ExamsPage() {
   const t = useTranslations('Student');
+  const locale = useLocale();
   const { data: exams = [], isLoading, isError } = useExams();
   const { data: attempts = [] } = useExamAttempts({ limit: 5 });
 
@@ -143,13 +144,13 @@ export default function ExamsPage() {
                           )}
                           <span className="rounded-md border px-2 py-1">
                             {t('exam.attemptStartedAtValue', {
-                              value: formatDateTime(attempt.startedAt),
+                              value: formatDateTime(attempt.startedAt, locale),
                             })}
                           </span>
                           {attempt.status === 'SUBMITTED' && attempt.submittedAt && (
                             <span className="rounded-md border px-2 py-1">
                               {t('exam.attemptSubmittedAtValue', {
-                                value: formatDateTime(attempt.submittedAt),
+                                value: formatDateTime(attempt.submittedAt, locale),
                               })}
                             </span>
                           )}
@@ -181,8 +182,8 @@ export default function ExamsPage() {
   );
 }
 
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat(undefined, {
+function formatDateTime(value: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(value));

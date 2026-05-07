@@ -9,9 +9,18 @@
     "NODE_ENV",
     "CORS_ORIGINS",
     "JWT_SECRET",
+    "JWT_EXPIRES_IN",
     "REDIS_URL",
+    "NEXT_PUBLIC_API_URL",
+    "NEXT_PUBLIC_WEB_STUDENT_URL",
+    "NEXT_PUBLIC_TENANT_ID",
+    "AUTH_COOKIE_SAME_SITE",
+    "AUTH_COOKIE_DOMAIN",
     "TRUST_PROXY",
     "ALLOW_TENANT_HEADER_IN_PRODUCTION",
+    "MCP_ENABLED",
+    "MCP_API_KEY",
+    "MCP_TENANT_ID",
     "npm_package_version"
   ],
   "tasks": {

@@ -1,13 +1,15 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Edit2, Trash2, ShieldAlert, RefreshCcw, Eye } from "lucide-react";
-import { useDeleteTenant, useRestoreTenant, Tenant } from "@/hooks/use-tenants";
-import toast from "react-hot-toast";
-import { TenantFormModal } from "./tenant-form-modal";
-import { useRouter } from "../../../navigation";
+import { useState } from 'react';
+import { Edit2, Eye, RefreshCcw, ShieldAlert, Trash2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import toast from 'react-hot-toast';
+import { useRouter } from '../../../navigation';
+import { Tenant, useDeleteTenant, useRestoreTenant } from '@/hooks/use-tenants';
+import { TenantFormModal } from './tenant-form-modal';
 
 export function TenantActions({ tenant }: { tenant: Tenant }) {
+  const t = useTranslations('SuperPortal.tenantActions');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const router = useRouter();
@@ -17,11 +19,11 @@ export function TenantActions({ tenant }: { tenant: Tenant }) {
   const handleDelete = () => {
     deleteTenant.mutate(tenant.id, {
       onSuccess: () => {
-        toast.success("Đã ngưng hoạt động trung tâm!");
+        toast.success(t('deactivateSuccess'));
         setIsDeleteModalOpen(false);
       },
       onError: () => {
-        toast.error("Không thể ngưng hoạt động trung tâm");
+        toast.error(t('deactivateError'));
       },
     });
   };
@@ -29,10 +31,10 @@ export function TenantActions({ tenant }: { tenant: Tenant }) {
   const handleRestore = () => {
     restoreTenant.mutate(tenant.id, {
       onSuccess: () => {
-        toast.success("Đã khôi phục trung tâm!");
+        toast.success(t('restoreSuccess'));
       },
       onError: () => {
-        toast.error("Không thể khôi phục trung tâm");
+        toast.error(t('restoreError'));
       },
     });
   };
@@ -43,70 +45,70 @@ export function TenantActions({ tenant }: { tenant: Tenant }) {
     <div className="flex items-center justify-end gap-2">
       <button
         onClick={() => router.push(`/tenants/${tenant.id}`)}
-        title="Xem chi tiết"
-        className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
+        title={t('viewDetails')}
+        aria-label={t('viewDetails')}
+        className="rounded-lg p-2 text-muted-foreground transition-all hover:bg-primary/10 hover:text-primary"
       >
-        <Eye className="w-4 h-4" />
+        <Eye className="h-4 w-4" />
       </button>
 
       <button
         onClick={() => setIsEditModalOpen(true)}
-        title="Cập nhật"
-        className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
+        title={t('edit')}
+        aria-label={t('edit')}
+        className="rounded-lg p-2 text-muted-foreground transition-all hover:bg-primary/10 hover:text-primary"
       >
-        <Edit2 className="w-4 h-4" />
+        <Edit2 className="h-4 w-4" />
       </button>
 
       {tenant.isActive ? (
         <button
           onClick={() => setIsDeleteModalOpen(true)}
-          title="Ngưng hoạt động"
-          className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all"
+          title={t('deactivate')}
+          aria-label={t('deactivate')}
+          className="rounded-lg p-2 text-muted-foreground transition-all hover:bg-destructive/10 hover:text-destructive"
         >
-          <Trash2 className="w-4 h-4" />
+          <Trash2 className="h-4 w-4" />
         </button>
       ) : (
         <button
           onClick={handleRestore}
           disabled={loading}
-          title="Khôi phục"
-          className="p-2 text-muted-foreground hover:text-emerald-500 hover:bg-emerald-500/10 rounded-lg transition-all disabled:opacity-50"
+          title={t('restore')}
+          aria-label={t('restore')}
+          className="rounded-lg p-2 text-muted-foreground transition-all hover:bg-emerald-500/10 hover:text-emerald-500 disabled:opacity-50"
         >
-          <RefreshCcw className="w-4 h-4" />
+          <RefreshCcw className="h-4 w-4" />
         </button>
       )}
 
-      {/* Edit Modal */}
       <TenantFormModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         tenant={tenant}
       />
 
-      {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-background/80 backdrop-blur-md">
-          <div className="w-full max-w-sm bg-card border rounded-2xl shadow-2xl overflow-hidden p-8 text-center">
-            <ShieldAlert className="w-12 h-12 text-destructive mx-auto mb-4" />
-            <h3 className="text-xl font-bold mb-2">Xác nhận xóa?</h3>
-            <p className="text-muted-foreground text-sm mb-6 font-medium">
-              Bạn có chắc chắn muốn ngưng hoạt động trung tâm{" "}
-              <strong className="text-foreground">{tenant.name}</strong> không?
-              Học viên sẽ không thể đăng nhập cho đến khi được khôi phục.
+          <div className="w-full max-w-sm overflow-hidden rounded-2xl border bg-card p-8 text-center shadow-2xl">
+            <ShieldAlert className="mx-auto mb-4 h-12 w-12 text-destructive" />
+            <h3 className="mb-2 text-xl font-bold">{t('confirmTitle')}</h3>
+            <p className="mb-6 text-sm font-medium text-muted-foreground">
+              {t('confirmDescription', { name: tenant.name })}
             </p>
-            <div className="flex gap-3 justify-center">
+            <div className="flex justify-center gap-3">
               <button
                 onClick={() => setIsDeleteModalOpen(false)}
-                className="px-4 py-2 text-sm font-bold text-muted-foreground hover:text-foreground transition-all"
+                className="text-sm font-bold text-muted-foreground transition-all hover:text-foreground"
               >
-                Hủy
+                {t('cancel')}
               </button>
               <button
                 onClick={handleDelete}
                 disabled={loading}
-                className="px-4 py-2 bg-destructive text-destructive-foreground hover:opacity-90 disabled:opacity-50 text-sm font-bold rounded-lg transition-all shadow-md active:scale-95"
+                className="rounded-lg bg-destructive px-4 py-2 text-sm font-bold text-destructive-foreground shadow-md transition-all hover:opacity-90 disabled:opacity-50 active:scale-95"
               >
-                {loading ? "Đang Xử Lý..." : "Ngưng Hoạt Động"}
+                {loading ? t('processing') : t('confirmDeactivate')}
               </button>
             </div>
           </div>

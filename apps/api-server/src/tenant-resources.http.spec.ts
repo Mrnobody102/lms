@@ -252,7 +252,9 @@ describe('Tenant resource HTTP flow', () => {
           }
 
           const matchesLogin =
-            where.email === currentUser.email &&
+            (typeof where.email === 'object' && where.email !== null && 'equals' in where.email
+              ? (where.email.equals as string)
+              : where.email) === currentUser.email &&
             where.tenantId === currentUser.tenantId &&
             where.deletedAt === null;
 

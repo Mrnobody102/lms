@@ -1,5 +1,6 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import type { NextFunction, Request, Response } from 'express';
+import { getRequestPath } from '../utils/request-path.util';
 import { MetricsService } from './metrics.service';
 
 @Injectable()
@@ -12,7 +13,7 @@ export class RequestMetricsMiddleware implements NestMiddleware {
     res.on('finish', () => {
       this.metricsService.recordRequest({
         method: req.method,
-        path: req.originalUrl,
+        path: getRequestPath(req),
         statusCode: res.statusCode,
         durationMs: Date.now() - startedAt,
       });

@@ -16,7 +16,7 @@ describe('HttpExceptionFilter', () => {
     };
     const request = {
       method: 'POST',
-      originalUrl: '/api/courses',
+      originalUrl: '/api/courses?token=secret',
       requestId: 'req_abc',
     };
     const host = {
@@ -40,7 +40,11 @@ describe('HttpExceptionFilter', () => {
     );
     expect(logger.error).toHaveBeenCalledWith(
       'Request error',
-      expect.objectContaining({ requestId: 'req_abc', statusCode: 400 }),
+      expect.objectContaining({
+        path: '/api/courses',
+        requestId: 'req_abc',
+        statusCode: 400,
+      }),
     );
   });
 

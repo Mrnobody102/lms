@@ -31,7 +31,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} data-hydrated={isHydrated} className="space-y-6">
+    <form onSubmit={handleSubmit} data-hydrated={isHydrated} className="space-y-7">
       {error && (
         <div className="flex items-center gap-2.5 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">
           <AlertCircle className="w-4 h-4 shrink-0" />
@@ -40,7 +40,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
       )}
 
       {/* Email */}
-      <div className="space-y-2.5">
+      <div className="space-y-3">
         <Label>{t('auth.email')}</Label>
         <div className="flex h-12 items-center rounded-xl border border-zinc-200 bg-zinc-50 text-zinc-900 transition-all focus-within:border-primary/70 focus-within:ring-2 focus-within:ring-primary/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100">
           <Mail className="ml-3.5 h-4 w-4 shrink-0 text-muted-foreground pointer-events-none" />
@@ -52,23 +52,15 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
               setEmail(e.target.value);
               if (error) clearError();
             }}
-            placeholder="email@example.com"
+            placeholder={t('auth.emailPlaceholder')}
             className="h-full min-w-0 flex-1 bg-transparent px-3 text-sm outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
           />
         </div>
       </div>
 
       {/* Password */}
-      <div className="space-y-2.5">
-        <div className="flex items-center justify-between gap-4">
-          <Label>{t('auth.password')}</Label>
-          <button
-            type="button"
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-          >
-            {t('auth.forgotPassword')}
-          </button>
-        </div>
+      <div className="space-y-3">
+        <Label>{t('auth.password')}</Label>
         <div className="flex h-12 items-center rounded-xl border border-zinc-200 bg-zinc-50 text-zinc-900 transition-all focus-within:border-primary/70 focus-within:ring-2 focus-within:ring-primary/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100">
           <Lock className="ml-3.5 h-4 w-4 shrink-0 text-muted-foreground pointer-events-none" />
           <input

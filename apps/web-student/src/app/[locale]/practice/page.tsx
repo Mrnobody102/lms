@@ -1,13 +1,14 @@
 'use client';
 
 import { ArrowRight, BookOpen, Dumbbell, FileQuestion, History, Loader2 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { StudentNav } from '@/components/layout/student-nav';
 import { usePracticeAttempts, usePracticeExerciseSets } from '@/hooks/use-practice';
 import { Link } from '@/navigation';
 
 export default function PracticePage() {
   const t = useTranslations('Student');
+  const locale = useLocale();
   const { data: exerciseSets = [], isLoading, isError } = usePracticeExerciseSets();
   const { data: attempts = [] } = usePracticeAttempts({ limit: 5 });
 
@@ -138,7 +139,7 @@ export default function PracticePage() {
                           )}
                           <span className="rounded-md border px-2 py-1">
                             {t('practice.attemptSubmittedAtValue', {
-                              value: formatDateTime(attempt.submittedAt),
+                              value: formatDateTime(attempt.submittedAt, locale),
                             })}
                           </span>
                         </div>
@@ -163,8 +164,8 @@ export default function PracticePage() {
   );
 }
 
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat(undefined, {
+function formatDateTime(value: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(value));

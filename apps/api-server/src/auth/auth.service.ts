@@ -31,15 +31,6 @@ export class AuthService {
       throw new BadRequestException('Tenant context is required');
     }
 
-    const existingUser = await this.prisma.user.findUnique({
-      where: { tenantId_email: { tenantId, email: registerDto.email } },
-    });
-
-    if (existingUser) {
-      this.logger.warn(`Registration failed - email already exists: tenantId=${tenantId}`);
-      throw new ConflictException('Email already registered');
-    }
-
     const tenant = await this.prisma.tenant.findFirst({
       where: { id: tenantId, isActive: true },
     });
@@ -49,39 +40,63 @@ export class AuthService {
       throw new ConflictException('Invalid tenant');
     }
 
-    const hashedPassword = await bcrypt.hash(registerDto.password, 12);
-
-    const user = await this.prisma.user.create({
-      data: {
-        email: registerDto.email,
-        password: hashedPassword,
-        fullName: registerDto.fullName,
-        phoneNumber: registerDto.phoneNumber,
+    const email = this.normalizeEmail(registerDto.email);
+    const existingUser = await this.prisma.user.findFirst({
+      where: {
         tenantId,
-      },
-      select: {
-        id: true,
-        email: true,
-        fullName: true,
-        phoneNumber: true,
-        avatarUrl: true,
-        role: true,
-        isActive: true,
-        tenantId: true,
-        createdAt: true,
-        updatedAt: true,
+        email: {
+          equals: email,
+          mode: 'insensitive',
+        },
       },
     });
 
-    this.logger.log(`User registered: id=${user.id}, role=${user.role}`);
+    if (existingUser) {
+      this.logger.warn(`Registration failed - email already exists: tenantId=${tenantId}`);
+      throw new ConflictException('Email already registered');
+    }
 
-    const token = this.generateToken(user);
-    this.setAuthCookie(res, token);
-    this.setCsrfCookie(res);
+    const hashedPassword = await bcrypt.hash(registerDto.password, 12);
 
-    return {
-      user,
-    };
+    try {
+      const user = await this.prisma.user.create({
+        data: {
+          email,
+          password: hashedPassword,
+          fullName: registerDto.fullName,
+          phoneNumber: registerDto.phoneNumber,
+          tenantId,
+        },
+        select: {
+          id: true,
+          email: true,
+          fullName: true,
+          phoneNumber: true,
+          avatarUrl: true,
+          role: true,
+          isActive: true,
+          tenantId: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      this.logger.log(`User registered: id=${user.id}, role=${user.role}`);
+
+      const token = this.generateToken(user);
+      this.setAuthCookie(res, token);
+      this.setCsrfCookie(res);
+
+      return {
+        user,
+      };
+    } catch (error) {
+      if (this.isUniqueConstraintError(error)) {
+        this.logger.warn(`Registration failed - email already exists: tenantId=${tenantId}`);
+        throw new ConflictException('Email already registered');
+      }
+      throw error;
+    }
   }
 
   async login(loginDto: LoginDto, tenantId: string | undefined, res: Response) {
@@ -89,9 +104,23 @@ export class AuthService {
       throw new BadRequestException('Tenant context is required');
     }
 
+    const tenant = await this.prisma.tenant.findFirst({
+      where: { id: tenantId, isActive: true },
+      select: { id: true },
+    });
+
+    if (!tenant) {
+      this.logger.warn(`Login failed - inactive tenant: ${tenantId}`);
+      throw this.invalidCredentials();
+    }
+
+    const email = this.normalizeEmail(loginDto.email);
     const user = await this.prisma.user.findFirst({
       where: {
-        email: loginDto.email,
+        email: {
+          equals: email,
+          mode: 'insensitive',
+        },
         tenantId,
         deletedAt: null,
       },
@@ -104,16 +133,6 @@ export class AuthService {
 
     if (!user.isActive) {
       this.logger.warn(`Login failed - inactive account: id=${user.id}`);
-      throw this.invalidCredentials();
-    }
-
-    const tenant = await this.prisma.tenant.findFirst({
-      where: { id: tenantId, isActive: true },
-      select: { id: true },
-    });
-
-    if (!tenant) {
-      this.logger.warn(`Login failed - inactive tenant: ${tenantId}`);
       throw this.invalidCredentials();
     }
 
@@ -160,6 +179,15 @@ export class AuthService {
 
   private invalidCredentials(): UnauthorizedException {
     return new UnauthorizedException('Invalid credentials');
+  }
+
+  private normalizeEmail(email: string): string {
+    return email.trim().toLowerCase();
+  }
+
+  private isUniqueConstraintError(error: unknown): boolean {
+    const prismaError = error as { code?: string };
+    return prismaError.code === 'P2002';
   }
 
   private setAuthCookie(res: Response, token: string): void {
