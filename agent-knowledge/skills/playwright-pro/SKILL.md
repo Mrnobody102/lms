@@ -203,7 +203,7 @@ pnpm playwright test --list
 
 ## Reference Documentation
 
-See `reference/` directory for:
+See `references/` directory for:
 
 - **golden-rules.md**: The 10 non-negotiable rules for Playwright tests
 - **locators.md**: Complete locator priority with cheat sheet

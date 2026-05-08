@@ -103,7 +103,7 @@ model User {
   @@unique([id, tenantId])
   @@index([tenantId, role])
   @@index([tenantId, isActive])
-  @@index([deletedAt])
+  @@index([tenantId, deletedAt])
 }
 
 model Course {
@@ -131,7 +131,7 @@ model Course {
   @@unique([tenantId, slug])
   @@unique([id, tenantId])
   @@index([tenantId, isActive])
-  @@index([deletedAt])
+  @@index([tenantId, deletedAt])
 }
 
 model CourseUnit {
@@ -181,7 +181,7 @@ model Lesson {
   @@index([courseId])
   @@index([unitId])
   @@index([tenantId, type])
-  @@index([deletedAt])
+  @@index([tenantId, deletedAt])
 }
 
 model UserLessonProgress {

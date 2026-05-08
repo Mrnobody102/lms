@@ -17,18 +17,21 @@ Do not load the whole `agent-knowledge/skills/` tree by default.
 
 ## Skill Map
 
-| User intent                                              | Skill files                                                 |
-| -------------------------------------------------------- | ----------------------------------------------------------- |
-| Architecture review, shared boundaries, tenant isolation | `architecture-core`, `monorepo-navigator`                   |
-| Feature planning, task breakdown                         | `engineering-planning`                                      |
-| API endpoint, service, DTO, guard                        | `senior-backend`, `nestjs-standards`, `api-design-reviewer` |
-| Auth, cookie, JWT, role behavior                         | `auth-standards`, `senior-backend`                          |
-| Prisma schema, migration, data safety                    | `db-intelligence`, `database-operations`                    |
-| Next.js page/component/UI                                | `senior-frontend`, `nextjs-standards`                       |
-| Translation/i18n                                         | `i18n-workflow`                                             |
-| Unit/integration/E2E testing                             | `testing-strategy`, `test-suite-builder`, `playwright-pro`  |
-| Docker, CI, production deploy                            | `deployment-ops`                                            |
-| MCP tool design                                          | `mcp-server-builder`                                        |
+| User intent                                              | Skill files                                                             |
+| -------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Architecture review, shared boundaries, tenant isolation | `architecture-core`, `monorepo-navigator`                               |
+| Feature planning, task breakdown                         | `engineering-planning`                                                  |
+| API endpoint, service, DTO, guard                        | `senior-backend`, `nestjs-standards`, `api-design-reviewer`             |
+| Auth, cookie, JWT, role behavior                         | `auth-standards`, `senior-backend`                                      |
+| Prisma schema, migration, data safety                    | `db-intelligence`, `database-operations`                                |
+| Next.js page/component/UI                                | `senior-frontend`, `nextjs-standards`                                   |
+| Translation/i18n                                         | `i18n-workflow`                                                         |
+| Unit/integration/E2E testing                             | `testing-strategy`, `test-suite-builder`, `playwright-pro`              |
+| Docker, CI, production deploy                            | `deployment-ops`                                                        |
+| MCP tool design                                          | `mcp-server-builder`                                                    |
+| Codebase review, architecture audit, tech debt           | `code-review`, `architecture-core`, `senior-backend`, `senior-frontend` |
+| Security audit, vulnerability scan                       | `code-review`, `auth-standards`, `api-design-reviewer`                  |
+| Production readiness check                               | `code-review`, `deployment-ops`, `testing-strategy`                     |
 
 ## Project Rules For Every Skill
 

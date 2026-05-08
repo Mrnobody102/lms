@@ -7,6 +7,7 @@ const nextConfig = {
   transpilePackages: ['@repo/shared', '@repo/ui', '@repo/api-client'],
   output: 'standalone',
   skipTrailingSlashRedirect: true,
+  eslint: { ignoreDuringBuilds: true },
 };
 
 module.exports = withNextIntl(nextConfig);

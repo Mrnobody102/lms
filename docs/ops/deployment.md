@@ -56,6 +56,9 @@ Nguyên tắc:
 - `CORS_ORIGINS` phải là danh sách origin chính xác, không có path/query
 - Tenant production phải resolve từ host/domain, không dựa vào `NEXT_PUBLIC_TENANT_ID`
 
+> [!WARNING]
+> **Bảo mật Tenant Isolation**: Khi deploy qua Reverse Proxy (Nginx, AWS ALB, Cloudflare), bắt buộc phải cấu hình xóa bỏ (strip) header `x-tenant-id` từ các request bên ngoài internet gửi vào. Điều này để chống giả mạo tenant. Chỉ cho phép các microservices nội bộ được dùng header này.
+
 ### Mẫu domain production
 
 Ví dụ:

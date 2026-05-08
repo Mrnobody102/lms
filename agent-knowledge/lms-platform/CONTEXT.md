@@ -37,8 +37,14 @@ lms-platform/
 - **Tenant (Trung tâm)**: Đơn vị độc lập cao nhất. Mỗi trung tâm có dữ liệu riêng biệt.
 - **User (Người dùng)**: Gắn liền với một Tenant, có Role cụ thể.
 - **Course (Khóa học)**: Thuộc về một Tenant, chứa các bài học và tài liệu.
-- **Lesson (Bài học)**: Thuộc về một Course, có nhiều loại (VIDEO, TEXT, QUIZ, FLASHCARD).
+- **CourseUnit (Chương/Unit)**: Nhóm curriculum thuộc Course, dùng để tổ chức Lesson.
+- **Lesson (Bài học)**: Thuộc về một Course/Unit, có nhiều loại (VIDEO, TEXT, QUIZ, FLASHCARD).
 - **Progress (Tiến độ)**: Theo dõi tiến độ học tập của User trên từng Lesson.
+- **PracticeQuestion / PracticeExerciseSet**: Ngân hàng câu hỏi và bộ bài tập theo course/unit.
+- **PracticeAttempt / PracticeAnswer**: Lưu lịch sử làm bài, điểm số và phản hồi.
+- **Exam / ExamSection / ExamQuestion**: Template đề thi theo tenant/course/unit.
+- **ExamAttempt / ExamAnswer**: Lifecycle thi (STARTED → SUBMITTED), score và review.
+- **Reporting**: Student summary (activity, streak, performance), course report, admin overview.
 
 ## 4. Quy luật nghiệp vụ (Business Rules)
 
@@ -65,12 +71,17 @@ Hệ thống AI Skills được tổ chức theo hướng **Modular** trong `age
 
 - `architecture-core`: Hiểu app boundaries và monorepo layout
 - `auth-standards`: Implement login, registration, JWT flow
+- `code-review`: Codebase audit, security review, production readiness check
 - `database-operations`: Chạy migrations, seeding, Prisma changes
+- `db-intelligence`: Phân tích schema, lên kế hoạch data changes
+- `deployment-ops`: Docker, CI/CD, production deployment
 - `nestjs-standards`: Building API endpoints với NestJS
 - `nextjs-standards`: Building frontend pages và components
 - `i18n-workflow`: Thêm hoặc cập nhật translations
 - `testing-strategy`: Viết unit và integration tests
 - `engineering-planning`: Lên kế hoạch features hoặc refactors
+- `monorepo-navigator`: Cross-package impact analysis, selective builds
+- `mcp-server-builder`: Thiết kế MCP server từ API contracts
 
 ## 7. Tài liệu tham khảo nhanh
 

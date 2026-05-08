@@ -3,6 +3,17 @@
 This SOP defines how humans and AI agents should work in the LMS Platform repo.
 It is intentionally practical: use it as the default operating procedure, then adapt only when the task clearly requires it.
 
+## 0. Context Verification
+
+Before starting any work, verify the environment:
+
+1. Check `git status --short --branch` — ensure working tree is clean or changes are expected.
+2. Confirm the correct branch (`main`, `feature/*`, `fix/*`).
+3. If the task touches shared packages, verify dependencies are installed (`pnpm install`).
+4. If the task touches the API, check that database is accessible (Docker running or remote DB reachable).
+
+Skip this phase for documentation-only or investigation tasks.
+
 ## 1. Intake
 
 1. Restate the goal in concrete terms.
@@ -12,7 +23,7 @@ It is intentionally practical: use it as the default operating procedure, then a
    - `agent-knowledge/lms-platform/CONTEXT.md`
    - relevant skill files from `agent-knowledge/skills/`
    - nearest source files and tests
-4. Check `git status --short --branch` before editing.
+4. Read the per-app `AGENTS.md` if one exists in the target app/package.
 
 ## 2. Plan
 

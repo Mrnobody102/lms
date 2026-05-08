@@ -1,7 +1,12 @@
 # LMS Platform Agent Guide
 
+<!-- last-updated: 2026-05-09 -->
+<!-- schema-version: 2.1 -->
+
 This file is the root instruction entrypoint for AI coding agents working in this repository.
 Keep it short, operational, and consistent with the repo's CI.
+
+Per-app `AGENTS.md` files exist in `apps/*/` and `packages/database/` for scoped context.
 
 ## Project Snapshot
 
@@ -41,6 +46,8 @@ Use these skills as task-specific context:
 | i18n                           | `agent-knowledge/skills/i18n-workflow/SKILL.md`                                                                                                             |
 | Testing                        | `agent-knowledge/skills/testing-strategy/SKILL.md`, `agent-knowledge/skills/test-suite-builder/SKILL.md`, `agent-knowledge/skills/playwright-pro/SKILL.md`  |
 | Deployment/CI                  | `agent-knowledge/skills/deployment-ops/SKILL.md`, `docs/ops/deployment.md`                                                                                  |
+| Code review / codebase audit   | `agent-knowledge/skills/code-review/SKILL.md` (cross-cutting — loads other skills as needed)                                                                |
+| Security audit                 | `agent-knowledge/skills/code-review/SKILL.md`, `agent-knowledge/skills/auth-standards/SKILL.md`                                                             |
 
 ## Working Rules
 

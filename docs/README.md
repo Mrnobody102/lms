@@ -43,8 +43,9 @@ Nếu bạn mới tham gia dự án, hãy đọc theo thứ tự:
 1. **[AGENTS.md](../AGENTS.md)** — Entry point cho mọi AI coding agent trong repo.
 2. **[CLAUDE.md](../CLAUDE.md)** — Memory entrypoint cho Claude Code, trỏ về `AGENTS.md`.
 3. **[docs/ai-agent/SOP.md](ai-agent/SOP.md)** — Quy trình làm việc chuẩn: intake, plan, implementation, validation, handoff.
-4. **[agent-knowledge/lms-platform/CONTEXT.md](../agent-knowledge/lms-platform/CONTEXT.md)** — Ngữ cảnh nghiệp vụ LMS.
-5. **[agent-knowledge/lms-platform/SKILL.md](../agent-knowledge/lms-platform/SKILL.md)** — Skill map để chọn đúng skill theo loại task.
+4. **[docs/ai-agent/prompts/README.md](ai-agent/prompts/README.md)** — Thư viện prompt templates cho AI Agent.
+5. **[agent-knowledge/lms-platform/CONTEXT.md](../agent-knowledge/lms-platform/CONTEXT.md)** — Ngữ cảnh nghiệp vụ LMS.
+6. **[agent-knowledge/lms-platform/SKILL.md](../agent-knowledge/lms-platform/SKILL.md)** — Skill map để chọn đúng skill theo loại task.
 
 ## Cấu Trúc Thư Mục Tài Liệu
 
@@ -74,7 +75,10 @@ docs/
 └── ai-agent/                 # Tài liệu AI Agent (nội bộ)
     ├── SOP.md
     ├── ai-agent-architecture.md
-    └── overnight-command-template.md
+    ├── overnight-command-template.md
+    └── prompts/              # Thư viện prompt templates
+        ├── README.md         # Index các prompt templates
+        └── codebase-audit.md # Prompt chuẩn cho Codebase Audit
 ```
 
 ## Các File Quan Trọng Khác
