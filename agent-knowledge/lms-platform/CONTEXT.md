@@ -36,14 +36,11 @@ lms-platform/
 
 - **Tenant (Trung tâm)**: Đơn vị độc lập cao nhất. Mỗi trung tâm có dữ liệu riêng biệt.
 - **User (Người dùng)**: Gắn liền với một Tenant, có Role cụ thể.
-- **Course (Khóa học)**: Thuộc về một Tenant, chứa các bài học và tài liệu.
-- **CourseUnit (Chương/Unit)**: Nhóm curriculum thuộc Course, dùng để tổ chức Lesson.
-- **Lesson (Bài học)**: Thuộc về một Course/Unit, có nhiều loại (VIDEO, TEXT, QUIZ, FLASHCARD).
+- **Course (Khóa học)**: Thuộc về một Tenant. Chứa `aiSettings` định nghĩa loại trợ lý AI chuyên biệt cho môn học đó.
+- **CourseUnit (Chương/Unit)**: Nhóm curriculum thuộc Course.
+- **Lesson (Bài học)**: Thuộc về một Course/Unit. Đã mở rộng thêm các dạng hiện đại: `SIMULATION` (Học mô phỏng AI), `MICRO_CARD` (Học siêu tốc), bên cạnh VIDEO/TEXT. Có `aiPrompt` cho kịch bản mô phỏng.
 - **Progress (Tiến độ)**: Theo dõi tiến độ học tập của User trên từng Lesson.
-- **PracticeQuestion / PracticeExerciseSet**: Ngân hàng câu hỏi và bộ bài tập theo course/unit.
-- **PracticeAttempt / PracticeAnswer**: Lưu lịch sử làm bài, điểm số và phản hồi.
-- **Exam / ExamSection / ExamQuestion**: Template đề thi theo tenant/course/unit.
-- **ExamAttempt / ExamAnswer**: Lifecycle thi (STARTED → SUBMITTED), score và review.
+- **Practice & Exam**: Lưu trữ Question, Exercise Set, và Attempt. Đã mở rộng hỗ trợ `AI_EVALUATED_AUDIO/TEXT` để thu bài bằng giọng nói/file và chấm bằng AI.
 - **Reporting**: Student summary (activity, streak, performance), course report, admin overview.
 
 ## 4. Quy luật nghiệp vụ (Business Rules)
@@ -59,6 +56,7 @@ lms-platform/
 | Backend         | NestJS                   | TypeScript, Prisma, class-validator, Swagger      |
 | Frontend        | Next.js (App Router)     | React Server Components, Tailwind CSS             |
 | Database        | PostgreSQL (Docker)      | Prisma ORM, multi-tenant via `tenantId`           |
+| AI/LLM Layer    | Gemini/OpenAI API        | Contextual Tutors, Multi-modal Assessment         |
 | State (Client)  | Zustand + TanStack Query | Auth via Zustand, server state via TanStack Query |
 | i18n            | next-intl                | Vietnamese and English                            |
 | Package Manager | pnpm 9                   | Workspaces                                        |

@@ -84,9 +84,10 @@ graph TD
 - `metrics`
 - `mcp`
 
-## Learning Domain Hiện Tại
+## Learning Domain Hiện Tại (Đang dịch chuyển)
 
-Luồng nội dung học tập hiện tại là `Course -> CourseUnit -> Lesson`.
+Luồng nội dung học tập hiện tại mang tính tuyến tính: `Course -> CourseUnit -> Lesson`.
+**Tầm nhìn tương lai:** Sẽ dịch chuyển sang mô hình "Adaptive Skill Tree" nơi AI lắp ráp lộ trình cá nhân hóa từ các "Micro-Cards" thay vì bài giảng dài tĩnh.
 
 - `Course` là khối chính để enrollment, progress, practice, exam bám vào.
 - `CourseUnit` là unit/chapter thuộc `Course`, dùng để nhóm curriculum.
@@ -112,6 +113,14 @@ Luồng nội dung học tập hiện tại là `Course -> CourseUnit -> Lesson`
 - Student summary trả activity calendar, continue lesson, streak và performance theo unit/skill.
 - Course report trả enrollment progress, completion rate, activity sessions và tracked time.
 - Admin overview có activity trend 7 ngày và accuracy tổng hợp từ practice/exam attempts.
+
+## Hệ Sinh Thái AI Đa Ngành (Domain-Agnostic AI Architecture)
+
+Kiến trúc hệ thống đang được thiết kế lại để hỗ trợ **Kỷ Nguyên Hậu AI (2026+)** với tính tương thích đa ngành (không hardcode vào bất kỳ ngôn ngữ hay môn học nào):
+
+- **Contextual AI Tutor**: Bảng `Course` chứa `aiSettings` JSON để config Prompt và loại trợ lý. Hệ thống cho phép học viên bôi đen nội dung (text, video subtitle) và nhận giải thích từ AI theo ngữ cảnh khóa học (VD: Dịch tiếng Trung hoặc Review Code).
+- **Experiential Simulations**: Bảng `Lesson` mở rộng với `type=simulation` và field `aiPrompt`. Thay vì học lý thuyết, học viên giao tiếp voice/text với AI đóng vai theo kịch bản để hoàn thành mục tiêu giao tiếp thực tế.
+- **Multi-modal Assignments**: Practice và Exam support các câu hỏi dạng `AI_EVALUATED_AUDIO` và `AI_EVALUATED_TEXT`. Học viên nộp bài qua giọng nói hoặc file, AI (vd: Gemini Multimodal) sẽ chấm điểm theo Rubric và trả về `aiFeedback` chi tiết.
 
 ## Tenant Và Runtime Policy
 

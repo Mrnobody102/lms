@@ -1,427 +1,76 @@
-# Plan: Interactive Learning UI — Final Production Plan
+# Plan: Kiến Trúc Học Tập Tương Lai (Post-AI Learning Paradigm 2026-2027)
 
-> **Ngày tạo:** 2026-05-09
-> **Phương pháp:** Đọc 100% source code tất cả file liên quan với dẫn chứng dòng cụ thể. Qua 6 vòng phản biện.
-
----
-
-## Bảng Sự Thật — Trạng Thái Hiện Tại Của Codebase
-
-Trước khi làm bất cứ điều gì, đây là những gì **đã hoạt động hoàn toàn** (không cần làm thêm):
-
-| Thứ                                    | File & Dòng                             | Ghi chú                                     |
-| -------------------------------------- | --------------------------------------- | ------------------------------------------- |
-| Streak đã có trong API                 | `progress-api.ts:59`                    | `totals.currentStreak`                      |
-| Streak đã hiển thị Dashboard           | `page.tsx:280-282`                      | `DashboardStat` render rồi                  |
-| `calculateCurrentStreak` UTC-correct   | `progress.service.ts:273`               | `.toISOString().slice(0,10)`                |
-| `handleComplete` đã có                 | `page.tsx:76-81`                        | Gọi `updateProgress.mutate`                 |
-| `progress` prop đã truyền vào Sidebar  | `page.tsx:107`                          | `useCourseProgress` data                    |
-| Sidebar đã dùng `progress` per-lesson  | `lesson-sidebar.tsx:88-89`              | Icon ✓/▷/○ đã có                            |
-| i18n streak keys đã có                 | `en.json:43-44`, `vi.json:43-44`        | `currentStreak`, `streakValue`              |
-| i18n quiz keys cơ bản đã có            | `en.json:115-123`, `vi.json:115-123`    | Nhưng **thiếu 2 keys** cho instant feedback |
-| Hai hệ thống quiz HOÀN TOÀN khác nhau  | `quiz-content.tsx` vs `/practice` route | Không dùng lẫn                              |
-| Admin UI chưa có form `quiz`/`content` | `edit-lesson-form.tsx:51-53`            | Chỉ submit `title, type, duration, unitId`  |
-
----
-
-## Bugs Đã Phát Hiện — Phải Sửa Trước Khi Thêm Feature
-
-### Bug A (Backend): `updateProgress` tạo duplicate `LESSON_COMPLETED` activity
-
-**Bằng chứng:** `progress.service.ts:48-58`
-
-```typescript
-// HIỆN TẠI — Luôn tạo activity kể cả khi status đã là COMPLETED:
-if (status === ProgressStatus.COMPLETED) {
-  await this.prisma.learningActivity.create({ ... }); // không check đã tồn tại chưa
-}
-```
-
-**Hệ quả:** Khi video auto-complete → `handleComplete` → sau đó user bấm nút "Mark Complete" lần 2 → 2 bản ghi `LESSON_COMPLETED` trong DB. Streak vẫn đúng (distinct dates), nhưng data analytics bị bẩn.
-
-**Fix cụ thể:**
-
-```typescript
-// TRONG updateProgress(), trước upsert:
-const existing = await this.prisma.userLessonProgress.findUnique({
-  where: { userId_lessonId: { userId, lessonId } },
-  select: { status: true },
-});
-const wasAlreadyCompleted = existing?.status === ProgressStatus.COMPLETED;
-
-// ... upsert như cũ ...
-
-// ĐỔI điều kiện:
-if (status === ProgressStatus.COMPLETED && !wasAlreadyCompleted) {
-  await this.prisma.learningActivity.create({ ... });
-}
-```
-
-### Bug B (Frontend): `handleComplete` không có guard — double-call possible
-
-**Bằng chứng:** `page.tsx:76-81` — không có `isPending` check.
-**Hệ quả:** Race condition: video triggers `handleComplete`, user kịp bấm nút trong 200ms chờ invalidation.
-
-**Fix:** Extract `isCompleted` ra const, thêm guard:
-
-```typescript
-// page.tsx — trước return statement:
-const isCompleted = progress.some(
-  (p) => p.lessonId === currentLesson.id && p.status === ProgressStatus.COMPLETED,
-);
-
-const handleComplete = () => {
-  if (isCompleted || updateProgress.isPending) return; // Guard
-  updateProgress.mutate({ lessonId: currentLesson.id, status: ProgressStatus.COMPLETED });
-};
-```
-
-### Bug C (Performance): `useProgressSummary` không có `refetchOnWindowFocus: false`
-
-**Bằng chứng:** `use-progress.ts:43-50` — `staleTime: 60 * 1000` nhưng không có `refetchOnWindowFocus`.
-**Hệ quả:** Khi thêm hook này vào `LessonHeader`, mỗi lần user switch tab trong lúc học sẽ trigger heavy query (load toàn bộ courses + activities để tính streak).
-
-**Fix trong hook definition (1 dòng):**
-
-```typescript
-export function useProgressSummary(enabled = true) {
-  return useQuery({
-    queryKey: ['progress-summary'],
-    queryFn: () => progressApi.getSummary(),
-    enabled,
-    staleTime: 5 * 60 * 1000, // Tăng lên 5 phút
-    refetchOnWindowFocus: false, // THÊM — không refetch khi switch tab
-  });
-}
-```
-
----
-
-## Phase 0 — Fix Bugs (Backend First, ~20 phút)
-
-**Lý do làm trước:** Bug A sẽ xảy ra ngay khi Phase 1 deploy vì video tracking sẽ gọi `handleComplete` trước khi user bấm nút.
-
-### File cần sửa:
-
-- **[MODIFY]** `apps/api-server/src/progress/progress.service.ts` — Fix `updateProgress`, thêm `wasAlreadyCompleted` check.
-
----
-
-## Phase 1 — Frontend Only (~2 giờ, không cần backend thêm)
-
-### 1A: Fix `handleComplete` Guard + Extract `isCompleted` const (~10 phút)
-
-**[MODIFY]** `apps/web-student/src/app/[locale]/lessons/[lessonId]/page.tsx`
-
-- Extract `isCompleted` ra const trước `handleComplete` (dòng 76).
-- Thêm guard `if (isCompleted || updateProgress.isPending) return;`.
-- Sau này các feature khác cần `isCompleted` đều dùng được const này.
-
----
-
-### 1B: `useProgressSummary` Performance Fix (~5 phút)
-
-**[MODIFY]** `apps/web-student/src/hooks/use-progress.ts`
-
-- Thêm `staleTime: 5 * 60 * 1000` (tăng từ 60s lên 5 phút).
-- Thêm `refetchOnWindowFocus: false`.
-
----
-
-### 1C: Streak Badge ở Lesson Header (~20 phút)
-
-**[MODIFY]** `apps/web-student/src/components/lessons/lesson-header.tsx`
-
-- Import `useProgressSummary` từ `../../hooks/use-progress`.
-- Lấy `totals?.currentStreak`.
-- Hiển thị badge `🔥 {streakValue}` nếu `currentStreak > 0`.
-- Dùng key i18n đã có: `t('dashboard.streakValue', { days: currentStreak })`.
-
----
-
-### 1D: Progress Bar ở Lesson Sidebar (~15 phút)
-
-**Bằng chứng data đã có:** `lesson-sidebar.tsx:88-89` đã có `progress` prop. `course.lessons` đã có.
-
-**Tính toán (thêm ở đầu component):**
-
-```typescript
-const totalLessons = course.lessons?.length ?? 0;
-const completedCount = progress.filter((p) => p.status === ProgressStatus.COMPLETED).length;
-const completionPct = totalLessons === 0 ? 0 : Math.round((completedCount / totalLessons) * 100);
-```
-
-**UI thêm giữa header và `<div className="flex-1 overflow-y-auto">`:**
-
-```html
-<!-- Progress bar section -->
-<div className="px-8 py-3 border-b bg-muted/10">
-  <div className="flex justify-between text-xs font-semibold text-muted-foreground mb-2">
-    <span>{completedCount}/{totalLessons} bài</span>
-    <span>{completionPct}%</span>
-  </div>
-  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-    <div
-      className="h-full bg-primary rounded-full transition-[width] duration-700 ease-out"
-      style={{ width: `${completionPct}%` }}
-    />
-  </div>
-</div>
-```
-
-**[MODIFY]** `apps/web-student/src/components/lessons/lesson-sidebar.tsx`
-
----
-
-### 1E: Native Video Completion Tracking (~25 phút)
-
-**Scope giới hạn rõ ràng:** Chỉ `<video>` HTML5 (MP4 direct). YouTube `<iframe>` không support `onEnded` vì browser sandbox — sẽ làm Phase 2.
-
-**Prop chain cần thêm:** `LessonPage` → `LessonContent` → `VideoPlayer`
-
-```typescript
-// VideoPlayer — thêm prop và logic:
-interface VideoPlayerProps {
-  videoUrl?: string;
-  title: string;
-  onComplete?: () => void; // MỚI
-}
-
-// Trong VideoPlayer, với <video> native:
-const completedRef = useRef(false); // Guard: chỉ trigger 1 lần
-
-const handleTimeUpdate = (e: React.SyntheticEvent<HTMLVideoElement>) => {
-  const video = e.currentTarget;
-  if (!completedRef.current && video.duration > 0 && video.currentTime / video.duration >= 0.85) {
-    completedRef.current = true;
-    onComplete?.();
-  }
-};
-
-// JSX:
-<video
-  src={safeSrc}
-  controls
-  className="..."
-  onEnded={() => { if (!completedRef.current) { completedRef.current = true; onComplete?.(); } }}
-  onTimeUpdate={handleTimeUpdate}
+> **Phân Tích Tầm Nhìn Chiến Lược:** Bạn đã chạm đến lõi của sự dịch chuyển giáo dục trong kỷ nguyên AI. Khi AI có thể code hộ, viết bài hộ, thì việc học theo kiểu "nhồi nhét kiến thức" (như học thuộc lòng syntax lập trình) đã trở nên vô nghĩa. Thay vào đó, con người năm 2026+ học để phát triển **Kỹ năng tư duy (Critical Thinking), Kỹ năng giao tiếp/Ngôn ngữ (Human Connection), và Kỹ năng điều phối AI**.
 >
-```
+> Cách học truyền thống (xem video 20 phút -> làm bài test máy móc) đã chết vì nó đi ngược lại với thói quen tiêu thụ thông tin "nhanh, gãy gọn, 도pamine cao" của thời đại TikTok/Reels. Hệ thống của chúng ta phải **Thích ứng hoàn toàn (Hyper-Adaptive)** và **Tương tác liên tục (Continuous Engagement)**.
 
-**Files cần sửa:**
-
-- **[MODIFY]** `apps/web-student/src/components/lessons/video-player.tsx`
-- **[MODIFY]** `apps/web-student/src/components/lessons/lesson-content.tsx` — thêm `onComplete?: () => void` prop
-- **[MODIFY]** `apps/web-student/src/app/[locale]/lessons/[lessonId]/page.tsx` — truyền `onComplete={handleComplete}`
+Dưới đây là thiết kế kiến trúc cho một nền tảng học tập **thực sự của tương lai**:
 
 ---
 
-### 1F: Adaptive Quiz — Instant Per-Question Feedback (~50 phút)
+## 🚀 Tầm Nhìn Kỷ Nguyên Hậu AI (Post-AI Era)
 
-**Phân tích code hiện tại (`quiz-content.tsx`):**
+### 1. Cái Chết Của "Bài Giảng Tuyến Tính" -> Kiến Trúc "Skill Tree & Micro-Cards"
 
-- Dùng `showResults` boolean — lock toàn bộ sau khi bấm "Check Answers".
-- Chưa có per-question instant lock.
+- **Thực trạng cũ:** Học viên bị ép học từ Bài 1 đến Bài 10 theo một đường thẳng.
+- **Tầm nhìn hệ thống:** Không còn "Bài 1, Bài 2". Hệ thống phân tích trình độ người học qua vài câu hỏi đầu vào, sau đó AI tự động "lắp ráp" một lộ trình riêng biệt (Adaptive Path).
+- Học viên chỉ học những điểm yếu của mình. Nếu đã biết, hệ thống tự động cho "Skip" (Bỏ qua).
 
-**Thiết kế mới:**
+### 2. Định Dạng "Microlearning & Instant Action" (Học Siêu Tốc)
 
-- Xóa `showResults` state.
-- Thêm `lockedMap: Record<number, boolean>` — lock từng câu sau khi chọn.
-- Sau khi lock → hiện màu ngay: xanh/đỏ + text "Đáp án đúng: [X]" nếu sai.
-- Tất cả locked → gọi `onAllAnswered?.(score, total)`.
-- Xóa nút "Check My Answers" và khu vực "Try Again" (UX mới không dùng).
-- Thêm banner "✓ Đã trả lời hết! Cuộn xuống để hoàn thành bài học." khi done.
+- **Thực trạng cũ:** Ngồi xem video dài 30 phút rồi ngủ gật.
+- **Tầm nhìn hệ thống:** Nội dung được xé nhỏ thành các "Thẻ học tập" (Cards) kéo dài 1-3 phút (giống cơ chế Reels/Shorts). Vừa xem xong 1 phút video là hệ thống yêu cầu TƯƠNG TÁC NGAY (nói vào mic, vuốt chọn đáp án, đưa ra quyết định). Tốc độ nhanh, gãy gọn, gây nghiện.
 
-**i18n cần thêm (cả `en.json` lẫn `vi.json`):**
+### 3. Học Qua Mô Phỏng & Trải Nghiệm (Experiential Learning)
 
-```json
-"quiz": {
-  // ... keys hiện tại giữ nguyên ...
-  "correctAnswerIs": "Correct answer: {answer}",   // vi: "Đáp án đúng: {answer}"
-  "allAnsweredHint": "All answered! Scroll down to mark this lesson complete."
-  // vi: "Đã trả lời hết! Cuộn xuống để hoàn thành bài học."
-}
-```
-
-**`LessonPage` — khi nhận `onAllAnswered`:**
-
-```typescript
-const handleQuizAllAnswered = () => {
-  // Scroll xuống LessonNavigation để user thấy nút "Mark Complete"
-  document.querySelector('[data-lesson-navigation]')?.scrollIntoView({ behavior: 'smooth' });
-};
-```
-
-Thêm `data-lesson-navigation` attribute vào `LessonNavigation` div wrapper.
-
-**Files cần sửa:**
-
-- **[MODIFY]** `apps/web-student/src/components/lessons/quiz-content.tsx`
-- **[MODIFY]** `apps/web-student/src/components/lessons/lesson-content.tsx` — thêm `onAllAnswered?: () => void`
-- **[MODIFY]** `apps/web-student/src/components/lessons/lesson-navigation.tsx` — thêm `data-lesson-navigation`
-- **[MODIFY]** `apps/web-student/src/app/[locale]/lessons/[lessonId]/page.tsx` — pass `onAllAnswered`
-- **[MODIFY]** `apps/web-student/src/messages/en.json` — thêm 2 keys
-- **[MODIFY]** `apps/web-student/src/messages/vi.json` — thêm 2 keys
+- **Thực trạng cũ:** Trắc nghiệm A,B,C,D máy móc.
+- **Tầm nhìn hệ thống:** Học bằng cách "Quăng vào thực tế ảo".
+  - Thay vì học từ vựng "Sân bay", hệ thống mở AI Voice Chat: _"Bạn đang ở hải quan, hãy giải thích lý do nhập cảnh"_.
+  - Thay vì học lý thuyết "Quản lý nhân sự", hệ thống đưa ra tình huống: _"Nhân viên A đang bức xúc vì lương, bạn là sếp, hãy chat với nhân viên A (do AI đóng vai) để xoa dịu"_.
 
 ---
 
-## Phase 2 — YouTube Player + Checkpoint Schema (~1 ngày)
+## 🛠 Lộ Trình Kỹ Thuật (Chuyển Đổi Từ Hiện Tại Sang Tương Lai)
 
-### 2A: Thêm `checkpoints` Field vào Schema (~15 phút)
+Để hiện thực hóa tầm nhìn vĩ đại này từ nền tảng codebase hiện tại (đang có Course, Unit, Lesson), chúng ta cần một chiến lược chuyển đổi khôn ngoan mà không cần đập bỏ toàn bộ Database ngay lập tức.
 
-**Lý do dùng field riêng thay vì tái dụng `lesson.quiz`:**
+### Phase 1: Nền Tảng Theo Dõi & "Cởi Trói" Trải Nghiệm (Nền móng bắt buộc)
 
-- `quiz` = bài trắc nghiệm cuối bài học (`type: 'quiz'`).
-- `checkpoints` = câu hỏi pop-up chèn vào video (`type: 'video'`).
-- Dùng chung sẽ gây tech debt: lập trình viên sau bối rối, logic phức tạp.
-- Admin UI chưa có form nhập liệu nên migration **100% an toàn**.
+_Trước khi AI có thể adaptive, nó cần dữ liệu người dùng thật chuẩn. Phase 1 chính là lắp đặt các "cảm biến" để thu thập dữ liệu hành vi đó, đồng thời làm mượt UX._
 
-**Schema thêm vào `Lesson` model:**
+- **Khắc phục tư duy máy móc:** Sửa lại UI Quiz từ "làm xong hết mới biết điểm" thành "Instant Feedback" (Vuốt/chọn xong biết đúng sai, giải thích luôn tại chỗ) -> Tạo cảm giác gãy gọn, 도pamine.
+- **Gamification Kích Thích:** Thêm Streak (chuỗi ngày học liên tục), Progress Bar chạy mượt mà ngay trên thanh điều hướng để tạo thói quen (Hook habit).
+- **Video Tracking Chính Xác:** Tự động hóa việc ghi nhận tiến độ thay vì bắt user bấm nút thủ công.
 
-```prisma
-checkpoints Json? // Video checkpoint questions [{time: number, question, options, correctAnswer}]
-```
+### Phase 2: Schema Migration & Cấu trúc Dữ Liệu Hậu AI (Đã hoàn thành Audit)
 
-**Files cần sửa:**
+_Nâng cấp Database Schema để thoát khỏi lối mòn "Video/Quiz"._
 
-- **[MODIFY]** `packages/database/prisma/schema.prisma`
-- **[MODIFY]** `apps/api-server/src/lesson/lesson.service.ts` — thêm `checkpoints` vào `create()`, `update()`
-- **[MODIFY]** `apps/web-student/src/lib/course-api.ts` — thêm `checkpoints` vào `Lesson` type
+- **Mở rộng `LessonType`:** Thêm `simulation` (Mô phỏng thực tế) và `micro_card` (Học siêu tốc). Thêm trường `aiPrompt` lưu kịch bản.
+- **Mở rộng Assessment:** Thêm `AI_EVALUATED_AUDIO` và `AI_EVALUATED_TEXT` vào bảng `PracticeQuestion` để thu bài đa phương thức.
+- **Domain-Agnostic AI:** Thêm `Course.aiSettings` để linh hoạt thay đổi Role của AI theo từng môn học (IT, Ngôn ngữ, Kinh doanh).
 
-### 2B: YouTube Interactive Player (~4 giờ)
+### Phase 3: Microlearning & Content Transformation
 
-```bash
-pnpm --filter web-student add react-youtube
-```
+_Chuyển đổi cách hiển thị nội dung_
 
-**Files cần tạo/sửa:**
+- **Giao diện "Focus Mode":** Đổi trang Lesson hiện tại thành giao diện tràn viền, vuốt dọc giống TikTok/Duolingo (`LessonType = micro_card`). Mỗi bài học chỉ hiện một khối thông tin rất nhỏ -> Học viên học nhanh, không ngợp.
+- **Contextual AI Tutor:** Áp dụng `Course.aiSettings` để tạo một Assistant Widget. Học viên bôi đen bất kỳ đâu trên bài giảng để AI giải thích theo đúng ngữ cảnh môn học.
 
-- **[NEW]** `apps/web-student/src/components/lessons/youtube-player.tsx` — Wrap `react-youtube`, expose `onComplete`, đọc `lesson.checkpoints` để trigger `CheckpointCard`
-- **[NEW]** `apps/web-student/src/components/lessons/checkpoint-card.tsx` — Non-blocking popup góc dưới phải, không block video
-- **[MODIFY]** `apps/web-student/src/components/lessons/video-player.tsx` — Route YouTube URL → `YouTubePlayer`, còn lại → native `<video>`
+### Phase 4: The "Hyper-Adaptive" Engine & Experiential Roleplay
 
----
+_Đưa AI vào điều phối luồng học và mô phỏng thực tế_
 
-## Phase 3 — Future Architecture (Chưa Làm Ngay)
-
-### Vocabulary & Flashcard + SM-2 (Đúng Model)
-
-**Lý do NOT áp SM-2 vào `UserLessonProgress`:**
-
-- SM-2 hiệu quả với đơn vị kiến thức nhỏ (từ đơn, cụm từ).
-- Bắt user "ôn tập lại" cả bài giảng video bằng SM-2 là phi sư phạm.
-- Database hiện **chưa có** model Flashcard/Vocabulary.
-
-**Thiết kế đúng (khi làm):**
-
-```prisma
-model VocabularyItem { ... }
-model UserFlashcardReview {
-  nextReviewAt   DateTime?
-  interval       Int @default(1)
-  easeFactorX100 Int @default(250)
-  reviewCount    Int @default(0)
-}
-```
-
-### AI Tutor
-
-- Gợi ý provider: **Gemini Flash** (phù hợp hệ sinh thái, free tier rộng, tốt tiếng Việt).
-- Chờ confirm trước khi triển khai.
+- Tích hợp hệ thống "Knowledge Tracing". Nếu user trả lời sai 1 thẻ, AI tự động chèn thêm thẻ tương tự vào bài học ngày mai. Nếu user giỏi, AI tự động cắt bỏ các bài dễ.
+- Tích hợp **AI Voice/Chat** (`LessonType = simulation`) dựa trên `aiPrompt` đã lưu ở Phase 2 để tạo các bài học dạng "Mô phỏng tình huống" (Roleplay) thay cho bài quiz giấy truyền thống. Chấm điểm bài nộp bằng `AI_EVALUATED_AUDIO`.
 
 ---
 
-## Thứ Tự Thực Thi Cuối Cùng
+## 🎯 Quyết Định Hiện Tại
 
-```
-Phase 0 (~20 phút, 1 file backend):
-  └─ Fix updateProgress idempotency (progress.service.ts)
+Tầm nhìn của bạn đã vượt xa một ứng dụng học tập thông thường, nó là một nền tảng **Phát triển năng lực thời đại số**. Nhưng về mặt kỹ thuật, hệ thống của bạn (tính đến trước khi Audit) vẫn đang ở cấu trúc LMS truyền thống.
 
-Phase 1 (~2h15, 10 files frontend):
-  ├─ 1A: Guard handleComplete + extract isCompleted const         (10 phút)
-  ├─ 1B: useProgressSummary performance fix                       ( 5 phút)
-  ├─ 1C: Streak Badge tại LessonHeader                            (20 phút)
-  ├─ 1D: Progress Bar tại LessonSidebar                           (15 phút)
-  ├─ 1E: Native Video Completion Tracking (non-YouTube only)      (25 phút)
-  └─ 1F: Adaptive Quiz Instant Per-Question Feedback + i18n       (50 phút)
+**Chúng ta vừa hoàn thành Database Audit (Phase 2). Để vươn tới Phase 3 & 4 (AI Adaptive Engine), chúng ta KHÔNG THỂ nhảy cóc bỏ qua Phase 1.** Hệ thống bắt buộc phải có Gamification (Streak), phải tracking được tiến độ (chống duplicate), và phải có nền tảng UI mượt mà (Instant Feedback Quiz) thì mới có "đất" cho AI hoạt động ở các Phase sau.
 
-Phase 2 (~1 ngày, dependency mới + schema):
-  ├─ 2A: Schema checkpoints field + API update                    (15 phút)
-  └─ 2B: YouTube Interactive Player + CheckpointCard              ( 4 giờ)
-
-Phase 3 (Future, major feature):
-  ├─ Vocabulary/Flashcard System with SM-2
-  └─ AI Tutor Integration (Gemini Flash)
-```
-
----
-
-## Danh Sách Tất Cả Files Thay Đổi
-
-### Phase 0
-
-| File                                               | Loại   | Lý do                                   |
-| -------------------------------------------------- | ------ | --------------------------------------- |
-| `apps/api-server/src/progress/progress.service.ts` | MODIFY | Fix duplicate LESSON_COMPLETED activity |
-
-### Phase 1
-
-| File                                                            | Loại   | Lý do                                                      |
-| --------------------------------------------------------------- | ------ | ---------------------------------------------------------- |
-| `apps/web-student/src/app/[locale]/lessons/[lessonId]/page.tsx` | MODIFY | Extract isCompleted, guard, onComplete+onAllAnswered props |
-| `apps/web-student/src/hooks/use-progress.ts`                    | MODIFY | staleTime 5min, refetchOnWindowFocus: false                |
-| `apps/web-student/src/components/lessons/lesson-header.tsx`     | MODIFY | Streak badge                                               |
-| `apps/web-student/src/components/lessons/lesson-sidebar.tsx`    | MODIFY | Progress bar UI                                            |
-| `apps/web-student/src/components/lessons/video-player.tsx`      | MODIFY | onComplete prop, 85% tracking                              |
-| `apps/web-student/src/components/lessons/lesson-content.tsx`    | MODIFY | onComplete, onAllAnswered props                            |
-| `apps/web-student/src/components/lessons/lesson-navigation.tsx` | MODIFY | data-lesson-navigation attribute                           |
-| `apps/web-student/src/components/lessons/quiz-content.tsx`      | MODIFY | Instant per-question feedback refactor                     |
-| `apps/web-student/src/messages/en.json`                         | MODIFY | 2 keys mới cho quiz instant feedback                       |
-| `apps/web-student/src/messages/vi.json`                         | MODIFY | 2 keys mới cho quiz instant feedback                       |
-
-### Phase 2
-
-| File                                                          | Loại   | Lý do                              |
-| ------------------------------------------------------------- | ------ | ---------------------------------- |
-| `packages/database/prisma/schema.prisma`                      | MODIFY | Thêm checkpoints Json?             |
-| `apps/api-server/src/lesson/lesson.service.ts`                | MODIFY | Thêm checkpoints vào create/update |
-| `apps/web-student/src/lib/course-api.ts`                      | MODIFY | Thêm checkpoints type              |
-| `apps/web-student/src/components/lessons/youtube-player.tsx`  | NEW    | YouTube API wrapper                |
-| `apps/web-student/src/components/lessons/checkpoint-card.tsx` | NEW    | Non-blocking checkpoint popup      |
-| `apps/web-student/src/components/lessons/video-player.tsx`    | MODIFY | Route YouTube → YouTubePlayer      |
-
----
-
-## Verification Plan
-
-### Phase 0 Verification
-
-```bash
-pnpm --filter api-server test
-pnpm --filter api-server typecheck
-```
-
-Manual: Bấm "Mark Complete" 2 lần → DB chỉ có 1 `LESSON_COMPLETED` record.
-
-### Phase 1 Verification
-
-```bash
-pnpm --filter web-student typecheck
-```
-
-Manual:
-
-- Streak badge hiển thị đúng trên trang bài học.
-- Progress bar cập nhật ngay sau khi hoàn thành bài.
-- MP4 video → hoàn thành tự động sau 85% → nút "Mark Complete" bị disable.
-- Quiz → chọn đáp án → lock ngay, màu xanh/đỏ → cuộn xuống nút "Mark Complete".
-
-### Phase 2 Verification
-
-```bash
-pnpm --filter @repo/database typecheck
-pnpm --filter api-server typecheck
-pnpm --filter web-student typecheck
-```
-
-Manual: YouTube video → checkpoint pop-up xuất hiện đúng thời điểm, non-blocking.
+> [!IMPORTANT]
+> Toàn bộ Codebase, Docs và Database đã được nâng cấp kiến trúc để hỗ trợ tầm nhìn này. Xin phép **tiến hành thi công Phase 1 ngay bây giờ** để xây dựng lớp móng vững chắc nhất (UI/UX) cho tòa tháp này!

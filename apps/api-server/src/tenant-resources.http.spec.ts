@@ -53,6 +53,7 @@ describe('Tenant resource HTTP flow', () => {
     userLessonProgress: {
       findMany: ReturnType<typeof vi.fn>;
       findFirst: ReturnType<typeof vi.fn>;
+      findUnique: ReturnType<typeof vi.fn>;
       upsert: ReturnType<typeof vi.fn>;
     };
     learningActivity: {
@@ -507,6 +508,22 @@ describe('Tenant resource HTTP flow', () => {
                 })
                 .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()),
             );
+          },
+        ),
+        findUnique: vi.fn().mockImplementation(
+          ({
+            where,
+          }: {
+            where: {
+              userId_lessonId: { userId: string; lessonId: string };
+            };
+          }) => {
+            const record = progressRecords.find(
+              (entry) =>
+                entry.userId === where.userId_lessonId.userId &&
+                entry.lessonId === where.userId_lessonId.lessonId,
+            );
+            return Promise.resolve(record ?? null);
           },
         ),
         findFirst: vi.fn().mockImplementation(

@@ -14,6 +14,11 @@ export class ProgressService {
   /**
    * Update or create a progress record for a user and lesson.
    * Ensures the lesson belongs to the user's tenant.
+   *
+   * Idempotent: only creates a LESSON_COMPLETED activity the first time a lesson
+   * transitions to COMPLETED. Subsequent calls with COMPLETED status are no-ops
+   * for the activity log, preventing duplicate records when auto-completion
+   * (e.g. video 85% threshold) races with the manual "Mark Complete" button.
    */
   async updateProgress(
     userId: string,
@@ -26,6 +31,13 @@ export class ProgressService {
       where: this.learningAccess.lessonWhere(tenantId, { id: userId, role }, lessonId),
     });
     if (!lesson) throw new NotFoundException(`Lesson not found in this tenant`);
+
+    // Check existing status before upsert so we can detect a real COMPLETED transition.
+    const existing = await this.prisma.userLessonProgress.findUnique({
+      where: { userId_lessonId: { userId, lessonId } },
+      select: { status: true },
+    });
+    const wasAlreadyCompleted = existing?.status === ProgressStatus.COMPLETED;
 
     const progress = await this.prisma.userLessonProgress.upsert({
       where: {
@@ -45,7 +57,8 @@ export class ProgressService {
       },
     });
 
-    if (status === ProgressStatus.COMPLETED) {
+    // Only log the completion activity when the lesson wasn't already completed.
+    if (status === ProgressStatus.COMPLETED && !wasAlreadyCompleted) {
       await this.prisma.learningActivity.create({
         data: {
           userId,

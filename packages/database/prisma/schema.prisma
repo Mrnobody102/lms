@@ -19,6 +19,8 @@ enum LessonType {
   video
   text
   quiz
+  simulation
+  micro_card
 }
 
 enum ProgressStatus {
@@ -39,6 +41,8 @@ enum LearningActivityType {
 enum PracticeQuestionType {
   MULTIPLE_CHOICE
   FILL_BLANK
+  AI_EVALUATED_AUDIO
+  AI_EVALUATED_TEXT
 }
 
 enum PracticeAttemptStatus {
@@ -48,6 +52,8 @@ enum PracticeAttemptStatus {
 enum ExamQuestionType {
   MULTIPLE_CHOICE
   FILL_BLANK
+  AI_EVALUATED_AUDIO
+  AI_EVALUATED_TEXT
 }
 
 enum ExamAttemptStatus {
@@ -125,6 +131,7 @@ model Course {
   exams            Exam[]
   examAttempts     ExamAttempt[]
   totalDuration    Int                   @default(0)
+  aiSettings       Json?
   createdAt        DateTime              @default(now())
   updatedAt        DateTime              @updatedAt
 
@@ -164,6 +171,7 @@ model Lesson {
   videoUrl   String? // Link video bài giảng
   duration   Int                  @default(10) // Thời lượng dự kiến (phút)
   quiz       Json? // Nội dung quiz (nếu type là quiz)
+  aiPrompt   String?
   order      Int                  @default(0) // Thứ tự bài học trong khóa học
   deletedAt  DateTime?
   tenantId   String
@@ -337,6 +345,7 @@ model PracticeAnswer {
   question   PracticeQuestion @relation(fields: [questionId, tenantId], references: [id, tenantId], onDelete: Cascade)
   answer     Json
   isCorrect  Boolean
+  aiFeedback Json?
   createdAt  DateTime         @default(now())
 
   @@unique([attemptId, questionId])
@@ -345,21 +354,21 @@ model PracticeAnswer {
 }
 
 model Exam {
-  id              String         @id @default(uuid())
+  id              String        @id @default(uuid())
   tenantId        String
-  tenant          Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant          Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   courseId        String
-  course          Course         @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  course          Course        @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
   unitId          String?
-  unit            CourseUnit?    @relation(fields: [unitId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
+  unit            CourseUnit?   @relation(fields: [unitId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
   title           String
   description     String?
-  durationMinutes Int            @default(30)
+  durationMinutes Int           @default(30)
   passingScore    Int?
-  isPublished     Boolean        @default(false)
+  isPublished     Boolean       @default(false)
   deletedAt       DateTime?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
   sections        ExamSection[]
   attempts        ExamAttempt[]
 
@@ -437,6 +446,7 @@ model ExamAnswer {
   answer        Json
   isCorrect     Boolean
   pointsAwarded Int          @default(0)
+  aiFeedback    Json?
   createdAt     DateTime     @default(now())
 
   @@unique([attemptId, questionId])
