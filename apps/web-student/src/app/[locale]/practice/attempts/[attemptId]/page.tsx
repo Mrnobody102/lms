@@ -4,6 +4,7 @@ import { ArrowLeft, CheckCircle2, Loader2, RotateCcw, XCircle } from 'lucide-rea
 import { useParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { StudentNav } from '@/components/layout/student-nav';
+import { AIFeedbackPanel } from '@/components/lessons/ai-feedback-panel';
 import { usePracticeAttempt } from '@/hooks/use-practice';
 import { PracticeQuestion } from '@/lib/practice-api';
 import { Link } from '@/navigation';
@@ -105,7 +106,11 @@ export default function PracticeAttemptReviewPage() {
                         <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
                           {answer.question.type === 'MULTIPLE_CHOICE'
                             ? t('practice.multipleChoice')
-                            : t('practice.fillBlank')}
+                            : answer.question.type === 'FILL_BLANK'
+                              ? t('practice.fillBlank')
+                              : answer.question.type === 'AI_EVALUATED_AUDIO'
+                                ? t('practice.aiAudio')
+                                : t('practice.aiText')}
                         </span>
                         {answer.question.skillTags.map((tag) => (
                           <span
@@ -142,7 +147,7 @@ export default function PracticeAttemptReviewPage() {
                         value: formatPracticeAnswer(answer.question, answer.answer),
                       })}
                     </p>
-                    {!answer.isCorrect && (
+                    {!answer.isCorrect && !isAiQuestionType(answer.question.type) && (
                       <p className="mt-2">
                         {t('practice.correctAnswerValue', {
                           value: formatPracticeAnswer(
@@ -154,6 +159,9 @@ export default function PracticeAttemptReviewPage() {
                     )}
                     {answer.question.explanation && (
                       <p className="mt-2 text-muted-foreground">{answer.question.explanation}</p>
+                    )}
+                    {isAiQuestionType(answer.question.type) && (
+                      <AIFeedbackPanel aiFeedback={answer.aiFeedback} className="mt-4" />
                     )}
                   </div>
                 </section>
@@ -185,4 +193,8 @@ function formatPracticeAnswer(
   }
 
   return String(value ?? '');
+}
+
+function isAiQuestionType(type: PracticeQuestion['type']) {
+  return type === 'AI_EVALUATED_AUDIO' || type === 'AI_EVALUATED_TEXT';
 }

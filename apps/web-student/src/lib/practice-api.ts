@@ -1,6 +1,10 @@
 import api from './api';
 
-export type PracticeQuestionType = 'MULTIPLE_CHOICE' | 'FILL_BLANK';
+export type PracticeQuestionType =
+  | 'MULTIPLE_CHOICE'
+  | 'FILL_BLANK'
+  | 'AI_EVALUATED_AUDIO'
+  | 'AI_EVALUATED_TEXT';
 
 export interface PracticeQuestion {
   id: string;
@@ -40,6 +44,7 @@ export interface PracticeAnswerFeedback {
   isCorrect: boolean;
   correctAnswer: unknown;
   explanation?: string | null;
+  aiFeedback?: unknown;
 }
 
 export interface PracticeAttemptResult {
@@ -75,6 +80,7 @@ export interface PracticeAttemptDetail extends PracticeAttemptSummary {
     id: string;
     answer: unknown;
     isCorrect: boolean;
+    aiFeedback?: unknown;
     createdAt: string;
     question: PracticeQuestion & { correctAnswer: unknown };
   }>;

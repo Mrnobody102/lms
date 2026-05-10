@@ -1,15 +1,22 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { PlayCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 interface VideoPlayerProps {
   videoUrl?: string;
   title: string;
+  onComplete?: () => void;
 }
 
-export function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
+export function VideoPlayer({ videoUrl, title, onComplete }: VideoPlayerProps) {
   const t = useTranslations('Student');
+  const hasTriggeredComplete = useRef(false);
+
+  useEffect(() => {
+    hasTriggeredComplete.current = false;
+  }, [videoUrl]);
 
   if (!videoUrl) {
     return (
@@ -63,7 +70,7 @@ export function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
     <div className="relative aspect-video bg-black rounded-[2rem] shadow-2xl shadow-primary/10 overflow-hidden border border-white/5 group transition-transform duration-500 hover:scale-[1.005]">
       {!safeSrc ? (
         <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-          <p className="text-sm font-medium">Video unavailable</p>
+          <p className="text-sm font-medium">{t('lesson.videoUnavailable')}</p>
         </div>
       ) : isYouTube ? (
         <iframe
@@ -75,8 +82,22 @@ export function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
           allowFullScreen
         ></iframe>
       ) : (
-        <video src={safeSrc} controls className="absolute inset-0 w-full h-full object-cover">
-          Your browser does not support the video tag.
+        <video
+          src={safeSrc}
+          controls
+          className="absolute inset-0 w-full h-full object-cover"
+          onTimeUpdate={(e) => {
+            const video = e.currentTarget;
+            if (onComplete && !hasTriggeredComplete.current && video.duration > 0) {
+              const progress = video.currentTime / video.duration;
+              if (progress >= 0.85) {
+                hasTriggeredComplete.current = true;
+                onComplete();
+              }
+            }
+          }}
+        >
+          {t('lesson.videoUnsupported')}
         </video>
       )}
 

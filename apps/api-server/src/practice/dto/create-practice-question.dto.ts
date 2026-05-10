@@ -35,7 +35,10 @@ export class CreatePracticeQuestionDto {
   @IsOptional()
   options?: unknown;
 
-  @ApiProperty({ description: 'Correct answer payload. Number for MCQ, string for fill blank.' })
+  @ApiProperty({
+    description:
+      'Correct answer payload. Number for MCQ, string for fill blank or AI reference answer.',
+  })
   @IsDefined()
   correctAnswer: unknown;
 

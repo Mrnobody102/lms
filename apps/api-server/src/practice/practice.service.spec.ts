@@ -136,6 +136,78 @@ describe('PracticeService', () => {
     );
   });
 
+  it('should attach aiFeedback for AI-evaluated answers', async () => {
+    const exerciseSet = {
+      id: 'set-1',
+      tenantId: 'tenant-1',
+      courseId: 'course-1',
+      questions: [
+        {
+          question: {
+            id: 'question-1',
+            type: PracticeQuestionType.AI_EVALUATED_TEXT,
+            prompt: 'Write a greeting',
+            correctAnswer: 'ni hao',
+            explanation: null,
+          },
+        },
+      ],
+    };
+    const prisma = {
+      practiceExerciseSet: {
+        findFirst: vi.fn().mockResolvedValue(exerciseSet),
+      },
+      practiceAttempt: {
+        create: vi.fn().mockResolvedValue({
+          id: 'attempt-1',
+          score: 1,
+          totalPoints: 1,
+          answers: [],
+        }),
+      },
+    };
+    const learningAccess = {
+      ensureCourseAccess: vi.fn().mockResolvedValue(undefined),
+    };
+    const service = new PracticeService(prisma as never, learningAccess as never);
+
+    const result = await service.submitAttempt(
+      'set-1',
+      'tenant-1',
+      { id: 'user-1', role: Role.STUDENT },
+      [{ questionId: 'question-1', answer: 'Ni Hao' }],
+    );
+
+    expect(result.result.answers[0]).toEqual(
+      expect.objectContaining({
+        aiFeedback: expect.objectContaining({
+          status: 'AUTO_REVIEWED',
+          mode: PracticeQuestionType.AI_EVALUATED_TEXT,
+          matched: true,
+          transcript: 'Ni Hao',
+        }),
+      }),
+    );
+    expect(prisma.practiceAttempt.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          answers: expect.objectContaining({
+            create: [
+              expect.objectContaining({
+                aiFeedback: expect.objectContaining({
+                  status: 'AUTO_REVIEWED',
+                  mode: PracticeQuestionType.AI_EVALUATED_TEXT,
+                  matched: true,
+                  transcript: 'Ni Hao',
+                }),
+              }),
+            ],
+          }),
+        }),
+      }),
+    );
+  });
+
   it('should reject unsupported practice answer shapes before persisting attempts', async () => {
     const prisma = {
       practiceExerciseSet: {
@@ -255,6 +327,12 @@ describe('PracticeService', () => {
           totalPoints: 2,
           answers: [
             {
+              aiFeedback: {
+                status: 'AUTO_REVIEWED',
+                mode: PracticeQuestionType.AI_EVALUATED_TEXT,
+                matched: true,
+                transcript: 'Ni Hao',
+              },
               question: {
                 id: 'question-1',
                 prompt: 'Choose one',
@@ -289,5 +367,11 @@ describe('PracticeService', () => {
     });
     expect(result.exerciseSet.title).toBe('Vocabulary');
     expect(result.answers[0].question.explanation).toBe('Option 2 is correct');
+    expect(result.answers[0].aiFeedback).toEqual({
+      status: 'AUTO_REVIEWED',
+      mode: PracticeQuestionType.AI_EVALUATED_TEXT,
+      matched: true,
+      transcript: 'Ni Hao',
+    });
   });
 });

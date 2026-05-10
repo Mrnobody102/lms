@@ -1,38 +1,32 @@
-# Plan: Kiến Trúc Học Tập Tương Lai (Post-AI Learning Paradigm 2026-2027)
+# Plan: Mô Hình Học Tập Lai Hiện Đại (Hybrid AI-Enhanced Learning 2026)
 
-> **Phân Tích Tầm Nhìn Chiến Lược:** Bạn đã chạm đến lõi của sự dịch chuyển giáo dục trong kỷ nguyên AI. Khi AI có thể code hộ, viết bài hộ, thì việc học theo kiểu "nhồi nhét kiến thức" (như học thuộc lòng syntax lập trình) đã trở nên vô nghĩa. Thay vào đó, con người năm 2026+ học để phát triển **Kỹ năng tư duy (Critical Thinking), Kỹ năng giao tiếp/Ngôn ngữ (Human Connection), và Kỹ năng điều phối AI**.
+> **Phân Tích Tầm Nhìn Chiến Lược:** Hệ thống đang dịch chuyển theo mô hình **Lai (Hybrid)**: Giữ vững các giá trị đào tạo truyền thống (Video bài giảng, Flashcards, Quizzes) nhưng được "siêu cấp hóa" bằng AI để tối ưu hiệu quả. Đây là hướng đi thực tế và bền vững nhất cho các trung tâm ngoại ngữ (đặc biệt là Tiếng Trung) - nơi cần sự kết hợp giữa kiến thức nền tảng vững chắc và khả năng thực hành giao tiếp linh hoạt.
 >
-> Cách học truyền thống (xem video 20 phút -> làm bài test máy móc) đã chết vì nó đi ngược lại với thói quen tiêu thụ thông tin "nhanh, gãy gọn, 도pamine cao" của thời đại TikTok/Reels. Hệ thống của chúng ta phải **Thích ứng hoàn toàn (Hyper-Adaptive)** và **Tương tác liên tục (Continuous Engagement)**.
-
-Dưới đây là thiết kế kiến trúc cho một nền tảng học tập **thực sự của tương lai**:
+> Hệ thống của chúng ta không thay thế giáo viên hay giáo trình truyền thống, mà đóng vai trò là một **Hệ sinh thái thông minh** hỗ trợ học viên mọi lúc, mọi nơi.
 
 ---
 
-## 🚀 Tầm Nhìn Kỷ Nguyên Hậu AI (Post-AI Era)
+## 🚀 Tầm Nhìn Mô Hình Học Tập Lai (Hybrid AI-Enhanced Era)
 
-### 1. Cái Chết Của "Bài Giảng Tuyến Tính" -> Kiến Trúc "Skill Tree & Micro-Cards"
+### 1. Sự Tiến Hóa Của Nội Dung Truyền Thống
 
-- **Thực trạng cũ:** Học viên bị ép học từ Bài 1 đến Bài 10 theo một đường thẳng.
-- **Tầm nhìn hệ thống:** Không còn "Bài 1, Bài 2". Hệ thống phân tích trình độ người học qua vài câu hỏi đầu vào, sau đó AI tự động "lắp ráp" một lộ trình riêng biệt (Adaptive Path).
-- Học viên chỉ học những điểm yếu của mình. Nếu đã biết, hệ thống tự động cho "Skip" (Bỏ qua).
+- **Video & Flashcards (Traditional Core):** Không chỉ là xem/nhìn. Video bài giảng được tích hợp AI bóc băng (Subtitles) để học viên có thể bôi đen từ vựng và nhận giải thích ngay lập tức. Flashcards (`micro_card`) được cá nhân hóa hoàn toàn dựa trên những từ học viên hay quên.
+- **Quizzes & Exams:** Chuyển đổi từ cơ chế "đợi chấm" sang "Instant Feedback". AI sẽ giải thích tại sao đáp án A đúng, đáp án B sai ngay khi học viên chọn.
 
-### 2. Định Dạng "Microlearning & Instant Action" (Học Siêu Tốc)
+### 2. Định Dạng "Microlearning" (Học Siêu Tốc)
 
-- **Thực trạng cũ:** Ngồi xem video dài 30 phút rồi ngủ gật.
-- **Tầm nhìn hệ thống:** Nội dung được xé nhỏ thành các "Thẻ học tập" (Cards) kéo dài 1-3 phút (giống cơ chế Reels/Shorts). Vừa xem xong 1 phút video là hệ thống yêu cầu TƯƠNG TÁC NGAY (nói vào mic, vuốt chọn đáp án, đưa ra quyết định). Tốc độ nhanh, gãy gọn, gây nghiện.
+- Nội dung được xé nhỏ thành các mẩu kiến thức 1-3 phút. Phù hợp với thói quen tiêu thụ thông tin hiện đại. Vừa xem xong 1 phút video là hệ thống yêu cầu TƯƠNG TÁC NGAY qua các Micro-cards để ghi nhớ sâu.
 
-### 3. Học Qua Mô Phỏng & Trải Nghiệm (Experiential Learning)
+### 3. Thực Hành Mô Phỏng Với AI (AI Roleplay & Assignments)
 
-- **Thực trạng cũ:** Trắc nghiệm A,B,C,D máy móc.
-- **Tầm nhìn hệ thống:** Học bằng cách "Quăng vào thực tế ảo".
-  - Thay vì học từ vựng "Sân bay", hệ thống mở AI Voice Chat: _"Bạn đang ở hải quan, hãy giải thích lý do nhập cảnh"_.
-  - Thay vì học lý thuyết "Quản lý nhân sự", hệ thống đưa ra tình huống: _"Nhân viên A đang bức xúc vì lương, bạn là sếp, hãy chat với nhân viên A (do AI đóng vai) để xoa dịu"_.
+- **Hội thoại đóng vai:** Sau khi học xong ngữ pháp/từ vựng truyền thống, học viên sẽ được "Quăng vào thực tế ảo" với AI. Ví dụ: Đóng vai mặc cả đi chợ, phỏng vấn xin việc bằng tiếng Trung.
+- **Chấm điểm đa phương thức:** Học viên nộp bài nói (Audio) hoặc bài viết, AI sẽ bóc tách từng lỗi phát âm, dùng từ và đưa ra lời phê chi tiết (Granular Feedback).
 
 ---
 
 ## 🛠 Lộ Trình Kỹ Thuật (Chuyển Đổi Từ Hiện Tại Sang Tương Lai)
 
-Để hiện thực hóa tầm nhìn vĩ đại này từ nền tảng codebase hiện tại (đang có Course, Unit, Lesson), chúng ta cần một chiến lược chuyển đổi khôn ngoan mà không cần đập bỏ toàn bộ Database ngay lập tức.
+{{ ... }}
 
 ### Phase 1: Nền Tảng Theo Dõi & "Cởi Trói" Trải Nghiệm (Nền móng bắt buộc)
 

@@ -25,8 +25,30 @@ const course = {
   ],
 };
 
+const practiceSet = {
+  id: 'practice-set-1',
+  courseId: course.id,
+  unitId: null,
+  title: 'AI speaking practice',
+  description: 'Practice a short greeting with AI review.',
+  isPublished: true,
+  course: { id: course.id, title: course.title },
+  unit: null,
+};
+
+const aiPracticeQuestion = {
+  id: 'question-ai-1',
+  type: 'AI_EVALUATED_AUDIO' as const,
+  prompt: 'Write a greeting',
+  options: null,
+  explanation: 'Keep the greeting short and natural.',
+  skillTags: ['speaking'],
+};
+
 async function installStudentApiMocks(page: Page) {
   let currentUser: typeof studentUser | null = null;
+  let hasPracticeAttempt = false;
+  let latestPracticeAnswer = 'Ni Hao';
   let progress = [] as Array<{
     id: string;
     lessonId: string;
@@ -46,6 +68,73 @@ async function installStudentApiMocks(page: Page) {
     'access-control-allow-methods': 'GET,POST,OPTIONS',
     'access-control-allow-headers': 'content-type,x-tenant-id,x-csrf-token',
   };
+
+  const buildAiFeedback = () => ({
+    status: 'AUTO_REVIEWED',
+    mode: aiPracticeQuestion.type,
+    matched: true,
+    transcript: latestPracticeAnswer,
+    summary: 'Greeting recognized by the AI tutor.',
+  });
+
+  const buildPracticeAttemptSummary = () => ({
+    id: 'attempt-1',
+    score: 1,
+    totalPoints: 1,
+    submittedAt: '2026-04-21T12:15:00.000Z',
+    exerciseSet: {
+      id: practiceSet.id,
+      title: practiceSet.title,
+      course: practiceSet.course,
+      unit: practiceSet.unit,
+    },
+  });
+
+  const buildPracticeAttemptResult = () => ({
+    attempt: {
+      id: 'attempt-1',
+      score: 1,
+      totalPoints: 1,
+      submittedAt: '2026-04-21T12:15:00.000Z',
+    },
+    result: {
+      score: 1,
+      totalPoints: 1,
+      percentage: 100,
+      answers: [
+        {
+          questionId: aiPracticeQuestion.id,
+          prompt: aiPracticeQuestion.prompt,
+          answer: latestPracticeAnswer,
+          isCorrect: true,
+          correctAnswer: 'Ni hao',
+          explanation: aiPracticeQuestion.explanation,
+          aiFeedback: buildAiFeedback(),
+        },
+      ],
+    },
+  });
+
+  const buildPracticeAttemptDetail = () => ({
+    ...buildPracticeAttemptSummary(),
+    exerciseSet: {
+      ...buildPracticeAttemptSummary().exerciseSet,
+      description: practiceSet.description,
+    },
+    answers: [
+      {
+        id: 'answer-1',
+        answer: latestPracticeAnswer,
+        isCorrect: true,
+        aiFeedback: buildAiFeedback(),
+        createdAt: '2026-04-21T12:15:00.000Z',
+        question: {
+          ...aiPracticeQuestion,
+          correctAnswer: 'Ni hao',
+        },
+      },
+    ],
+  });
 
   await page.route('**/api/**', async (route) => {
     const request = route.request();
@@ -208,6 +297,57 @@ async function installStudentApiMocks(page: Page) {
       return json(200, progress[0]);
     }
 
+    if (path.endsWith('/api/practice/exercise-sets') && method === 'GET') {
+      return json(200, [
+        {
+          ...practiceSet,
+          _count: { questions: 1, attempts: hasPracticeAttempt ? 1 : 0 },
+        },
+      ]);
+    }
+
+    if (path.endsWith('/api/practice/exercise-sets/practice-set-1') && method === 'GET') {
+      return json(200, {
+        ...practiceSet,
+        questions: [
+          {
+            id: 'practice-question-link-1',
+            order: 1,
+            question: aiPracticeQuestion,
+          },
+        ],
+      });
+    }
+
+    if (path.endsWith('/api/practice/exercise-sets/practice-set-1/attempts') && method === 'POST') {
+      const payload = request.postDataJSON() as {
+        answers?: Array<{ questionId: string; answer: unknown }>;
+      };
+      const submittedAnswer = payload.answers?.find(
+        (answer) => answer.questionId === aiPracticeQuestion.id,
+      )?.answer;
+
+      latestPracticeAnswer = typeof submittedAnswer === 'string' ? submittedAnswer : 'Ni Hao';
+      hasPracticeAttempt = true;
+
+      return json(201, buildPracticeAttemptResult());
+    }
+
+    if (path.endsWith('/api/practice/attempts') && method === 'GET') {
+      return json(200, hasPracticeAttempt ? [buildPracticeAttemptSummary()] : []);
+    }
+
+    if (path.endsWith('/api/practice/attempts/attempt-1') && method === 'GET') {
+      if (!hasPracticeAttempt) {
+        return json(404, {
+          statusCode: 404,
+          message: 'Practice attempt not found',
+        });
+      }
+
+      return json(200, buildPracticeAttemptDetail());
+    }
+
     return route.continue();
   });
 }
@@ -284,4 +424,32 @@ test('student can view the learning dashboard summary', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'HSK 1 Basics' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Resume lesson' })).toBeVisible();
   await expect(page.getByText('0 sessions')).toBeVisible();
+});
+
+test('student can submit AI practice and review AI feedback', async ({ page }) => {
+  await installStudentApiMocks(page);
+
+  await page.goto('/en/login');
+  await waitForHydratedForm(page);
+  await page.locator('input[type="email"]').fill('student@example.com');
+  await page.locator('input[type="password"]').fill('Student@123');
+  await page.getByRole('button', { name: 'Login Now' }).click();
+
+  await expect(page).toHaveURL(/\/en\/courses$/, { timeout: 15000 });
+  await page.goto('/en/practice');
+  await expect(page.getByRole('heading', { name: 'AI speaking practice' })).toBeVisible();
+
+  await page.getByRole('link', { name: 'Start practice' }).click();
+  await expect(page).toHaveURL(/\/en\/practice\/practice-set-1$/, { timeout: 15000 });
+  await page.getByPlaceholder('Speak or type your transcript').fill('Ni Hao');
+  await page.getByRole('button', { name: 'Submit answers' }).click();
+
+  await expect(page.getByText('AI coaching feedback')).toBeVisible();
+  await expect(page.getByText('Transcript: Ni Hao')).toBeVisible();
+  await expect(page.getByText('Reviewed by AI tutor')).toBeVisible();
+
+  await page.getByRole('link', { name: 'Review attempt' }).click();
+  await expect(page).toHaveURL(/\/en\/practice\/attempts\/attempt-1$/, { timeout: 15000 });
+  await expect(page.getByText('AI coaching feedback')).toBeVisible();
+  await expect(page.getByText('Transcript: Ni Hao')).toBeVisible();
 });

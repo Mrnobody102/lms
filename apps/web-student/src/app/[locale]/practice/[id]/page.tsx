@@ -12,6 +12,7 @@ import {
   PracticeQuestion,
 } from '@/lib/practice-api';
 import { Link } from '@/navigation';
+import { AIEvaluationInput } from '@/components/lessons/ai-evaluation-input';
 
 export default function PracticeAttemptPage() {
   const t = useTranslations('Student');
@@ -203,6 +204,7 @@ function QuestionCard({
 }) {
   const t = useTranslations('Student');
   const options = getOptions(question.options);
+  const isAiQuestion = isAiQuestionType(question.type);
 
   return (
     <section className="rounded-md border bg-card p-5">
@@ -215,7 +217,11 @@ function QuestionCard({
             <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
               {question.type === 'MULTIPLE_CHOICE'
                 ? t('practice.multipleChoice')
-                : t('practice.fillBlank')}
+                : question.type === 'FILL_BLANK'
+                  ? t('practice.fillBlank')
+                  : question.type === 'AI_EVALUATED_AUDIO'
+                    ? t('practice.aiAudio')
+                    : t('practice.aiText')}
             </span>
             {question.skillTags.map((tag) => (
               <span
@@ -249,7 +255,7 @@ function QuestionCard({
             </label>
           ))}
         </div>
-      ) : (
+      ) : question.type === 'FILL_BLANK' ? (
         <input
           value={value}
           disabled={disabled}
@@ -257,9 +263,17 @@ function QuestionCard({
           placeholder={t('practice.fillBlankPlaceholder')}
           className="h-11 w-full rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
         />
+      ) : (
+        <AIEvaluationInput
+          type={question.type}
+          value={value}
+          disabled={disabled}
+          onChange={onChange}
+          aiFeedback={feedback?.aiFeedback}
+        />
       )}
 
-      {feedback && (
+      {feedback && !isAiQuestion && (
         <div
           className={`mt-4 rounded-md border p-4 text-sm ${
             feedback.isCorrect
@@ -340,6 +354,10 @@ function ResultSummary({
 
 function getOptions(value: unknown) {
   return Array.isArray(value) ? value.map((item) => String(item)) : [];
+}
+
+function isAiQuestionType(type: PracticeQuestion['type']) {
+  return type === 'AI_EVALUATED_AUDIO' || type === 'AI_EVALUATED_TEXT';
 }
 
 function formatAnswer(question: PracticeQuestion | undefined, value: unknown) {

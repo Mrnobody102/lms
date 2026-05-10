@@ -12,7 +12,7 @@ export default function CoursesPage() {
 
   return (
     <div className="min-h-screen font-sans">
-      <StudentNav />
+      <StudentNav showLinks />
 
       <main className="max-w-7xl mx-auto px-6 py-12">
         <header className="mb-10">

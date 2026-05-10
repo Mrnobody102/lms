@@ -7,6 +7,7 @@ export const ANSWER_LIMITS = {
   maxOptions: 20,
   maxOptionLength: 1000,
   maxFillBlankLength: 1000,
+  maxAiAnswerLength: 5000,
   maxSkillTags: 10,
   maxSubmittedAnswers: 200,
   maxPracticeSetQuestions: 100,
@@ -35,7 +36,9 @@ export function normalizeQuestionPayload(input: {
   }
 
   return {
-    correctAnswer: normalizeFillBlankAnswer(input.correctAnswer, 'Correct answer'),
+    correctAnswer: isAiEvaluatedQuestion(input.type)
+      ? normalizeAiAnswer(input.correctAnswer, 'Correct answer')
+      : normalizeFillBlankAnswer(input.correctAnswer, 'Correct answer'),
   };
 }
 
@@ -49,7 +52,9 @@ export function normalizeSubmittedAnswer(input: {
     return normalizeMultipleChoiceAnswer(input.answer, options.length);
   }
 
-  return normalizeFillBlankAnswer(input.answer, 'Submitted answer');
+  return isAiEvaluatedQuestion(input.type)
+    ? normalizeAiAnswer(input.answer, 'Submitted answer')
+    : normalizeFillBlankAnswer(input.answer, 'Submitted answer');
 }
 
 export function isNormalizedAnswerCorrect(input: {
@@ -126,6 +131,25 @@ function normalizeFillBlankAnswer(value: unknown, label: string): string {
   return normalized;
 }
 
+function normalizeAiAnswer(value: unknown, label: string): string {
+  if (typeof value !== 'string') {
+    throw new BadRequestException(`${label} must be text`);
+  }
+
+  const normalized = value.trim();
+  if (!normalized) {
+    throw new BadRequestException(`${label} must not be empty`);
+  }
+
+  if (normalized.length > ANSWER_LIMITS.maxAiAnswerLength) {
+    throw new BadRequestException(
+      `${label} must be at most ${ANSWER_LIMITS.maxAiAnswerLength} characters`,
+    );
+  }
+
+  return normalized;
+}
+
 function normalizeText(value: unknown): string {
   return String(value ?? '')
     .trim()
@@ -134,4 +158,8 @@ function normalizeText(value: unknown): string {
 
 function isMultipleChoice(type: AnswerQuestionType): boolean {
   return String(type) === 'MULTIPLE_CHOICE';
+}
+
+function isAiEvaluatedQuestion(type: AnswerQuestionType): boolean {
+  return String(type) === 'AI_EVALUATED_AUDIO' || String(type) === 'AI_EVALUATED_TEXT';
 }

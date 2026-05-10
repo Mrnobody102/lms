@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { Lesson } from '../../lib/course-api';
 import { VideoPlayer } from './video-player';
 import { TextContent } from './text-content';
+import { MicroCardContent } from './micro-card-content';
 
 const QuizContent = dynamic(
   () => import('./quiz-content').then((m) => ({ default: m.QuizContent })),
@@ -18,27 +19,45 @@ const QuizContent = dynamic(
   },
 );
 
+const SimulationContent = dynamic(
+  () => import('./simulation-content').then((m) => ({ default: m.SimulationContent })),
+  {
+    loading: () => (
+      <div className="p-12 rounded-[2rem] bg-card/30 flex flex-col items-center justify-center">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    ),
+  },
+);
+
 interface LessonContentProps {
   lesson: Lesson;
+  onComplete?: () => void;
 }
 
-export function LessonContent({ lesson }: LessonContentProps) {
+export function LessonContent({ lesson, onComplete }: LessonContentProps) {
   const t = useTranslations('Student');
 
   const renderContent = () => {
     switch (lesson.type) {
       case 'video':
-        return <VideoPlayer videoUrl={lesson.videoUrl} title={lesson.title} />;
+        return (
+          <VideoPlayer videoUrl={lesson.videoUrl} title={lesson.title} onComplete={onComplete} />
+        );
       case 'text':
         return <TextContent content={lesson.content} title={lesson.title} />;
       case 'quiz':
         return <QuizContent quiz={lesson.quiz} />;
+      case 'micro_card':
+        return <MicroCardContent content={lesson.content ?? undefined} />;
+      case 'simulation':
+        return <SimulationContent aiPrompt={lesson.aiPrompt ?? undefined} />;
       default:
         return (
           <div className="p-12 rounded-[2rem] bg-muted flex flex-col items-center justify-center text-center">
             <BookOpen className="w-12 h-12 mb-4 opacity-20" />
             <p className="font-bold text-muted-foreground uppercase tracking-widest text-xs">
-              Unsupported lesson type
+              {t('lesson.unsupportedType')}
             </p>
           </div>
         );

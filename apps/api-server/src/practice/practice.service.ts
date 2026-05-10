@@ -7,6 +7,7 @@ import {
   normalizeQuestionPayload,
   normalizeSubmittedAnswer,
 } from '../common/utils/answer-validation.util';
+import { AiEvaluationService } from './ai-evaluation.service';
 
 interface PracticeUser {
   id: string;
@@ -23,6 +24,7 @@ export class PracticeService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly learningAccess: LearningAccessService,
+    private readonly aiEvaluation: AiEvaluationService = new AiEvaluationService(),
   ) {}
 
   async createQuestion(
@@ -307,6 +309,7 @@ export class PracticeService {
     const results = questions.map((question) => {
       const answer = answerByQuestion.get(question.id);
       const isCorrect = answer === undefined ? false : this.scoreAnswer(question, answer);
+      const aiFeedback = this.buildAiFeedback(question, answer);
       return {
         questionId: question.id,
         prompt: question.prompt,
@@ -314,6 +317,7 @@ export class PracticeService {
         isCorrect,
         correctAnswer: question.correctAnswer,
         explanation: question.explanation,
+        aiFeedback,
       };
     });
     const score = results.filter((result) => result.isCorrect).length;
@@ -334,6 +338,9 @@ export class PracticeService {
               questionId: result.questionId,
               answer: result.answer as Prisma.InputJsonValue,
               isCorrect: result.isCorrect,
+              ...(result.aiFeedback
+                ? { aiFeedback: result.aiFeedback as unknown as Prisma.InputJsonValue }
+                : {}),
             })),
         },
       },
@@ -448,6 +455,25 @@ export class PracticeService {
     answer: number | string,
   ) {
     return isNormalizedAnswerCorrect({
+      type: question.type,
+      answer,
+      correctAnswer: question.correctAnswer,
+    });
+  }
+
+  private buildAiFeedback(
+    question: { type: PracticeQuestionType; correctAnswer: unknown },
+    answer: number | string | undefined,
+  ) {
+    if (
+      answer === undefined ||
+      typeof answer !== 'string' ||
+      !this.aiEvaluation.supportsPracticeQuestion(question.type)
+    ) {
+      return undefined;
+    }
+
+    return this.aiEvaluation.evaluatePracticeAnswer({
       type: question.type,
       answer,
       correctAnswer: question.correctAnswer,

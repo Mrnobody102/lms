@@ -22,6 +22,11 @@ export function LessonSidebar({
   onClose,
 }: LessonSidebarProps) {
   const t = useTranslations('Student');
+  const completedLessons = progress.filter((p) => p.status === ProgressStatus.COMPLETED).length;
+  const totalLessons = course.lessons?.length ?? 0;
+  const completionPercentage =
+    totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+
   const units = course.units ?? [];
   const groupedLessonIds = new Set(
     units.flatMap((unit) => (unit.lessons ?? []).map((lesson) => lesson.id)),
@@ -53,13 +58,32 @@ export function LessonSidebar({
         ${!isSidebarOpen && 'lg:hidden shadow-none border-l-0'}
       `}
       >
-        <div className="p-8 border-b flex items-center justify-between shrink-0 bg-muted/20">
-          <h3 className="font-black text-xl uppercase tracking-tighter text-foreground/80">
-            {t('lesson.curriculum')}
-          </h3>
-          <button onClick={onClose} className="p-2 hover:bg-muted rounded-xl lg:hidden border">
-            <X className="w-5 h-5" />
-          </button>
+        <div className="p-8 border-b space-y-6 shrink-0 bg-muted/20">
+          <div className="flex items-center justify-between">
+            <h3 className="font-black text-xl uppercase tracking-tighter text-foreground/80">
+              {t('lesson.curriculum')}
+            </h3>
+            <button onClick={onClose} className="p-2 hover:bg-muted rounded-xl lg:hidden border">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+              <span>
+                {completionPercentage}% {t('lesson.completed').toUpperCase()}
+              </span>
+              <span>
+                {completedLessons}/{totalLessons}
+              </span>
+            </div>
+            <div className="h-2 w-full bg-muted rounded-full overflow-hidden border">
+              <div
+                className="h-full bg-primary transition-all duration-1000 ease-out"
+                style={{ width: `${completionPercentage}%` }}
+              />
+            </div>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-6 space-y-2">

@@ -1,10 +1,11 @@
 'use client';
 
-import { ArrowLeft, Menu, X } from 'lucide-react';
+import { ArrowLeft, Menu, X, Flame } from 'lucide-react';
 import { Link } from '../../navigation';
 import { ThemeToggle, LanguageToggle } from '@repo/ui';
 import { useTranslations } from 'next-intl';
 import { Course } from '../../lib/course-api';
+import { useProgressSummary } from '../../hooks/use-progress';
 
 interface LessonHeaderProps {
   course: Course;
@@ -14,6 +15,8 @@ interface LessonHeaderProps {
 
 export function LessonHeader({ course, isSidebarOpen, toggleSidebar }: LessonHeaderProps) {
   const t = useTranslations('Student');
+  const { data: progressSummary } = useProgressSummary();
+  const streak = progressSummary?.totals?.currentStreak ?? 0;
 
   return (
     <header className="h-16 border-b bg-background/80 backdrop-blur-xl px-6 flex items-center justify-between shrink-0 z-50">
@@ -39,6 +42,15 @@ export function LessonHeader({ course, isSidebarOpen, toggleSidebar }: LessonHea
       </div>
 
       <div className="flex items-center gap-2">
+        {streak > 0 && (
+          <div
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/10 text-orange-500 rounded-full font-bold text-sm border border-orange-500/20 mr-2"
+            title={`${streak} Day Streak!`}
+          >
+            <Flame className="w-4 h-4 animate-pulse" />
+            <span>{streak}</span>
+          </div>
+        )}
         <div className="hidden sm:flex items-center gap-1 bg-muted/50 p-1 rounded-xl border">
           <ThemeToggle label={t('themeToggle')} />
           <LanguageToggle />

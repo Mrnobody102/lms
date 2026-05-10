@@ -3,8 +3,9 @@ import api from './api';
 export interface Lesson {
   id: string;
   title: string;
-  type: 'video' | 'text' | 'quiz';
+  type: 'video' | 'text' | 'quiz' | 'simulation' | 'micro_card';
   content?: string;
+  aiPrompt?: string;
   videoUrl?: string;
   duration: number;
   order: number;

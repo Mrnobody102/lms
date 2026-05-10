@@ -44,4 +44,15 @@ describe('answer validation utilities', () => {
       }),
     ).toBe(true);
   });
+
+  it('should normalize AI-evaluated answers with the extended text limit', () => {
+    const longAnswer = 'x'.repeat(1500);
+
+    expect(
+      normalizeSubmittedAnswer({
+        type: PracticeQuestionType.AI_EVALUATED_TEXT,
+        answer: ` ${longAnswer} `,
+      }),
+    ).toBe(longAnswer);
+  });
 });

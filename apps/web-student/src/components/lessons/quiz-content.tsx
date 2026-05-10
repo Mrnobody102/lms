@@ -17,12 +17,10 @@ interface QuizContentProps {
 export function QuizContent({ quiz }: QuizContentProps) {
   const t = useTranslations('Student');
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
-  const [showResults, setShowResults] = useState(false);
 
   // Reset state when quiz changes (e.g., navigating between lessons)
   useEffect(() => {
     setSelectedAnswers({});
-    setShowResults(false);
   }, [quiz]);
 
   if (!quiz || !quiz.questions.length) {
@@ -35,7 +33,7 @@ export function QuizContent({ quiz }: QuizContentProps) {
   }
 
   const handleOptionSelect = (qIdx: number, oIdx: number) => {
-    if (showResults) return;
+    if (selectedAnswers[qIdx] !== undefined) return; // Prevent changing answer
     setSelectedAnswers((prev) => ({ ...prev, [qIdx]: oIdx }));
   };
 
@@ -73,11 +71,12 @@ export function QuizContent({ quiz }: QuizContentProps) {
               {q.options.map((option, oIdx) => {
                 const isSelected = selectedAnswers[qIdx] === oIdx;
                 const isCorrect = q.correctAnswer === oIdx;
+                const isAnswered = selectedAnswers[qIdx] !== undefined;
 
                 let containerClass =
                   'p-5 rounded-2xl border-2 transition-all duration-300 font-bold text-sm flex items-center justify-between relative overflow-hidden group/item ';
 
-                if (showResults) {
+                if (isAnswered) {
                   if (isSelected && isCorrect)
                     containerClass +=
                       'bg-emerald-500/10 border-emerald-500 text-emerald-600 shadow-lg shadow-emerald-500/10';
@@ -99,15 +98,15 @@ export function QuizContent({ quiz }: QuizContentProps) {
                   <button
                     key={oIdx}
                     onClick={() => handleOptionSelect(qIdx, oIdx)}
-                    disabled={showResults}
+                    disabled={isAnswered}
                     className={containerClass}
                   >
                     <span className="relative z-10">{option}</span>
                     <div className="relative z-10">
-                      {showResults && isCorrect && (
+                      {isAnswered && isCorrect && (
                         <CheckCircle2 className="w-5 h-5 animate-bounce" />
                       )}
-                      {!showResults && isSelected && (
+                      {!isAnswered && isSelected && (
                         <ArrowRightCircle className="w-5 h-5 animate-pulse" />
                       )}
                     </div>
@@ -119,15 +118,7 @@ export function QuizContent({ quiz }: QuizContentProps) {
         ))}
       </div>
 
-      {!showResults ? (
-        <button
-          onClick={() => setShowResults(true)}
-          disabled={Object.keys(selectedAnswers).length < quiz.questions.length}
-          className="w-full py-5 rounded-[2rem] bg-foreground text-background font-black text-lg shadow-2xl transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-foreground/90 mt-10 focus:outline-none focus:ring-4 focus:ring-primary/20"
-        >
-          {t('quiz.checkAnswers')}
-        </button>
-      ) : (
+      {Object.keys(selectedAnswers).length === quiz.questions.length && (
         <div className="p-10 rounded-[2rem] bg-emerald-500 text-white shadow-2xl shadow-emerald-500/30 flex flex-col items-center justify-center text-center transition-all duration-500 mt-10 scale-in-center">
           <Trophy className="w-16 h-16 mb-6" />
           <h3 className="text-3xl font-black mb-2">{t('quiz.greatEffort')}</h3>
@@ -139,7 +130,6 @@ export function QuizContent({ quiz }: QuizContentProps) {
           </p>
           <button
             onClick={() => {
-              setShowResults(false);
               setSelectedAnswers({});
             }}
             className="px-8 py-3 bg-white/20 hover:bg-white/30 rounded-xl font-bold text-sm transition-colors focus:outline-none focus:ring-4 focus:ring-white/20"

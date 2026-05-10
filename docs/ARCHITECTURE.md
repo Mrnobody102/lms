@@ -114,13 +114,15 @@ Luồng nội dung học tập hiện tại mang tính tuyến tính: `Course ->
 - Course report trả enrollment progress, completion rate, activity sessions và tracked time.
 - Admin overview có activity trend 7 ngày và accuracy tổng hợp từ practice/exam attempts.
 
-## Hệ Sinh Thái AI Đa Ngành (Domain-Agnostic AI Architecture)
+## Mô Hình Học Tập Lai (Hybrid AI-Enhanced Learning)
 
-Kiến trúc hệ thống đang được thiết kế lại để hỗ trợ **Kỷ Nguyên Hậu AI (2026+)** với tính tương thích đa ngành (không hardcode vào bất kỳ ngôn ngữ hay môn học nào):
+Kiến trúc hệ thống được thiết kế để kết hợp hài hòa giữa phương pháp học truyền thống và sức mạnh của AI, đặc biệt tối ưu cho đào tạo ngôn ngữ (Tiếng Trung) nhưng vẫn giữ tính đa ngành:
 
-- **Contextual AI Tutor**: Bảng `Course` chứa `aiSettings` JSON để config Prompt và loại trợ lý. Hệ thống cho phép học viên bôi đen nội dung (text, video subtitle) và nhận giải thích từ AI theo ngữ cảnh khóa học (VD: Dịch tiếng Trung hoặc Review Code).
-- **Experiential Simulations**: Bảng `Lesson` mở rộng với `type=simulation` và field `aiPrompt`. Thay vì học lý thuyết, học viên giao tiếp voice/text với AI đóng vai theo kịch bản để hoàn thành mục tiêu giao tiếp thực tế.
-- **Multi-modal Assignments**: Practice và Exam support các câu hỏi dạng `AI_EVALUATED_AUDIO` và `AI_EVALUATED_TEXT`. Học viên nộp bài qua giọng nói hoặc file, AI (vd: Gemini Multimodal) sẽ chấm điểm theo Rubric và trả về `aiFeedback` chi tiết.
+- **Traditional Core (Tĩnh)**: Duy trì các cột trụ vững chắc như Video bài giảng, Flashcards (`micro_card`), Trắc nghiệm (`quiz`) và Đề thi chuẩn hóa (`exam`).
+- **AI-Enhanced Layers (Động)**:
+  - **Contextual AI Tutor**: Bảng `Course` chứa `aiSettings` JSON để config Prompt. AI hiểu nội dung bài học để giải thích ngữ pháp, từ vựng ngay khi học viên cần.
+  - **Experiential Simulations**: Bảng `Lesson` mở rộng với `type=simulation` và field `aiPrompt`. Học viên đóng vai hội thoại với AI để thực hành giao tiếp thực tế.
+  - **Multi-modal Assignments**: Practice và Exam support các câu hỏi dạng `AI_EVALUATED_AUDIO` và `AI_EVALUATED_TEXT`. AI (vd: Gemini Multimodal) chấm điểm và trả về `aiFeedback` chi tiết.
 
 ## Tenant Và Runtime Policy
 
