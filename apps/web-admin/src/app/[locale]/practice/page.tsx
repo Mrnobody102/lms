@@ -247,7 +247,15 @@ export default function AdminPracticePage() {
                             />
                             <div className="min-w-0 flex-1">
                               <div className="flex flex-wrap items-center gap-2">
-                                <Badge variant="outline">{question.type}</Badge>
+                                <Badge variant="outline">
+                                  {question.type === 'MULTIPLE_CHOICE'
+                                    ? t('multipleChoice')
+                                    : question.type === 'FILL_BLANK'
+                                      ? t('fillBlank')
+                                      : question.type === 'AI_EVALUATED_AUDIO'
+                                        ? t('aiEvaluatedAudio')
+                                        : t('aiEvaluatedText')}
+                                </Badge>
                                 {question.skillTags.map((tag) => (
                                   <Badge key={tag} variant="secondary">
                                     {tag}
@@ -318,7 +326,13 @@ export default function AdminPracticePage() {
                         >
                           <option value="MULTIPLE_CHOICE">{t('multipleChoice')}</option>
                           <option value="FILL_BLANK">{t('fillBlank')}</option>
+                          <option value="AI_EVALUATED_AUDIO">{t('aiEvaluatedAudio')}</option>
+                          <option value="AI_EVALUATED_TEXT">{t('aiEvaluatedText')}</option>
                         </select>
+                        {(questionType === 'AI_EVALUATED_AUDIO' ||
+                          questionType === 'AI_EVALUATED_TEXT') && (
+                          <p className="text-xs text-muted-foreground">{t('aiQuestionHint')}</p>
+                        )}
                       </div>
 
                       <div className="space-y-1.5">

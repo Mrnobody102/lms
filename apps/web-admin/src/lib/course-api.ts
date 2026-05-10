@@ -1,15 +1,24 @@
 import api from './api';
 
+export type LessonType = 'video' | 'text' | 'quiz' | 'simulation' | 'micro_card';
+
+export interface CourseAiSettings {
+  enabled: boolean;
+  prompt: string;
+}
+
 export interface Lesson {
   id: string;
   title: string;
-  type: 'video' | 'text' | 'quiz';
+  type: LessonType;
   content?: string;
+  aiPrompt?: string | null;
   videoUrl?: string;
   duration: number;
   order: number;
   courseId: string;
   unitId?: string | null;
+  quiz?: unknown;
 }
 
 export interface CourseUnit {
@@ -25,11 +34,22 @@ export interface Course {
   id: string;
   title: string;
   description?: string | null;
+  aiSettings?: CourseAiSettings | null;
   lessons: Lesson[];
   units?: CourseUnit[];
   enrollments?: CourseEnrollment[];
   _count?: { lessons: number };
 }
+
+export interface CourseCreateInput {
+  title: string;
+  slug?: string;
+  description?: string;
+  totalDuration?: number;
+  aiSettings?: CourseAiSettings;
+}
+
+export type CourseUpdateInput = Partial<CourseCreateInput>;
 
 export interface CourseEnrollment {
   id: string;
@@ -108,16 +128,11 @@ export const courseApi = {
     return api.get(`/courses/${id}`).then((r) => r.data as Course);
   },
 
-  createCourse(data: {
-    title: string;
-    slug?: string;
-    description?: string;
-    totalDuration?: number;
-  }) {
+  createCourse(data: CourseCreateInput) {
     return api.post('/courses', data).then((r) => r.data as Course);
   },
 
-  updateCourse(id: string, data: Partial<Course>) {
+  updateCourse(id: string, data: CourseUpdateInput) {
     return api.patch(`/courses/${id}`, data).then((r) => r.data as Course);
   },
 
@@ -178,3 +193,22 @@ export const courseApi = {
       .then((r) => r.data as PaginatedResponse<Lesson>);
   },
 };
+
+export function normalizeCourseAiSettings(value: unknown): CourseAiSettings {
+  if (!value || typeof value !== 'object') {
+    return { enabled: false, prompt: '' };
+  }
+
+  const record = value as Record<string, unknown>;
+  return {
+    enabled: Boolean(record.enabled),
+    prompt: typeof record.prompt === 'string' ? record.prompt : '',
+  };
+}
+
+export function buildCourseAiSettings(enabled: boolean, prompt: string): CourseAiSettings {
+  return {
+    enabled,
+    prompt: prompt.trim(),
+  };
+}

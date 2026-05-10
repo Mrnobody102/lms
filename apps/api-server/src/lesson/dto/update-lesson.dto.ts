@@ -45,7 +45,7 @@ export class UpdateLessonDto {
   unitId?: string | null;
 
   @ApiPropertyOptional({ description: 'Lesson type' })
-  @IsEnum(LessonType, { message: 'Type must be one of: video, text, quiz' })
+  @IsEnum(LessonType, { message: 'Type must be one of: video, text, quiz, simulation, micro_card' })
   @IsOptional()
   type?: LessonType;
 
@@ -59,4 +59,10 @@ export class UpdateLessonDto {
   @ValidateIf((_object, value) => value !== undefined && value !== null)
   @IsObject()
   quiz?: object | null;
+
+  @ApiPropertyOptional({ description: 'AI prompt for simulation or micro-card lessons' })
+  @IsString()
+  @IsOptional()
+  @MaxLength(5000, { message: 'AI prompt must be at most 5000 characters' })
+  aiPrompt?: string;
 }

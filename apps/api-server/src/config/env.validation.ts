@@ -83,6 +83,15 @@ export const envSchema = z
     // Redis
     REDIS_URL: redisUrlSchema.optional(),
 
+    // AI gateway. Keep disabled until an endpoint/API key is configured.
+    AI_PROVIDER: z.enum(['off', 'gateway']).default('off'),
+    AI_ENDPOINT_URL: z.string().url().optional(),
+    AI_API_KEY: z.string().optional(),
+    AI_MODEL: z.string().optional(),
+    AI_TIMEOUT_MS: z.coerce.number().min(1000).max(120000).default(15000),
+    AI_MAX_OUTPUT_TOKENS: z.coerce.number().min(1).max(8192).default(512),
+    AI_TEMPERATURE: z.coerce.number().min(0).max(2).default(0.2),
+
     // MCP
     MCP_ENABLED: booleanEnvSchema,
     MCP_API_KEY: z.string().min(32).optional(),
@@ -108,6 +117,14 @@ export const envSchema = z
         code: z.ZodIssueCode.custom,
         path: ['CORS_ORIGINS'],
         message: 'CORS_ORIGINS is required in production',
+      });
+    }
+
+    if (env.AI_PROVIDER === 'gateway' && !env.AI_ENDPOINT_URL) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['AI_ENDPOINT_URL'],
+        message: 'AI_ENDPOINT_URL is required when AI_PROVIDER=gateway',
       });
     }
 

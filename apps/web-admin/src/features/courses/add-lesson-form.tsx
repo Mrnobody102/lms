@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { CourseUnit, Lesson } from '@/lib/course-api';
+import { CourseUnit, Lesson, LessonType } from '@/lib/course-api';
 import {
   Button,
   Input,
@@ -37,9 +37,10 @@ export function AddLessonDialog({
   const t = useTranslations('Admin');
 
   const [title, setTitle] = useState('');
-  const [type, setType] = useState<'video' | 'text' | 'quiz'>('video');
+  const [type, setType] = useState<LessonType>('video');
   const [duration, setDuration] = useState(10);
   const [unitId, setUnitId] = useState<string | null>(selectedUnitId ?? units[0]?.id ?? null);
+  const [aiPrompt, setAiPrompt] = useState('');
 
   useEffect(() => {
     if (open) {
@@ -55,12 +56,14 @@ export function AddLessonDialog({
       duration,
       order: existingLessonsCount + 1,
       unitId,
+      aiPrompt: aiPrompt.trim() || undefined,
     });
     if (success) {
       setTitle('');
       setType('video');
       setDuration(10);
       setUnitId(selectedUnitId ?? units[0]?.id ?? null);
+      setAiPrompt('');
       onOpenChange(false);
     }
   };
@@ -71,6 +74,7 @@ export function AddLessonDialog({
       setType('video');
       setDuration(10);
       setUnitId(selectedUnitId ?? units[0]?.id ?? null);
+      setAiPrompt('');
     }
     onOpenChange(isOpen);
   };
@@ -113,19 +117,19 @@ export function AddLessonDialog({
 
           <div className="space-y-1.5">
             <Label className="text-sm">{t('contentType')}</Label>
-            <div className="flex gap-2">
-              {(['video', 'text', 'quiz'] as const).map((t) => (
+            <div className="grid grid-cols-2 gap-2">
+              {lessonTypeOptions.map((option) => (
                 <button
-                  key={t}
+                  key={option.value}
                   type="button"
-                  onClick={() => setType(t)}
-                  className={`flex-1 py-2 rounded-lg border text-xs font-medium capitalize transition-all ${
-                    type === t
+                  onClick={() => setType(option.value)}
+                  className={`rounded-lg border px-3 py-2 text-xs font-medium transition-all ${
+                    type === option.value
                       ? 'border-primary bg-primary text-primary-foreground'
                       : 'border-input bg-background hover:bg-muted'
                   }`}
                 >
-                  {t}
+                  {t(option.labelKey)}
                 </button>
               ))}
             </div>
@@ -139,6 +143,16 @@ export function AddLessonDialog({
               value={duration}
               onChange={(e) => setDuration(parseInt(e.target.value) || 0)}
               className="w-32"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-sm">{t('aiPrompt')}</Label>
+            <textarea
+              value={aiPrompt}
+              onChange={(event) => setAiPrompt(event.target.value)}
+              placeholder={t('aiPromptPlaceholder')}
+              className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
             />
           </div>
         </div>
@@ -156,3 +170,19 @@ export function AddLessonDialog({
     </Dialog>
   );
 }
+
+const lessonTypeOptions = [
+  { value: 'video', labelKey: 'lessonTypeVideo' },
+  { value: 'text', labelKey: 'lessonTypeText' },
+  { value: 'quiz', labelKey: 'lessonTypeQuiz' },
+  { value: 'simulation', labelKey: 'lessonTypeSimulation' },
+  { value: 'micro_card', labelKey: 'lessonTypeMicroCard' },
+] as const satisfies ReadonlyArray<{
+  value: LessonType;
+  labelKey:
+    | 'lessonTypeVideo'
+    | 'lessonTypeText'
+    | 'lessonTypeQuiz'
+    | 'lessonTypeSimulation'
+    | 'lessonTypeMicroCard';
+}>;

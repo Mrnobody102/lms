@@ -20,6 +20,7 @@ export class CourseService {
     slug?: string;
     description?: string;
     totalDuration?: number;
+    aiSettings?: Record<string, unknown>;
   }) {
     return this.prisma.$transaction(async (tx) => {
       const course = await tx.course.create({
@@ -28,6 +29,7 @@ export class CourseService {
           slug: data.slug,
           description: data.description,
           totalDuration: data.totalDuration,
+          aiSettings: this.toJsonInput(data.aiSettings),
           tenantId: data.tenantId,
         },
       });
@@ -207,14 +209,28 @@ export class CourseService {
   async update(
     id: string,
     tenantId: string,
-    data: { title?: string; slug?: string; description?: string; totalDuration?: number },
+    data: {
+      title?: string;
+      slug?: string;
+      description?: string;
+      totalDuration?: number;
+      aiSettings?: Record<string, unknown>;
+    },
   ) {
     // Ensure course exists and belongs to tenant
     await this.findOne(id, tenantId, undefined, { includeInactive: true });
 
+    const updateData: Prisma.CourseUncheckedUpdateInput = {
+      title: data.title,
+      slug: data.slug,
+      description: data.description,
+      totalDuration: data.totalDuration,
+      aiSettings: this.toJsonInput(data.aiSettings),
+    };
+
     return this.prisma.course.update({
       where: { id_tenantId: { id, tenantId } },
-      data,
+      data: updateData,
     });
   }
 
@@ -537,5 +553,13 @@ export class CourseService {
     }
 
     return unit;
+  }
+
+  private toJsonInput(value: Record<string, unknown> | undefined) {
+    if (value === undefined) {
+      return undefined;
+    }
+
+    return value as Prisma.InputJsonValue;
   }
 }

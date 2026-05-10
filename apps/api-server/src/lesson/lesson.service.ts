@@ -17,6 +17,7 @@ export class LessonService {
     videoUrl?: string;
     duration?: number;
     quiz?: Prisma.JsonValue;
+    aiPrompt?: string;
     order?: number;
     unitId?: string | null;
     courseId: string;
@@ -40,6 +41,7 @@ export class LessonService {
         videoUrl: data.videoUrl,
         duration: data.duration ?? 10,
         quiz: this.toNullableJsonInput(data.quiz),
+        aiPrompt: data.aiPrompt,
         order: data.order ?? 0,
         courseId: data.courseId,
         unitId,
@@ -97,6 +99,7 @@ export class LessonService {
       videoUrl?: string;
       duration?: number;
       quiz?: Prisma.JsonValue | null;
+      aiPrompt?: string;
       order?: number;
       unitId?: string | null;
     },

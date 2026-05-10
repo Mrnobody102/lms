@@ -47,7 +47,7 @@ export class CreateLessonDto {
   unitId?: string;
 
   @ApiPropertyOptional({ example: 'video', description: 'Lesson type' })
-  @IsEnum(LessonType, { message: 'Type must be one of: video, text, quiz' })
+  @IsEnum(LessonType, { message: 'Type must be one of: video, text, quiz, simulation, micro_card' })
   @IsOptional()
   type?: LessonType;
 
@@ -61,4 +61,10 @@ export class CreateLessonDto {
   @IsOptional()
   @IsObject()
   quiz?: object;
+
+  @ApiPropertyOptional({ description: 'AI prompt for simulation or micro-card lessons' })
+  @IsString()
+  @IsOptional()
+  @MaxLength(5000, { message: 'AI prompt must be at most 5000 characters' })
+  aiPrompt?: string;
 }

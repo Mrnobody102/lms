@@ -1,6 +1,10 @@
 import api from './api';
 
-export type PracticeQuestionType = 'MULTIPLE_CHOICE' | 'FILL_BLANK';
+export type PracticeQuestionType =
+  | 'MULTIPLE_CHOICE'
+  | 'FILL_BLANK'
+  | 'AI_EVALUATED_AUDIO'
+  | 'AI_EVALUATED_TEXT';
 
 export interface PracticeQuestion {
   id: string;

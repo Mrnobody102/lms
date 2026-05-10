@@ -7,6 +7,8 @@ import {
   Video,
   FileText,
   HelpCircle,
+  Bot,
+  LayoutGrid,
   Plus,
   Pencil,
   Trash2,
@@ -20,23 +22,35 @@ import {
 } from 'lucide-react';
 import { Button, Badge, Input } from '@/components/ui';
 
-const typeConfig = {
-  video: {
-    icon: Video,
-    label: 'Video',
-    color: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-  },
-  text: {
-    icon: FileText,
-    label: 'Text',
-    color: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300',
-  },
-  quiz: {
-    icon: HelpCircle,
-    label: 'Quiz',
-    color: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
-  },
-};
+function getTypeConfig(t: ReturnType<typeof useTranslations>) {
+  return {
+    video: {
+      icon: Video,
+      label: t('lessonTypeVideo'),
+      color: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+    },
+    text: {
+      icon: FileText,
+      label: t('lessonTypeText'),
+      color: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300',
+    },
+    quiz: {
+      icon: HelpCircle,
+      label: t('lessonTypeQuiz'),
+      color: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
+    },
+    simulation: {
+      icon: Bot,
+      label: t('lessonTypeSimulation'),
+      color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300',
+    },
+    micro_card: {
+      icon: LayoutGrid,
+      label: t('lessonTypeMicroCard'),
+      color: 'bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-300',
+    },
+  } as const;
+}
 
 interface LessonListProps {
   lessons: Lesson[];
@@ -339,6 +353,7 @@ function LessonRows({
         <span className="text-right">Actions</span>
       </div>
       {lessons.map((lesson, idx) => {
+        const typeConfig = getTypeConfig(t);
         const cfg = typeConfig[lesson.type as keyof typeof typeConfig] ?? typeConfig.text;
         return (
           <div

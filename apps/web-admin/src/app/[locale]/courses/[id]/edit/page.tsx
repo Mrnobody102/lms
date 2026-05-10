@@ -25,7 +25,7 @@ import { EditLessonDialog } from '@/features/courses/edit-lesson-form';
 import { CourseStats } from '@/features/courses/course-stats';
 import { CourseReportPanel } from '@/features/courses/course-report-panel';
 import { EnrollmentPanel } from '@/features/courses/enrollment-panel';
-import { Lesson } from '@/lib/course-api';
+import { Lesson, buildCourseAiSettings, normalizeCourseAiSettings } from '@/lib/course-api';
 import { Button, Alert, AlertDescription } from '@/components/ui';
 import { ArrowLeft, ExternalLink, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { Link } from '@/navigation';
@@ -52,9 +52,16 @@ export default function CourseEditorPage() {
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [localTitle, setLocalTitle] = useState('');
+  const [localAiEnabled, setLocalAiEnabled] = useState(false);
+  const [localAiPrompt, setLocalAiPrompt] = useState('');
 
   useEffect(() => {
-    if (course?.title) setLocalTitle(course.title);
+    if (!course) return;
+
+    setLocalTitle(course.title);
+    const aiSettings = normalizeCourseAiSettings(course.aiSettings);
+    setLocalAiEnabled(aiSettings.enabled);
+    setLocalAiPrompt(aiSettings.prompt);
   }, [course]);
 
   const showMsg = (type: 'success' | 'error', key: string) => {
@@ -65,7 +72,13 @@ export default function CourseEditorPage() {
   const handleUpdateCourse = () => {
     if (!course) return;
     updateCourse.mutate(
-      { id: courseId, data: { title: localTitle } },
+      {
+        id: courseId,
+        data: {
+          title: localTitle,
+          aiSettings: buildCourseAiSettings(localAiEnabled, localAiPrompt),
+        },
+      },
       {
         onSuccess: () => showMsg('success', 'courseSaved'),
         onError: () => showMsg('error', 'courseSaveError'),
@@ -286,6 +299,10 @@ export default function CourseEditorPage() {
                   <CourseForm
                     title={localTitle}
                     onTitleChange={setLocalTitle}
+                    aiEnabled={localAiEnabled}
+                    onAiEnabledChange={setLocalAiEnabled}
+                    aiPrompt={localAiPrompt}
+                    onAiPromptChange={setLocalAiPrompt}
                     onSave={handleUpdateCourse}
                     saving={updateCourse.isPending}
                   />

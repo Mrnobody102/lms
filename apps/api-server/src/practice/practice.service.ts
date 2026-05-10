@@ -7,7 +7,7 @@ import {
   normalizeQuestionPayload,
   normalizeSubmittedAnswer,
 } from '../common/utils/answer-validation.util';
-import { AiEvaluationService } from './ai-evaluation.service';
+import { AiEvaluationService, type PracticeAiFeedback } from './ai-evaluation.service';
 
 interface PracticeUser {
   id: string;
@@ -268,7 +268,7 @@ export class PracticeService {
         isPublished: true,
         deletedAt: null,
       },
-      include: this.exerciseSetInclude(true),
+      include: this.exerciseSetInclude(true, true),
     });
 
     if (!exerciseSet) {
@@ -306,20 +306,28 @@ export class PracticeService {
       }),
     );
 
-    const results = questions.map((question) => {
-      const answer = answerByQuestion.get(question.id);
-      const isCorrect = answer === undefined ? false : this.scoreAnswer(question, answer);
-      const aiFeedback = this.buildAiFeedback(question, answer);
-      return {
-        questionId: question.id,
-        prompt: question.prompt,
-        answer: answer ?? null,
-        isCorrect,
-        correctAnswer: question.correctAnswer,
-        explanation: question.explanation,
-        aiFeedback,
-      };
-    });
+    const results = await Promise.all(
+      questions.map(async (question) => {
+        const answer = answerByQuestion.get(question.id);
+        const isCorrect = answer === undefined ? false : this.scoreAnswer(question, answer);
+        const aiFeedback = await this.buildAiFeedback({
+          question,
+          answer,
+          courseTitle: exerciseSet.course?.title,
+          courseAiSettings: exerciseSet.course?.aiSettings,
+        });
+
+        return {
+          questionId: question.id,
+          prompt: question.prompt,
+          answer: answer ?? null,
+          isCorrect,
+          correctAnswer: question.correctAnswer,
+          explanation: question.explanation,
+          aiFeedback,
+        };
+      }),
+    );
     const score = results.filter((result) => result.isCorrect).length;
 
     const attempt = await this.prisma.practiceAttempt.create({
@@ -412,9 +420,13 @@ export class PracticeService {
     return uniqueQuestionIds.map((id) => questions.find((question) => question.id === id)!);
   }
 
-  private exerciseSetInclude(includeCorrectAnswers: boolean) {
+  private exerciseSetInclude(includeCorrectAnswers: boolean, includeCourseAiSettings = false) {
     return {
-      course: { select: { id: true, title: true } },
+      course: {
+        select: includeCourseAiSettings
+          ? { id: true, title: true, aiSettings: true }
+          : { id: true, title: true },
+      },
       unit: { select: { id: true, title: true } },
       questions: {
         orderBy: { order: 'asc' as const },
@@ -461,10 +473,19 @@ export class PracticeService {
     });
   }
 
-  private buildAiFeedback(
-    question: { type: PracticeQuestionType; correctAnswer: unknown },
-    answer: number | string | undefined,
-  ) {
+  private async buildAiFeedback(input: {
+    question: {
+      type: PracticeQuestionType;
+      prompt: string;
+      correctAnswer: unknown;
+      skillTags?: string[];
+    };
+    answer: number | string | undefined;
+    courseTitle?: string;
+    courseAiSettings?: unknown;
+  }): Promise<PracticeAiFeedback | undefined> {
+    const { question, answer } = input;
+
     if (
       answer === undefined ||
       typeof answer !== 'string' ||
@@ -477,6 +498,10 @@ export class PracticeService {
       type: question.type,
       answer,
       correctAnswer: question.correctAnswer,
+      questionPrompt: question.prompt,
+      skillTags: question.skillTags,
+      courseTitle: input.courseTitle,
+      courseAiSettings: input.courseAiSettings,
     });
   }
 }

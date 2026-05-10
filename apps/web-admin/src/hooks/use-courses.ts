@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { courseApi, Course, Lesson } from '@/lib/course-api';
+import { courseApi, CourseCreateInput, CourseUpdateInput, Lesson } from '@/lib/course-api';
 
 export function useCourses(params?: { page?: number; limit?: number; search?: string }) {
   return useQuery({
@@ -39,8 +39,7 @@ export function useLessons(courseId: string, params?: { page?: number; limit?: n
 export function useCreateCourse() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: { title: string; slug?: string; totalDuration?: number }) =>
-      courseApi.createCourse(data),
+    mutationFn: (data: CourseCreateInput) => courseApi.createCourse(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['courses'] });
     },
@@ -50,7 +49,7 @@ export function useCreateCourse() {
 export function useUpdateCourse() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Course> }) =>
+    mutationFn: ({ id, data }: { id: string; data: CourseUpdateInput }) =>
       courseApi.updateCourse(id, data),
     onSuccess: (_data, vars) => {
       queryClient.invalidateQueries({ queryKey: ['course', vars.id] });

@@ -9,11 +9,14 @@ import { useCreateCourse } from '@/hooks/use-courses';
 import { Button, Input, Label, Alert, AlertDescription } from '@/components/ui';
 import { ArrowLeft, Plus, Loader2, AlertCircle, BookOpen } from 'lucide-react';
 import { Link, useRouter } from '@/navigation';
+import { buildCourseAiSettings } from '@/lib/course-api';
 
 export default function NewCoursePage() {
   const t = useTranslations('Admin');
   const router = useRouter();
   const [title, setTitle] = useState('');
+  const [aiEnabled, setAiEnabled] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
   const { mutate: createCourse, isPending: loading, error: createError } = useCreateCourse();
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -22,7 +25,7 @@ export default function NewCoursePage() {
     if (!title.trim()) return;
     setLocalError(null);
     createCourse(
-      { title },
+      { title, aiSettings: buildCourseAiSettings(aiEnabled, aiPrompt) },
       {
         onSuccess: (newCourse) => {
           router.push(`/courses/${newCourse.id}/edit`);
@@ -79,6 +82,32 @@ export default function NewCoursePage() {
                     placeholder={t('courseNamePlaceholder')}
                     className="text-base"
                   />
+                </div>
+                <div className="rounded-lg border bg-muted/20 p-4 space-y-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-1">
+                      <Label className="text-sm font-medium">{t('aiSettings')}</Label>
+                      <p className="text-xs text-muted-foreground">{t('aiSettingsDesc')}</p>
+                    </div>
+                    <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                      <input
+                        type="checkbox"
+                        checked={aiEnabled}
+                        onChange={(event) => setAiEnabled(event.target.checked)}
+                        className="h-4 w-4 rounded border-input text-primary focus:ring-primary/20"
+                      />
+                      {t('aiEnabled')}
+                    </label>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">{t('aiPrompt')}</Label>
+                    <textarea
+                      value={aiPrompt}
+                      onChange={(event) => setAiPrompt(event.target.value)}
+                      placeholder={t('aiPromptPlaceholder')}
+                      className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
+                    />
+                  </div>
                 </div>
                 <Button type="submit" disabled={loading || !title.trim()} className="w-full gap-2">
                   {loading ? (
