@@ -4,9 +4,9 @@ export interface Lesson {
   id: string;
   title: string;
   type: 'video' | 'text' | 'quiz' | 'simulation' | 'micro_card';
-  content?: string;
-  aiPrompt?: string;
-  videoUrl?: string;
+  content?: string | null;
+  aiPrompt?: string | null;
+  videoUrl?: string | null;
   duration: number;
   order: number;
   courseId: string;

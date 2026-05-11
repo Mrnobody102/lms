@@ -14,6 +14,12 @@ import {
   DialogFooter,
 } from '@/components/ui';
 import { Loader2, Plus } from 'lucide-react';
+import {
+  LessonTypeFields,
+  createEmptyMicroCardDraft,
+  isLessonDraftReady,
+  serializeMicroCardContent,
+} from './lesson-type-fields';
 
 interface AddLessonDialogProps {
   existingLessonsCount: number;
@@ -40,7 +46,10 @@ export function AddLessonDialog({
   const [type, setType] = useState<LessonType>('video');
   const [duration, setDuration] = useState(10);
   const [unitId, setUnitId] = useState<string | null>(selectedUnitId ?? units[0]?.id ?? null);
+  const [content, setContent] = useState('');
+  const [videoUrl, setVideoUrl] = useState('');
   const [aiPrompt, setAiPrompt] = useState('');
+  const [microCard, setMicroCard] = useState(createEmptyMicroCardDraft());
 
   useEffect(() => {
     if (open) {
@@ -49,21 +58,32 @@ export function AddLessonDialog({
   }, [open, selectedUnitId, units]);
 
   const handleSubmit = async () => {
-    if (!title.trim()) return;
+    if (!isLessonDraftReady({ type, title, content, videoUrl, aiPrompt, microCard })) return;
+
     const success = await onSubmit({
       title,
       type,
       duration,
       order: existingLessonsCount + 1,
       unitId,
-      aiPrompt: aiPrompt.trim() || undefined,
+      content:
+        type === 'text'
+          ? content.trim()
+          : type === 'micro_card'
+            ? serializeMicroCardContent(microCard)
+            : undefined,
+      videoUrl: type === 'video' ? videoUrl.trim() : undefined,
+      aiPrompt: type === 'simulation' ? aiPrompt.trim() : undefined,
     });
     if (success) {
       setTitle('');
       setType('video');
       setDuration(10);
       setUnitId(selectedUnitId ?? units[0]?.id ?? null);
+      setContent('');
+      setVideoUrl('');
       setAiPrompt('');
+      setMicroCard(createEmptyMicroCardDraft());
       onOpenChange(false);
     }
   };
@@ -74,7 +94,10 @@ export function AddLessonDialog({
       setType('video');
       setDuration(10);
       setUnitId(selectedUnitId ?? units[0]?.id ?? null);
+      setContent('');
+      setVideoUrl('');
       setAiPrompt('');
+      setMicroCard(createEmptyMicroCardDraft());
     }
     onOpenChange(isOpen);
   };
@@ -135,6 +158,18 @@ export function AddLessonDialog({
             </div>
           </div>
 
+          <LessonTypeFields
+            type={type}
+            content={content}
+            onContentChange={setContent}
+            videoUrl={videoUrl}
+            onVideoUrlChange={setVideoUrl}
+            aiPrompt={aiPrompt}
+            onAiPromptChange={setAiPrompt}
+            microCard={microCard}
+            onMicroCardChange={setMicroCard}
+          />
+
           <div className="space-y-1.5">
             <Label className="text-sm">{t('durationMinutes')}</Label>
             <Input
@@ -145,23 +180,18 @@ export function AddLessonDialog({
               className="w-32"
             />
           </div>
-
-          <div className="space-y-1.5">
-            <Label className="text-sm">{t('aiPrompt')}</Label>
-            <textarea
-              value={aiPrompt}
-              onChange={(event) => setAiPrompt(event.target.value)}
-              placeholder={t('aiPromptPlaceholder')}
-              className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
-            />
-          </div>
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => handleClose(false)} disabled={saving}>
             {t('cancel')}
           </Button>
-          <Button onClick={handleSubmit} disabled={saving || !title.trim()}>
+          <Button
+            onClick={handleSubmit}
+            disabled={
+              saving || !isLessonDraftReady({ type, title, content, videoUrl, aiPrompt, microCard })
+            }
+          >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
             {t('add')}
           </Button>

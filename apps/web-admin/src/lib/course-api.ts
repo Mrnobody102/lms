@@ -11,9 +11,9 @@ export interface Lesson {
   id: string;
   title: string;
   type: LessonType;
-  content?: string;
+  content?: string | null;
   aiPrompt?: string | null;
-  videoUrl?: string;
+  videoUrl?: string | null;
   duration: number;
   order: number;
   courseId: string;

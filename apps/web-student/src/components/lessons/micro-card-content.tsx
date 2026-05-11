@@ -13,19 +13,14 @@ interface MicroCardData {
 }
 
 interface MicroCardContentProps {
-  content?: string; // Expecting JSON string
+  content?: string | null;
 }
 
 export function MicroCardContent({ content }: MicroCardContentProps) {
   const t = useTranslations('Student');
   const [isFlipped, setIsFlipped] = useState(false);
 
-  let data: MicroCardData | null = null;
-  try {
-    data = content ? JSON.parse(content) : null;
-  } catch (e) {
-    console.error('Failed to parse micro_card content', e);
-  }
+  const data = parseMicroCardContent(content);
 
   if (!data) {
     return (
@@ -128,4 +123,38 @@ export function MicroCardContent({ content }: MicroCardContentProps) {
       `}</style>
     </div>
   );
+}
+
+function parseMicroCardContent(content: string | null | undefined): MicroCardData | null {
+  if (!content) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(content) as Record<string, unknown>;
+    const front = readRequiredString(parsed.front);
+    const back = readRequiredString(parsed.back);
+
+    if (!front || !back) {
+      return null;
+    }
+
+    return {
+      front,
+      back,
+      pinyin: readOptionalString(parsed.pinyin),
+      example: readOptionalString(parsed.example),
+      audioUrl: readOptionalString(parsed.audioUrl),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function readRequiredString(value: unknown) {
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+function readOptionalString(value: unknown) {
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
 }

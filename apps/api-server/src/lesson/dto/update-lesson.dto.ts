@@ -21,17 +21,17 @@ export class UpdateLessonDto {
   title?: string;
 
   @ApiPropertyOptional({ description: 'Lesson content' })
+  @ValidateIf((_object, value) => value !== undefined && value !== null)
   @IsString()
-  @IsOptional()
   @MaxLength(50000, { message: 'Lesson content must be at most 50000 characters' })
-  content?: string;
+  content?: string | null;
 
   @ApiPropertyOptional({ description: 'Video URL' })
+  @ValidateIf((_object, value) => value !== undefined && value !== null)
   @IsString()
-  @IsOptional()
   @MaxLength(2000, { message: 'Video URL must be at most 2000 characters' })
   @IsUrl({ require_protocol: true })
-  videoUrl?: string;
+  videoUrl?: string | null;
 
   @ApiPropertyOptional({ description: 'Lesson order' })
   @IsInt()
@@ -61,8 +61,8 @@ export class UpdateLessonDto {
   quiz?: object | null;
 
   @ApiPropertyOptional({ description: 'AI prompt for simulation or micro-card lessons' })
+  @ValidateIf((_object, value) => value !== undefined && value !== null)
   @IsString()
-  @IsOptional()
   @MaxLength(5000, { message: 'AI prompt must be at most 5000 characters' })
-  aiPrompt?: string;
+  aiPrompt?: string | null;
 }

@@ -14,6 +14,13 @@ import {
   DialogFooter,
 } from '@/components/ui';
 import { Loader2 } from 'lucide-react';
+import {
+  LessonTypeFields,
+  createEmptyMicroCardDraft,
+  isLessonDraftReady,
+  parseMicroCardContent,
+  serializeMicroCardContent,
+} from './lesson-type-fields';
 
 interface EditLessonDialogProps {
   lesson: Lesson | null;
@@ -38,7 +45,10 @@ export function EditLessonDialog({
   const [type, setType] = useState<LessonType>('video');
   const [duration, setDuration] = useState(10);
   const [unitId, setUnitId] = useState<string | null>(null);
+  const [content, setContent] = useState('');
+  const [videoUrl, setVideoUrl] = useState('');
   const [aiPrompt, setAiPrompt] = useState('');
+  const [microCard, setMicroCard] = useState(createEmptyMicroCardDraft());
 
   useEffect(() => {
     if (lesson) {
@@ -46,13 +56,30 @@ export function EditLessonDialog({
       setType(lesson.type);
       setDuration(lesson.duration);
       setUnitId(lesson.unitId ?? null);
+      setContent(lesson.content ?? '');
+      setVideoUrl(lesson.videoUrl ?? '');
       setAiPrompt(lesson.aiPrompt ?? '');
+      setMicroCard(parseMicroCardContent(lesson.content));
     }
   }, [lesson]);
 
   const handleSubmit = async () => {
-    if (!title.trim()) return;
-    await onSubmit({ title, type, duration, unitId, aiPrompt: aiPrompt.trim() });
+    if (!isLessonDraftReady({ type, title, content, videoUrl, aiPrompt, microCard })) return;
+
+    await onSubmit({
+      title,
+      type,
+      duration,
+      unitId,
+      content:
+        type === 'text'
+          ? content.trim()
+          : type === 'micro_card'
+            ? serializeMicroCardContent(microCard)
+            : null,
+      videoUrl: type === 'video' ? videoUrl.trim() : null,
+      aiPrompt: type === 'simulation' ? aiPrompt.trim() : null,
+    });
   };
 
   return (
@@ -110,6 +137,18 @@ export function EditLessonDialog({
             </div>
           </div>
 
+          <LessonTypeFields
+            type={type}
+            content={content}
+            onContentChange={setContent}
+            videoUrl={videoUrl}
+            onVideoUrlChange={setVideoUrl}
+            aiPrompt={aiPrompt}
+            onAiPromptChange={setAiPrompt}
+            microCard={microCard}
+            onMicroCardChange={setMicroCard}
+          />
+
           <div className="space-y-1.5">
             <Label className="text-sm">{t('durationMinutes')}</Label>
             <Input
@@ -120,23 +159,18 @@ export function EditLessonDialog({
               className="w-32"
             />
           </div>
-
-          <div className="space-y-1.5">
-            <Label className="text-sm">{t('aiPrompt')}</Label>
-            <textarea
-              value={aiPrompt}
-              onChange={(event) => setAiPrompt(event.target.value)}
-              placeholder={t('aiPromptPlaceholder')}
-              className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
-            />
-          </div>
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
             {t('cancel')}
           </Button>
-          <Button onClick={handleSubmit} disabled={saving || !title.trim()}>
+          <Button
+            onClick={handleSubmit}
+            disabled={
+              saving || !isLessonDraftReady({ type, title, content, videoUrl, aiPrompt, microCard })
+            }
+          >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : t('save')}
           </Button>
         </DialogFooter>

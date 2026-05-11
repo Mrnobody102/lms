@@ -95,11 +95,11 @@ export class LessonService {
     data: {
       title?: string;
       type?: LessonType;
-      content?: string;
-      videoUrl?: string;
+      content?: string | null;
+      videoUrl?: string | null;
       duration?: number;
       quiz?: Prisma.JsonValue | null;
-      aiPrompt?: string;
+      aiPrompt?: string | null;
       order?: number;
       unitId?: string | null;
     },

@@ -42,10 +42,14 @@ export function LessonContent({ lesson, onComplete }: LessonContentProps) {
     switch (lesson.type) {
       case 'video':
         return (
-          <VideoPlayer videoUrl={lesson.videoUrl} title={lesson.title} onComplete={onComplete} />
+          <VideoPlayer
+            videoUrl={lesson.videoUrl ?? undefined}
+            title={lesson.title}
+            onComplete={onComplete}
+          />
         );
       case 'text':
-        return <TextContent content={lesson.content} title={lesson.title} />;
+        return <TextContent content={lesson.content ?? undefined} title={lesson.title} />;
       case 'quiz':
         return <QuizContent quiz={lesson.quiz} />;
       case 'micro_card':

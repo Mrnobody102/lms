@@ -1,4 +1,4 @@
-{
+﻿{
   "Admin": {
     "dashboard": "Bảng điều khiển",
     "students": "Học viên",
@@ -182,6 +182,21 @@
     "lessonTypeQuiz": "Câu hỏi",
     "lessonTypeSimulation": "Mô phỏng",
     "lessonTypeMicroCard": "Thẻ học nhanh",
+    "videoUrl": "URL video",
+    "videoUrlPlaceholder": "https://example.com/video.mp4",
+    "lessonContent": "Nội dung bài học",
+    "lessonContentPlaceholder": "Viết nội dung bài học ở đây.",
+    "lessonAiPromptPlaceholder": "Mô tả vai trò hoặc bối cảnh cho bài học này.",
+    "microCardFront": "Mặt trước",
+    "microCardFrontPlaceholder": "Ví dụ: 你好",
+    "microCardPinyin": "Pinyin",
+    "microCardPinyinPlaceholder": "Ví dụ: nǐ hǎo",
+    "microCardBack": "Mặt sau",
+    "microCardBackPlaceholder": "Ví dụ: Xin chào",
+    "microCardExample": "Ví dụ",
+    "microCardExamplePlaceholder": "Câu ví dụ tùy chọn.",
+    "microCardAudioUrl": "URL âm thanh",
+    "microCardAudioUrlPlaceholder": "https://example.com/audio.mp3",
     "practiceManagementDesc": "Tạo ngân hàng câu hỏi và xuất bản bộ bài luyện tập theo khóa hoặc unit.",
     "selectCourse": "Chọn khóa học",
     "allUnits": "Tất cả unit",
