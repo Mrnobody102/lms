@@ -378,6 +378,104 @@ describe('ExamService', () => {
     expect(result.sections[0].questions[0]).not.toHaveProperty('explanation');
   });
 
+  it('should update an exam template and replace its sections', async () => {
+    const tx = {
+      exam: {
+        update: vi.fn().mockResolvedValue({ id: 'exam-1' }),
+        findFirstOrThrow: vi.fn().mockResolvedValue({
+          id: 'exam-1',
+          title: 'Updated exam',
+          sections: [],
+        }),
+      },
+      examSection: {
+        deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
+        create: vi.fn().mockResolvedValue({ id: 'section-1' }),
+      },
+    };
+    const prisma = {
+      exam: {
+        findFirst: vi.fn().mockResolvedValue({ id: 'exam-1', courseId: 'course-1' }),
+      },
+      $transaction: vi.fn((callback) => callback(tx)),
+    };
+    const learningAccess = {
+      courseWhere: vi.fn(),
+    };
+    const service = new ExamService(prisma as never, learningAccess as never);
+
+    await service.updateExam('exam-1', 'tenant-1', {
+      title: 'Updated exam',
+      sections: [
+        {
+          title: 'Vocabulary',
+          questions: [
+            {
+              type: ExamQuestionType.MULTIPLE_CHOICE,
+              prompt: 'Choose one',
+              options: ['A', 'B'],
+              correctAnswer: 1,
+              points: 2,
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(tx.exam.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id_tenantId: { id: 'exam-1', tenantId: 'tenant-1' } },
+        data: expect.objectContaining({
+          title: 'Updated exam',
+        }),
+      }),
+    );
+    expect(tx.examSection.deleteMany).toHaveBeenCalledWith({
+      where: { examId: 'exam-1', tenantId: 'tenant-1' },
+    });
+    expect(tx.examSection.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          tenantId: 'tenant-1',
+          examId: 'exam-1',
+          title: 'Vocabulary',
+          questions: {
+            create: [
+              expect.objectContaining({
+                prompt: 'Choose one',
+                points: 2,
+              }),
+            ],
+          },
+        }),
+      }),
+    );
+  });
+
+  it('should soft delete exam templates', async () => {
+    const prisma = {
+      exam: {
+        findFirst: vi.fn().mockResolvedValue({ id: 'exam-1' }),
+        update: vi.fn().mockResolvedValue({ id: 'exam-1' }),
+      },
+    };
+    const learningAccess = {
+      courseWhere: vi.fn(),
+    };
+    const service = new ExamService(prisma as never, learningAccess as never);
+
+    await service.removeExam('exam-1', 'tenant-1');
+
+    expect(prisma.exam.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id_tenantId: { id: 'exam-1', tenantId: 'tenant-1' } },
+        data: expect.objectContaining({
+          deletedAt: expect.any(Date),
+        }),
+      }),
+    );
+  });
+
   it('should list recent exam attempts with timing metadata for the current student', async () => {
     const startedAt = new Date(Date.now() - 5 * 60_000);
     const prisma = {

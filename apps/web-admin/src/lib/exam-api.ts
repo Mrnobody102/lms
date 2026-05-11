@@ -71,4 +71,35 @@ export const examApi = {
   }) {
     return api.post('/exams', data).then((response) => response.data as ExamSummary);
   },
+
+  updateExam(
+    id: string,
+    data: {
+      unitId?: string | null;
+      title?: string;
+      description?: string | null;
+      durationMinutes?: number;
+      passingScore?: number | null;
+      isPublished?: boolean;
+      sections?: Array<{
+        title: string;
+        order?: number;
+        questions: Array<{
+          type: ExamQuestionType;
+          prompt: string;
+          options?: unknown;
+          correctAnswer: unknown;
+          explanation?: string;
+          points?: number;
+          skillTags?: string[];
+        }>;
+      }>;
+    },
+  ) {
+    return api.patch(`/exams/${id}`, data).then((response) => response.data as Exam);
+  },
+
+  deleteExam(id: string) {
+    return api.delete(`/exams/${id}`).then((response) => response.data as ExamSummary);
+  },
 };

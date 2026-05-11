@@ -11,18 +11,35 @@ import {
   FileCheck2,
   Eye,
   Loader2,
+  PencilLine,
   Plus,
   Trash2,
+  X,
 } from 'lucide-react';
 import { DraftPreviewCard } from '@/components/authoring/draft-preview-card';
 import { AdminHeader } from '@/components/layout/admin-header';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
-import { Alert, AlertDescription, Badge, Button, Input, Label } from '@/components/ui';
+import {
+  Alert,
+  AlertDescription,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Badge,
+  Button,
+  Input,
+  Label,
+} from '@/components/ui';
 import { formatDraftValue, parseCsv, parseList } from '@/features/authoring/draft-utils';
 import { useCourse, useCourses } from '@/hooks/use-courses';
-import { useCreateExam, useExam, useExams } from '@/hooks/use-exams';
-import { Exam, ExamQuestionType } from '@/lib/exam-api';
+import { useCreateExam, useDeleteExam, useExam, useExams, useUpdateExam } from '@/hooks/use-exams';
+import { Exam, ExamQuestionType, ExamSummary } from '@/lib/exam-api';
 
 type ExamQuestionDraft = {
   id: string;
@@ -67,7 +84,9 @@ export default function AdminExamsPage() {
     createExamQuestionDraft(),
   ]);
   const [templateExamId, setTemplateExamId] = useState('');
-  const [templateAction, setTemplateAction] = useState<'load' | 'duplicate' | null>(null);
+  const [templateAction, setTemplateAction] = useState<'load' | 'duplicate' | 'edit' | null>(null);
+  const [editingExamId, setEditingExamId] = useState<string | null>(null);
+  const [examToDelete, setExamToDelete] = useState<ExamSummary | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const { data: selectedCourse } = useCourse(courseId);
@@ -76,7 +95,10 @@ export default function AdminExamsPage() {
   const { data: exams = [], isLoading: examsLoading } = useExams(query);
   const { data: templateExam, isLoading: templateLoading } = useExam(templateExamId);
   const createExam = useCreateExam();
+  const updateExam = useUpdateExam();
+  const deleteExam = useDeleteExam();
   const selectedUnit = units.find((unit) => unit.id === unitId) ?? null;
+  const examSaving = createExam.isPending || updateExam.isPending;
   const draft = useMemo(
     () =>
       buildExamDraft({
@@ -98,6 +120,7 @@ export default function AdminExamsPage() {
 
   useEffect(() => {
     setUnitId('');
+    setEditingExamId(null);
   }, [courseId]);
 
   useEffect(() => {
@@ -121,15 +144,32 @@ export default function AdminExamsPage() {
       setQuestionDrafts,
       duplicateTitle: (value) => t('duplicatedExamTitle', { title: value }),
     });
+    setEditingExamId(templateAction === 'edit' ? templateExam.id : null);
     setMessage({
       type: 'success',
-      text: templateAction === 'duplicate' ? t('examDuplicatedToDraft') : t('examLoadedToDraft'),
+      text:
+        templateAction === 'duplicate'
+          ? t('examDuplicatedToDraft')
+          : templateAction === 'edit'
+            ? t('examLoadedForEdit')
+            : t('examLoadedToDraft'),
     });
     setTemplateAction(null);
     setTemplateExamId('');
   }, [t, templateAction, templateExam]);
 
-  const handleCreateExam = (event: FormEvent) => {
+  const resetExamDraft = () => {
+    setEditingExamId(null);
+    setTitle('');
+    setDescription('');
+    setDurationMinutes('30');
+    setPassingScore('60');
+    setIsPublished(true);
+    setSectionTitle('');
+    setQuestionDrafts([createExamQuestionDraft()]);
+  };
+
+  const handleSubmitExam = (event: FormEvent) => {
     event.preventDefault();
     if (!draft.checks.course || !draft.checks.title || !draft.checks.section) {
       setMessage({ type: 'error', text: t('examRequiredFields') });
@@ -151,33 +191,53 @@ export default function AdminExamsPage() {
       return;
     }
 
-    createExam.mutate(
-      {
-        courseId,
-        unitId: unitId || undefined,
-        title: title.trim(),
-        description: description.trim() || undefined,
-        durationMinutes: draft.durationMinutes ?? 0,
-        passingScore: draft.passingScore ?? 0,
-        isPublished,
-        sections: [
-          {
-            title: sectionTitle.trim(),
-            questions: draft.questions,
-          },
-        ],
-      },
-      {
-        onSuccess: () => {
-          setTitle('');
-          setDescription('');
-          setSectionTitle('');
-          setQuestionDrafts([createExamQuestionDraft()]);
-          setMessage({ type: 'success', text: t('examCreated') });
+    const payload = {
+      unitId: unitId || null,
+      title: title.trim(),
+      description: description.trim() || null,
+      durationMinutes: draft.durationMinutes ?? 0,
+      passingScore: draft.passingScore ?? 0,
+      isPublished,
+      sections: [
+        {
+          title: sectionTitle.trim(),
+          questions: draft.questions,
         },
-        onError: () => setMessage({ type: 'error', text: t('examCreateError') }),
-      },
-    );
+      ],
+    };
+
+    const mutation = editingExamId
+      ? updateExam.mutateAsync({ id: editingExamId, payload })
+      : createExam.mutateAsync({
+          courseId,
+          unitId: unitId || undefined,
+          title: title.trim(),
+          description: description.trim() || undefined,
+          durationMinutes: draft.durationMinutes ?? 0,
+          passingScore: draft.passingScore ?? 0,
+          isPublished,
+          sections: [
+            {
+              title: sectionTitle.trim(),
+              questions: draft.questions,
+            },
+          ],
+        });
+
+    mutation
+      .then(() => {
+        resetExamDraft();
+        setMessage({
+          type: 'success',
+          text: editingExamId ? t('examUpdated') : t('examCreated'),
+        });
+      })
+      .catch(() =>
+        setMessage({
+          type: 'error',
+          text: editingExamId ? t('examUpdateError') : t('examCreateError'),
+        }),
+      );
   };
 
   const updateQuestionDraft = (id: string, patch: Partial<ExamQuestionDraft>) => {
@@ -224,9 +284,17 @@ export default function AdminExamsPage() {
     });
   };
 
-  const loadExamTemplate = (examId: string, action: 'load' | 'duplicate') => {
+  const loadExamTemplate = (examId: string, action: 'load' | 'duplicate' | 'edit') => {
     setTemplateExamId(examId);
     setTemplateAction(action);
+  };
+
+  const handleEditExam = (examId: string) => {
+    loadExamTemplate(examId, 'edit');
+  };
+
+  const handleDeleteExam = (exam: ExamSummary) => {
+    setExamToDelete(exam);
   };
 
   return (
@@ -341,9 +409,28 @@ export default function AdminExamsPage() {
                               variant="outline"
                               className="gap-2"
                               disabled={templateLoading && templateExamId === exam.id}
+                              onClick={() => handleEditExam(exam.id)}
+                            >
+                              {templateLoading &&
+                              templateExamId === exam.id &&
+                              templateAction === 'edit' ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <PencilLine className="h-3.5 w-3.5" />
+                              )}
+                              {t('editExam')}
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="gap-2"
+                              disabled={templateLoading && templateExamId === exam.id}
                               onClick={() => loadExamTemplate(exam.id, 'load')}
                             >
-                              {templateLoading && templateExamId === exam.id ? (
+                              {templateLoading &&
+                              templateExamId === exam.id &&
+                              templateAction === 'load' ? (
                                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                               ) : (
                                 <Eye className="h-3.5 w-3.5" />
@@ -360,6 +447,16 @@ export default function AdminExamsPage() {
                             >
                               <Copy className="h-3.5 w-3.5" />
                               {t('duplicateExam')}
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              className="gap-2 text-destructive hover:text-destructive"
+                              onClick={() => handleDeleteExam(exam)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              {t('deleteExam')}
                             </Button>
                           </div>
                         </article>
@@ -415,8 +512,24 @@ export default function AdminExamsPage() {
                     ]}
                   />
 
-                  <form onSubmit={handleCreateExam} className="rounded-xl border bg-card p-5">
-                    <h2 className="mb-4 text-base font-semibold">{t('createExam')}</h2>
+                  <form onSubmit={handleSubmitExam} className="rounded-xl border bg-card p-5">
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <h2 className="text-base font-semibold">
+                        {editingExamId ? t('editExam') : t('createExam')}
+                      </h2>
+                      {editingExamId && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="gap-1.5"
+                          onClick={resetExamDraft}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                          {t('cancelEdit')}
+                        </Button>
+                      )}
+                    </div>
                     <div className="space-y-4">
                       <div className="space-y-1.5">
                         <Label>{t('examTitle')}</Label>
@@ -506,17 +619,15 @@ export default function AdminExamsPage() {
                         </div>
                       </div>
 
-                      <Button
-                        type="submit"
-                        className="w-full gap-2"
-                        disabled={createExam.isPending}
-                      >
-                        {createExam.isPending ? (
+                      <Button type="submit" className="w-full gap-2" disabled={examSaving}>
+                        {examSaving ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : editingExamId ? (
+                          <PencilLine className="h-4 w-4" />
                         ) : (
                           <Plus className="h-4 w-4" />
                         )}
-                        {t('createExam')}
+                        {editingExamId ? t('updateExam') : t('createExam')}
                       </Button>
                     </div>
                   </form>
@@ -525,6 +636,28 @@ export default function AdminExamsPage() {
             )}
           </div>
         </main>
+        <DeleteConfirmDialog
+          open={Boolean(examToDelete)}
+          title={t('deleteExam')}
+          description={t('confirmDeleteExam')}
+          confirmLabel={t('deleteExam')}
+          cancelLabel={t('cancel')}
+          pending={deleteExam.isPending}
+          onOpenChange={(open) => {
+            if (!open) setExamToDelete(null);
+          }}
+          onConfirm={() => {
+            if (!examToDelete) return;
+            deleteExam.mutate(examToDelete.id, {
+              onSuccess: () => {
+                if (editingExamId === examToDelete.id) resetExamDraft();
+                setExamToDelete(null);
+                setMessage({ type: 'success', text: t('examDeleted') });
+              },
+              onError: () => setMessage({ type: 'error', text: t('examDeleteError') }),
+            });
+          }}
+        />
       </div>
     </AuthGuard>
   );
@@ -542,6 +675,44 @@ function LoadingRow({ label }: { label: string }) {
 function EmptyState({ title }: { title: string }) {
   return (
     <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">{title}</div>
+  );
+}
+
+function DeleteConfirmDialog({
+  open,
+  title,
+  description,
+  confirmLabel,
+  cancelLabel,
+  pending,
+  onOpenChange,
+  onConfirm,
+}: {
+  open: boolean;
+  title: string;
+  description: string;
+  confirmLabel: string;
+  cancelLabel: string;
+  pending: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>{cancelLabel}</AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm} disabled={pending}>
+            {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {confirmLabel}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 

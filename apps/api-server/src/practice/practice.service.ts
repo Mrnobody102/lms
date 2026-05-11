@@ -73,6 +73,76 @@ export class PracticeService {
     });
   }
 
+  async updateQuestion(
+    id: string,
+    tenantId: string,
+    data: {
+      unitId?: string | null;
+      type?: PracticeQuestionType;
+      prompt?: string;
+      options?: unknown;
+      correctAnswer?: unknown;
+      explanation?: string | null;
+      skillTags?: string[];
+    },
+  ) {
+    const question = await this.prisma.practiceQuestion.findFirst({
+      where: { id, tenantId, deletedAt: null },
+    });
+
+    if (!question) {
+      throw new NotFoundException(`Practice question with ID ${id} not found`);
+    }
+
+    const nextUnitId =
+      data.unitId === undefined
+        ? undefined
+        : await this.resolveUnit(question.courseId, tenantId, data.unitId);
+    const normalized = normalizeQuestionPayload({
+      type: data.type ?? question.type,
+      options: data.options === undefined ? question.options : data.options,
+      correctAnswer: data.correctAnswer === undefined ? question.correctAnswer : data.correctAnswer,
+    });
+
+    return this.prisma.practiceQuestion.update({
+      where: { id_tenantId: { id, tenantId } },
+      data: {
+        unitId: nextUnitId,
+        type: data.type ?? question.type,
+        prompt: data.prompt ?? question.prompt,
+        options:
+          normalized.options === undefined
+            ? undefined
+            : (normalized.options as Prisma.InputJsonValue),
+        correctAnswer: normalized.correctAnswer as Prisma.InputJsonValue,
+        explanation: data.explanation === undefined ? question.explanation : data.explanation,
+        skillTags: data.skillTags ?? question.skillTags,
+      },
+    });
+  }
+
+  async removeQuestion(id: string, tenantId: string) {
+    const question = await this.prisma.practiceQuestion.findFirst({
+      where: { id, tenantId, deletedAt: null },
+      select: { id: true },
+    });
+
+    if (!question) {
+      throw new NotFoundException(`Practice question with ID ${id} not found`);
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      await tx.practiceExerciseSetQuestion.deleteMany({
+        where: { questionId: id, tenantId },
+      });
+
+      return tx.practiceQuestion.update({
+        where: { id_tenantId: { id, tenantId } },
+        data: { deletedAt: new Date() },
+      });
+    });
+  }
+
   async listQuestions(tenantId: string, query: { courseId?: string; unitId?: string }) {
     return this.prisma.practiceQuestion.findMany({
       where: {
@@ -125,6 +195,93 @@ export class PracticeService {
         where: { id: exerciseSet.id, tenantId },
         include: this.exerciseSetInclude(true),
       });
+    });
+  }
+
+  async updateExerciseSet(
+    id: string,
+    tenantId: string,
+    data: {
+      unitId?: string | null;
+      title?: string;
+      description?: string | null;
+      isPublished?: boolean;
+      questionIds?: string[];
+    },
+  ) {
+    const exerciseSet = await this.prisma.practiceExerciseSet.findFirst({
+      where: { id, tenantId, deletedAt: null },
+      select: { id: true, courseId: true, unitId: true },
+    });
+
+    if (!exerciseSet) {
+      throw new NotFoundException(`Practice exercise set with ID ${id} not found`);
+    }
+
+    const nextUnitId =
+      data.unitId === undefined
+        ? undefined
+        : await this.resolveUnit(exerciseSet.courseId, tenantId, data.unitId);
+    const questionIds =
+      data.questionIds ??
+      (
+        await this.prisma.practiceExerciseSetQuestion.findMany({
+          where: { exerciseSetId: id, tenantId },
+          orderBy: { order: 'asc' },
+          select: { questionId: true },
+        })
+      ).map((link) => link.questionId);
+
+    if (questionIds.length === 0) {
+      throw new BadRequestException('Practice exercise set needs at least one question');
+    }
+
+    const questions = await this.findValidQuestions(tenantId, exerciseSet.courseId, questionIds);
+
+    return this.prisma.$transaction(async (tx) => {
+      await tx.practiceExerciseSet.update({
+        where: { id_tenantId: { id, tenantId } },
+        data: {
+          title: data.title,
+          description: data.description,
+          isPublished: data.isPublished,
+          unitId: nextUnitId,
+        },
+      });
+
+      await tx.practiceExerciseSetQuestion.deleteMany({
+        where: { exerciseSetId: id, tenantId },
+      });
+
+      await tx.practiceExerciseSetQuestion.createMany({
+        data: questions.map((question, index) => ({
+          tenantId,
+          exerciseSetId: id,
+          questionId: question.id,
+          order: index,
+        })),
+      });
+
+      return tx.practiceExerciseSet.findFirstOrThrow({
+        where: { id, tenantId },
+        include: this.exerciseSetInclude(true),
+      });
+    });
+  }
+
+  async removeExerciseSet(id: string, tenantId: string) {
+    const exerciseSet = await this.prisma.practiceExerciseSet.findFirst({
+      where: { id, tenantId, deletedAt: null },
+      select: { id: true },
+    });
+
+    if (!exerciseSet) {
+      throw new NotFoundException(`Practice exercise set with ID ${id} not found`);
+    }
+
+    return this.prisma.practiceExerciseSet.update({
+      where: { id_tenantId: { id, tenantId } },
+      data: { deletedAt: new Date() },
     });
   }
 
@@ -417,6 +574,32 @@ export class PracticeService {
     if (!unit) {
       throw new NotFoundException(`Unit with ID ${unitId} not found in this course`);
     }
+  }
+
+  private async resolveUnit(courseId: string, tenantId: string, unitId?: string | null) {
+    if (unitId === null) {
+      return null;
+    }
+
+    if (!unitId) {
+      return undefined;
+    }
+
+    const unit = await this.prisma.courseUnit.findFirst({
+      where: {
+        id: unitId,
+        tenantId,
+        courseId,
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+
+    if (!unit) {
+      throw new NotFoundException(`Unit with ID ${unitId} not found in this course`);
+    }
+
+    return unit.id;
   }
 
   private async findValidQuestions(tenantId: string, courseId: string, questionIds: string[]) {

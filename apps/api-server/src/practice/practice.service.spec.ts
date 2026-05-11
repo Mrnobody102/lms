@@ -420,4 +420,81 @@ describe('PracticeService', () => {
       aiPendingCount: 0,
     });
   });
+
+  it('should update a practice question without breaking tenant scoping', async () => {
+    const prisma = {
+      practiceQuestion: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: 'question-1',
+          courseId: 'course-1',
+          type: PracticeQuestionType.MULTIPLE_CHOICE,
+          prompt: 'Old prompt',
+          options: ['A', 'B'],
+          correctAnswer: 1,
+          explanation: 'Old explanation',
+          skillTags: ['old'],
+        }),
+        update: vi.fn().mockResolvedValue({
+          id: 'question-1',
+          prompt: 'New prompt',
+        }),
+      },
+    };
+    const learningAccess = {
+      courseWhere: vi.fn(),
+    };
+    const service = new PracticeService(prisma as never, learningAccess as never);
+
+    await service.updateQuestion('question-1', 'tenant-1', {
+      prompt: 'New prompt',
+      correctAnswer: 0,
+      skillTags: ['grammar'],
+    });
+
+    expect(prisma.practiceQuestion.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id_tenantId: { id: 'question-1', tenantId: 'tenant-1' } },
+        data: expect.objectContaining({
+          prompt: 'New prompt',
+          correctAnswer: 0,
+          skillTags: ['grammar'],
+        }),
+      }),
+    );
+  });
+
+  it('should soft delete practice questions and unlink them from exercise sets', async () => {
+    const tx = {
+      practiceExerciseSetQuestion: {
+        deleteMany: vi.fn().mockResolvedValue({ count: 2 }),
+      },
+      practiceQuestion: {
+        update: vi.fn().mockResolvedValue({ id: 'question-1' }),
+      },
+    };
+    const prisma = {
+      practiceQuestion: {
+        findFirst: vi.fn().mockResolvedValue({ id: 'question-1' }),
+      },
+      $transaction: vi.fn((callback) => callback(tx)),
+    };
+    const learningAccess = {
+      courseWhere: vi.fn(),
+    };
+    const service = new PracticeService(prisma as never, learningAccess as never);
+
+    await service.removeQuestion('question-1', 'tenant-1');
+
+    expect(tx.practiceExerciseSetQuestion.deleteMany).toHaveBeenCalledWith({
+      where: { questionId: 'question-1', tenantId: 'tenant-1' },
+    });
+    expect(tx.practiceQuestion.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id_tenantId: { id: 'question-1', tenantId: 'tenant-1' } },
+        data: expect.objectContaining({
+          deletedAt: expect.any(Date),
+        }),
+      }),
+    );
+  });
 });

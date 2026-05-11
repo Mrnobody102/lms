@@ -49,3 +49,50 @@ export function useCreateExam() {
     },
   });
 }
+
+export function useUpdateExam() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: {
+      id: string;
+      payload: {
+        unitId?: string | null;
+        title?: string;
+        description?: string | null;
+        durationMinutes?: number;
+        passingScore?: number | null;
+        isPublished?: boolean;
+        sections?: Array<{
+          title: string;
+          order?: number;
+          questions: Array<{
+            type: ExamQuestionType;
+            prompt: string;
+            options?: unknown;
+            correctAnswer: unknown;
+            explanation?: string;
+            points?: number;
+            skillTags?: string[];
+          }>;
+        }>;
+      };
+    }) => examApi.updateExam(data.id, data.payload),
+    onSuccess: (_result, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['exams'] });
+      queryClient.invalidateQueries({ queryKey: ['exam', variables.id] });
+    },
+  });
+}
+
+export function useDeleteExam() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => examApi.deleteExam(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['exams'] });
+      queryClient.invalidateQueries({ queryKey: ['exam'] });
+    },
+  });
+}

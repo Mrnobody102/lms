@@ -98,6 +98,122 @@ export class ExamService {
     });
   }
 
+  async updateExam(
+    id: string,
+    tenantId: string,
+    data: {
+      unitId?: string | null;
+      title?: string;
+      description?: string | null;
+      durationMinutes?: number;
+      passingScore?: number | null;
+      isPublished?: boolean;
+      sections?: CreateExamDto['sections'];
+    },
+  ) {
+    const exam = await this.prisma.exam.findFirst({
+      where: { id, tenantId, deletedAt: null },
+      select: { id: true, courseId: true },
+    });
+
+    if (!exam) {
+      throw new NotFoundException(`Exam with ID ${id} not found`);
+    }
+
+    const nextUnitId =
+      data.unitId === undefined
+        ? undefined
+        : await this.resolveUnit(exam.courseId, tenantId, data.unitId);
+
+    const topLevelData: Prisma.ExamUncheckedUpdateInput = {
+      title: data.title,
+      description: data.description,
+      durationMinutes: data.durationMinutes,
+      passingScore: data.passingScore,
+      isPublished: data.isPublished,
+      unitId: nextUnitId,
+    };
+
+    if (!data.sections) {
+      return this.prisma.exam.update({
+        where: { id_tenantId: { id, tenantId } },
+        data: topLevelData,
+        include: this.examInclude(true),
+      });
+    }
+
+    const sections = data.sections.map((section) => ({
+      ...section,
+      questions: section.questions.map((question) => ({
+        ...question,
+        payload: normalizeQuestionPayload({
+          type: question.type,
+          options: question.options,
+          correctAnswer: question.correctAnswer,
+        }),
+      })),
+    }));
+
+    return this.prisma.$transaction(async (tx) => {
+      await tx.exam.update({
+        where: { id_tenantId: { id, tenantId } },
+        data: topLevelData,
+      });
+
+      await tx.examSection.deleteMany({
+        where: { examId: id, tenantId },
+      });
+
+      for (const [sectionIndex, section] of sections.entries()) {
+        await tx.examSection.create({
+          data: {
+            tenantId,
+            examId: id,
+            title: section.title,
+            order: section.order ?? sectionIndex,
+            questions: {
+              create: section.questions.map((question, questionIndex) => ({
+                tenantId,
+                type: question.type,
+                prompt: question.prompt,
+                options:
+                  question.payload.options === undefined
+                    ? undefined
+                    : (question.payload.options as Prisma.InputJsonValue),
+                correctAnswer: question.payload.correctAnswer as Prisma.InputJsonValue,
+                explanation: question.explanation,
+                points: question.points ?? 1,
+                skillTags: question.skillTags ?? [],
+                order: questionIndex,
+              })),
+            },
+          },
+        });
+      }
+
+      return tx.exam.findFirstOrThrow({
+        where: { id, tenantId },
+        include: this.examInclude(true),
+      });
+    });
+  }
+
+  async removeExam(id: string, tenantId: string) {
+    const exam = await this.prisma.exam.findFirst({
+      where: { id, tenantId, deletedAt: null },
+      select: { id: true },
+    });
+
+    if (!exam) {
+      throw new NotFoundException(`Exam with ID ${id} not found`);
+    }
+
+    return this.prisma.exam.update({
+      where: { id_tenantId: { id, tenantId } },
+      data: { deletedAt: new Date() },
+    });
+  }
+
   async listExams(tenantId: string, user: ExamUser, query: { courseId?: string; unitId?: string }) {
     const where: Prisma.ExamWhereInput = {
       tenantId,
@@ -429,6 +545,32 @@ export class ExamService {
     if (!unit) {
       throw new NotFoundException(`Unit with ID ${unitId} not found in this course`);
     }
+  }
+
+  private async resolveUnit(courseId: string, tenantId: string, unitId?: string | null) {
+    if (unitId === null) {
+      return null;
+    }
+
+    if (!unitId) {
+      return undefined;
+    }
+
+    const unit = await this.prisma.courseUnit.findFirst({
+      where: {
+        id: unitId,
+        tenantId,
+        courseId,
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+
+    if (!unit) {
+      throw new NotFoundException(`Unit with ID ${unitId} not found in this course`);
+    }
+
+    return unit.id;
   }
 
   private attemptWhere(attemptId: string, tenantId: string, user: ExamUser) {

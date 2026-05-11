@@ -30,6 +30,42 @@ export function useCreatePracticeQuestion() {
   });
 }
 
+export function useUpdatePracticeQuestion() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: {
+      id: string;
+      payload: {
+        unitId?: string | null;
+        type?: PracticeQuestionType;
+        prompt?: string;
+        options?: unknown;
+        correctAnswer?: unknown;
+        explanation?: string | null;
+        skillTags?: string[];
+      };
+    }) => practiceApi.updateQuestion(data.id, data.payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['practice-questions'] });
+      queryClient.invalidateQueries({ queryKey: ['practice-exercise-sets'] });
+    },
+  });
+}
+
+export function useDeletePracticeQuestion() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => practiceApi.deleteQuestion(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['practice-questions'] });
+      queryClient.invalidateQueries({ queryKey: ['practice-exercise-sets'] });
+      queryClient.invalidateQueries({ queryKey: ['practice-exercise-set'] });
+    },
+  });
+}
+
 export function usePracticeExerciseSets(params?: { courseId?: string; unitId?: string }) {
   return useQuery({
     queryKey: ['practice-exercise-sets', params],
@@ -53,6 +89,48 @@ export function useCreatePracticeExerciseSet() {
     }) => practiceApi.createExerciseSet(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['practice-exercise-sets'] });
+    },
+  });
+}
+
+export function usePracticeExerciseSet(id: string) {
+  return useQuery({
+    queryKey: ['practice-exercise-set', id],
+    queryFn: () => practiceApi.getExerciseSet(id),
+    enabled: Boolean(id),
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useUpdatePracticeExerciseSet() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: {
+      id: string;
+      payload: {
+        unitId?: string | null;
+        title?: string;
+        description?: string | null;
+        isPublished?: boolean;
+        questionIds?: string[];
+      };
+    }) => practiceApi.updateExerciseSet(data.id, data.payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['practice-exercise-sets'] });
+      queryClient.invalidateQueries({ queryKey: ['practice-exercise-set'] });
+    },
+  });
+}
+
+export function useDeletePracticeExerciseSet() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => practiceApi.deleteExerciseSet(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['practice-exercise-sets'] });
+      queryClient.invalidateQueries({ queryKey: ['practice-exercise-set'] });
     },
   });
 }

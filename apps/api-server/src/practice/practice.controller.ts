@@ -1,9 +1,11 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
   Request,
@@ -21,6 +23,8 @@ import { CreatePracticeQuestionDto } from './dto/create-practice-question.dto';
 import { CreatePracticeSetDto } from './dto/create-practice-set.dto';
 import { PracticeQueryDto } from './dto/practice-query.dto';
 import { SubmitPracticeAttemptDto } from './dto/submit-practice-attempt.dto';
+import { UpdatePracticeQuestionDto } from './dto/update-practice-question.dto';
+import { UpdatePracticeSetDto } from './dto/update-practice-set.dto';
 import { PracticeService } from './practice.service';
 
 @ApiBearerAuth()
@@ -37,6 +41,26 @@ export class PracticeController {
     return this.practiceService.createQuestion(getScopedTenantId(req), dto);
   }
 
+  @Patch('questions/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Update a practice question' })
+  updateQuestion(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdatePracticeQuestionDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.practiceService.updateQuestion(id, getScopedTenantId(req), dto);
+  }
+
+  @Delete('questions/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Delete a practice question' })
+  deleteQuestion(@Param('id', ParseUUIDPipe) id: string, @Request() req: AuthenticatedRequest) {
+    return this.practiceService.removeQuestion(id, getScopedTenantId(req));
+  }
+
   @Get('questions')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
@@ -51,6 +75,26 @@ export class PracticeController {
   @ApiOperation({ summary: 'Create a practice exercise set' })
   createExerciseSet(@Body() dto: CreatePracticeSetDto, @Request() req: AuthenticatedRequest) {
     return this.practiceService.createExerciseSet(getScopedTenantId(req), dto);
+  }
+
+  @Patch('exercise-sets/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Update a practice exercise set' })
+  updateExerciseSet(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdatePracticeSetDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.practiceService.updateExerciseSet(id, getScopedTenantId(req), dto);
+  }
+
+  @Delete('exercise-sets/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Delete a practice exercise set' })
+  deleteExerciseSet(@Param('id', ParseUUIDPipe) id: string, @Request() req: AuthenticatedRequest) {
+    return this.practiceService.removeExerciseSet(id, getScopedTenantId(req));
   }
 
   @Get('exercise-sets')

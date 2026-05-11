@@ -31,6 +31,14 @@ export interface PracticeExerciseSet {
   _count?: { questions: number; attempts: number };
 }
 
+export interface PracticeExerciseSetDetail extends PracticeExerciseSet {
+  questions: Array<{
+    id: string;
+    order: number;
+    question: PracticeQuestion;
+  }>;
+}
+
 export const practiceApi = {
   getQuestions(params?: { courseId?: string; unitId?: string }) {
     return api.get('/practice/questions', { params }).then((r) => r.data as PracticeQuestion[]);
@@ -49,6 +57,25 @@ export const practiceApi = {
     return api.post('/practice/questions', data).then((r) => r.data as PracticeQuestion);
   },
 
+  updateQuestion(
+    id: string,
+    data: {
+      unitId?: string | null;
+      type?: PracticeQuestionType;
+      prompt?: string;
+      options?: unknown;
+      correctAnswer?: unknown;
+      explanation?: string | null;
+      skillTags?: string[];
+    },
+  ) {
+    return api.patch(`/practice/questions/${id}`, data).then((r) => r.data as PracticeQuestion);
+  },
+
+  deleteQuestion(id: string) {
+    return api.delete(`/practice/questions/${id}`).then((r) => r.data as PracticeQuestion);
+  },
+
   getExerciseSets(params?: { courseId?: string; unitId?: string }) {
     return api
       .get('/practice/exercise-sets', { params })
@@ -64,5 +91,30 @@ export const practiceApi = {
     questionIds: string[];
   }) {
     return api.post('/practice/exercise-sets', data).then((r) => r.data as PracticeExerciseSet);
+  },
+
+  getExerciseSet(id: string) {
+    return api
+      .get(`/practice/exercise-sets/${id}`)
+      .then((r) => r.data as PracticeExerciseSetDetail);
+  },
+
+  updateExerciseSet(
+    id: string,
+    data: {
+      unitId?: string | null;
+      title?: string;
+      description?: string | null;
+      isPublished?: boolean;
+      questionIds?: string[];
+    },
+  ) {
+    return api
+      .patch(`/practice/exercise-sets/${id}`, data)
+      .then((r) => r.data as PracticeExerciseSet);
+  },
+
+  deleteExerciseSet(id: string) {
+    return api.delete(`/practice/exercise-sets/${id}`).then((r) => r.data as PracticeExerciseSet);
   },
 };

@@ -6,16 +6,36 @@ import { DraftPreviewCard } from '@/components/authoring/draft-preview-card';
 import { AdminHeader } from '@/components/layout/admin-header';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
-import { Alert, AlertDescription, Badge, Button, Input, Label } from '@/components/ui';
+import {
+  Alert,
+  AlertDescription,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Badge,
+  Button,
+  Input,
+  Label,
+} from '@/components/ui';
 import { formatDraftValue, parseCsv, parseList } from '@/features/authoring/draft-utils';
 import { useCourse, useCourses } from '@/hooks/use-courses';
 import {
   useCreatePracticeExerciseSet,
   useCreatePracticeQuestion,
+  useDeletePracticeExerciseSet,
+  useDeletePracticeQuestion,
   usePracticeExerciseSets,
+  usePracticeExerciseSet,
   usePracticeQuestions,
+  useUpdatePracticeExerciseSet,
+  useUpdatePracticeQuestion,
 } from '@/hooks/use-practice';
-import type { PracticeQuestion } from '@/lib/practice-api';
+import type { PracticeExerciseSet, PracticeQuestion } from '@/lib/practice-api';
 import { PracticeQuestionType } from '@/lib/practice-api';
 import {
   AlertCircle,
@@ -26,6 +46,8 @@ import {
   Loader2,
   Plus,
   PencilLine,
+  Trash2,
+  X,
 } from 'lucide-react';
 
 export default function AdminPracticePage() {
@@ -44,6 +66,10 @@ export default function AdminPracticePage() {
   const [setDescription, setSetDescription] = useState('');
   const [selectedQuestionIds, setSelectedQuestionIds] = useState<string[]>([]);
   const [isPublished, setIsPublished] = useState(true);
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+  const [editingExerciseSetId, setEditingExerciseSetId] = useState<string | null>(null);
+  const [questionToDelete, setQuestionToDelete] = useState<PracticeQuestion | null>(null);
+  const [exerciseSetToDelete, setExerciseSetToDelete] = useState<PracticeExerciseSet | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const { data: selectedCourse } = useCourse(courseId);
@@ -53,7 +79,14 @@ export default function AdminPracticePage() {
   const { data: questions = [], isLoading: questionsLoading } = usePracticeQuestions(query);
   const { data: exerciseSets = [], isLoading: setsLoading } = usePracticeExerciseSets(query);
   const createQuestion = useCreatePracticeQuestion();
+  const updateQuestion = useUpdatePracticeQuestion();
+  const deleteQuestion = useDeletePracticeQuestion();
   const createExerciseSet = useCreatePracticeExerciseSet();
+  const { data: editingExerciseSet } = usePracticeExerciseSet(editingExerciseSetId ?? '');
+  const updateExerciseSet = useUpdatePracticeExerciseSet();
+  const deleteExerciseSet = useDeletePracticeExerciseSet();
+  const questionSaving = createQuestion.isPending || updateQuestion.isPending;
+  const exerciseSetSaving = createExerciseSet.isPending || updateExerciseSet.isPending;
   const questionDraft = useMemo(
     () =>
       buildPracticeQuestionDraft({
@@ -86,7 +119,20 @@ export default function AdminPracticePage() {
   useEffect(() => {
     setUnitId('');
     setSelectedQuestionIds([]);
+    setEditingQuestionId(null);
+    setEditingExerciseSetId(null);
   }, [courseId]);
+
+  useEffect(() => {
+    if (!editingExerciseSetId || !editingExerciseSet) return;
+
+    setCourseId(editingExerciseSet.courseId);
+    setUnitId(editingExerciseSet.unitId ?? '');
+    setSetTitle(editingExerciseSet.title);
+    setSetDescription(editingExerciseSet.description ?? '');
+    setIsPublished(editingExerciseSet.isPublished);
+    setSelectedQuestionIds(editingExerciseSet.questions.map((item) => item.question.id));
+  }, [editingExerciseSet, editingExerciseSetId]);
 
   useEffect(() => {
     if (!message) return;
@@ -94,7 +140,25 @@ export default function AdminPracticePage() {
     return () => window.clearTimeout(timer);
   }, [message]);
 
-  const handleCreateQuestion = (event: FormEvent) => {
+  const resetQuestionDraft = () => {
+    setEditingQuestionId(null);
+    setQuestionType('MULTIPLE_CHOICE');
+    setPrompt('');
+    setOptionsText('');
+    setCorrectAnswer('');
+    setExplanation('');
+    setSkillTags('');
+  };
+
+  const resetExerciseSetDraft = () => {
+    setEditingExerciseSetId(null);
+    setSetTitle('');
+    setSetDescription('');
+    setSelectedQuestionIds([]);
+    setIsPublished(true);
+  };
+
+  const handleSubmitQuestion = (event: FormEvent) => {
     event.preventDefault();
     if (!questionDraft.checks.course || !questionDraft.checks.prompt || !correctAnswer.trim()) {
       setMessage({ type: 'error', text: t('practiceRequiredFields') });
@@ -116,29 +180,45 @@ export default function AdminPracticePage() {
       return;
     }
 
-    createQuestion.mutate(
-      {
-        courseId,
-        unitId: unitId || undefined,
-        type: questionType,
-        prompt: prompt.trim(),
-        options: questionType === 'MULTIPLE_CHOICE' ? questionDraft.options : undefined,
-        correctAnswer: questionDraft.correctAnswerValue,
-        explanation: explanation.trim() || undefined,
-        skillTags: questionDraft.skillTags,
-      },
-      {
-        onSuccess: () => {
-          setPrompt('');
-          setOptionsText('');
-          setCorrectAnswer('');
-          setExplanation('');
-          setSkillTags('');
-          setMessage({ type: 'success', text: t('practiceQuestionCreated') });
-        },
-        onError: () => setMessage({ type: 'error', text: t('practiceQuestionCreateError') }),
-      },
-    );
+    const payload = {
+      unitId: unitId || null,
+      type: questionType,
+      prompt: prompt.trim(),
+      options: questionType === 'MULTIPLE_CHOICE' ? questionDraft.options : undefined,
+      correctAnswer: questionDraft.correctAnswerValue,
+      explanation: explanation.trim() || null,
+      skillTags: questionDraft.skillTags,
+    };
+
+    const mutation = editingQuestionId
+      ? updateQuestion.mutateAsync({ id: editingQuestionId, payload })
+      : createQuestion.mutateAsync({
+          courseId,
+          unitId: unitId || undefined,
+          type: questionType,
+          prompt: prompt.trim(),
+          options: questionType === 'MULTIPLE_CHOICE' ? questionDraft.options : undefined,
+          correctAnswer: questionDraft.correctAnswerValue,
+          explanation: explanation.trim() || undefined,
+          skillTags: questionDraft.skillTags,
+        });
+
+    mutation
+      .then(() => {
+        resetQuestionDraft();
+        setMessage({
+          type: 'success',
+          text: editingQuestionId ? t('practiceQuestionUpdated') : t('practiceQuestionCreated'),
+        });
+      })
+      .catch(() =>
+        setMessage({
+          type: 'error',
+          text: editingQuestionId
+            ? t('practiceQuestionUpdateError')
+            : t('practiceQuestionCreateError'),
+        }),
+      );
   };
 
   const handleDuplicateQuestion = (question: PracticeQuestion) => {
@@ -160,7 +240,24 @@ export default function AdminPracticePage() {
     );
   };
 
+  const handleEditQuestion = (question: PracticeQuestion) => {
+    setEditingQuestionId(question.id);
+    setQuestionType(question.type);
+    setPrompt(question.prompt);
+    setOptionsText(
+      question.type === 'MULTIPLE_CHOICE' && Array.isArray(question.options)
+        ? question.options.map((option) => String(option)).join('\n')
+        : '',
+    );
+    setCorrectAnswer(formatDraftValue(question.correctAnswer));
+    setExplanation(question.explanation ?? '');
+    setSkillTags(question.skillTags.join(', '));
+    setUnitId(question.unitId ?? '');
+    setMessage({ type: 'success', text: t('practiceQuestionLoadedDraft') });
+  };
+
   const handleUseQuestionAsDraft = (question: PracticeQuestion) => {
+    setEditingQuestionId(null);
     setQuestionType(question.type);
     setPrompt(question.prompt);
     setOptionsText(
@@ -174,6 +271,10 @@ export default function AdminPracticePage() {
     setMessage({ type: 'success', text: t('practiceQuestionLoadedDraft') });
   };
 
+  const handleDeleteQuestion = (question: PracticeQuestion) => {
+    setQuestionToDelete(question);
+  };
+
   const selectAllQuestions = () => {
     setSelectedQuestionIds(questions.map((question) => question.id));
   };
@@ -182,7 +283,7 @@ export default function AdminPracticePage() {
     setSelectedQuestionIds([]);
   };
 
-  const handleCreateExerciseSet = (event: FormEvent) => {
+  const handleSubmitExerciseSet = (event: FormEvent) => {
     event.preventDefault();
     if (
       !exerciseSetDraft.checks.course ||
@@ -193,25 +294,47 @@ export default function AdminPracticePage() {
       return;
     }
 
-    createExerciseSet.mutate(
-      {
-        courseId,
-        unitId: unitId || undefined,
-        title: setTitle.trim(),
-        description: setDescription.trim() || undefined,
-        isPublished,
-        questionIds: selectedQuestionIds,
-      },
-      {
-        onSuccess: () => {
-          setSetTitle('');
-          setSetDescription('');
-          setSelectedQuestionIds([]);
-          setMessage({ type: 'success', text: t('practiceSetCreated') });
-        },
-        onError: () => setMessage({ type: 'error', text: t('practiceSetCreateError') }),
-      },
-    );
+    const payload = {
+      unitId: unitId || null,
+      title: setTitle.trim(),
+      description: setDescription.trim() || null,
+      isPublished,
+      questionIds: selectedQuestionIds,
+    };
+
+    const mutation = editingExerciseSetId
+      ? updateExerciseSet.mutateAsync({ id: editingExerciseSetId, payload })
+      : createExerciseSet.mutateAsync({
+          courseId,
+          unitId: unitId || undefined,
+          title: setTitle.trim(),
+          description: setDescription.trim() || undefined,
+          isPublished,
+          questionIds: selectedQuestionIds,
+        });
+
+    mutation
+      .then(() => {
+        resetExerciseSetDraft();
+        setMessage({
+          type: 'success',
+          text: editingExerciseSetId ? t('practiceSetUpdated') : t('practiceSetCreated'),
+        });
+      })
+      .catch(() =>
+        setMessage({
+          type: 'error',
+          text: editingExerciseSetId ? t('practiceSetUpdateError') : t('practiceSetCreateError'),
+        }),
+      );
+  };
+
+  const handleEditExerciseSet = (set: PracticeExerciseSet) => {
+    setEditingExerciseSetId(set.id);
+  };
+
+  const handleDeleteExerciseSet = (set: PracticeExerciseSet) => {
+    setExerciseSetToDelete(set);
   };
 
   return (
@@ -353,12 +476,27 @@ export default function AdminPracticePage() {
                                     onClick={(event) => {
                                       event.preventDefault();
                                       event.stopPropagation();
+                                      handleEditQuestion(question);
+                                    }}
+                                    title={t('editQuestion')}
+                                    aria-label={t('editQuestion')}
+                                  >
+                                    <PencilLine className="h-3.5 w-3.5" />
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    onClick={(event) => {
+                                      event.preventDefault();
+                                      event.stopPropagation();
                                       handleUseQuestionAsDraft(question);
                                     }}
                                     title={t('useQuestionAsDraft')}
                                     aria-label={t('useQuestionAsDraft')}
                                   >
-                                    <PencilLine className="h-3.5 w-3.5" />
+                                    <Plus className="h-3.5 w-3.5" />
                                   </Button>
                                   <Button
                                     type="button"
@@ -374,6 +512,21 @@ export default function AdminPracticePage() {
                                     aria-label={t('duplicateQuestion')}
                                   >
                                     <Copy className="h-3.5 w-3.5" />
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-destructive hover:text-destructive"
+                                    onClick={(event) => {
+                                      event.preventDefault();
+                                      event.stopPropagation();
+                                      handleDeleteQuestion(question);
+                                    }}
+                                    title={t('deleteQuestion')}
+                                    aria-label={t('deleteQuestion')}
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
                                   </Button>
                                 </div>
                               </div>
@@ -409,9 +562,33 @@ export default function AdminPracticePage() {
                                   {set.unit?.title || t('allUnits')}
                                 </p>
                               </div>
-                              <Badge variant={set.isPublished ? 'success' : 'outline'}>
-                                {set.isPublished ? t('published') : t('draft')}
-                              </Badge>
+                              <div className="flex shrink-0 items-center gap-1">
+                                <Badge variant={set.isPublished ? 'success' : 'outline'}>
+                                  {set.isPublished ? t('published') : t('draft')}
+                                </Badge>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  onClick={() => handleEditExerciseSet(set)}
+                                  title={t('editExerciseSet')}
+                                  aria-label={t('editExerciseSet')}
+                                >
+                                  <PencilLine className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-destructive hover:text-destructive"
+                                  onClick={() => handleDeleteExerciseSet(set)}
+                                  title={t('deleteExerciseSet')}
+                                  aria-label={t('deleteExerciseSet')}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
                             </div>
                             <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
                               <span>
@@ -458,8 +635,24 @@ export default function AdminPracticePage() {
                     ]}
                   />
 
-                  <form onSubmit={handleCreateQuestion} className="rounded-xl border bg-card p-5">
-                    <h2 className="mb-4 text-base font-semibold">{t('createQuestion')}</h2>
+                  <form onSubmit={handleSubmitQuestion} className="rounded-xl border bg-card p-5">
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <h2 className="text-base font-semibold">
+                        {editingQuestionId ? t('editQuestion') : t('createQuestion')}
+                      </h2>
+                      {editingQuestionId && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="gap-1.5"
+                          onClick={resetQuestionDraft}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                          {t('cancelEdit')}
+                        </Button>
+                      )}
+                    </div>
                     <div className="space-y-4">
                       <div className="space-y-1.5">
                         <Label>{t('questionType')}</Label>
@@ -534,17 +727,15 @@ export default function AdminPracticePage() {
                         />
                       </div>
 
-                      <Button
-                        type="submit"
-                        className="w-full gap-2"
-                        disabled={createQuestion.isPending}
-                      >
-                        {createQuestion.isPending ? (
+                      <Button type="submit" className="w-full gap-2" disabled={questionSaving}>
+                        {questionSaving ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : editingQuestionId ? (
+                          <PencilLine className="h-4 w-4" />
                         ) : (
                           <Plus className="h-4 w-4" />
                         )}
-                        {t('createQuestion')}
+                        {editingQuestionId ? t('updateQuestion') : t('createQuestion')}
                       </Button>
                     </div>
                   </form>
@@ -576,10 +767,26 @@ export default function AdminPracticePage() {
                   />
 
                   <form
-                    onSubmit={handleCreateExerciseSet}
+                    onSubmit={handleSubmitExerciseSet}
                     className="rounded-xl border bg-card p-5"
                   >
-                    <h2 className="mb-4 text-base font-semibold">{t('createExerciseSet')}</h2>
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <h2 className="text-base font-semibold">
+                        {editingExerciseSetId ? t('editExerciseSet') : t('createExerciseSet')}
+                      </h2>
+                      {editingExerciseSetId && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="gap-1.5"
+                          onClick={resetExerciseSetDraft}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                          {t('cancelEdit')}
+                        </Button>
+                      )}
+                    </div>
                     <div className="space-y-4">
                       <div className="space-y-1.5">
                         <Label>{t('exerciseSetTitle')}</Label>
@@ -608,17 +815,15 @@ export default function AdminPracticePage() {
                         />
                         {t('publishNow')}
                       </label>
-                      <Button
-                        type="submit"
-                        className="w-full gap-2"
-                        disabled={createExerciseSet.isPending}
-                      >
-                        {createExerciseSet.isPending ? (
+                      <Button type="submit" className="w-full gap-2" disabled={exerciseSetSaving}>
+                        {exerciseSetSaving ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : editingExerciseSetId ? (
+                          <PencilLine className="h-4 w-4" />
                         ) : (
                           <Dumbbell className="h-4 w-4" />
                         )}
-                        {t('createExerciseSet')}
+                        {editingExerciseSetId ? t('updateExerciseSet') : t('createExerciseSet')}
                       </Button>
                     </div>
                   </form>
@@ -627,6 +832,50 @@ export default function AdminPracticePage() {
             )}
           </div>
         </main>
+        <DeleteConfirmDialog
+          open={Boolean(questionToDelete)}
+          title={t('deleteQuestion')}
+          description={t('confirmDeleteQuestion')}
+          confirmLabel={t('deleteQuestion')}
+          cancelLabel={t('cancel')}
+          pending={deleteQuestion.isPending}
+          onOpenChange={(open) => {
+            if (!open) setQuestionToDelete(null);
+          }}
+          onConfirm={() => {
+            if (!questionToDelete) return;
+            deleteQuestion.mutate(questionToDelete.id, {
+              onSuccess: () => {
+                if (editingQuestionId === questionToDelete.id) resetQuestionDraft();
+                setQuestionToDelete(null);
+                setMessage({ type: 'success', text: t('practiceQuestionDeleted') });
+              },
+              onError: () => setMessage({ type: 'error', text: t('practiceQuestionDeleteError') }),
+            });
+          }}
+        />
+        <DeleteConfirmDialog
+          open={Boolean(exerciseSetToDelete)}
+          title={t('deleteExerciseSet')}
+          description={t('confirmDeleteExerciseSet')}
+          confirmLabel={t('deleteExerciseSet')}
+          cancelLabel={t('cancel')}
+          pending={deleteExerciseSet.isPending}
+          onOpenChange={(open) => {
+            if (!open) setExerciseSetToDelete(null);
+          }}
+          onConfirm={() => {
+            if (!exerciseSetToDelete) return;
+            deleteExerciseSet.mutate(exerciseSetToDelete.id, {
+              onSuccess: () => {
+                if (editingExerciseSetId === exerciseSetToDelete.id) resetExerciseSetDraft();
+                setExerciseSetToDelete(null);
+                setMessage({ type: 'success', text: t('practiceSetDeleted') });
+              },
+              onError: () => setMessage({ type: 'error', text: t('practiceSetDeleteError') }),
+            });
+          }}
+        />
       </div>
     </AuthGuard>
   );
@@ -644,6 +893,44 @@ function LoadingRow({ label }: { label: string }) {
 function EmptyState({ title }: { title: string }) {
   return (
     <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">{title}</div>
+  );
+}
+
+function DeleteConfirmDialog({
+  open,
+  title,
+  description,
+  confirmLabel,
+  cancelLabel,
+  pending,
+  onOpenChange,
+  onConfirm,
+}: {
+  open: boolean;
+  title: string;
+  description: string;
+  confirmLabel: string;
+  cancelLabel: string;
+  pending: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>{cancelLabel}</AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm} disabled={pending}>
+            {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {confirmLabel}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 

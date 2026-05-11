@@ -1,9 +1,11 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
   Request,
@@ -20,6 +22,7 @@ import { ExamAttemptQueryDto } from './dto/exam-attempt-query.dto';
 import { CreateExamDto } from './dto/create-exam.dto';
 import { ExamQueryDto } from './dto/exam-query.dto';
 import { SubmitExamAttemptDto } from './dto/submit-exam-attempt.dto';
+import { UpdateExamDto } from './dto/update-exam.dto';
 import { ExamService } from './exam.service';
 
 @ApiBearerAuth()
@@ -34,6 +37,26 @@ export class ExamController {
   @ApiOperation({ summary: 'Create an exam template with sections and questions' })
   createExam(@Body() dto: CreateExamDto, @Request() req: AuthenticatedRequest) {
     return this.examService.createExam(getScopedTenantId(req), dto);
+  }
+
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Update an exam template' })
+  updateExam(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateExamDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.examService.updateExam(id, getScopedTenantId(req), dto);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Delete an exam template' })
+  deleteExam(@Param('id', ParseUUIDPipe) id: string, @Request() req: AuthenticatedRequest) {
+    return this.examService.removeExam(id, getScopedTenantId(req));
   }
 
   @Get()
