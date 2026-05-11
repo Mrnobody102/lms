@@ -7,6 +7,7 @@ import { AdminHeader } from '@/components/layout/admin-header';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
 import { Alert, AlertDescription, Badge, Button, Input, Label } from '@/components/ui';
+import { formatDraftValue, parseCsv, parseList } from '@/features/authoring/draft-utils';
 import { useCourse, useCourses } from '@/hooks/use-courses';
 import {
   useCreatePracticeExerciseSet,
@@ -14,8 +15,18 @@ import {
   usePracticeExerciseSets,
   usePracticeQuestions,
 } from '@/hooks/use-practice';
+import type { PracticeQuestion } from '@/lib/practice-api';
 import { PracticeQuestionType } from '@/lib/practice-api';
-import { AlertCircle, BookOpen, CheckCircle2, Dumbbell, Loader2, Plus } from 'lucide-react';
+import {
+  AlertCircle,
+  BookOpen,
+  CheckCircle2,
+  Copy,
+  Dumbbell,
+  Loader2,
+  Plus,
+  PencilLine,
+} from 'lucide-react';
 
 export default function AdminPracticePage() {
   const t = useTranslations('Admin');
@@ -130,6 +141,47 @@ export default function AdminPracticePage() {
     );
   };
 
+  const handleDuplicateQuestion = (question: PracticeQuestion) => {
+    createQuestion.mutate(
+      {
+        courseId,
+        unitId: question.unitId ?? (unitId || undefined),
+        type: question.type,
+        prompt: question.prompt,
+        options: question.type === 'MULTIPLE_CHOICE' ? question.options : undefined,
+        correctAnswer: question.correctAnswer,
+        explanation: question.explanation ?? undefined,
+        skillTags: question.skillTags,
+      },
+      {
+        onSuccess: () => setMessage({ type: 'success', text: t('practiceQuestionDuplicated') }),
+        onError: () => setMessage({ type: 'error', text: t('practiceQuestionDuplicateError') }),
+      },
+    );
+  };
+
+  const handleUseQuestionAsDraft = (question: PracticeQuestion) => {
+    setQuestionType(question.type);
+    setPrompt(question.prompt);
+    setOptionsText(
+      question.type === 'MULTIPLE_CHOICE' && Array.isArray(question.options)
+        ? question.options.map((option) => String(option)).join('\n')
+        : '',
+    );
+    setCorrectAnswer(formatDraftValue(question.correctAnswer));
+    setExplanation(question.explanation ?? '');
+    setSkillTags(question.skillTags.join(', '));
+    setMessage({ type: 'success', text: t('practiceQuestionLoadedDraft') });
+  };
+
+  const selectAllQuestions = () => {
+    setSelectedQuestionIds(questions.map((question) => question.id));
+  };
+
+  const clearSelectedQuestions = () => {
+    setSelectedQuestionIds([]);
+  };
+
   const handleCreateExerciseSet = (event: FormEvent) => {
     event.preventDefault();
     if (
@@ -240,7 +292,15 @@ export default function AdminPracticePage() {
                         <h2 className="text-base font-semibold">{t('questionBank')}</h2>
                         <p className="text-sm text-muted-foreground">{t('questionBankDesc')}</p>
                       </div>
-                      <Badge variant="secondary">{questions.length}</Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary">{questions.length}</Badge>
+                        <Button variant="outline" size="sm" onClick={selectAllQuestions}>
+                          {t('selectAllQuestions')}
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={clearSelectedQuestions}>
+                          {t('clearSelection')}
+                        </Button>
+                      </div>
                     </div>
 
                     {questionsLoading ? (
@@ -267,21 +327,55 @@ export default function AdminPracticePage() {
                               }}
                             />
                             <div className="min-w-0 flex-1">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <Badge variant="outline">
-                                  {question.type === 'MULTIPLE_CHOICE'
-                                    ? t('multipleChoice')
-                                    : question.type === 'FILL_BLANK'
-                                      ? t('fillBlank')
-                                      : question.type === 'AI_EVALUATED_AUDIO'
-                                        ? t('aiEvaluatedAudio')
-                                        : t('aiEvaluatedText')}
-                                </Badge>
-                                {question.skillTags.map((tag) => (
-                                  <Badge key={tag} variant="secondary">
-                                    {tag}
+                              <div className="flex flex-wrap items-start justify-between gap-2">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <Badge variant="outline">
+                                    {question.type === 'MULTIPLE_CHOICE'
+                                      ? t('multipleChoice')
+                                      : question.type === 'FILL_BLANK'
+                                        ? t('fillBlank')
+                                        : question.type === 'AI_EVALUATED_AUDIO'
+                                          ? t('aiEvaluatedAudio')
+                                          : t('aiEvaluatedText')}
                                   </Badge>
-                                ))}
+                                  {question.skillTags.map((tag) => (
+                                    <Badge key={tag} variant="secondary">
+                                      {tag}
+                                    </Badge>
+                                  ))}
+                                </div>
+                                <div className="flex shrink-0 items-center gap-1">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    onClick={(event) => {
+                                      event.preventDefault();
+                                      event.stopPropagation();
+                                      handleUseQuestionAsDraft(question);
+                                    }}
+                                    title={t('useQuestionAsDraft')}
+                                    aria-label={t('useQuestionAsDraft')}
+                                  >
+                                    <PencilLine className="h-3.5 w-3.5" />
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    onClick={(event) => {
+                                      event.preventDefault();
+                                      event.stopPropagation();
+                                      handleDuplicateQuestion(question);
+                                    }}
+                                    title={t('duplicateQuestion')}
+                                    aria-label={t('duplicateQuestion')}
+                                  >
+                                    <Copy className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
                               </div>
                               <p className="mt-2 text-sm font-medium">{question.prompt}</p>
                             </div>
@@ -616,18 +710,4 @@ function getPracticeQuestionTypeLabel(
   if (type === 'FILL_BLANK') return t('fillBlank');
   if (type === 'AI_EVALUATED_AUDIO') return t('aiEvaluatedAudio');
   return t('aiEvaluatedText');
-}
-
-function parseList(value: string) {
-  return value
-    .split('\n')
-    .map((option) => option.trim())
-    .filter(Boolean);
-}
-
-function parseCsv(value: string) {
-  return value
-    .split(',')
-    .map((tag) => tag.trim())
-    .filter(Boolean);
 }

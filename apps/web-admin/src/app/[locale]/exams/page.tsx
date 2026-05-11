@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   AlertCircle,
@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   Copy,
   FileCheck2,
+  Eye,
   Loader2,
   Plus,
   Trash2,
@@ -18,9 +19,10 @@ import { AdminHeader } from '@/components/layout/admin-header';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
 import { Alert, AlertDescription, Badge, Button, Input, Label } from '@/components/ui';
+import { formatDraftValue, parseCsv, parseList } from '@/features/authoring/draft-utils';
 import { useCourse, useCourses } from '@/hooks/use-courses';
-import { useCreateExam, useExams } from '@/hooks/use-exams';
-import { ExamQuestionType } from '@/lib/exam-api';
+import { useCreateExam, useExam, useExams } from '@/hooks/use-exams';
+import { Exam, ExamQuestionType } from '@/lib/exam-api';
 
 type ExamQuestionDraft = {
   id: string;
@@ -64,12 +66,15 @@ export default function AdminExamsPage() {
   const [questionDrafts, setQuestionDrafts] = useState<ExamQuestionDraft[]>(() => [
     createExamQuestionDraft(),
   ]);
+  const [templateExamId, setTemplateExamId] = useState('');
+  const [templateAction, setTemplateAction] = useState<'load' | 'duplicate' | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const { data: selectedCourse } = useCourse(courseId);
   const units = selectedCourse?.units ?? [];
   const query = { courseId: courseId || undefined, unitId: unitId || undefined };
   const { data: exams = [], isLoading: examsLoading } = useExams(query);
+  const { data: templateExam, isLoading: templateLoading } = useExam(templateExamId);
   const createExam = useCreateExam();
   const selectedUnit = units.find((unit) => unit.id === unitId) ?? null;
   const draft = useMemo(
@@ -100,6 +105,29 @@ export default function AdminExamsPage() {
     const timer = window.setTimeout(() => setMessage(null), 4000);
     return () => window.clearTimeout(timer);
   }, [message]);
+
+  useEffect(() => {
+    if (!templateExam || !templateAction) return;
+
+    hydrateDraftFromExam(templateExam, templateAction === 'duplicate', {
+      setCourseId,
+      setUnitId,
+      setTitle,
+      setDescription,
+      setDurationMinutes,
+      setPassingScore,
+      setIsPublished,
+      setSectionTitle,
+      setQuestionDrafts,
+      duplicateTitle: (value) => t('duplicatedExamTitle', { title: value }),
+    });
+    setMessage({
+      type: 'success',
+      text: templateAction === 'duplicate' ? t('examDuplicatedToDraft') : t('examLoadedToDraft'),
+    });
+    setTemplateAction(null);
+    setTemplateExamId('');
+  }, [t, templateAction, templateExam]);
 
   const handleCreateExam = (event: FormEvent) => {
     event.preventDefault();
@@ -194,6 +222,11 @@ export default function AdminExamsPage() {
       next.splice(nextIndex, 0, question);
       return next;
     });
+  };
+
+  const loadExamTemplate = (examId: string, action: 'load' | 'duplicate') => {
+    setTemplateExamId(examId);
+    setTemplateAction(action);
   };
 
   return (
@@ -301,6 +334,34 @@ export default function AdminExamsPage() {
                             <span>{t('sectionCount', { count: exam._count?.sections ?? 0 })}</span>
                             <span>{t('attemptCount', { count: exam._count?.attempts ?? 0 })}</span>
                           </div>
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="gap-2"
+                              disabled={templateLoading && templateExamId === exam.id}
+                              onClick={() => loadExamTemplate(exam.id, 'load')}
+                            >
+                              {templateLoading && templateExamId === exam.id ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <Eye className="h-3.5 w-3.5" />
+                              )}
+                              {t('loadExamToDraft')}
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              className="gap-2"
+                              disabled={templateLoading && templateExamId === exam.id}
+                              onClick={() => loadExamTemplate(exam.id, 'duplicate')}
+                            >
+                              <Copy className="h-3.5 w-3.5" />
+                              {t('duplicateExam')}
+                            </Button>
+                          </div>
                         </article>
                       ))}
                     </div>
@@ -326,6 +387,10 @@ export default function AdminExamsPage() {
                       {
                         label: t('examQuestions'),
                         value: draft.questionCount,
+                      },
+                      {
+                        label: t('sections'),
+                        value: draft.sectionCount,
                       },
                       {
                         label: t('durationMinutes'),
@@ -677,6 +742,7 @@ function buildExamDraft(params: {
   return {
     durationMinutes,
     passingScore,
+    sectionCount: 1,
     questionCount: questions.length,
     validQuestionCount: questions.filter((question) => question.valid).length,
     invalidQuestionCount: questions.filter((question) => !question.valid).length,
@@ -718,18 +784,53 @@ function buildExamQuestionPayload(draft: ExamQuestionDraft) {
   };
 }
 
-function parseList(value: string) {
-  return value
-    .split('\n')
-    .map((option) => option.trim())
-    .filter(Boolean);
+function hydrateDraftFromExam(
+  exam: Exam,
+  duplicate: boolean,
+  actions: {
+    setCourseId: (value: string) => void;
+    setUnitId: (value: string) => void;
+    setTitle: (value: string) => void;
+    setDescription: (value: string) => void;
+    setDurationMinutes: (value: string) => void;
+    setPassingScore: (value: string) => void;
+    setIsPublished: (value: boolean) => void;
+    setSectionTitle: (value: string) => void;
+    setQuestionDrafts: Dispatch<SetStateAction<ExamQuestionDraft[]>>;
+    duplicateTitle: (value: string) => string;
+  },
+) {
+  actions.setCourseId(exam.courseId);
+  actions.setUnitId(exam.unitId ?? '');
+  actions.setTitle(duplicate ? actions.duplicateTitle(exam.title) : exam.title);
+  actions.setDescription(exam.description ?? '');
+  actions.setDurationMinutes(String(exam.durationMinutes));
+  actions.setPassingScore(String(exam.passingScore ?? 60));
+  actions.setIsPublished(exam.isPublished);
+  actions.setSectionTitle(exam.sections[0]?.title ?? '');
+  const questionDrafts = exam.sections.flatMap((section) =>
+    section.questions.map((question) => mapExamQuestionToDraft(question)),
+  );
+
+  actions.setQuestionDrafts(
+    questionDrafts.length > 0 ? questionDrafts : [createExamQuestionDraft()],
+  );
 }
 
-function parseCsv(value: string) {
-  return value
-    .split(',')
-    .map((tag) => tag.trim())
-    .filter(Boolean);
+function mapExamQuestionToDraft(question: Exam['sections'][number]['questions'][number]) {
+  return {
+    ...createExamQuestionDraft(question.type),
+    type: question.type,
+    prompt: question.prompt,
+    optionsText:
+      question.type === 'MULTIPLE_CHOICE' && Array.isArray(question.options)
+        ? question.options.map((option) => String(option)).join('\n')
+        : '',
+    correctAnswer: formatDraftValue(question.correctAnswer),
+    points: String(question.points ?? 1),
+    skillTags: question.skillTags.join(', '),
+    explanation: question.explanation ?? '',
+  };
 }
 
 function parsePositiveInteger(value: string) {

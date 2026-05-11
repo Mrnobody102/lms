@@ -279,6 +279,8 @@
       "retry": "Thử lại",
       "attemptStartedAtValue": "Bắt đầu lúc {value}",
       "attemptSubmittedAtValue": "Nộp lúc {value}",
+      "attemptDeadlineAtValue": "Hạn chót {value}",
+      "submitted": "Đã nộp",
       "resumeAttempt": "Tiếp tục làm bài",
       "inProgress": "Đang làm dở",
       "inProgressReview": "Lần làm này vẫn đang diễn ra. Mở lại đề để tiếp tục làm bài.",

@@ -50,8 +50,16 @@ export default function ExamAttemptReviewPage() {
                   <span className="rounded-md border px-2 py-1">{attempt.exam.unit.title}</span>
                 )}
                 <span className="rounded-md border px-2 py-1">
+                  {attempt.status === 'SUBMITTED' ? t('exam.submitted') : t('exam.inProgress')}
+                </span>
+                <span className="rounded-md border px-2 py-1">
                   {t('exam.attemptStartedAtValue', {
                     value: formatDateTime(attempt.startedAt, locale),
+                  })}
+                </span>
+                <span className="rounded-md border px-2 py-1">
+                  {t('exam.attemptDeadlineAtValue', {
+                    value: formatDateTime(attempt.deadlineAt, locale),
                   })}
                 </span>
                 {attempt.submittedAt && (
@@ -59,6 +67,11 @@ export default function ExamAttemptReviewPage() {
                     {t('exam.attemptSubmittedAtValue', {
                       value: formatDateTime(attempt.submittedAt, locale),
                     })}
+                  </span>
+                )}
+                {attempt.isExpired && (
+                  <span className="rounded-md border border-destructive/20 bg-destructive/5 px-2 py-1 text-destructive">
+                    {t('exam.expiredBadge')}
                   </span>
                 )}
               </div>
@@ -149,6 +162,9 @@ export default function ExamAttemptReviewPage() {
                         <h2 className="text-base font-semibold leading-relaxed">
                           {answer.question.prompt}
                         </h2>
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          {t('exam.pointsValue', { points: answer.question.points })}
+                        </p>
                       </div>
                     </div>
 

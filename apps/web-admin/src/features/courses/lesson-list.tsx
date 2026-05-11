@@ -19,6 +19,8 @@ import {
   X,
   ChevronUp,
   ChevronDown,
+  Copy,
+  ExternalLink,
 } from 'lucide-react';
 import { Button, Badge, Input } from '@/components/ui';
 
@@ -61,7 +63,11 @@ interface LessonListProps {
   onAddUnit?: (data: { title: string; order?: number }) => Promise<boolean>;
   onUpdateUnit?: (unitId: string, data: { title?: string; order?: number }) => Promise<boolean>;
   onDeleteUnit?: (unitId: string) => void;
+  onDuplicateUnit?: (unit: CourseUnit) => void;
+  onReorderUnit?: (unitId: string, direction: 'up' | 'down') => void;
   onReorder?: (lessonId: string, direction: 'up' | 'down') => void;
+  onDuplicate?: (lesson: Lesson) => void;
+  getPreviewUrl?: (lesson: Lesson) => string | null;
 }
 
 export function LessonList({
@@ -73,7 +79,11 @@ export function LessonList({
   onAddUnit,
   onUpdateUnit,
   onDeleteUnit,
+  onDuplicateUnit,
+  onReorderUnit,
   onReorder,
+  onDuplicate,
+  getPreviewUrl,
 }: LessonListProps) {
   const t = useTranslations('Admin');
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
@@ -84,12 +94,18 @@ export function LessonList({
 
   const sortedLessons = useMemo(() => [...lessons].sort(sortByOrder), [lessons]);
   const sortedUnits = useMemo(() => [...units].sort(sortByOrder), [units]);
+  const lessonGroups = useMemo(
+    () =>
+      sortedUnits.map((unit) => ({
+        unit,
+        lessons: getLessonsForUnit(unit, sortedLessons),
+      })),
+    [sortedLessons, sortedUnits],
+  );
   const groupedLessonIds = new Set(
-    sortedUnits.flatMap((unit) => (unit.lessons ?? []).map((lesson) => lesson.id)),
+    lessonGroups.flatMap((group) => group.lessons.map((lesson) => lesson.id)),
   );
-  const ungroupedLessons = sortedLessons.filter(
-    (lesson) => !lesson.unitId || !groupedLessonIds.has(lesson.id),
-  );
+  const ungroupedLessons = sortedLessons.filter((lesson) => !groupedLessonIds.has(lesson.id));
   const totalLessons = sortedLessons.length;
 
   const handleAddUnit = async () => {
@@ -187,7 +203,7 @@ export function LessonList({
         </div>
       ) : (
         <div className="space-y-4">
-          {sortedUnits.map((unit) => (
+          {lessonGroups.map(({ unit, lessons: unitLessons }, unitIndex) => (
             <section key={unit.id} className="overflow-hidden rounded-lg border">
               <div className="flex items-center justify-between gap-3 border-b bg-muted/40 px-4 py-3">
                 {editingUnit?.id === unit.id ? (
@@ -215,10 +231,48 @@ export function LessonList({
                     <div className="min-w-0">
                       <h4 className="truncate text-sm font-semibold">{unit.title}</h4>
                       <p className="text-xs text-muted-foreground">
-                        {t('unitLessonCount', { count: unit.lessons?.length ?? 0 })}
+                        {t('unitLessonCount', { count: unitLessons.length })}
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-1">
+                      {onReorderUnit && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            disabled={unitIndex === 0}
+                            title={t('moveUp')}
+                            aria-label={t('moveUp')}
+                            onClick={() => onReorderUnit(unit.id, 'up')}
+                          >
+                            <ChevronUp className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            disabled={unitIndex === lessonGroups.length - 1}
+                            title={t('moveDown')}
+                            aria-label={t('moveDown')}
+                            onClick={() => onReorderUnit(unit.id, 'down')}
+                          >
+                            <ChevronDown className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+                      {onDuplicateUnit && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          title={t('duplicateUnit')}
+                          aria-label={t('duplicateUnit')}
+                          onClick={() => onDuplicateUnit(unit)}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="outline"
@@ -275,12 +329,14 @@ export function LessonList({
               )}
 
               <LessonRows
-                lessons={[...(unit.lessons ?? [])].sort(sortByOrder)}
+                lessons={unitLessons}
                 confirmDelete={confirmDelete}
                 setConfirmDelete={setConfirmDelete}
                 onEdit={onEdit}
                 onDelete={onDelete}
                 onReorder={onReorder}
+                onDuplicate={onDuplicate}
+                getPreviewUrl={getPreviewUrl}
                 t={t}
               />
             </section>
@@ -312,6 +368,8 @@ export function LessonList({
                 onEdit={onEdit}
                 onDelete={onDelete}
                 onReorder={onReorder}
+                onDuplicate={onDuplicate}
+                getPreviewUrl={getPreviewUrl}
                 t={t}
               />
             </section>
@@ -329,6 +387,8 @@ function LessonRows({
   onEdit,
   onDelete,
   onReorder,
+  onDuplicate,
+  getPreviewUrl,
   t,
 }: {
   lessons: Lesson[];
@@ -337,6 +397,8 @@ function LessonRows({
   onEdit: (lesson: Lesson) => void;
   onDelete: (lessonId: string) => void;
   onReorder?: (lessonId: string, direction: 'up' | 'down') => void;
+  onDuplicate?: (lesson: Lesson) => void;
+  getPreviewUrl?: (lesson: Lesson) => string | null;
   t: ReturnType<typeof useTranslations>;
 }) {
   if (lessons.length === 0) {
@@ -345,7 +407,7 @@ function LessonRows({
 
   return (
     <div>
-      <div className="grid grid-cols-[2rem_7rem_1fr_5rem_6rem] gap-2 px-4 py-2.5 bg-muted/20 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+      <div className="grid grid-cols-[2rem_7rem_1fr_5rem_9.5rem] gap-2 px-4 py-2.5 bg-muted/20 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
         <span className="text-center">#</span>
         <span>Type</span>
         <span>Title</span>
@@ -356,10 +418,11 @@ function LessonRows({
         const typeConfig = getTypeConfig(t);
         const cfg = typeConfig[lesson.type as keyof typeof typeConfig] ?? typeConfig.text;
         const summary = getLessonSummary(lesson, t);
+        const previewUrl = getPreviewUrl?.(lesson) ?? null;
         return (
           <div
             key={lesson.id}
-            className="grid grid-cols-[2rem_7rem_1fr_5rem_6rem] gap-2 px-4 py-3 items-center border-t hover:bg-muted/30 transition-colors group"
+            className="grid grid-cols-[2rem_7rem_1fr_5rem_9.5rem] gap-2 px-4 py-3 items-center border-t hover:bg-muted/30 transition-colors group"
           >
             <span className="text-center text-sm font-semibold text-muted-foreground">
               {String(idx + 1).padStart(2, '0')}
@@ -385,6 +448,8 @@ function LessonRows({
                     size="icon"
                     className="h-7 w-7"
                     disabled={idx === 0}
+                    title={t('moveUp')}
+                    aria-label={t('moveUp')}
                     onClick={() => onReorder(lesson.id, 'up')}
                   >
                     <ChevronUp className="h-3.5 w-3.5" />
@@ -394,16 +459,46 @@ function LessonRows({
                     size="icon"
                     className="h-7 w-7"
                     disabled={idx === lessons.length - 1}
+                    title={t('moveDown')}
+                    aria-label={t('moveDown')}
                     onClick={() => onReorder(lesson.id, 'down')}
                   >
                     <ChevronDown className="h-3.5 w-3.5" />
                   </Button>
                 </>
               )}
+              {previewUrl && (
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                  title={t('lessonPreview')}
+                  aria-label={t('lessonPreview')}
+                >
+                  <a href={previewUrl} target="_blank" rel="noreferrer">
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </Button>
+              )}
+              {onDuplicate && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                  title={t('duplicateLesson')}
+                  aria-label={t('duplicateLesson')}
+                  onClick={() => onDuplicate(lesson)}
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                title={t('editLesson')}
+                aria-label={t('editLesson')}
                 onClick={() => onEdit(lesson)}
               >
                 <Pencil className="w-3.5 h-3.5" />
@@ -412,6 +507,8 @@ function LessonRows({
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7 text-destructive/70 hover:text-destructive"
+                title={t('deleteCourse')}
+                aria-label={t('deleteCourse')}
                 onClick={() => setConfirmDelete(lesson.id)}
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -443,6 +540,14 @@ function LessonRows({
       })}
     </div>
   );
+}
+
+function getLessonsForUnit(unit: CourseUnit, sortedLessons: Lesson[]) {
+  const fromFlat = sortedLessons.filter((lesson) => lesson.unitId === unit.id);
+  const knownIds = new Set(fromFlat.map((lesson) => lesson.id));
+  const fromUnit = (unit.lessons ?? []).filter((lesson) => !knownIds.has(lesson.id));
+
+  return [...fromFlat, ...fromUnit].sort(sortByOrder);
 }
 
 function sortByOrder<T extends { order: number; createdAt?: string }>(a: T, b: T) {

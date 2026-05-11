@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
+import { DraftPreviewCard } from '@/components/authoring/draft-preview-card';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
 import {
@@ -25,10 +26,23 @@ import { EditLessonDialog } from '@/features/courses/edit-lesson-form';
 import { CourseStats } from '@/features/courses/course-stats';
 import { CourseReportPanel } from '@/features/courses/course-report-panel';
 import { EnrollmentPanel } from '@/features/courses/enrollment-panel';
-import { Lesson, buildCourseAiSettings, normalizeCourseAiSettings } from '@/lib/course-api';
+import {
+  createEmptyQuizDraft,
+  isLessonDraftReady,
+  parseMicroCardContent,
+  parseQuizContent,
+} from '@/features/courses/lesson-type-fields';
+import {
+  CourseUnit,
+  Lesson,
+  buildCourseAiSettings,
+  normalizeCourseAiSettings,
+} from '@/lib/course-api';
 import { Button, Alert, AlertDescription } from '@/components/ui';
 import { ArrowLeft, ExternalLink, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { Link } from '@/navigation';
+
+const EMPTY_ARRAY: never[] = [];
 
 export default function CourseEditorPage() {
   const t = useTranslations('Admin');
@@ -108,6 +122,78 @@ export default function CourseEditorPage() {
     setSelectedUnitId(unitId ?? null);
     setShowAddLesson(true);
   };
+
+  const handleDuplicateLesson = async (lesson: Lesson): Promise<void> => {
+    const siblings = lessonsForUnit(lessons, lesson.unitId);
+    const nextOrder = lesson.order + 1;
+    const laterLessons = siblings.filter((item) => item.order > lesson.order);
+
+    try {
+      if (laterLessons.length > 0) {
+        await Promise.all(
+          laterLessons.map((item) =>
+            updateLesson.mutateAsync({
+              id: item.id,
+              courseId,
+              data: { order: item.order + 1 },
+            }),
+          ),
+        );
+      }
+
+      const { id: _id, courseId: _lessonCourseId, ...copy } = lesson;
+      await createLesson.mutateAsync({
+        courseId,
+        data: {
+          ...copy,
+          title: t('duplicatedLessonTitle', { title: lesson.title }),
+          order: nextOrder,
+          unitId: lesson.unitId ?? null,
+          content: lesson.content ?? null,
+          videoUrl: lesson.videoUrl ?? null,
+          aiPrompt: lesson.aiPrompt ?? null,
+          quiz: lesson.quiz ?? null,
+        },
+      });
+      showMsg('success', 'lessonDuplicated');
+    } catch {
+      showMsg('error', 'lessonDuplicateError');
+    }
+  };
+
+  const handleReorderLesson = async (lessonId: string, direction: 'up' | 'down') => {
+    const lesson = lessons.find((item) => item.id === lessonId);
+    if (!lesson) return;
+
+    const siblings = lessonsForUnit(lessons, lesson.unitId).sort((a, b) => a.order - b.order);
+    const index = siblings.findIndex((item) => item.id === lessonId);
+    const nextIndex = direction === 'up' ? index - 1 : index + 1;
+
+    if (index < 0 || nextIndex < 0 || nextIndex >= siblings.length) return;
+
+    const target = siblings[nextIndex];
+
+    try {
+      await Promise.all([
+        updateLesson.mutateAsync({
+          id: lesson.id,
+          courseId,
+          data: { order: target.order },
+        }),
+        updateLesson.mutateAsync({
+          id: target.id,
+          courseId,
+          data: { order: lesson.order },
+        }),
+      ]);
+      showMsg('success', 'lessonReordered');
+    } catch {
+      showMsg('error', 'lessonReorderError');
+    }
+  };
+
+  const getLessonPreviewUrl = (lesson: Lesson) =>
+    studentBaseUrl ? `${studentBaseUrl}/vi/lessons/${lesson.id}` : null;
 
   const handleUpdateLesson = (data: Partial<Lesson>): Promise<boolean> => {
     if (!editingLesson) return Promise.resolve(false);
@@ -198,6 +284,87 @@ export default function CourseEditorPage() {
     });
   };
 
+  const handleDuplicateUnit = async (unit: CourseUnit): Promise<void> => {
+    try {
+      const duplicate = await createCourseUnit.mutateAsync({
+        courseId,
+        data: {
+          title: t('duplicatedUnitTitle', { title: unit.title }),
+          order: unit.order + 1,
+        },
+      });
+
+      const unitLessons = lessonsForUnit(lessons, unit.id);
+      if (unitLessons.length > 0) {
+        await Promise.all(
+          unitLessons.map((lesson) =>
+            createLesson.mutateAsync({
+              courseId,
+              data: {
+                title: t('duplicatedLessonTitle', { title: lesson.title }),
+                type: lesson.type,
+                duration: lesson.duration,
+                order: lesson.order,
+                unitId: duplicate.id,
+                content: lesson.content ?? null,
+                videoUrl: lesson.videoUrl ?? null,
+                aiPrompt: lesson.aiPrompt ?? null,
+                quiz: lesson.quiz ?? null,
+              },
+            }),
+          ),
+        );
+      }
+
+      const laterUnits = units.filter((item) => item.order > unit.order);
+      if (laterUnits.length > 0) {
+        await Promise.all(
+          laterUnits.map((item) =>
+            updateCourseUnit.mutateAsync({
+              courseId,
+              unitId: item.id,
+              data: { order: item.order + 1 },
+            }),
+          ),
+        );
+      }
+
+      showMsg('success', 'unitDuplicated');
+    } catch {
+      showMsg('error', 'unitDuplicateError');
+    }
+  };
+
+  const handleReorderUnit = async (unitId: string, direction: 'up' | 'down') => {
+    const unit = units.find((item) => item.id === unitId);
+    if (!unit) return;
+
+    const orderedUnits = [...units].sort((a, b) => a.order - b.order);
+    const index = orderedUnits.findIndex((item) => item.id === unitId);
+    const nextIndex = direction === 'up' ? index - 1 : index + 1;
+    if (index < 0 || nextIndex < 0 || nextIndex >= orderedUnits.length) return;
+
+    const target = orderedUnits[nextIndex];
+
+    try {
+      await Promise.all([
+        updateCourseUnit.mutateAsync({
+          courseId,
+          unitId: unit.id,
+          data: { order: target.order },
+        }),
+        updateCourseUnit.mutateAsync({
+          courseId,
+          unitId: target.id,
+          data: { order: unit.order },
+        }),
+      ]);
+      showMsg('success', 'unitReordered');
+    } catch {
+      showMsg('error', 'unitReorderError');
+    }
+  };
+
   const handleDeleteUnit = (unitId: string) => {
     deleteCourseUnit.mutate(
       { courseId, unitId },
@@ -208,12 +375,23 @@ export default function CourseEditorPage() {
     );
   };
 
-  const lessons = course?.lessons ?? [];
-  const units = course?.units ?? [];
-  const enrollments = course?.enrollments ?? [];
+  const lessons = course?.lessons ?? EMPTY_ARRAY;
+  const units = course?.units ?? EMPTY_ARRAY;
+  const enrollments = course?.enrollments ?? EMPTY_ARRAY;
   const studentBaseUrl = process.env.NEXT_PUBLIC_WEB_STUDENT_URL;
   const firstLessonPreviewUrl =
-    studentBaseUrl && lessons[0] ? `${studentBaseUrl}/vi/lessons/${lessons[0].id}` : null;
+    studentBaseUrl && lessons[0] ? getLessonPreviewUrl(lessons[0]) : null;
+  const lessonReadiness = useMemo(() => {
+    const readyLessons = lessons.filter(isPersistedLessonReady).length;
+    return {
+      totalLessons: lessons.length,
+      totalUnits: units.length,
+      readyLessons,
+      draftLessons: lessons.length - readyLessons,
+      isReady:
+        Boolean(course?.title?.trim()) && lessons.length > 0 && readyLessons === lessons.length,
+    };
+  }, [course?.title, lessons, units.length]);
 
   if (isLoading) {
     return (
@@ -318,12 +496,33 @@ export default function CourseEditorPage() {
                     onAddUnit={handleAddUnit}
                     onUpdateUnit={handleUpdateUnit}
                     onDeleteUnit={handleDeleteUnit}
+                    onDuplicateUnit={handleDuplicateUnit}
+                    onReorderUnit={handleReorderUnit}
+                    onReorder={handleReorderLesson}
+                    onDuplicate={handleDuplicateLesson}
+                    getPreviewUrl={getLessonPreviewUrl}
                   />
                 </div>
               </div>
 
               {/* Right: Stats */}
               <div className="space-y-4">
+                <DraftPreviewCard
+                  title={t('courseReadiness')}
+                  ready={lessonReadiness.isReady}
+                  rows={[
+                    { label: t('courseName'), value: course.title },
+                    { label: t('unit'), value: lessonReadiness.totalUnits },
+                    { label: t('totalLectures'), value: lessonReadiness.totalLessons },
+                    { label: t('readyLessons'), value: lessonReadiness.readyLessons },
+                    { label: t('draftLessons'), value: lessonReadiness.draftLessons },
+                  ]}
+                  checklist={[
+                    { label: t('courseName'), ok: Boolean(course.title.trim()) },
+                    { label: t('readyLessons'), ok: lessonReadiness.totalLessons > 0 },
+                    { label: t('allLessonsReady'), ok: lessonReadiness.draftLessons === 0 },
+                  ]}
+                />
                 <div className="bg-card border rounded-xl p-5">
                   <CourseStats lessons={lessons} />
                 </div>
@@ -367,4 +566,52 @@ export default function CourseEditorPage() {
       </div>
     </AuthGuard>
   );
+}
+
+function lessonsForUnit(lessons: Lesson[], unitId?: string | null) {
+  return lessons
+    .filter((lesson) => (lesson.unitId ?? null) === (unitId ?? null))
+    .sort((a, b) => a.order - b.order);
+}
+
+function isPersistedLessonReady(lesson: Lesson) {
+  if (!lesson.title.trim()) return false;
+
+  if (lesson.type === 'video') {
+    return Boolean(lesson.videoUrl?.trim());
+  }
+
+  if (lesson.type === 'text') {
+    return Boolean(lesson.content?.trim());
+  }
+
+  if (lesson.type === 'simulation') {
+    return Boolean(lesson.aiPrompt?.trim());
+  }
+
+  if (lesson.type === 'micro_card') {
+    const card = parseMicroCardContent(lesson.content);
+    return Boolean(card.front.trim() && card.back.trim());
+  }
+
+  if (lesson.type === 'quiz') {
+    const quiz = parseQuizContent(lesson.quiz ?? createEmptyQuizDraft());
+    return isLessonDraftReady({
+      type: 'quiz',
+      title: lesson.title,
+      content: lesson.content ?? '',
+      videoUrl: lesson.videoUrl ?? '',
+      aiPrompt: lesson.aiPrompt ?? '',
+      microCard: {
+        front: '',
+        pinyin: '',
+        back: '',
+        example: '',
+        audioUrl: '',
+      },
+      quiz,
+    });
+  }
+
+  return true;
 }

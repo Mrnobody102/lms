@@ -279,6 +279,8 @@
       "retry": "Retry",
       "attemptStartedAtValue": "Started {value}",
       "attemptSubmittedAtValue": "Submitted {value}",
+      "attemptDeadlineAtValue": "Deadline {value}",
+      "submitted": "Submitted",
       "resumeAttempt": "Resume attempt",
       "inProgress": "In progress",
       "inProgressReview": "This attempt is still in progress. Open the exam to continue working.",

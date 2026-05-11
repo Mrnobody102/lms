@@ -2,6 +2,24 @@ import api from './api';
 
 export type ExamQuestionType = 'MULTIPLE_CHOICE' | 'FILL_BLANK';
 
+export interface ExamQuestion {
+  id: string;
+  type: ExamQuestionType;
+  prompt: string;
+  options?: unknown;
+  correctAnswer: unknown;
+  explanation?: string | null;
+  points: number;
+  skillTags: string[];
+}
+
+export interface ExamSection {
+  id: string;
+  title: string;
+  order: number;
+  questions: ExamQuestion[];
+}
+
 export interface ExamSummary {
   id: string;
   courseId: string;
@@ -16,25 +34,17 @@ export interface ExamSummary {
   _count?: { sections: number; attempts: number };
 }
 
-export interface ExamQuestion {
-  type: ExamQuestionType;
-  prompt: string;
-  options?: unknown;
-  correctAnswer: unknown;
-  explanation?: string;
-  points?: number;
-  skillTags?: string[];
-}
-
-export interface ExamSection {
-  title: string;
-  order?: number;
-  questions: ExamQuestion[];
+export interface Exam extends ExamSummary {
+  sections: ExamSection[];
 }
 
 export const examApi = {
   getExams(params?: { courseId?: string; unitId?: string }) {
     return api.get('/exams', { params }).then((response) => response.data as ExamSummary[]);
+  },
+
+  getExam(id: string) {
+    return api.get(`/exams/${id}`).then((response) => response.data as Exam);
   },
 
   createExam(data: {
@@ -45,7 +55,19 @@ export const examApi = {
     durationMinutes?: number;
     passingScore?: number;
     isPublished?: boolean;
-    sections: ExamSection[];
+    sections: Array<{
+      title: string;
+      order?: number;
+      questions: Array<{
+        type: ExamQuestionType;
+        prompt: string;
+        options?: unknown;
+        correctAnswer: unknown;
+        explanation?: string;
+        points?: number;
+        skillTags?: string[];
+      }>;
+    }>;
   }) {
     return api.post('/exams', data).then((response) => response.data as ExamSummary);
   },

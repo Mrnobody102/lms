@@ -10,6 +10,15 @@ export function useExams(params?: { courseId?: string; unitId?: string }) {
   });
 }
 
+export function useExam(id: string) {
+  return useQuery({
+    queryKey: ['exam', id],
+    queryFn: () => examApi.getExam(id),
+    enabled: Boolean(id),
+    staleTime: 60 * 1000,
+  });
+}
+
 export function useCreateExam() {
   const queryClient = useQueryClient();
 
