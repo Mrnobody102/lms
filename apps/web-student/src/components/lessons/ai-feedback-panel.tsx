@@ -15,6 +15,9 @@ interface AIFeedbackShape {
   matched?: boolean;
   transcript?: string;
   summary?: string;
+  confidence?: number;
+  provider?: string;
+  model?: string;
 }
 
 export function AIFeedbackPanel({ aiFeedback, className }: AIFeedbackPanelProps) {
@@ -69,6 +72,23 @@ export function AIFeedbackPanel({ aiFeedback, className }: AIFeedbackPanelProps)
           <CheckCircle2 className="h-3 w-3" />
           {isReviewed ? t('practice.aiReviewedBadge') : t('practice.aiPendingBadge')}
         </span>
+        {typeof feedback.confidence === 'number' && (
+          <span className="rounded-full bg-background/70 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+            {t('practice.aiConfidenceValue', {
+              value: Math.round(feedback.confidence * 100),
+            })}
+          </span>
+        )}
+        {feedback.provider && (
+          <span className="rounded-full bg-background/70 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+            {t('practice.aiProviderValue', { value: feedback.provider })}
+          </span>
+        )}
+        {feedback.model && (
+          <span className="rounded-full bg-background/70 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+            {t('practice.aiModelValue', { value: feedback.model })}
+          </span>
+        )}
       </div>
     </div>
   );
@@ -97,5 +117,18 @@ function normalizeAiFeedback(value: unknown): AIFeedbackShape | null {
     matched: typeof candidate.matched === 'boolean' ? candidate.matched : undefined,
     transcript: typeof candidate.transcript === 'string' ? candidate.transcript : undefined,
     summary: typeof candidate.summary === 'string' ? candidate.summary : undefined,
+    confidence: normalizeConfidence(candidate.confidence),
+    provider: typeof candidate.provider === 'string' ? candidate.provider : undefined,
+    model: typeof candidate.model === 'string' ? candidate.model : undefined,
   };
+}
+
+function normalizeConfidence(value: unknown) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return undefined;
+  }
+
+  if (value < 0) return 0;
+  if (value > 1) return 1;
+  return value;
 }

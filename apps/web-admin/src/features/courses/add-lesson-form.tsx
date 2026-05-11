@@ -15,9 +15,11 @@ import {
 } from '@/components/ui';
 import { Loader2, Plus } from 'lucide-react';
 import {
+  createEmptyQuizDraft,
   LessonTypeFields,
   createEmptyMicroCardDraft,
   isLessonDraftReady,
+  serializeQuizContent,
   serializeMicroCardContent,
 } from './lesson-type-fields';
 
@@ -50,6 +52,7 @@ export function AddLessonDialog({
   const [videoUrl, setVideoUrl] = useState('');
   const [aiPrompt, setAiPrompt] = useState('');
   const [microCard, setMicroCard] = useState(createEmptyMicroCardDraft());
+  const [quiz, setQuiz] = useState(createEmptyQuizDraft());
 
   useEffect(() => {
     if (open) {
@@ -58,7 +61,7 @@ export function AddLessonDialog({
   }, [open, selectedUnitId, units]);
 
   const handleSubmit = async () => {
-    if (!isLessonDraftReady({ type, title, content, videoUrl, aiPrompt, microCard })) return;
+    if (!isLessonDraftReady({ type, title, content, videoUrl, aiPrompt, microCard, quiz })) return;
 
     const success = await onSubmit({
       title,
@@ -72,6 +75,7 @@ export function AddLessonDialog({
           : type === 'micro_card'
             ? serializeMicroCardContent(microCard)
             : undefined,
+      quiz: type === 'quiz' ? serializeQuizContent(quiz) : undefined,
       videoUrl: type === 'video' ? videoUrl.trim() : undefined,
       aiPrompt: type === 'simulation' ? aiPrompt.trim() : undefined,
     });
@@ -84,6 +88,7 @@ export function AddLessonDialog({
       setVideoUrl('');
       setAiPrompt('');
       setMicroCard(createEmptyMicroCardDraft());
+      setQuiz(createEmptyQuizDraft());
       onOpenChange(false);
     }
   };
@@ -98,6 +103,7 @@ export function AddLessonDialog({
       setVideoUrl('');
       setAiPrompt('');
       setMicroCard(createEmptyMicroCardDraft());
+      setQuiz(createEmptyQuizDraft());
     }
     onOpenChange(isOpen);
   };
@@ -168,6 +174,8 @@ export function AddLessonDialog({
             onAiPromptChange={setAiPrompt}
             microCard={microCard}
             onMicroCardChange={setMicroCard}
+            quiz={quiz}
+            onQuizChange={setQuiz}
           />
 
           <div className="space-y-1.5">
@@ -189,7 +197,8 @@ export function AddLessonDialog({
           <Button
             onClick={handleSubmit}
             disabled={
-              saving || !isLessonDraftReady({ type, title, content, videoUrl, aiPrompt, microCard })
+              saving ||
+              !isLessonDraftReady({ type, title, content, videoUrl, aiPrompt, microCard, quiz })
             }
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}

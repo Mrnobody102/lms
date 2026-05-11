@@ -19,6 +19,13 @@ interface SubmittedAnswer {
   answer: unknown;
 }
 
+interface AttemptAnswerForStats {
+  aiFeedback?: unknown;
+  question: {
+    type: PracticeQuestionType;
+  };
+}
+
 @Injectable()
 export class PracticeService {
   constructor(
@@ -195,17 +202,25 @@ export class PracticeService {
             unit: { select: { id: true, title: true } },
           },
         },
+        answers: {
+          select: {
+            aiFeedback: true,
+            question: { select: { type: true } },
+          },
+        },
       },
       orderBy: { submittedAt: 'desc' },
       take: query.limit ?? 10,
     });
 
+    const attemptSummaries = attempts.map((attempt) => this.toAttemptSummary(attempt));
+
     if (user.role === Role.STUDENT) {
-      return attempts;
+      return attemptSummaries;
     }
 
     return Promise.all(
-      attempts.map(async (attempt) => {
+      attemptSummaries.map(async (attempt) => {
         await this.learningAccess.ensureCourseAccess(attempt.courseId, tenantId, user);
         return attempt;
       }),
@@ -252,7 +267,10 @@ export class PracticeService {
     }
 
     await this.learningAccess.ensureCourseAccess(attempt.courseId, tenantId, user);
-    return attempt;
+    return {
+      ...attempt,
+      stats: this.buildAttemptStats(attempt.answers),
+    };
   }
 
   async submitAttempt(
@@ -503,5 +521,43 @@ export class PracticeService {
       courseTitle: input.courseTitle,
       courseAiSettings: input.courseAiSettings,
     });
+  }
+
+  private toAttemptSummary<T extends { answers?: AttemptAnswerForStats[] }>(attempt: T) {
+    const { answers = [], ...summary } = attempt;
+    return {
+      ...summary,
+      stats: this.buildAttemptStats(answers),
+    };
+  }
+
+  private buildAttemptStats(answers: AttemptAnswerForStats[] = []) {
+    const aiAnswers = answers.filter((answer) => this.isAiQuestion(answer.question.type));
+    const aiReviewedCount = aiAnswers.filter(
+      (answer) => this.getAiFeedbackStatus(answer.aiFeedback) === 'AUTO_REVIEWED',
+    ).length;
+
+    return {
+      answeredCount: answers.length,
+      aiAnsweredCount: aiAnswers.length,
+      aiReviewedCount,
+      aiPendingCount: Math.max(aiAnswers.length - aiReviewedCount, 0),
+    };
+  }
+
+  private isAiQuestion(type: PracticeQuestionType) {
+    return (
+      type === PracticeQuestionType.AI_EVALUATED_AUDIO ||
+      type === PracticeQuestionType.AI_EVALUATED_TEXT
+    );
+  }
+
+  private getAiFeedbackStatus(value: unknown) {
+    if (typeof value !== 'object' || value === null) {
+      return undefined;
+    }
+
+    const status = (value as Record<string, unknown>).status;
+    return status === 'AUTO_REVIEWED' || status === 'PENDING_REVIEW' ? status : undefined;
   }
 }

@@ -1,6 +1,16 @@
 'use client';
 
-import { ArrowRight, BookOpen, Dumbbell, FileQuestion, History, Loader2 } from 'lucide-react';
+import {
+  ArrowRight,
+  BookOpen,
+  CheckCircle2,
+  Dumbbell,
+  FileQuestion,
+  History,
+  Loader2,
+  MessageSquare,
+} from 'lucide-react';
+import { ReactNode, useMemo } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { StudentNav } from '@/components/layout/student-nav';
 import { usePracticeAttempts, usePracticeExerciseSets } from '@/hooks/use-practice';
@@ -10,7 +20,11 @@ export default function PracticePage() {
   const t = useTranslations('Student');
   const locale = useLocale();
   const { data: exerciseSets = [], isLoading, isError } = usePracticeExerciseSets();
-  const { data: attempts = [] } = usePracticeAttempts({ limit: 5 });
+  const { data: attempts = [], isError: isAttemptsError } = usePracticeAttempts({ limit: 5 });
+  const overview = useMemo(
+    () => buildPracticeOverview(exerciseSets, attempts),
+    [attempts, exerciseSets],
+  );
 
   return (
     <div className="min-h-screen bg-background font-sans">
@@ -53,6 +67,37 @@ export default function PracticePage() {
           </section>
         ) : (
           <div className="space-y-10">
+            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+              <OverviewMetric
+                icon={<BookOpen className="h-5 w-5" />}
+                label={t('practice.publishedSets')}
+                value={t('practice.publishedSetsValue', { count: exerciseSets.length })}
+              />
+              <OverviewMetric
+                icon={<FileQuestion className="h-5 w-5" />}
+                label={t('practice.totalQuestions')}
+                value={t('practice.totalQuestionsValue', { count: overview.totalQuestions })}
+              />
+              <OverviewMetric
+                icon={<History className="h-5 w-5" />}
+                label={t('practice.recentAttempts')}
+                value={t('practice.recentAttemptValue', { count: attempts.length })}
+              />
+              <OverviewMetric
+                icon={<CheckCircle2 className="h-5 w-5" />}
+                label={t('practice.averageAccuracy')}
+                value={t('practice.averageAccuracyValue', { value: overview.averageAccuracy })}
+              />
+              <OverviewMetric
+                icon={<MessageSquare className="h-5 w-5" />}
+                label={t('practice.aiReviewSummary')}
+                value={t('practice.aiReviewSummaryValue', {
+                  reviewed: overview.aiReviewedCount,
+                  pending: overview.aiPendingCount,
+                })}
+              />
+            </section>
+
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
               {exerciseSets.map((set) => (
                 <article
@@ -107,7 +152,11 @@ export default function PracticePage() {
                 </div>
               </div>
 
-              {attempts.length === 0 ? (
+              {isAttemptsError ? (
+                <div className="rounded-md border border-destructive/20 bg-destructive/5 p-5 text-sm text-destructive">
+                  {t('practice.attemptsLoadError')}
+                </div>
+              ) : attempts.length === 0 ? (
                 <div className="rounded-md border border-dashed p-5 text-sm text-muted-foreground">
                   {t('practice.noAttempts')}
                 </div>
@@ -127,6 +176,12 @@ export default function PracticePage() {
                               total: attempt.totalPoints,
                             })}
                           </span>
+                          <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
+                            {t('practice.answeredCountValue', {
+                              count: attempt.stats.answeredCount,
+                              total: attempt.totalPoints,
+                            })}
+                          </span>
                         </div>
                         <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
                           <span className="rounded-md border px-2 py-1">
@@ -142,6 +197,14 @@ export default function PracticePage() {
                               value: formatDateTime(attempt.submittedAt, locale),
                             })}
                           </span>
+                          {attempt.stats.aiAnsweredCount > 0 && (
+                            <span className="rounded-md border px-2 py-1">
+                              {t('practice.aiReviewSummaryValue', {
+                                reviewed: attempt.stats.aiReviewedCount,
+                                pending: attempt.stats.aiPendingCount,
+                              })}
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -164,9 +227,51 @@ export default function PracticePage() {
   );
 }
 
+function OverviewMetric({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+  return (
+    <article className="rounded-md border bg-card p-4">
+      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-primary">
+        {icon}
+      </div>
+      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-2 text-lg font-semibold leading-tight">{value}</p>
+    </article>
+  );
+}
+
 function formatDateTime(value: string, locale: string) {
   return new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(value));
+}
+
+type PracticeOverviewAttempt = {
+  score: number;
+  totalPoints: number;
+  stats: {
+    aiReviewedCount: number;
+    aiPendingCount: number;
+  };
+};
+
+function buildPracticeOverview(
+  exerciseSets: Array<{ _count?: { questions: number } }>,
+  attempts: PracticeOverviewAttempt[],
+) {
+  const totalQuestions = exerciseSets.reduce((sum, set) => sum + (set._count?.questions ?? 0), 0);
+  const totalScore = attempts.reduce((sum, attempt) => sum + attempt.score, 0);
+  const totalPoints = attempts.reduce((sum, attempt) => sum + Math.max(attempt.totalPoints, 0), 0);
+  const averageAccuracy = totalPoints > 0 ? Math.round((totalScore / totalPoints) * 100) : 0;
+  const aiReviewedCount = attempts.reduce((sum, attempt) => sum + attempt.stats.aiReviewedCount, 0);
+  const aiPendingCount = attempts.reduce((sum, attempt) => sum + attempt.stats.aiPendingCount, 0);
+
+  return {
+    totalQuestions,
+    averageAccuracy,
+    aiReviewedCount,
+    aiPendingCount,
+  };
 }

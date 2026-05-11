@@ -287,6 +287,7 @@ describe('PracticeService', () => {
           {
             id: 'attempt-1',
             userId: 'user-1',
+            courseId: 'course-1',
             score: 2,
             totalPoints: 3,
             submittedAt: new Date(),
@@ -296,6 +297,30 @@ describe('PracticeService', () => {
               course: { id: 'course-1', title: 'HSK 1' },
               unit: { id: 'unit-1', title: 'Unit 1' },
             },
+            answers: [
+              {
+                aiFeedback: {
+                  status: 'AUTO_REVIEWED',
+                },
+                question: {
+                  type: PracticeQuestionType.AI_EVALUATED_TEXT,
+                },
+              },
+              {
+                aiFeedback: {
+                  status: 'PENDING_REVIEW',
+                },
+                question: {
+                  type: PracticeQuestionType.AI_EVALUATED_AUDIO,
+                },
+              },
+              {
+                aiFeedback: null,
+                question: {
+                  type: PracticeQuestionType.MULTIPLE_CHOICE,
+                },
+              },
+            ],
           },
         ]),
       },
@@ -311,10 +336,24 @@ describe('PracticeService', () => {
       expect.objectContaining({
         where: expect.objectContaining({ tenantId: 'tenant-1', userId: 'user-1' }),
         take: 10,
+        include: expect.objectContaining({
+          answers: expect.any(Object),
+        }),
       }),
     );
     expect(result).toHaveLength(1);
     expect(result[0].exerciseSet.title).toBe('Vocabulary');
+    expect(result[0]).toEqual(
+      expect.objectContaining({
+        stats: {
+          answeredCount: 3,
+          aiAnsweredCount: 2,
+          aiReviewedCount: 1,
+          aiPendingCount: 1,
+        },
+      }),
+    );
+    expect(result[0]).not.toHaveProperty('answers');
   });
 
   it('should return a practice attempt review with answers and question metadata', async () => {
@@ -335,6 +374,7 @@ describe('PracticeService', () => {
               },
               question: {
                 id: 'question-1',
+                type: PracticeQuestionType.AI_EVALUATED_TEXT,
                 prompt: 'Choose one',
                 correctAnswer: 1,
                 explanation: 'Option 2 is correct',
@@ -372,6 +412,12 @@ describe('PracticeService', () => {
       mode: PracticeQuestionType.AI_EVALUATED_TEXT,
       matched: true,
       transcript: 'Ni Hao',
+    });
+    expect(result.stats).toEqual({
+      answeredCount: 1,
+      aiAnsweredCount: 1,
+      aiReviewedCount: 1,
+      aiPendingCount: 0,
     });
   });
 });

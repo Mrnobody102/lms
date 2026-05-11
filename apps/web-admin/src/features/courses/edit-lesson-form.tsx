@@ -15,11 +15,14 @@ import {
 } from '@/components/ui';
 import { Loader2 } from 'lucide-react';
 import {
+  createEmptyQuizDraft,
   LessonTypeFields,
   createEmptyMicroCardDraft,
   isLessonDraftReady,
   parseMicroCardContent,
+  parseQuizContent,
   serializeMicroCardContent,
+  serializeQuizContent,
 } from './lesson-type-fields';
 
 interface EditLessonDialogProps {
@@ -49,6 +52,7 @@ export function EditLessonDialog({
   const [videoUrl, setVideoUrl] = useState('');
   const [aiPrompt, setAiPrompt] = useState('');
   const [microCard, setMicroCard] = useState(createEmptyMicroCardDraft());
+  const [quiz, setQuiz] = useState(createEmptyQuizDraft());
 
   useEffect(() => {
     if (lesson) {
@@ -60,11 +64,12 @@ export function EditLessonDialog({
       setVideoUrl(lesson.videoUrl ?? '');
       setAiPrompt(lesson.aiPrompt ?? '');
       setMicroCard(parseMicroCardContent(lesson.content));
+      setQuiz(parseQuizContent(lesson.quiz));
     }
   }, [lesson]);
 
   const handleSubmit = async () => {
-    if (!isLessonDraftReady({ type, title, content, videoUrl, aiPrompt, microCard })) return;
+    if (!isLessonDraftReady({ type, title, content, videoUrl, aiPrompt, microCard, quiz })) return;
 
     await onSubmit({
       title,
@@ -77,6 +82,7 @@ export function EditLessonDialog({
           : type === 'micro_card'
             ? serializeMicroCardContent(microCard)
             : null,
+      quiz: type === 'quiz' ? serializeQuizContent(quiz) : null,
       videoUrl: type === 'video' ? videoUrl.trim() : null,
       aiPrompt: type === 'simulation' ? aiPrompt.trim() : null,
     });
@@ -147,6 +153,8 @@ export function EditLessonDialog({
             onAiPromptChange={setAiPrompt}
             microCard={microCard}
             onMicroCardChange={setMicroCard}
+            quiz={quiz}
+            onQuizChange={setQuiz}
           />
 
           <div className="space-y-1.5">
@@ -168,7 +176,8 @@ export function EditLessonDialog({
           <Button
             onClick={handleSubmit}
             disabled={
-              saving || !isLessonDraftReady({ type, title, content, videoUrl, aiPrompt, microCard })
+              saving ||
+              !isLessonDraftReady({ type, title, content, videoUrl, aiPrompt, microCard, quiz })
             }
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : t('save')}

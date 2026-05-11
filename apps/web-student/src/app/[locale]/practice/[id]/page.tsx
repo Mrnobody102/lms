@@ -315,6 +315,7 @@ function ResultSummary({
   onRetry: () => void;
 }) {
   const t = useTranslations('Student');
+  const aiStats = buildResultAiStats(result.result.answers);
 
   return (
     <section className="mb-6 rounded-md border bg-card p-6">
@@ -330,6 +331,14 @@ function ResultSummary({
           <p className="mt-1 text-sm text-muted-foreground">
             {t('practice.percentageValue', { value: result.result.percentage })}
           </p>
+          {aiStats.aiAnsweredCount > 0 && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              {t('practice.aiReviewSummaryValue', {
+                reviewed: aiStats.aiReviewedCount,
+                pending: aiStats.aiPendingCount,
+              })}
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap gap-3">
           <Link
@@ -366,4 +375,26 @@ function formatAnswer(question: PracticeQuestion | undefined, value: unknown) {
   }
 
   return String(value ?? '');
+}
+
+function buildResultAiStats(answers: PracticeAnswerFeedback[]) {
+  const aiAnswers = answers.filter((answer) => Boolean(answer.aiFeedback));
+  const aiReviewedCount = aiAnswers.filter(
+    (answer) => getAiFeedbackStatus(answer.aiFeedback) === 'AUTO_REVIEWED',
+  ).length;
+
+  return {
+    aiAnsweredCount: aiAnswers.length,
+    aiReviewedCount,
+    aiPendingCount: Math.max(aiAnswers.length - aiReviewedCount, 0),
+  };
+}
+
+function getAiFeedbackStatus(value: unknown) {
+  if (typeof value !== 'object' || value === null) {
+    return undefined;
+  }
+
+  const status = (value as Record<string, unknown>).status;
+  return status === 'AUTO_REVIEWED' || status === 'PENDING_REVIEW' ? status : undefined;
 }

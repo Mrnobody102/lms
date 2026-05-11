@@ -66,6 +66,22 @@ export default function PracticeAttemptReviewPage() {
                   })}
                 </span>
               </div>
+              <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-muted-foreground">
+                <span className="rounded-md border px-2 py-1">
+                  {t('practice.answeredCountValue', {
+                    count: attempt.stats.answeredCount,
+                    total: attempt.totalPoints,
+                  })}
+                </span>
+                {attempt.stats.aiAnsweredCount > 0 && (
+                  <span className="rounded-md border px-2 py-1">
+                    {t('practice.aiReviewSummaryValue', {
+                      reviewed: attempt.stats.aiReviewedCount,
+                      pending: attempt.stats.aiPendingCount,
+                    })}
+                  </span>
+                )}
+              </div>
             </header>
 
             <section className="mb-6 rounded-md border bg-card p-6">

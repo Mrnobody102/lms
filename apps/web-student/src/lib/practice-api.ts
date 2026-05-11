@@ -62,11 +62,19 @@ export interface PracticeAttemptResult {
   };
 }
 
+export interface PracticeAttemptStats {
+  answeredCount: number;
+  aiAnsweredCount: number;
+  aiReviewedCount: number;
+  aiPendingCount: number;
+}
+
 export interface PracticeAttemptSummary {
   id: string;
   score: number;
   totalPoints: number;
   submittedAt: string;
+  stats: PracticeAttemptStats;
   exerciseSet: {
     id: string;
     title: string;

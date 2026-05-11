@@ -355,6 +355,7 @@ function LessonRows({
       {lessons.map((lesson, idx) => {
         const typeConfig = getTypeConfig(t);
         const cfg = typeConfig[lesson.type as keyof typeof typeConfig] ?? typeConfig.text;
+        const summary = getLessonSummary(lesson, t);
         return (
           <div
             key={lesson.id}
@@ -368,7 +369,10 @@ function LessonRows({
                 {cfg.label}
               </Badge>
             </div>
-            <span className="text-sm font-medium truncate pr-2">{lesson.title}</span>
+            <div className="min-w-0 pr-2">
+              <p className="truncate text-sm font-medium">{lesson.title}</p>
+              {summary && <p className="truncate text-xs text-muted-foreground">{summary}</p>}
+            </div>
             <div className="flex items-center justify-end gap-1 text-xs text-muted-foreground">
               <Clock className="w-3 h-3" />
               <span>{lesson.duration}m</span>
@@ -443,4 +447,54 @@ function LessonRows({
 
 function sortByOrder<T extends { order: number; createdAt?: string }>(a: T, b: T) {
   return a.order - b.order;
+}
+
+function getLessonSummary(lesson: Lesson, t: ReturnType<typeof useTranslations>) {
+  if (lesson.type === 'video') {
+    return lesson.videoUrl || t('lessonMissingContent');
+  }
+
+  if (lesson.type === 'text') {
+    return lesson.content
+      ? t('lessonContentLength', { count: lesson.content.length })
+      : t('lessonMissingContent');
+  }
+
+  if (lesson.type === 'simulation') {
+    return lesson.aiPrompt
+      ? t('lessonContentLength', { count: lesson.aiPrompt.length })
+      : t('lessonMissingContent');
+  }
+
+  if (lesson.type === 'micro_card') {
+    const card = parseMicroCardSummary(lesson.content);
+    return card ?? t('lessonMissingContent');
+  }
+
+  if (lesson.type === 'quiz') {
+    const count = getQuizQuestionCount(lesson.quiz);
+    return t('lessonQuizSummary', { count });
+  }
+
+  return null;
+}
+
+function parseMicroCardSummary(content: string | null | undefined) {
+  if (!content) return null;
+
+  try {
+    const parsed = JSON.parse(content) as Record<string, unknown>;
+    const front = typeof parsed.front === 'string' ? parsed.front.trim() : '';
+    const back = typeof parsed.back === 'string' ? parsed.back.trim() : '';
+    return front && back ? `${front} -> ${back}` : null;
+  } catch {
+    return null;
+  }
+}
+
+function getQuizQuestionCount(quiz: unknown) {
+  if (!quiz || typeof quiz !== 'object') return 0;
+
+  const record = quiz as Record<string, unknown>;
+  return Array.isArray(record.questions) ? record.questions.length : 0;
 }
