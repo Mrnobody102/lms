@@ -1,16 +1,49 @@
 'use client';
 
-import { ArrowRight, BookOpen, FileCheck2, History, Loader2 } from 'lucide-react';
+import {
+  ArrowRight,
+  BarChart3,
+  BookOpen,
+  Clock3,
+  FileCheck2,
+  History,
+  Loader2,
+  PlayCircle,
+  RotateCcw,
+} from 'lucide-react';
+import { ReactNode, useEffect, useMemo, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { StudentNav } from '@/components/layout/student-nav';
 import { useExamAttempts, useExams } from '@/hooks/use-exams';
+import type { ExamAttemptSummary, ExamSummary } from '@/lib/exam-api';
 import { Link } from '@/navigation';
 
 export default function ExamsPage() {
   const t = useTranslations('Student');
   const locale = useLocale();
   const { data: exams = [], isLoading, isError } = useExams();
-  const { data: attempts = [] } = useExamAttempts({ limit: 5 });
+  const {
+    data: attempts = [],
+    isLoading: isAttemptsLoading,
+    isError: isAttemptsError,
+    refetch: refetchAttempts,
+  } = useExamAttempts({ limit: 5 });
+  const [now, setNow] = useState(() => Date.now());
+  const hasActiveAttempt = useMemo(
+    () =>
+      attempts.some((attempt) => attempt.status === 'STARTED' && !isAttemptExpired(attempt, now)),
+    [attempts, now],
+  );
+  const overview = useMemo(() => buildExamOverview(exams, attempts, now), [attempts, exams, now]);
+
+  useEffect(() => {
+    if (!hasActiveAttempt) {
+      return undefined;
+    }
+
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [hasActiveAttempt]);
 
   return (
     <div className="min-h-screen bg-background font-sans">
@@ -53,6 +86,35 @@ export default function ExamsPage() {
           </section>
         ) : (
           <div className="space-y-10">
+            {!isAttemptsLoading && !isAttemptsError && (
+              <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <OverviewMetric
+                  icon={<FileCheck2 className="h-5 w-5" />}
+                  label={t('exam.publishedExams')}
+                  value={t('exam.publishedExamsValue', { count: overview.publishedExams })}
+                />
+                <OverviewMetric
+                  icon={<PlayCircle className="h-5 w-5" />}
+                  label={t('exam.activeAttempts')}
+                  value={t('exam.activeAttemptsValue', {
+                    count: overview.activeAttempts,
+                  })}
+                />
+                <OverviewMetric
+                  icon={<History className="h-5 w-5" />}
+                  label={t('exam.submittedAttempts')}
+                  value={t('exam.submittedAttemptsValue', {
+                    count: overview.submittedAttempts,
+                  })}
+                />
+                <OverviewMetric
+                  icon={<BarChart3 className="h-5 w-5" />}
+                  label={t('exam.averageScore')}
+                  value={t('exam.averageScoreValue', { value: overview.averageScore })}
+                />
+              </section>
+            )}
+
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
               {exams.map((exam) => (
                 <article
@@ -110,68 +172,119 @@ export default function ExamsPage() {
                 </div>
               </div>
 
-              {attempts.length === 0 ? (
+              {isAttemptsLoading ? (
+                <div className="flex items-center gap-2 rounded-md border p-4 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {t('exam.loadingAttempts')}
+                </div>
+              ) : isAttemptsError ? (
+                <div className="rounded-md border border-destructive/20 bg-destructive/5 p-5 text-sm text-destructive">
+                  <div>{t('exam.attemptsLoadError')}</div>
+                  <button
+                    type="button"
+                    onClick={() => void refetchAttempts()}
+                    className="mt-3 inline-flex h-9 items-center justify-center gap-2 rounded-md border border-destructive/20 bg-background px-3 text-xs font-semibold text-foreground hover:bg-muted"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    {t('exam.retry')}
+                  </button>
+                </div>
+              ) : attempts.length === 0 ? (
                 <div className="rounded-md border border-dashed p-5 text-sm text-muted-foreground">
                   {t('exam.noAttempts')}
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {attempts.map((attempt) => (
-                    <article
-                      key={attempt.id}
-                      className="flex flex-col gap-4 rounded-md border p-4 md:flex-row md:items-center md:justify-between"
-                    >
-                      <div className="min-w-0 space-y-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="text-sm font-semibold">{attempt.exam.title}</h3>
-                          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-                            {attempt.status === 'SUBMITTED'
-                              ? t('exam.scoreValue', {
-                                  score: attempt.score,
-                                  total: attempt.totalPoints,
-                                })
-                              : t('exam.inProgress')}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                          <span className="rounded-md border px-2 py-1">
-                            {attempt.exam.course.title}
-                          </span>
-                          {attempt.exam.unit?.title && (
-                            <span className="rounded-md border px-2 py-1">
-                              {attempt.exam.unit.title}
+                  {attempts.map((attempt) => {
+                    const attemptExpired = isAttemptExpired(attempt, now);
+
+                    return (
+                      <article
+                        key={attempt.id}
+                        className="flex flex-col gap-4 rounded-md border p-4 md:flex-row md:items-center md:justify-between"
+                      >
+                        <div className="min-w-0 space-y-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="text-sm font-semibold">{attempt.exam.title}</h3>
+                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                              {attempt.status === 'SUBMITTED'
+                                ? t('exam.scoreValue', {
+                                    score: attempt.score,
+                                    total: attempt.totalPoints,
+                                  })
+                                : t('exam.inProgress')}
                             </span>
-                          )}
-                          <span className="rounded-md border px-2 py-1">
-                            {t('exam.attemptStartedAtValue', {
-                              value: formatDateTime(attempt.startedAt, locale),
-                            })}
-                          </span>
-                          {attempt.status === 'SUBMITTED' && attempt.submittedAt && (
+                            {attempt.status === 'SUBMITTED' &&
+                              attempt.exam.passingScore !== null &&
+                              attempt.exam.passingScore !== undefined && (
+                                <span
+                                  className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                                    getAttemptPercentage(attempt.score, attempt.totalPoints) >=
+                                    attempt.exam.passingScore
+                                      ? 'bg-emerald-500/10 text-emerald-600'
+                                      : 'bg-destructive/10 text-destructive'
+                                  }`}
+                                >
+                                  {getAttemptPercentage(attempt.score, attempt.totalPoints) >=
+                                  attempt.exam.passingScore
+                                    ? t('exam.passed')
+                                    : t('exam.notPassed')}
+                                </span>
+                              )}
+                          </div>
+                          <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
                             <span className="rounded-md border px-2 py-1">
-                              {t('exam.attemptSubmittedAtValue', {
-                                value: formatDateTime(attempt.submittedAt, locale),
+                              {attempt.exam.course.title}
+                            </span>
+                            {attempt.exam.unit?.title && (
+                              <span className="rounded-md border px-2 py-1">
+                                {attempt.exam.unit.title}
+                              </span>
+                            )}
+                            <span className="rounded-md border px-2 py-1">
+                              {t('exam.attemptStartedAtValue', {
+                                value: formatDateTime(attempt.startedAt, locale),
                               })}
                             </span>
-                          )}
+                            {attempt.status === 'SUBMITTED' && attempt.submittedAt && (
+                              <span className="rounded-md border px-2 py-1">
+                                {t('exam.attemptSubmittedAtValue', {
+                                  value: formatDateTime(attempt.submittedAt, locale),
+                                })}
+                              </span>
+                            )}
+                            {attempt.status === 'STARTED' && !attemptExpired && (
+                              <span className="rounded-md border px-2 py-1">
+                                <Clock3 className="mr-1 inline-block h-3.5 w-3.5 align-[-2px]" />
+                                {t('exam.timeRemainingValue', {
+                                  value: formatRemainingTime(attempt.deadlineAt, now),
+                                })}
+                              </span>
+                            )}
+                            {attempt.status === 'STARTED' && attemptExpired && (
+                              <span className="rounded-md border border-destructive/30 bg-destructive/5 px-2 py-1 text-destructive">
+                                {t('exam.expiredBadge')}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
 
-                      <Link
-                        href={
-                          attempt.status === 'STARTED' && !attempt.isExpired
-                            ? `/exams/${attempt.exam.id}`
-                            : `/exams/attempts/${attempt.id}`
-                        }
-                        className="inline-flex h-10 items-center justify-center gap-2 rounded-md border px-4 text-sm font-semibold hover:bg-muted"
-                      >
-                        {attempt.status === 'STARTED' && !attempt.isExpired
-                          ? t('exam.resumeAttempt')
-                          : t('exam.reviewAttempt')}
-                        <ArrowRight className="h-4 w-4" />
-                      </Link>
-                    </article>
-                  ))}
+                        <Link
+                          href={
+                            attempt.status === 'STARTED' && !attemptExpired
+                              ? `/exams/${attempt.exam.id}`
+                              : `/exams/attempts/${attempt.id}`
+                          }
+                          className="inline-flex h-10 items-center justify-center gap-2 rounded-md border px-4 text-sm font-semibold hover:bg-muted"
+                        >
+                          {attempt.status === 'STARTED' && !attemptExpired
+                            ? t('exam.resumeAttempt')
+                            : t('exam.reviewAttempt')}
+                          <ArrowRight className="h-4 w-4" />
+                        </Link>
+                      </article>
+                    );
+                  })}
                 </div>
               )}
             </section>
@@ -182,9 +295,68 @@ export default function ExamsPage() {
   );
 }
 
+function OverviewMetric({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+  return (
+    <article className="rounded-md border bg-card p-4">
+      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-primary">
+        {icon}
+      </div>
+      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-2 text-lg font-semibold leading-tight">{value}</p>
+    </article>
+  );
+}
+
 function formatDateTime(value: string, locale: string) {
   return new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(value));
+}
+
+function formatRemainingTime(deadlineAt: string, now: number) {
+  const remainingMs = Math.max(0, new Date(deadlineAt).getTime() - now);
+  const totalSeconds = Math.ceil(remainingMs / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+function getAttemptPercentage(score: number, totalPoints: number) {
+  return Math.round((score / Math.max(totalPoints, 1)) * 100);
+}
+
+function buildExamOverview(exams: ExamSummary[], attempts: ExamAttemptSummary[], now: number) {
+  const activeAttempts = attempts.filter(
+    (attempt) => attempt.status === 'STARTED' && !isAttemptExpired(attempt, now),
+  ).length;
+  const submittedAttempts = attempts.filter((attempt) => attempt.status === 'SUBMITTED');
+  const averageScore =
+    submittedAttempts.length === 0
+      ? 0
+      : Math.round(
+          submittedAttempts.reduce(
+            (sum, attempt) => sum + getAttemptPercentage(attempt.score, attempt.totalPoints),
+            0,
+          ) / submittedAttempts.length,
+        );
+
+  return {
+    publishedExams: exams.filter((exam) => exam.isPublished).length,
+    activeAttempts,
+    submittedAttempts: submittedAttempts.length,
+    averageScore,
+  };
+}
+
+function isAttemptExpired(attempt: ExamAttemptSummary, now: number) {
+  return attempt.isExpired || new Date(attempt.deadlineAt).getTime() <= now;
 }

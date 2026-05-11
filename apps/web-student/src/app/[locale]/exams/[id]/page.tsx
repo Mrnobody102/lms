@@ -404,6 +404,7 @@ function ResultSummary({
   onRetry: () => void;
 }) {
   const t = useTranslations('Student');
+  const answerStats = buildAnswerStats(result.result.answers);
 
   return (
     <section className="mb-6 rounded-md border bg-card p-6">
@@ -424,6 +425,17 @@ function ResultSummary({
               {result.result.passed ? t('exam.passed') : t('exam.notPassed')}
             </p>
           )}
+          <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-muted-foreground">
+            <span className="rounded-md border px-2 py-1">
+              {t('exam.answeredCountValue', { count: answerStats.answeredCount })}
+            </span>
+            <span className="rounded-md border px-2 py-1">
+              {t('exam.correctCountValue', { count: answerStats.correctCount })}
+            </span>
+            <span className="rounded-md border px-2 py-1">
+              {t('exam.incorrectCountValue', { count: answerStats.incorrectCount })}
+            </span>
+          </div>
         </div>
         <div className="flex flex-wrap gap-3">
           <Link
@@ -460,8 +472,14 @@ function formatAnswer(question: ExamQuestion | undefined, value: unknown) {
 
 function formatRemainingTime(remainingMs: number | null) {
   const totalSeconds = Math.max(0, Math.ceil((remainingMs ?? 0) / 1000));
-  const minutes = Math.floor(totalSeconds / 60);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
@@ -482,4 +500,14 @@ function getSubmitErrorMessage(error: unknown, t: ReturnType<typeof useTranslati
   return message.includes('time has expired')
     ? t('exam.expiredSubmitError')
     : t('exam.submitError');
+}
+
+function buildAnswerStats(answers: Array<{ isCorrect: boolean }>) {
+  const correctCount = answers.filter((answer) => answer.isCorrect).length;
+
+  return {
+    answeredCount: answers.length,
+    correctCount,
+    incorrectCount: Math.max(answers.length - correctCount, 0),
+  };
 }

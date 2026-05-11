@@ -15,6 +15,7 @@ export default function ExamAttemptReviewPage() {
   const attemptId =
     (Array.isArray(params.attemptId) ? params.attemptId[0] : params.attemptId) ?? '';
   const { data: attempt, isLoading, isError } = useExamAttempt(attemptId);
+  const answerStats = attempt?.status === 'SUBMITTED' ? buildAnswerStats(attempt.answers) : null;
 
   return (
     <div className="min-h-screen bg-background font-sans">
@@ -61,6 +62,19 @@ export default function ExamAttemptReviewPage() {
                   </span>
                 )}
               </div>
+              {answerStats && (
+                <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-muted-foreground">
+                  <span className="rounded-md border px-2 py-1">
+                    {t('exam.answeredCountValue', { count: answerStats.answeredCount })}
+                  </span>
+                  <span className="rounded-md border px-2 py-1">
+                    {t('exam.correctCountValue', { count: answerStats.correctCount })}
+                  </span>
+                  <span className="rounded-md border px-2 py-1">
+                    {t('exam.incorrectCountValue', { count: answerStats.incorrectCount })}
+                  </span>
+                </div>
+              )}
             </header>
 
             <section className="mb-6 rounded-md border bg-card p-6">
@@ -200,4 +214,14 @@ function formatExamAnswer(question: ExamQuestion & { correctAnswer?: unknown }, 
   }
 
   return String(value ?? '');
+}
+
+function buildAnswerStats(answers: Array<{ isCorrect: boolean }>) {
+  const correctCount = answers.filter((answer) => answer.isCorrect).length;
+
+  return {
+    answeredCount: answers.length,
+    correctCount,
+    incorrectCount: Math.max(answers.length - correctCount, 0),
+  };
 }

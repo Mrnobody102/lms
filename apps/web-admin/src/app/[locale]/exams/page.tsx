@@ -2,7 +2,18 @@
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { AlertCircle, CheckCircle2, FileCheck2, Loader2, Plus } from 'lucide-react';
+import {
+  AlertCircle,
+  ArrowDown,
+  ArrowUp,
+  CheckCircle2,
+  Copy,
+  FileCheck2,
+  Loader2,
+  Plus,
+  Trash2,
+} from 'lucide-react';
+import { DraftPreviewCard } from '@/components/authoring/draft-preview-card';
 import { AdminHeader } from '@/components/layout/admin-header';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
@@ -10,6 +21,33 @@ import { Alert, AlertDescription, Badge, Button, Input, Label } from '@/componen
 import { useCourse, useCourses } from '@/hooks/use-courses';
 import { useCreateExam, useExams } from '@/hooks/use-exams';
 import { ExamQuestionType } from '@/lib/exam-api';
+
+type ExamQuestionDraft = {
+  id: string;
+  type: ExamQuestionType;
+  prompt: string;
+  optionsText: string;
+  correctAnswer: string;
+  points: string;
+  skillTags: string;
+  explanation: string;
+};
+
+function createExamQuestionDraft(type: ExamQuestionType = 'MULTIPLE_CHOICE'): ExamQuestionDraft {
+  return {
+    id:
+      typeof globalThis.crypto?.randomUUID === 'function'
+        ? globalThis.crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    type,
+    prompt: '',
+    optionsText: '',
+    correctAnswer: '',
+    points: '1',
+    skillTags: '',
+    explanation: '',
+  };
+}
 
 export default function AdminExamsPage() {
   const t = useTranslations('Admin');
@@ -23,13 +61,9 @@ export default function AdminExamsPage() {
   const [passingScore, setPassingScore] = useState('60');
   const [isPublished, setIsPublished] = useState(true);
   const [sectionTitle, setSectionTitle] = useState('');
-  const [questionType, setQuestionType] = useState<ExamQuestionType>('MULTIPLE_CHOICE');
-  const [prompt, setPrompt] = useState('');
-  const [optionsText, setOptionsText] = useState('');
-  const [correctAnswer, setCorrectAnswer] = useState('');
-  const [points, setPoints] = useState('1');
-  const [skillTags, setSkillTags] = useState('');
-  const [explanation, setExplanation] = useState('');
+  const [questionDrafts, setQuestionDrafts] = useState<ExamQuestionDraft[]>(() => [
+    createExamQuestionDraft(),
+  ]);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const { data: selectedCourse } = useCourse(courseId);
@@ -37,6 +71,19 @@ export default function AdminExamsPage() {
   const query = { courseId: courseId || undefined, unitId: unitId || undefined };
   const { data: exams = [], isLoading: examsLoading } = useExams(query);
   const createExam = useCreateExam();
+  const selectedUnit = units.find((unit) => unit.id === unitId) ?? null;
+  const draft = useMemo(
+    () =>
+      buildExamDraft({
+        courseId,
+        title,
+        sectionTitle,
+        durationMinutes,
+        passingScore,
+        questionDrafts,
+      }),
+    [courseId, durationMinutes, passingScore, questionDrafts, sectionTitle, title],
+  );
 
   useEffect(() => {
     if (!courseId && courses[0]?.id) {
@@ -56,46 +103,23 @@ export default function AdminExamsPage() {
 
   const handleCreateExam = (event: FormEvent) => {
     event.preventDefault();
-    if (
-      !courseId ||
-      !title.trim() ||
-      !sectionTitle.trim() ||
-      !prompt.trim() ||
-      !correctAnswer.trim()
-    ) {
+    if (!draft.checks.course || !draft.checks.title || !draft.checks.section) {
       setMessage({ type: 'error', text: t('examRequiredFields') });
       return;
     }
 
-    const options =
-      questionType === 'MULTIPLE_CHOICE'
-        ? optionsText
-            .split('\n')
-            .map((option) => option.trim())
-            .filter(Boolean)
-        : undefined;
-
-    if (questionType === 'MULTIPLE_CHOICE' && (!options || options.length < 2)) {
-      setMessage({ type: 'error', text: t('examOptionsRequired') });
+    if (!draft.checks.hasQuestions) {
+      setMessage({ type: 'error', text: t('examQuestionsRequired') });
       return;
     }
 
-    const parsedCorrectAnswer =
-      questionType === 'MULTIPLE_CHOICE' ? Number(correctAnswer) : correctAnswer.trim();
-    if (questionType === 'MULTIPLE_CHOICE' && Number.isNaN(parsedCorrectAnswer)) {
-      setMessage({ type: 'error', text: t('examCorrectAnswerIndexRequired') });
-      return;
-    }
-
-    const parsedDuration = Number(durationMinutes);
-    const parsedPassingScore = Number(passingScore);
-    const parsedPoints = Number(points);
-    if (
-      Number.isNaN(parsedDuration) ||
-      Number.isNaN(parsedPassingScore) ||
-      Number.isNaN(parsedPoints)
-    ) {
+    if (!draft.checks.duration || !draft.checks.passingScore) {
       setMessage({ type: 'error', text: t('examNumericFieldsRequired') });
+      return;
+    }
+
+    if (draft.invalidQuestionCount > 0) {
+      setMessage({ type: 'error', text: t('examQuestionValidationError') });
       return;
     }
 
@@ -105,26 +129,13 @@ export default function AdminExamsPage() {
         unitId: unitId || undefined,
         title: title.trim(),
         description: description.trim() || undefined,
-        durationMinutes: parsedDuration,
-        passingScore: parsedPassingScore,
+        durationMinutes: draft.durationMinutes ?? 0,
+        passingScore: draft.passingScore ?? 0,
         isPublished,
         sections: [
           {
             title: sectionTitle.trim(),
-            questions: [
-              {
-                type: questionType,
-                prompt: prompt.trim(),
-                options,
-                correctAnswer: parsedCorrectAnswer,
-                explanation: explanation.trim() || undefined,
-                points: parsedPoints,
-                skillTags: skillTags
-                  .split(',')
-                  .map((tag) => tag.trim())
-                  .filter(Boolean),
-              },
-            ],
+            questions: draft.questions,
           },
         ],
       },
@@ -133,17 +144,56 @@ export default function AdminExamsPage() {
           setTitle('');
           setDescription('');
           setSectionTitle('');
-          setPrompt('');
-          setOptionsText('');
-          setCorrectAnswer('');
-          setPoints('1');
-          setSkillTags('');
-          setExplanation('');
+          setQuestionDrafts([createExamQuestionDraft()]);
           setMessage({ type: 'success', text: t('examCreated') });
         },
         onError: () => setMessage({ type: 'error', text: t('examCreateError') }),
       },
     );
+  };
+
+  const updateQuestionDraft = (id: string, patch: Partial<ExamQuestionDraft>) => {
+    setQuestionDrafts((current) =>
+      current.map((question) => (question.id === id ? { ...question, ...patch } : question)),
+    );
+  };
+
+  const addQuestionDraft = () => {
+    const lastType = questionDrafts.at(-1)?.type ?? 'MULTIPLE_CHOICE';
+    setQuestionDrafts((current) => [...current, createExamQuestionDraft(lastType)]);
+  };
+
+  const duplicateQuestionDraft = (id: string) => {
+    setQuestionDrafts((current) => {
+      const index = current.findIndex((question) => question.id === id);
+      if (index === -1) return current;
+
+      const next = [...current];
+      next.splice(index + 1, 0, {
+        ...current[index],
+        id: createExamQuestionDraft().id,
+      });
+      return next;
+    });
+  };
+
+  const removeQuestionDraft = (id: string) => {
+    setQuestionDrafts((current) =>
+      current.length <= 1 ? current : current.filter((question) => question.id !== id),
+    );
+  };
+
+  const moveQuestionDraft = (id: string, direction: -1 | 1) => {
+    setQuestionDrafts((current) => {
+      const index = current.findIndex((question) => question.id === id);
+      const nextIndex = index + direction;
+      if (index === -1 || nextIndex < 0 || nextIndex >= current.length) return current;
+
+      const next = [...current];
+      const [question] = next.splice(index, 1);
+      next.splice(nextIndex, 0, question);
+      return next;
+    });
   };
 
   return (
@@ -257,141 +307,155 @@ export default function AdminExamsPage() {
                   )}
                 </section>
 
-                <form onSubmit={handleCreateExam} className="rounded-xl border bg-card p-5">
-                  <h2 className="mb-4 text-base font-semibold">{t('createExam')}</h2>
-                  <div className="space-y-4">
-                    <div className="space-y-1.5">
-                      <Label>{t('examTitle')}</Label>
-                      <Input
-                        value={title}
-                        onChange={(event) => setTitle(event.target.value)}
-                        placeholder={t('examTitlePlaceholder')}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>{t('description')}</Label>
-                      <textarea
-                        value={description}
-                        onChange={(event) => setDescription(event.target.value)}
-                        className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
-                        <Label>{t('durationMinutes')}</Label>
-                        <Input
-                          value={durationMinutes}
-                          onChange={(event) => setDurationMinutes(event.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label>{t('passingScore')}</Label>
-                        <Input
-                          value={passingScore}
-                          onChange={(event) => setPassingScore(event.target.value)}
-                        />
-                      </div>
-                    </div>
-                    <label className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={isPublished}
-                        onChange={(event) => setIsPublished(event.target.checked)}
-                      />
-                      {t('publishNow')}
-                    </label>
+                <aside className="space-y-6">
+                  <DraftPreviewCard
+                    title={t('examPreview')}
+                    ready={draft.isReady}
+                    rows={[
+                      { label: t('courseName'), value: selectedCourse?.title ?? t('selectCourse') },
+                      { label: t('unit'), value: selectedUnit?.title ?? t('allUnits') },
+                      { label: t('status'), value: isPublished ? t('published') : t('draft') },
+                      {
+                        label: t('examTitle'),
+                        value: title.trim() || t('examTitlePlaceholder'),
+                      },
+                      {
+                        label: t('sectionTitle'),
+                        value: sectionTitle.trim() || t('sectionTitlePlaceholder'),
+                      },
+                      {
+                        label: t('examQuestions'),
+                        value: draft.questionCount,
+                      },
+                      {
+                        label: t('durationMinutes'),
+                        value: draft.durationMinutes ?? 0,
+                      },
+                      {
+                        label: t('passingScore'),
+                        value: draft.passingScore ?? 0,
+                      },
+                      {
+                        label: t('readyQuestions'),
+                        value: `${draft.validQuestionCount}/${draft.questionCount}`,
+                      },
+                    ]}
+                    checklist={[
+                      { label: t('courseName'), ok: draft.checks.course },
+                      { label: t('examTitle'), ok: draft.checks.title },
+                      { label: t('sectionTitle'), ok: draft.checks.section },
+                      { label: t('examQuestions'), ok: draft.checks.questions },
+                      { label: t('durationMinutes'), ok: draft.checks.duration },
+                      { label: t('passingScore'), ok: draft.checks.passingScore },
+                    ]}
+                  />
 
-                    <div className="border-t pt-4 space-y-4">
+                  <form onSubmit={handleCreateExam} className="rounded-xl border bg-card p-5">
+                    <h2 className="mb-4 text-base font-semibold">{t('createExam')}</h2>
+                    <div className="space-y-4">
                       <div className="space-y-1.5">
-                        <Label>{t('sectionTitle')}</Label>
+                        <Label>{t('examTitle')}</Label>
                         <Input
-                          value={sectionTitle}
-                          onChange={(event) => setSectionTitle(event.target.value)}
-                          placeholder={t('sectionTitlePlaceholder')}
+                          value={title}
+                          onChange={(event) => setTitle(event.target.value)}
+                          placeholder={t('examTitlePlaceholder')}
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label>{t('questionType')}</Label>
-                        <select
-                          value={questionType}
-                          onChange={(event) =>
-                            setQuestionType(event.target.value as ExamQuestionType)
-                          }
-                          className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                        >
-                          <option value="MULTIPLE_CHOICE">{t('multipleChoice')}</option>
-                          <option value="FILL_BLANK">{t('fillBlank')}</option>
-                        </select>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label>{t('questionPrompt')}</Label>
+                        <Label>{t('description')}</Label>
                         <textarea
-                          value={prompt}
-                          onChange={(event) => setPrompt(event.target.value)}
-                          className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                          placeholder={t('questionPromptPlaceholder')}
-                        />
-                      </div>
-                      {questionType === 'MULTIPLE_CHOICE' && (
-                        <div className="space-y-1.5">
-                          <Label>{t('answerOptions')}</Label>
-                          <textarea
-                            value={optionsText}
-                            onChange={(event) => setOptionsText(event.target.value)}
-                            className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                            placeholder={t('answerOptionsPlaceholder')}
-                          />
-                        </div>
-                      )}
-                      <div className="grid grid-cols-[1fr_90px] gap-3">
-                        <div className="space-y-1.5">
-                          <Label>{t('correctAnswer')}</Label>
-                          <Input
-                            value={correctAnswer}
-                            onChange={(event) => setCorrectAnswer(event.target.value)}
-                            placeholder={
-                              questionType === 'MULTIPLE_CHOICE'
-                                ? t('correctAnswerIndexPlaceholder')
-                                : t('correctAnswerTextPlaceholder')
-                            }
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label>{t('points')}</Label>
-                          <Input
-                            value={points}
-                            onChange={(event) => setPoints(event.target.value)}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label>{t('skillTags')}</Label>
-                        <Input
-                          value={skillTags}
-                          onChange={(event) => setSkillTags(event.target.value)}
-                          placeholder={t('skillTagsPlaceholder')}
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label>{t('explanation')}</Label>
-                        <textarea
-                          value={explanation}
-                          onChange={(event) => setExplanation(event.target.value)}
+                          value={description}
+                          onChange={(event) => setDescription(event.target.value)}
                           className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                         />
                       </div>
-                    </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label>{t('durationMinutes')}</Label>
+                          <Input
+                            value={durationMinutes}
+                            onChange={(event) => setDurationMinutes(event.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>{t('passingScore')}</Label>
+                          <Input
+                            value={passingScore}
+                            onChange={(event) => setPassingScore(event.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <label className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={isPublished}
+                          onChange={(event) => setIsPublished(event.target.checked)}
+                        />
+                        {t('publishNow')}
+                      </label>
 
-                    <Button type="submit" className="w-full gap-2" disabled={createExam.isPending}>
-                      {createExam.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Plus className="h-4 w-4" />
-                      )}
-                      {t('createExam')}
-                    </Button>
-                  </div>
-                </form>
+                      <div className="border-t pt-4 space-y-4">
+                        <div className="space-y-1.5">
+                          <Label>{t('sectionTitle')}</Label>
+                          <Input
+                            value={sectionTitle}
+                            onChange={(event) => setSectionTitle(event.target.value)}
+                            placeholder={t('sectionTitlePlaceholder')}
+                          />
+                        </div>
+
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <Label>{t('examQuestions')}</Label>
+                            <p className="text-xs text-muted-foreground">
+                              {t('examQuestionsDesc')}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={addQuestionDraft}
+                            className="inline-flex h-9 items-center justify-center gap-2 rounded-md border px-3 text-sm font-semibold hover:bg-muted"
+                          >
+                            <Plus className="h-4 w-4" />
+                            {t('addQuestion')}
+                          </button>
+                        </div>
+
+                        <div className="space-y-4">
+                          {questionDrafts.map((draftItem, index) => (
+                            <QuestionDraftCard
+                              key={draftItem.id}
+                              draft={draftItem}
+                              index={index}
+                              canMoveUp={index > 0}
+                              canMoveDown={index < questionDrafts.length - 1}
+                              canRemove={questionDrafts.length > 1}
+                              onChange={(patch) => updateQuestionDraft(draftItem.id, patch)}
+                              onDuplicate={() => duplicateQuestionDraft(draftItem.id)}
+                              onRemove={() => removeQuestionDraft(draftItem.id)}
+                              onMoveUp={() => moveQuestionDraft(draftItem.id, -1)}
+                              onMoveDown={() => moveQuestionDraft(draftItem.id, 1)}
+                              t={t}
+                            />
+                          ))}
+                        </div>
+                      </div>
+
+                      <Button
+                        type="submit"
+                        className="w-full gap-2"
+                        disabled={createExam.isPending}
+                      >
+                        {createExam.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Plus className="h-4 w-4" />
+                        )}
+                        {t('createExam')}
+                      </Button>
+                    </div>
+                  </form>
+                </aside>
               </div>
             )}
           </div>
@@ -414,4 +478,271 @@ function EmptyState({ title }: { title: string }) {
   return (
     <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">{title}</div>
   );
+}
+
+function QuestionDraftCard({
+  draft,
+  index,
+  canMoveUp,
+  canMoveDown,
+  canRemove,
+  onChange,
+  onDuplicate,
+  onRemove,
+  onMoveUp,
+  onMoveDown,
+  t,
+}: {
+  draft: ExamQuestionDraft;
+  index: number;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
+  canRemove: boolean;
+  onChange: (patch: Partial<ExamQuestionDraft>) => void;
+  onDuplicate: () => void;
+  onRemove: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  t: ReturnType<typeof useTranslations<'Admin'>>;
+}) {
+  const options = parseList(draft.optionsText);
+  const points = parsePositiveNumber(draft.points);
+  const hasCorrectAnswer = draft.correctAnswer.trim().length > 0;
+  const correctAnswerIndex = Number(draft.correctAnswer);
+  const correctAnswerIsNumeric = hasCorrectAnswer && Number.isInteger(correctAnswerIndex);
+  const correctAnswerInRange =
+    draft.type === 'MULTIPLE_CHOICE'
+      ? correctAnswerIsNumeric && correctAnswerIndex >= 0 && correctAnswerIndex < options.length
+      : hasCorrectAnswer;
+  const isReady =
+    draft.prompt.trim().length > 0 &&
+    (draft.type !== 'MULTIPLE_CHOICE' || options.length >= 2) &&
+    correctAnswerInRange &&
+    points !== null;
+
+  return (
+    <article className="rounded-xl border bg-muted/20 p-4">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-sm font-semibold">{t('questionLabel', { index: index + 1 })}</h3>
+            <Badge variant={isReady ? 'success' : 'outline'}>
+              {isReady ? t('readyToSave') : t('needsAttention')}
+            </Badge>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {draft.type === 'MULTIPLE_CHOICE' ? t('multipleChoice') : t('fillBlank')}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={onMoveUp}
+            disabled={!canMoveUp}
+            title={t('moveUp')}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md border disabled:opacity-40"
+          >
+            <ArrowUp className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={onMoveDown}
+            disabled={!canMoveDown}
+            title={t('moveDown')}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md border disabled:opacity-40"
+          >
+            <ArrowDown className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={onDuplicate}
+            title={t('duplicateQuestion')}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md border"
+          >
+            <Copy className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={onRemove}
+            disabled={!canRemove}
+            title={t('remove')}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md border text-destructive disabled:opacity-40"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="space-y-1.5">
+          <Label>{t('questionPrompt')}</Label>
+          <textarea
+            value={draft.prompt}
+            onChange={(event) => onChange({ prompt: event.target.value })}
+            className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            placeholder={t('questionPromptPlaceholder')}
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label>{t('questionType')}</Label>
+          <select
+            value={draft.type}
+            onChange={(event) => onChange({ type: event.target.value as ExamQuestionType })}
+            className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          >
+            <option value="MULTIPLE_CHOICE">{t('multipleChoice')}</option>
+            <option value="FILL_BLANK">{t('fillBlank')}</option>
+          </select>
+        </div>
+
+        {draft.type === 'MULTIPLE_CHOICE' && (
+          <div className="space-y-1.5">
+            <Label>{t('answerOptions')}</Label>
+            <textarea
+              value={draft.optionsText}
+              onChange={(event) => onChange({ optionsText: event.target.value })}
+              className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              placeholder={t('answerOptionsPlaceholder')}
+            />
+          </div>
+        )}
+
+        <div className="grid grid-cols-[1fr_90px] gap-3">
+          <div className="space-y-1.5">
+            <Label>{t('correctAnswer')}</Label>
+            <Input
+              value={draft.correctAnswer}
+              onChange={(event) => onChange({ correctAnswer: event.target.value })}
+              placeholder={
+                draft.type === 'MULTIPLE_CHOICE'
+                  ? t('correctAnswerIndexPlaceholder')
+                  : t('correctAnswerTextPlaceholder')
+              }
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>{t('points')}</Label>
+            <Input
+              value={draft.points}
+              onChange={(event) => onChange({ points: event.target.value })}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label>{t('skillTags')}</Label>
+          <Input
+            value={draft.skillTags}
+            onChange={(event) => onChange({ skillTags: event.target.value })}
+            placeholder={t('skillTagsPlaceholder')}
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label>{t('explanation')}</Label>
+          <textarea
+            value={draft.explanation}
+            onChange={(event) => onChange({ explanation: event.target.value })}
+            className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          />
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function buildExamDraft(params: {
+  courseId: string;
+  title: string;
+  sectionTitle: string;
+  durationMinutes: string;
+  passingScore: string;
+  questionDrafts: ExamQuestionDraft[];
+}) {
+  const durationMinutes = parsePositiveInteger(params.durationMinutes);
+  const passingScore = parsePercentage(params.passingScore);
+  const questions = params.questionDrafts.map((draft) => buildExamQuestionPayload(draft));
+  const checks = {
+    course: Boolean(params.courseId),
+    title: params.title.trim().length > 0,
+    section: params.sectionTitle.trim().length > 0,
+    duration: durationMinutes !== null,
+    passingScore: passingScore !== null,
+    hasQuestions: questions.length > 0,
+    questions: questions.length > 0 && questions.every((question) => question.valid),
+  };
+
+  return {
+    durationMinutes,
+    passingScore,
+    questionCount: questions.length,
+    validQuestionCount: questions.filter((question) => question.valid).length,
+    invalidQuestionCount: questions.filter((question) => !question.valid).length,
+    questions: questions.map((question) => question.payload),
+    checks,
+    isReady: Object.values(checks).every(Boolean),
+  };
+}
+
+function buildExamQuestionPayload(draft: ExamQuestionDraft) {
+  const options = parseList(draft.optionsText);
+  const points = parsePositiveNumber(draft.points);
+  const skillTags = parseCsv(draft.skillTags);
+  const hasCorrectAnswer = draft.correctAnswer.trim().length > 0;
+  const correctAnswerIndex = Number(draft.correctAnswer);
+  const correctAnswerIsNumeric = hasCorrectAnswer && Number.isInteger(correctAnswerIndex);
+  const correctAnswerInRange =
+    draft.type === 'MULTIPLE_CHOICE'
+      ? correctAnswerIsNumeric && correctAnswerIndex >= 0 && correctAnswerIndex < options.length
+      : hasCorrectAnswer;
+  const valid =
+    draft.prompt.trim().length > 0 &&
+    (draft.type !== 'MULTIPLE_CHOICE' || options.length >= 2) &&
+    correctAnswerInRange &&
+    points !== null;
+
+  return {
+    valid,
+    payload: {
+      type: draft.type,
+      prompt: draft.prompt.trim(),
+      options: draft.type === 'MULTIPLE_CHOICE' ? options : undefined,
+      correctAnswer:
+        draft.type === 'MULTIPLE_CHOICE' ? correctAnswerIndex : draft.correctAnswer.trim(),
+      explanation: draft.explanation.trim() || undefined,
+      points: points ?? 1,
+      skillTags,
+    },
+  };
+}
+
+function parseList(value: string) {
+  return value
+    .split('\n')
+    .map((option) => option.trim())
+    .filter(Boolean);
+}
+
+function parseCsv(value: string) {
+  return value
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+}
+
+function parsePositiveInteger(value: string) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+function parsePositiveNumber(value: string) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function parsePercentage(value: string) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 && parsed <= 100 ? parsed : null;
 }

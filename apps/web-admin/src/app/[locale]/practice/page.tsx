@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { DraftPreviewCard } from '@/components/authoring/draft-preview-card';
 import { AdminHeader } from '@/components/layout/admin-header';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
@@ -31,15 +32,39 @@ export default function AdminPracticePage() {
   const [setTitle, setSetTitle] = useState('');
   const [setDescription, setSetDescription] = useState('');
   const [selectedQuestionIds, setSelectedQuestionIds] = useState<string[]>([]);
+  const [isPublished, setIsPublished] = useState(true);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const { data: selectedCourse } = useCourse(courseId);
   const units = selectedCourse?.units ?? [];
+  const selectedUnit = units.find((unit) => unit.id === unitId) ?? null;
   const query = { courseId: courseId || undefined, unitId: unitId || undefined };
   const { data: questions = [], isLoading: questionsLoading } = usePracticeQuestions(query);
   const { data: exerciseSets = [], isLoading: setsLoading } = usePracticeExerciseSets(query);
   const createQuestion = useCreatePracticeQuestion();
   const createExerciseSet = useCreatePracticeExerciseSet();
+  const questionDraft = useMemo(
+    () =>
+      buildPracticeQuestionDraft({
+        courseId,
+        questionType,
+        prompt,
+        optionsText,
+        correctAnswer,
+        skillTags,
+      }),
+    [courseId, correctAnswer, optionsText, prompt, questionType, skillTags],
+  );
+  const exerciseSetDraft = useMemo(
+    () =>
+      buildPracticeSetDraft({
+        courseId,
+        setTitle,
+        selectedQuestionCount: selectedQuestionIds.length,
+        isPublished,
+      }),
+    [courseId, isPublished, selectedQuestionIds.length, setTitle],
+  );
 
   useEffect(() => {
     if (!courseId && courses[0]?.id) {
@@ -60,28 +85,23 @@ export default function AdminPracticePage() {
 
   const handleCreateQuestion = (event: FormEvent) => {
     event.preventDefault();
-    if (!courseId || !prompt.trim() || !correctAnswer.trim()) {
+    if (!questionDraft.checks.course || !questionDraft.checks.prompt || !correctAnswer.trim()) {
       setMessage({ type: 'error', text: t('practiceRequiredFields') });
       return;
     }
 
-    const options =
-      questionType === 'MULTIPLE_CHOICE'
-        ? optionsText
-            .split('\n')
-            .map((option) => option.trim())
-            .filter(Boolean)
-        : undefined;
-
-    if (questionType === 'MULTIPLE_CHOICE' && (!options || options.length < 2)) {
+    if (!questionDraft.checks.options) {
       setMessage({ type: 'error', text: t('practiceOptionsRequired') });
       return;
     }
 
-    const parsedCorrectAnswer =
-      questionType === 'MULTIPLE_CHOICE' ? Number(correctAnswer) : correctAnswer.trim();
-    if (questionType === 'MULTIPLE_CHOICE' && Number.isNaN(parsedCorrectAnswer)) {
+    if (questionType === 'MULTIPLE_CHOICE' && !questionDraft.correctAnswerIsNumeric) {
       setMessage({ type: 'error', text: t('practiceCorrectAnswerIndexRequired') });
+      return;
+    }
+
+    if (!questionDraft.checks.correctAnswer) {
+      setMessage({ type: 'error', text: t('practiceCorrectAnswerIndexRangeRequired') });
       return;
     }
 
@@ -91,13 +111,10 @@ export default function AdminPracticePage() {
         unitId: unitId || undefined,
         type: questionType,
         prompt: prompt.trim(),
-        options,
-        correctAnswer: parsedCorrectAnswer,
+        options: questionType === 'MULTIPLE_CHOICE' ? questionDraft.options : undefined,
+        correctAnswer: questionDraft.correctAnswerValue,
         explanation: explanation.trim() || undefined,
-        skillTags: skillTags
-          .split(',')
-          .map((tag) => tag.trim())
-          .filter(Boolean),
+        skillTags: questionDraft.skillTags,
       },
       {
         onSuccess: () => {
@@ -115,7 +132,11 @@ export default function AdminPracticePage() {
 
   const handleCreateExerciseSet = (event: FormEvent) => {
     event.preventDefault();
-    if (!courseId || !setTitle.trim() || selectedQuestionIds.length === 0) {
+    if (
+      !exerciseSetDraft.checks.course ||
+      !exerciseSetDraft.checks.title ||
+      selectedQuestionIds.length === 0
+    ) {
       setMessage({ type: 'error', text: t('practiceSetRequiredFields') });
       return;
     }
@@ -126,7 +147,7 @@ export default function AdminPracticePage() {
         unitId: unitId || undefined,
         title: setTitle.trim(),
         description: setDescription.trim() || undefined,
-        isPublished: true,
+        isPublished,
         questionIds: selectedQuestionIds,
       },
       {
@@ -312,6 +333,37 @@ export default function AdminPracticePage() {
                 </div>
 
                 <aside className="space-y-6">
+                  <DraftPreviewCard
+                    title={t('practiceQuestionPreview')}
+                    ready={questionDraft.isReady}
+                    rows={[
+                      { label: t('courseName'), value: selectedCourse?.title ?? t('selectCourse') },
+                      { label: t('unit'), value: selectedUnit?.title ?? t('allUnits') },
+                      {
+                        label: t('questionType'),
+                        value: getPracticeQuestionTypeLabel(questionType, t),
+                      },
+                      {
+                        label: t('questionPrompt'),
+                        value: prompt.trim() || t('questionPromptPlaceholder'),
+                      },
+                      {
+                        label: t('answerOptions'),
+                        value: questionDraft.options.length,
+                      },
+                      {
+                        label: t('skillTags'),
+                        value: questionDraft.skillTags.length,
+                      },
+                    ]}
+                    checklist={[
+                      { label: t('courseName'), ok: questionDraft.checks.course },
+                      { label: t('questionPrompt'), ok: questionDraft.checks.prompt },
+                      { label: t('answerOptions'), ok: questionDraft.checks.options },
+                      { label: t('correctAnswer'), ok: questionDraft.checks.correctAnswer },
+                    ]}
+                  />
+
                   <form onSubmit={handleCreateQuestion} className="rounded-xl border bg-card p-5">
                     <h2 className="mb-4 text-base font-semibold">{t('createQuestion')}</h2>
                     <div className="space-y-4">
@@ -403,6 +455,32 @@ export default function AdminPracticePage() {
                     </div>
                   </form>
 
+                  <DraftPreviewCard
+                    title={t('exerciseSetPreview')}
+                    ready={exerciseSetDraft.isReady}
+                    rows={[
+                      { label: t('courseName'), value: selectedCourse?.title ?? t('selectCourse') },
+                      { label: t('unit'), value: selectedUnit?.title ?? t('allUnits') },
+                      { label: t('status'), value: isPublished ? t('published') : t('draft') },
+                      {
+                        label: t('exerciseSetTitle'),
+                        value: setTitle.trim() || t('exerciseSetTitlePlaceholder'),
+                      },
+                      {
+                        label: t('questionCount'),
+                        value: selectedQuestionIds.length,
+                      },
+                    ]}
+                    checklist={[
+                      { label: t('courseName'), ok: exerciseSetDraft.checks.course },
+                      { label: t('exerciseSetTitle'), ok: exerciseSetDraft.checks.title },
+                      {
+                        label: t('selectedQuestionsValue', { count: 1 }),
+                        ok: exerciseSetDraft.checks.questions,
+                      },
+                    ]}
+                  />
+
                   <form
                     onSubmit={handleCreateExerciseSet}
                     className="rounded-xl border bg-card p-5"
@@ -428,6 +506,14 @@ export default function AdminPracticePage() {
                       <div className="rounded-lg border bg-muted/20 p-3 text-sm text-muted-foreground">
                         {t('selectedQuestionsValue', { count: selectedQuestionIds.length })}
                       </div>
+                      <label className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={isPublished}
+                          onChange={(event) => setIsPublished(event.target.checked)}
+                        />
+                        {t('publishNow')}
+                      </label>
                       <Button
                         type="submit"
                         className="w-full gap-2"
@@ -465,4 +551,83 @@ function EmptyState({ title }: { title: string }) {
   return (
     <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">{title}</div>
   );
+}
+
+function buildPracticeQuestionDraft(params: {
+  courseId: string;
+  questionType: PracticeQuestionType;
+  prompt: string;
+  optionsText: string;
+  correctAnswer: string;
+  skillTags: string;
+}) {
+  const options = parseList(params.optionsText);
+  const skillTags = parseCsv(params.skillTags);
+  const hasCorrectAnswer = params.correctAnswer.trim().length > 0;
+  const correctAnswerIndex = Number(params.correctAnswer);
+  const correctAnswerIsNumeric = hasCorrectAnswer && Number.isInteger(correctAnswerIndex);
+  const correctAnswerInRange =
+    params.questionType === 'MULTIPLE_CHOICE'
+      ? correctAnswerIsNumeric && correctAnswerIndex >= 0 && correctAnswerIndex < options.length
+      : hasCorrectAnswer;
+
+  const checks = {
+    course: Boolean(params.courseId),
+    prompt: params.prompt.trim().length > 0,
+    options: params.questionType !== 'MULTIPLE_CHOICE' || options.length >= 2,
+    correctAnswer: correctAnswerInRange,
+  };
+
+  return {
+    options,
+    skillTags,
+    correctAnswerValue:
+      params.questionType === 'MULTIPLE_CHOICE' ? correctAnswerIndex : params.correctAnswer.trim(),
+    correctAnswerIsNumeric,
+    checks,
+    isReady: Object.values(checks).every(Boolean),
+  };
+}
+
+function buildPracticeSetDraft(params: {
+  courseId: string;
+  setTitle: string;
+  selectedQuestionCount: number;
+  isPublished: boolean;
+}) {
+  const checks = {
+    course: Boolean(params.courseId),
+    title: params.setTitle.trim().length > 0,
+    questions: params.selectedQuestionCount > 0,
+  };
+
+  return {
+    isPublished: params.isPublished,
+    checks,
+    isReady: Object.values(checks).every(Boolean),
+  };
+}
+
+function getPracticeQuestionTypeLabel(
+  type: PracticeQuestionType,
+  t: ReturnType<typeof useTranslations<'Admin'>>,
+) {
+  if (type === 'MULTIPLE_CHOICE') return t('multipleChoice');
+  if (type === 'FILL_BLANK') return t('fillBlank');
+  if (type === 'AI_EVALUATED_AUDIO') return t('aiEvaluatedAudio');
+  return t('aiEvaluatedText');
+}
+
+function parseList(value: string) {
+  return value
+    .split('\n')
+    .map((option) => option.trim())
+    .filter(Boolean);
+}
+
+function parseCsv(value: string) {
+  return value
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter(Boolean);
 }
