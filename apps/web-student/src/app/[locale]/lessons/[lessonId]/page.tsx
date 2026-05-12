@@ -20,6 +20,26 @@ import { StudentNav } from '../../../../components/layout/student-nav';
 export default function LessonPage() {
   const t = useTranslations('Student');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('lms_sidebar_open');
+    if (saved !== null) {
+      setIsSidebarOpen(saved === 'true');
+    }
+  }, []);
+
+  const handleToggleSidebar = () => {
+    setIsSidebarOpen((prev) => {
+      const next = !prev;
+      localStorage.setItem('lms_sidebar_open', String(next));
+      return next;
+    });
+  };
+
+  const handleCloseSidebar = () => {
+    setIsSidebarOpen(false);
+    localStorage.setItem('lms_sidebar_open', 'false');
+  };
   const params = useParams();
 
   const lessonParam = params.lessonId;
@@ -98,7 +118,7 @@ export default function LessonPage() {
       <LessonHeader
         course={course}
         isSidebarOpen={isSidebarOpen}
-        toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        toggleSidebar={handleToggleSidebar}
       />
 
       <div className="flex flex-1 overflow-hidden relative">
@@ -119,7 +139,7 @@ export default function LessonPage() {
           currentLesson={currentLesson}
           progress={progress}
           isSidebarOpen={isSidebarOpen}
-          onClose={() => setIsSidebarOpen(false)}
+          onClose={handleCloseSidebar}
         />
       </div>
     </div>

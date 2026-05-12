@@ -1,8 +1,10 @@
 import { Injectable, NestMiddleware, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Request, Response, NextFunction } from 'express';
+import { Prisma } from '@repo/database';
 import { PrismaService } from '../services/prisma.service';
 import { extractTenantHints, TenantAwareRequest } from '../utils/tenant-request.util';
+import { isUUID } from 'class-validator';
 
 @Injectable()
 export class TenantMiddleware implements NestMiddleware {
@@ -43,10 +45,19 @@ export class TenantMiddleware implements NestMiddleware {
 
   private async resolveTenant(tenantHints: string[]) {
     for (const tenantHint of tenantHints) {
+      const orConditions: Prisma.TenantWhereInput[] = [
+        { slug: tenantHint },
+        { domain: tenantHint },
+      ];
+
+      if (isUUID(tenantHint)) {
+        orConditions.push({ id: tenantHint });
+      }
+
       const tenant = await this.prisma.tenant.findFirst({
         where: {
           isActive: true,
-          OR: [{ id: tenantHint }, { slug: tenantHint }, { domain: tenantHint }],
+          OR: orConditions,
         },
         select: {
           id: true,

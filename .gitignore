@@ -69,3 +69,6 @@ apps/*/test-results
 
 # TypeScript build info
 *.tsbuildinfo
+
+# Scratch files
+scratch/

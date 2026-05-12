@@ -79,7 +79,7 @@ async function main() {
     where: { slug: 'trung-tam-demo' },
     update: {},
     create: {
-      name: 'Trung Tam Tieng Trung Demo',
+      name: 'Trung Tâm Tiếng Trung Demo',
       slug: 'trung-tam-demo',
       domain: 'demo.lms.com',
       settings: {
@@ -111,7 +111,7 @@ async function main() {
     create: {
       email: 'student@lms.com',
       password: hashedPassword,
-      fullName: 'Hoc Vien A',
+      fullName: 'Học Viên A',
       role: Role.STUDENT,
       tenantId: tenant.id,
     },
@@ -126,12 +126,12 @@ async function main() {
       },
     },
     update: {
-      title: 'Khoa hoc Nhap mon Tieng Trung (HSK 1 - Demo)',
+      title: 'Khóa học Nhập môn Tiếng Trung (HSK 1 - Demo)',
       totalDuration: 30,
       isActive: true,
     },
     create: {
-      title: 'Khoa hoc Nhap mon Tieng Trung (HSK 1 - Demo)',
+      title: 'Khóa học Nhập môn Tiếng Trung (HSK 1 - Demo)',
       slug: 'hsk-1-demo',
       tenantId: tenant.id,
       totalDuration: 30,
@@ -161,14 +161,14 @@ async function main() {
       id: demoIds.defaultUnit,
     },
     update: {
-      title: 'Nhap mon',
+      title: 'Nhập môn',
       order: 0,
       deletedAt: null,
     },
     create: {
       id: demoIds.defaultUnit,
-      title: 'Nhap mon',
-      description: 'Cac bai hoc nen tang dau tien.',
+      title: 'Nhập môn',
+      description: 'Các bài học nền tảng đầu tiên.',
       order: 0,
       tenantId: tenant.id,
       courseId: course.id,
@@ -179,7 +179,7 @@ async function main() {
     await prisma.lesson.createMany({
       data: [
         {
-          title: 'Bai 1: Gioi thieu Pinyin',
+          title: 'Bài 1: Giới thiệu Pinyin',
           type: LessonType.video,
           videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
           duration: 15,
@@ -189,10 +189,10 @@ async function main() {
           courseId: course.id,
         },
         {
-          title: 'Bai 2: Tu vung co ban',
+          title: 'Bài 2: Từ vựng cơ bản',
           type: LessonType.text,
           content:
-            '<h2>Chao hoi trong tieng Trung</h2><p>Ni hao (你好) - Xin chao</p><p>Zaijian (再见) - Tam biet</p>',
+            '<h2>Chào hỏi trong tiếng Trung</h2><p>Nǐ hǎo (你好) - Xin chào</p><p>Zàijiàn (再见) - Tạm biệt</p>',
           duration: 10,
           order: 2,
           unitId: defaultUnit.id,
@@ -200,7 +200,7 @@ async function main() {
           courseId: course.id,
         },
         {
-          title: 'Bai 3: Bai tap on tap',
+          title: 'Bài 3: Bài tập ôn tập',
           type: LessonType.quiz,
           duration: 5,
           order: 3,
@@ -210,8 +210,8 @@ async function main() {
           quiz: {
             questions: [
               {
-                question: "Tu 'Xin chao' trong tieng Trung la gi?",
-                options: ['Zaijian', 'Ni hao', 'Xiexie', 'Bu keqi'],
+                question: "Từ 'Xin chào' trong tiếng Trung là gì?",
+                options: ['Zàijiàn', 'Nǐ hǎo', 'Xièxie', 'Bú kèqì'],
                 correctAnswer: 1,
               },
             ],
@@ -226,8 +226,8 @@ async function main() {
       id: demoIds.practiceQuestion,
     },
     update: {
-      prompt: "Tu 'Xin chao' trong tieng Trung la gi?",
-      options: ['Zaijian', 'Ni hao', 'Xiexie', 'Bu keqi'],
+      prompt: "Từ 'Xin chào' trong tiếng Trung là gì?",
+      options: ['Zàijiàn', 'Nǐ hǎo', 'Xièxie', 'Bú kèqì'],
       correctAnswer: 1,
       skillTags: ['vocabulary'],
       deletedAt: null,
@@ -238,10 +238,10 @@ async function main() {
       courseId: course.id,
       unitId: defaultUnit.id,
       type: PracticeQuestionType.MULTIPLE_CHOICE,
-      prompt: "Tu 'Xin chao' trong tieng Trung la gi?",
-      options: ['Zaijian', 'Ni hao', 'Xiexie', 'Bu keqi'],
+      prompt: "Từ 'Xin chào' trong tiếng Trung là gì?",
+      options: ['Zàijiàn', 'Nǐ hǎo', 'Xièxie', 'Bú kèqì'],
       correctAnswer: 1,
-      explanation: "'Ni hao' la cach chao co ban trong tieng Trung.",
+      explanation: "'Nǐ hǎo' là cách chào cơ bản trong tiếng Trung.",
       skillTags: ['vocabulary'],
     },
   });
@@ -251,7 +251,7 @@ async function main() {
       id: demoIds.practiceSet,
     },
     update: {
-      title: 'Luyen tap tu vung nhap mon',
+      title: 'Luyện tập từ vựng nhập môn',
       isPublished: true,
       deletedAt: null,
     },
@@ -260,8 +260,8 @@ async function main() {
       tenantId: tenant.id,
       courseId: course.id,
       unitId: defaultUnit.id,
-      title: 'Luyen tap tu vung nhap mon',
-      description: 'Bai luyen tap nhanh cho unit nhap mon.',
+      title: 'Luyện tập từ vựng nhập môn',
+      description: 'Bài luyện tập nhanh cho unit nhập môn.',
       isPublished: true,
     },
   });
@@ -287,7 +287,7 @@ async function main() {
       id: demoIds.exam,
     },
     update: {
-      title: 'Kiem tra nhanh nhap mon',
+      title: 'Kiểm tra nhanh nhập môn',
       durationMinutes: 15,
       passingScore: 60,
       isPublished: true,
@@ -298,8 +298,8 @@ async function main() {
       tenantId: tenant.id,
       courseId: course.id,
       unitId: defaultUnit.id,
-      title: 'Kiem tra nhanh nhap mon',
-      description: 'Bai kiem tra mau cho unit nhap mon.',
+      title: 'Kiểm tra nhanh nhập môn',
+      description: 'Bài kiểm tra mẫu cho unit nhập môn.',
       durationMinutes: 15,
       passingScore: 60,
       isPublished: true,
@@ -311,14 +311,14 @@ async function main() {
       id: demoIds.examSection,
     },
     update: {
-      title: 'Tu vung',
+      title: 'Từ vựng',
       order: 0,
     },
     create: {
       id: demoIds.examSection,
       tenantId: tenant.id,
       examId: exam.id,
-      title: 'Tu vung',
+      title: 'Từ vựng',
       order: 0,
     },
   });
@@ -328,8 +328,8 @@ async function main() {
       id: demoIds.examQuestion,
     },
     update: {
-      prompt: "Tu 'Xin chao' trong tieng Trung la gi?",
-      options: ['Zaijian', 'Ni hao', 'Xiexie', 'Bu keqi'],
+      prompt: "Từ 'Xin chào' trong tiếng Trung là gì?",
+      options: ['Zàijiàn', 'Nǐ hǎo', 'Xièxie', 'Bú kèqì'],
       correctAnswer: 1,
       points: 1,
       skillTags: ['vocabulary'],
@@ -339,10 +339,10 @@ async function main() {
       tenantId: tenant.id,
       sectionId: examSection.id,
       type: ExamQuestionType.MULTIPLE_CHOICE,
-      prompt: "Tu 'Xin chao' trong tieng Trung la gi?",
-      options: ['Zaijian', 'Ni hao', 'Xiexie', 'Bu keqi'],
+      prompt: "Từ 'Xin chào' trong tiếng Trung là gì?",
+      options: ['Zàijiàn', 'Nǐ hǎo', 'Xièxie', 'Bú kèqì'],
       correctAnswer: 1,
-      explanation: "'Ni hao' la cach chao co ban trong tieng Trung.",
+      explanation: "'Nǐ hǎo' là cách chào cơ bản trong tiếng Trung.",
       points: 1,
       skillTags: ['vocabulary'],
       order: 0,
