@@ -14,6 +14,7 @@ import { ReactNode, useMemo } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { StudentNav } from '@/components/layout/student-nav';
 import { usePracticeAttempts, usePracticeExerciseSets } from '@/hooks/use-practice';
+import { getPracticeAttemptStats, type PracticeAttemptSummary } from '@/lib/practice-api';
 import { Link } from '@/navigation';
 
 export default function PracticePage() {
@@ -163,59 +164,7 @@ export default function PracticePage() {
               ) : (
                 <div className="space-y-3">
                   {attempts.map((attempt) => (
-                    <article
-                      key={attempt.id}
-                      className="flex flex-col gap-4 rounded-md border p-4 md:flex-row md:items-center md:justify-between"
-                    >
-                      <div className="min-w-0 space-y-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="text-sm font-semibold">{attempt.exerciseSet.title}</h3>
-                          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-                            {t('practice.scoreValue', {
-                              score: attempt.score,
-                              total: attempt.totalPoints,
-                            })}
-                          </span>
-                          <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
-                            {t('practice.answeredCountValue', {
-                              count: attempt.stats.answeredCount,
-                              total: attempt.totalPoints,
-                            })}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                          <span className="rounded-md border px-2 py-1">
-                            {attempt.exerciseSet.course.title}
-                          </span>
-                          {attempt.exerciseSet.unit?.title && (
-                            <span className="rounded-md border px-2 py-1">
-                              {attempt.exerciseSet.unit.title}
-                            </span>
-                          )}
-                          <span className="rounded-md border px-2 py-1">
-                            {t('practice.attemptSubmittedAtValue', {
-                              value: formatDateTime(attempt.submittedAt, locale),
-                            })}
-                          </span>
-                          {attempt.stats.aiAnsweredCount > 0 && (
-                            <span className="rounded-md border px-2 py-1">
-                              {t('practice.aiReviewSummaryValue', {
-                                reviewed: attempt.stats.aiReviewedCount,
-                                pending: attempt.stats.aiPendingCount,
-                              })}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <Link
-                        href={`/practice/attempts/${attempt.id}`}
-                        className="inline-flex h-10 items-center justify-center gap-2 rounded-md border px-4 text-sm font-semibold hover:bg-muted"
-                      >
-                        {t('practice.reviewAttempt')}
-                        <ArrowRight className="h-4 w-4" />
-                      </Link>
-                    </article>
+                    <PracticeAttemptRow key={attempt.id} attempt={attempt} locale={locale} />
                   ))}
                 </div>
               )}
@@ -224,6 +173,66 @@ export default function PracticePage() {
         )}
       </main>
     </div>
+  );
+}
+
+function PracticeAttemptRow({
+  attempt,
+  locale,
+}: {
+  attempt: PracticeAttemptSummary;
+  locale: string;
+}) {
+  const t = useTranslations('Student');
+  const stats = getPracticeAttemptStats(attempt);
+
+  return (
+    <article className="flex flex-col gap-4 rounded-md border p-4 md:flex-row md:items-center md:justify-between">
+      <div className="min-w-0 space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="text-sm font-semibold">{attempt.exerciseSet.title}</h3>
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+            {t('practice.scoreValue', {
+              score: attempt.score,
+              total: attempt.totalPoints,
+            })}
+          </span>
+          <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
+            {t('practice.answeredCountValue', {
+              count: stats.answeredCount,
+              total: attempt.totalPoints,
+            })}
+          </span>
+        </div>
+        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+          <span className="rounded-md border px-2 py-1">{attempt.exerciseSet.course.title}</span>
+          {attempt.exerciseSet.unit?.title && (
+            <span className="rounded-md border px-2 py-1">{attempt.exerciseSet.unit.title}</span>
+          )}
+          <span className="rounded-md border px-2 py-1">
+            {t('practice.attemptSubmittedAtValue', {
+              value: formatDateTime(attempt.submittedAt, locale),
+            })}
+          </span>
+          {stats.aiAnsweredCount > 0 && (
+            <span className="rounded-md border px-2 py-1">
+              {t('practice.aiReviewSummaryValue', {
+                reviewed: stats.aiReviewedCount,
+                pending: stats.aiPendingCount,
+              })}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <Link
+        href={`/practice/attempts/${attempt.id}`}
+        className="inline-flex h-10 items-center justify-center gap-2 rounded-md border px-4 text-sm font-semibold hover:bg-muted"
+      >
+        {t('practice.reviewAttempt')}
+        <ArrowRight className="h-4 w-4" />
+      </Link>
+    </article>
   );
 }
 
@@ -251,10 +260,7 @@ function formatDateTime(value: string, locale: string) {
 type PracticeOverviewAttempt = {
   score: number;
   totalPoints: number;
-  stats: {
-    aiReviewedCount: number;
-    aiPendingCount: number;
-  };
+  stats?: PracticeAttemptSummary['stats'];
 };
 
 function buildPracticeOverview(
@@ -265,8 +271,14 @@ function buildPracticeOverview(
   const totalScore = attempts.reduce((sum, attempt) => sum + attempt.score, 0);
   const totalPoints = attempts.reduce((sum, attempt) => sum + Math.max(attempt.totalPoints, 0), 0);
   const averageAccuracy = totalPoints > 0 ? Math.round((totalScore / totalPoints) * 100) : 0;
-  const aiReviewedCount = attempts.reduce((sum, attempt) => sum + attempt.stats.aiReviewedCount, 0);
-  const aiPendingCount = attempts.reduce((sum, attempt) => sum + attempt.stats.aiPendingCount, 0);
+  const aiReviewedCount = attempts.reduce(
+    (sum, attempt) => sum + getPracticeAttemptStats(attempt).aiReviewedCount,
+    0,
+  );
+  const aiPendingCount = attempts.reduce(
+    (sum, attempt) => sum + getPracticeAttemptStats(attempt).aiPendingCount,
+    0,
+  );
 
   return {
     totalQuestions,

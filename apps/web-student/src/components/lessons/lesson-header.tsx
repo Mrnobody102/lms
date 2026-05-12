@@ -22,7 +22,7 @@ export function LessonHeader({ course, isSidebarOpen, toggleSidebar }: LessonHea
     <header className="h-16 border-b bg-background/80 backdrop-blur-xl px-6 flex items-center justify-between shrink-0 z-50">
       <div className="flex items-center gap-4">
         <Link
-          href="/"
+          href={`/courses/${course.id}`}
           className="p-2 hover:bg-muted rounded-xl transition-all active:scale-90 text-muted-foreground hover:text-foreground border border-transparent hover:border-border focus:outline-none focus:ring-2 focus:ring-primary/20"
           aria-label={t('lesson.backToCourse')}
           title={t('lesson.backToCourse')}
@@ -35,7 +35,7 @@ export function LessonHeader({ course, isSidebarOpen, toggleSidebar }: LessonHea
             {course.title}
           </h1>
           <p className="text-[10px] sm:text-xs text-muted-foreground font-medium hidden sm:block">
-            {t('lesson.totalLessons', { count: course.lessons?.length ?? 0 })} •{' '}
+            {t('lesson.totalLessons', { count: course.lessons?.length ?? 0 })} -{' '}
             {t('lesson.duration', { minutes: course.totalDuration ?? 0 })}
           </p>
         </div>

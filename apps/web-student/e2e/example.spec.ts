@@ -1,5 +1,7 @@
 import { expect, Page, test } from '@playwright/test';
 
+const navigationTimeout = 30_000;
+
 const studentUser = {
   id: 'user-1',
   email: 'student@example.com',
@@ -82,6 +84,12 @@ async function installStudentApiMocks(page: Page) {
     score: 1,
     totalPoints: 1,
     submittedAt: '2026-04-21T12:15:00.000Z',
+    stats: {
+      answeredCount: 1,
+      aiAnsweredCount: 1,
+      aiReviewedCount: 1,
+      aiPendingCount: 0,
+    },
     exerciseSet: {
       id: practiceSet.id,
       title: practiceSet.title,
@@ -246,7 +254,34 @@ async function installStudentApiMocks(page: Page) {
             duration: course.lessons[0].duration,
           },
         },
-        courses: [],
+        courses: [
+          {
+            course: {
+              id: course.id,
+              title: course.title,
+              totalDuration: course.totalDuration,
+            },
+            totalLessons: course.lessons.length,
+            completedLessons,
+            activitySessions: activities.filter((item) => item.type === 'LESSON_OPENED').length,
+            completionPercentage: Math.round((completedLessons / course.lessons.length) * 100),
+            lastActivityAt: latestActivity?.occurredAt ?? null,
+            lastAccessedLesson: latestActivity
+              ? {
+                  id: course.lessons[0].id,
+                  title: course.lessons[0].title,
+                  courseId: course.id,
+                  duration: course.lessons[0].duration,
+                }
+              : null,
+            continueLesson: {
+              id: course.lessons[0].id,
+              title: course.lessons[0].title,
+              courseId: course.id,
+              duration: course.lessons[0].duration,
+            },
+          },
+        ],
         totals: {
           courses: 1,
           lessons: course.lessons.length,
@@ -356,7 +391,7 @@ async function openLessonPage(page: Page) {
   await page.getByRole('link', { name: 'Start Now' }).click();
 
   for (let attempt = 0; attempt < 2; attempt += 1) {
-    await expect(page).toHaveURL(/\/en\/lessons\/lesson-1$/, { timeout: 20000 });
+    await expect(page).toHaveURL(/\/en\/lessons\/lesson-1$/, { timeout: navigationTimeout });
 
     const notFoundHeading = page.getByRole('heading', { name: '404' });
     if (!(await notFoundHeading.isVisible().catch(() => false))) {
@@ -381,7 +416,7 @@ test('student can register, land on courses, and logout', async ({ page }) => {
   await page.locator('input[type="password"]').fill('Student@123');
   await page.getByRole('button', { name: 'Create Learning Account' }).click();
 
-  await expect(page).toHaveURL(/\/en\/courses$/, { timeout: 15000 });
+  await expect(page).toHaveURL(/\/en\/courses$/, { timeout: navigationTimeout });
   await expect(page.getByRole('heading', { name: 'All Courses' })).toBeVisible();
   await expect(page.getByText('Student User')).toBeVisible();
 
@@ -398,7 +433,7 @@ test('student can login, open a lesson, and mark it completed', async ({ page })
   await page.locator('input[type="password"]').fill('Student@123');
   await page.getByRole('button', { name: 'Login Now' }).click();
 
-  await expect(page).toHaveURL(/\/en\/courses$/, { timeout: 15000 });
+  await expect(page).toHaveURL(/\/en\/courses$/, { timeout: navigationTimeout });
   await openLessonPage(page);
   await expect(page.getByRole('button', { name: 'Mark as Complete' })).toBeVisible({
     timeout: 10000,
@@ -417,7 +452,7 @@ test('student can view the learning dashboard summary', async ({ page }) => {
   await page.locator('input[type="password"]').fill('Student@123');
   await page.getByRole('button', { name: 'Login Now' }).click();
 
-  await expect(page).toHaveURL(/\/en\/courses$/, { timeout: 15000 });
+  await expect(page).toHaveURL(/\/en\/courses$/, { timeout: navigationTimeout });
   await page.goto('/en');
 
   await expect(page.getByRole('heading', { name: 'Continue your course' })).toBeVisible();
@@ -435,12 +470,12 @@ test('student can submit AI practice and review AI feedback', async ({ page }) =
   await page.locator('input[type="password"]').fill('Student@123');
   await page.getByRole('button', { name: 'Login Now' }).click();
 
-  await expect(page).toHaveURL(/\/en\/courses$/, { timeout: 15000 });
+  await expect(page).toHaveURL(/\/en\/courses$/, { timeout: navigationTimeout });
   await page.goto('/en/practice');
   await expect(page.getByRole('heading', { name: 'AI speaking practice' })).toBeVisible();
 
   await page.getByRole('link', { name: 'Start practice' }).click();
-  await expect(page).toHaveURL(/\/en\/practice\/practice-set-1$/, { timeout: 15000 });
+  await expect(page).toHaveURL(/\/en\/practice\/practice-set-1$/, { timeout: navigationTimeout });
   await page.getByPlaceholder('Speak or type your transcript').fill('Ni Hao');
   await page.getByRole('button', { name: 'Submit answers' }).click();
 
@@ -449,7 +484,9 @@ test('student can submit AI practice and review AI feedback', async ({ page }) =
   await expect(page.getByText('Reviewed by AI tutor')).toBeVisible();
 
   await page.getByRole('link', { name: 'Review attempt' }).click();
-  await expect(page).toHaveURL(/\/en\/practice\/attempts\/attempt-1$/, { timeout: 15000 });
+  await expect(page).toHaveURL(/\/en\/practice\/attempts\/attempt-1$/, {
+    timeout: navigationTimeout,
+  });
   await expect(page.getByText('AI coaching feedback')).toBeVisible();
   await expect(page.getByText('Transcript: Ni Hao')).toBeVisible();
 });

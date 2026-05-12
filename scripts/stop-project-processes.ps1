@@ -14,19 +14,84 @@ function Write-Info {
   }
 }
 
-foreach ($port in $Ports) {
-  $connections = @(Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue)
+function Get-ListeningProcessIds {
+  param([int]$Port)
 
-  if (-not $connections -or $connections.Count -eq 0) {
+  if ($IsWindows -or $PSVersionTable.PSEdition -eq 'Desktop') {
+    $connections = @(Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue)
+    return @($connections | Select-Object -ExpandProperty OwningProcess -Unique)
+  }
+
+  $lsof = Get-Command lsof -ErrorAction SilentlyContinue
+  if ($lsof) {
+    $ids = @(& $lsof.Source -nP "-iTCP:$Port" '-sTCP:LISTEN' '-t' 2>$null)
+    return @($ids | Where-Object { $_ -match '^\d+$' } | ForEach-Object { [int]$_ } | Select-Object -Unique)
+  }
+
+  $ss = Get-Command ss -ErrorAction SilentlyContinue
+  if ($ss) {
+    $output = @(& $ss.Source -ltnp "sport = :$Port" 2>$null)
+    return @(
+      $output |
+        Select-String -Pattern 'pid=(\d+)' -AllMatches |
+        ForEach-Object { $_.Matches } |
+        ForEach-Object { [int]$_.Groups[1].Value } |
+        Select-Object -Unique
+    )
+  }
+
+  Write-Info "Port ${Port}: cannot inspect listening processes because neither lsof nor ss is available"
+  return @()
+}
+
+function Get-ProcessCommandLine {
+  param([int]$ProcessId)
+
+  if ($IsWindows -or $PSVersionTable.PSEdition -eq 'Desktop') {
+    $process = Get-CimInstance Win32_Process -Filter "ProcessId = $ProcessId" -ErrorAction SilentlyContinue
+    if (-not $process) {
+      return $null
+    }
+
+    return @{
+      ProcessId = $process.ProcessId
+      Name = $process.Name
+      CommandLine = if ($process.CommandLine) { $process.CommandLine } else { '' }
+    }
+  }
+
+  $processInfo = Get-Process -Id $ProcessId -ErrorAction SilentlyContinue
+  if (-not $processInfo) {
+    return $null
+  }
+
+  $commandLine = ''
+  $cmdlinePath = "/proc/$ProcessId/cmdline"
+  if (Test-Path $cmdlinePath) {
+    $bytes = [System.IO.File]::ReadAllBytes($cmdlinePath)
+    $commandLine = [System.Text.Encoding]::UTF8.GetString($bytes).Replace([char]0, ' ').Trim()
+  }
+
+  return @{
+    ProcessId = $processInfo.Id
+    Name = $processInfo.ProcessName
+    CommandLine = $commandLine
+  }
+}
+
+foreach ($port in $Ports) {
+  $processIds = @(Get-ListeningProcessIds -Port $port)
+
+  if (-not $processIds -or $processIds.Count -eq 0) {
     Write-Info "Port ${port}: free"
     continue
   }
 
-  foreach ($connection in ($connections | Sort-Object OwningProcess -Unique)) {
-    $process = Get-CimInstance Win32_Process -Filter "ProcessId = $($connection.OwningProcess)" -ErrorAction SilentlyContinue
+  foreach ($processId in ($processIds | Sort-Object -Unique)) {
+    $process = Get-ProcessCommandLine -ProcessId $processId
 
     if (-not $process) {
-      Write-Info "Port ${port}: process $($connection.OwningProcess) no longer exists"
+      Write-Info "Port ${port}: process $processId no longer exists"
       continue
     }
 

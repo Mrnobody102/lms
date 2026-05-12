@@ -33,7 +33,7 @@ export default function LessonPage() {
   const trackedLessonIdRef = useRef<string | null>(null);
 
   const loading = lessonLoading || courseLoading;
-  const error = lessonError?.message ?? null;
+  const hasError = Boolean(lessonError);
 
   useEffect(() => {
     if (!currentLesson || trackedLessonIdRef.current === currentLesson.id) {
@@ -58,15 +58,15 @@ export default function LessonPage() {
     );
   }
 
-  if (error || !currentLesson || !course) {
+  if (hasError || !currentLesson || !course) {
     return (
       <div className="h-screen flex flex-col bg-background">
         <StudentNav showLinks />
         <div className="flex-1 flex items-center justify-center p-8">
           <div className="text-center p-8 rounded-[2rem] bg-card border shadow-2xl max-w-md mx-auto animate-in fade-in zoom-in duration-500">
-            <h1 className="text-3xl font-black mb-4 tracking-tighter">{t('lesson.error')}</h1>
+            <h1 className="text-3xl font-black mb-4 tracking-tighter">{t('lesson.notFound')}</h1>
             <p className="text-muted-foreground font-medium leading-relaxed">
-              {error || t('lesson.notFoundDesc')}
+              {hasError ? t('lesson.loadError') : t('lesson.notFoundDesc')}
             </p>
           </div>
         </div>
@@ -85,6 +85,10 @@ export default function LessonPage() {
     updateProgress.mutate({
       lessonId: currentLesson.id,
       status: ProgressStatus.COMPLETED,
+    });
+    recordLessonActivity({
+      lessonId: currentLesson.id,
+      type: LearningActivityType.LESSON_COMPLETED,
     });
   };
 

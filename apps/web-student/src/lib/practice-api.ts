@@ -74,13 +74,40 @@ export interface PracticeAttemptSummary {
   score: number;
   totalPoints: number;
   submittedAt: string;
-  stats: PracticeAttemptStats;
+  stats?: PracticeAttemptStats;
   exerciseSet: {
     id: string;
     title: string;
     course: { id: string; title: string };
     unit?: { id: string; title: string } | null;
   };
+}
+
+export function getPracticeAttemptStats(
+  attempt: Pick<PracticeAttemptSummary, 'stats' | 'totalPoints'> & {
+    answers?: Array<{ question: PracticeQuestion; aiFeedback?: unknown }>;
+  },
+): PracticeAttemptStats {
+  if (attempt.stats) {
+    return attempt.stats;
+  }
+
+  const answers = attempt.answers ?? [];
+  const aiAnsweredCount = answers.filter((answer) => isAiQuestionType(answer.question.type)).length;
+  const aiReviewedCount = answers.filter(
+    (answer) => isAiQuestionType(answer.question.type) && Boolean(answer.aiFeedback),
+  ).length;
+
+  return {
+    answeredCount: answers.length || attempt.totalPoints,
+    aiAnsweredCount,
+    aiReviewedCount,
+    aiPendingCount: Math.max(aiAnsweredCount - aiReviewedCount, 0),
+  };
+}
+
+function isAiQuestionType(type: PracticeQuestionType) {
+  return type === 'AI_EVALUATED_AUDIO' || type === 'AI_EVALUATED_TEXT';
 }
 
 export interface PracticeAttemptDetail extends PracticeAttemptSummary {

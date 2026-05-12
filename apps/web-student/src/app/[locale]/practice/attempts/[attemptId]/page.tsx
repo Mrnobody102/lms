@@ -6,7 +6,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { StudentNav } from '@/components/layout/student-nav';
 import { AIFeedbackPanel } from '@/components/lessons/ai-feedback-panel';
 import { usePracticeAttempt } from '@/hooks/use-practice';
-import { PracticeQuestion } from '@/lib/practice-api';
+import { getPracticeAttemptStats, PracticeQuestion } from '@/lib/practice-api';
 import { Link } from '@/navigation';
 
 export default function PracticeAttemptReviewPage() {
@@ -16,6 +16,7 @@ export default function PracticeAttemptReviewPage() {
   const attemptId =
     (Array.isArray(params.attemptId) ? params.attemptId[0] : params.attemptId) ?? '';
   const { data: attempt, isLoading, isError } = usePracticeAttempt(attemptId);
+  const stats = attempt ? getPracticeAttemptStats(attempt) : null;
 
   return (
     <div className="min-h-screen bg-background font-sans">
@@ -69,15 +70,15 @@ export default function PracticeAttemptReviewPage() {
               <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-muted-foreground">
                 <span className="rounded-md border px-2 py-1">
                   {t('practice.answeredCountValue', {
-                    count: attempt.stats.answeredCount,
+                    count: stats?.answeredCount ?? attempt.totalPoints,
                     total: attempt.totalPoints,
                   })}
                 </span>
-                {attempt.stats.aiAnsweredCount > 0 && (
+                {(stats?.aiAnsweredCount ?? 0) > 0 && (
                   <span className="rounded-md border px-2 py-1">
                     {t('practice.aiReviewSummaryValue', {
-                      reviewed: attempt.stats.aiReviewedCount,
-                      pending: attempt.stats.aiPendingCount,
+                      reviewed: stats?.aiReviewedCount ?? 0,
+                      pending: stats?.aiPendingCount ?? 0,
                     })}
                   </span>
                 )}
