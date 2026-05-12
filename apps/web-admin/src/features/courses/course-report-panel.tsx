@@ -1,8 +1,9 @@
 'use client';
 
+import { useMemo, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { Activity, BarChart3, CheckCircle2, Clock3, Loader2, Users } from 'lucide-react';
-import { Badge } from '@/components/ui';
+import { Activity, BarChart3, CheckCircle2, Clock3, Loader2, Search, Users } from 'lucide-react';
+import { Badge, Button, Input } from '@/components/ui';
 import { CourseEnrollmentReport } from '@/lib/course-api';
 
 interface CourseReportPanelProps {
@@ -13,6 +14,22 @@ interface CourseReportPanelProps {
 export function CourseReportPanel({ report, loading = false }: CourseReportPanelProps) {
   const t = useTranslations('Admin');
   const locale = useLocale();
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<
+    'all' | 'COMPLETED' | 'IN_PROGRESS' | 'NOT_STARTED'
+  >('all');
+  const students = useMemo(() => report?.students ?? [], [report]);
+  const filteredStudents = useMemo(() => {
+    const term = search.trim();
+    return students.filter((student) => {
+      const statusMatches = statusFilter === 'all' || student.status === statusFilter;
+      const textMatches =
+        !term ||
+        student.fullName.toLowerCase().includes(term.toLowerCase()) ||
+        student.email.toLowerCase().includes(term.toLowerCase());
+      return statusMatches && textMatches;
+    });
+  }, [search, statusFilter, students]);
 
   if (loading) {
     return (
@@ -101,60 +118,106 @@ export function CourseReportPanel({ report, loading = false }: CourseReportPanel
               {t('completionRateValue', { value: report.totals.completionRate })}
             </p>
           </div>
+          <Badge variant="secondary">
+            {t('visibleStudentsValue', { count: filteredStudents.length })}
+          </Badge>
+        </div>
+
+        <div className="grid gap-3 border-b px-4 py-3 md:grid-cols-[minmax(0,1fr)_180px_auto]">
+          <div className="flex h-10 items-center rounded-md border border-input bg-background text-foreground transition-colors focus-within:ring-2 focus-within:ring-primary/20">
+            <Search className="ml-3.5 h-4 w-4 shrink-0 text-muted-foreground pointer-events-none" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={t('searchReportStudents')}
+              className="h-full min-w-0 flex-1 border-0 bg-transparent px-3 py-0 shadow-none focus-visible:ring-0"
+            />
+          </div>
+          <select
+            value={statusFilter}
+            onChange={(event) =>
+              setStatusFilter(
+                event.target.value as 'all' | 'COMPLETED' | 'IN_PROGRESS' | 'NOT_STARTED',
+              )
+            }
+            className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          >
+            <option value="all">{t('allStatuses')}</option>
+            <option value="COMPLETED">{t('completedOnly')}</option>
+            <option value="IN_PROGRESS">{t('inProgressOnly')}</option>
+            <option value="NOT_STARTED">{t('notStartedOnly')}</option>
+          </select>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => {
+              setSearch('');
+              setStatusFilter('all');
+            }}
+            disabled={!search && statusFilter === 'all'}
+          >
+            {t('clearFilters')}
+          </Button>
         </div>
 
         <div className="max-h-[420px] overflow-y-auto">
-          {report.students.map((student) => {
-            const lastActivityLabel = student.lastActivityAt
-              ? new Intl.DateTimeFormat(locale, {
-                  dateStyle: 'medium',
-                  timeStyle: 'short',
-                }).format(new Date(student.lastActivityAt))
-              : t('noActivityYet');
+          {filteredStudents.length === 0 ? (
+            <div className="px-4 py-6 text-sm text-muted-foreground">{t('noFilteredStudents')}</div>
+          ) : (
+            filteredStudents.map((student) => {
+              const lastActivityLabel = student.lastActivityAt
+                ? new Intl.DateTimeFormat(locale, {
+                    dateStyle: 'medium',
+                    timeStyle: 'short',
+                  }).format(new Date(student.lastActivityAt))
+                : t('noActivityYet');
 
-            return (
-              <div key={student.enrollmentId} className="border-b px-4 py-4 last:border-b-0">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">
-                      {student.fullName || student.email}
-                    </p>
-                    <p className="truncate text-xs text-muted-foreground">{student.email}</p>
+              return (
+                <div key={student.enrollmentId} className="border-b px-4 py-4 last:border-b-0">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">
+                        {student.fullName || student.email}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">{student.email}</p>
+                    </div>
+                    <Badge
+                      variant={
+                        student.status === 'COMPLETED'
+                          ? 'success'
+                          : student.status === 'IN_PROGRESS'
+                            ? 'secondary'
+                            : 'outline'
+                      }
+                    >
+                      {t(`reportStatus.${student.status}`)}
+                    </Badge>
                   </div>
-                  <Badge
-                    variant={
-                      student.status === 'COMPLETED'
-                        ? 'success'
-                        : student.status === 'IN_PROGRESS'
-                          ? 'secondary'
-                          : 'outline'
-                    }
-                  >
-                    {t(`reportStatus.${student.status}`)}
-                  </Badge>
-                </div>
 
-                <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full bg-primary"
-                    style={{ width: `${student.completionPercentage}%` }}
-                  />
-                </div>
+                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-primary"
+                      style={{ width: `${student.completionPercentage}%` }}
+                    />
+                  </div>
 
-                <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
-                  <span>
-                    {t('completedCount', {
-                      completed: student.completedLessons,
-                      total: student.totalLessons,
-                    })}
-                  </span>
-                  <span>{t('studentProgressValue', { value: student.completionPercentage })}</span>
-                  <span>{t('studentSessionsValue', { value: student.activitySessions })}</span>
-                  <span>{t('lastActivityValue', { value: lastActivityLabel })}</span>
+                  <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
+                    <span>
+                      {t('completedCount', {
+                        completed: student.completedLessons,
+                        total: student.totalLessons,
+                      })}
+                    </span>
+                    <span>
+                      {t('studentProgressValue', { value: student.completionPercentage })}
+                    </span>
+                    <span>{t('studentSessionsValue', { value: student.activitySessions })}</span>
+                    <span>{t('lastActivityValue', { value: lastActivityLabel })}</span>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
       </div>
     </section>

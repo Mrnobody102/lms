@@ -68,6 +68,10 @@ function createExamQuestionDraft(type: ExamQuestionType = 'MULTIPLE_CHOICE'): Ex
   };
 }
 
+function includesNormalized(haystack: string, needle: string) {
+  return haystack.toLowerCase().includes(needle.toLowerCase());
+}
+
 export default function AdminExamsPage() {
   const t = useTranslations('Admin');
   const { data: courseData, isLoading: coursesLoading } = useCourses({ limit: 100 });
@@ -87,6 +91,13 @@ export default function AdminExamsPage() {
   const [templateAction, setTemplateAction] = useState<'load' | 'duplicate' | 'edit' | null>(null);
   const [editingExamId, setEditingExamId] = useState<string | null>(null);
   const [examToDelete, setExamToDelete] = useState<ExamSummary | null>(null);
+  const [selectedExamIds, setSelectedExamIds] = useState<string[]>([]);
+  const [examSearch, setExamSearch] = useState('');
+  const [examStatusFilter, setExamStatusFilter] = useState<'all' | 'published' | 'draft'>('all');
+  const [examBulkDeleteOpen, setExamBulkDeleteOpen] = useState(false);
+  const [examBulkAction, setExamBulkAction] = useState<'publish' | 'unpublish' | 'delete' | null>(
+    null,
+  );
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const { data: selectedCourse } = useCourse(courseId);
@@ -99,6 +110,26 @@ export default function AdminExamsPage() {
   const deleteExam = useDeleteExam();
   const selectedUnit = units.find((unit) => unit.id === unitId) ?? null;
   const examSaving = createExam.isPending || updateExam.isPending;
+  const filteredExams = useMemo(() => {
+    const search = examSearch.trim();
+    return exams.filter((exam) => {
+      const statusMatches =
+        examStatusFilter === 'all' ||
+        (examStatusFilter === 'published' && exam.isPublished) ||
+        (examStatusFilter === 'draft' && !exam.isPublished);
+      const textMatches =
+        !search ||
+        includesNormalized(exam.title, search) ||
+        includesNormalized(exam.description ?? '', search) ||
+        includesNormalized(exam.unit?.title ?? '', search);
+      return statusMatches && textMatches;
+    });
+  }, [examSearch, examStatusFilter, exams]);
+  const selectedExams = useMemo(
+    () => exams.filter((exam) => selectedExamIds.includes(exam.id)),
+    [exams, selectedExamIds],
+  );
+  const examBulkPending = examBulkAction !== null;
   const draft = useMemo(
     () =>
       buildExamDraft({
@@ -121,6 +152,7 @@ export default function AdminExamsPage() {
   useEffect(() => {
     setUnitId('');
     setEditingExamId(null);
+    setSelectedExamIds([]);
   }, [courseId]);
 
   useEffect(() => {
@@ -297,6 +329,87 @@ export default function AdminExamsPage() {
     setExamToDelete(exam);
   };
 
+  const toggleExamSelection = (examId: string, checked: boolean) => {
+    setSelectedExamIds((current) =>
+      checked
+        ? current.includes(examId)
+          ? current
+          : [...current, examId]
+        : current.filter((id) => id !== examId),
+    );
+  };
+
+  const selectAllExams = () => {
+    setSelectedExamIds(filteredExams.map((exam) => exam.id));
+  };
+
+  const clearSelectedExams = () => {
+    setSelectedExamIds([]);
+  };
+
+  const clearExamFilters = () => {
+    setExamSearch('');
+    setExamStatusFilter('all');
+  };
+
+  const handleToggleExamPublished = (exam: ExamSummary) => {
+    const nextPublished = !exam.isPublished;
+    updateExam.mutate(
+      { id: exam.id, payload: { isPublished: nextPublished } },
+      {
+        onSuccess: () =>
+          setMessage({
+            type: 'success',
+            text: nextPublished ? t('examPublished') : t('examUnpublished'),
+          }),
+        onError: () => setMessage({ type: 'error', text: t('examPublishUpdateError') }),
+      },
+    );
+  };
+
+  const handleBulkExamPublish = async (nextPublished: boolean) => {
+    if (selectedExams.length === 0) return;
+    setExamBulkAction(nextPublished ? 'publish' : 'unpublish');
+    try {
+      await Promise.all(
+        selectedExams.map((exam) =>
+          updateExam.mutateAsync({ id: exam.id, payload: { isPublished: nextPublished } }),
+        ),
+      );
+      setSelectedExamIds([]);
+      setMessage({
+        type: 'success',
+        text: nextPublished
+          ? t('bulkExamsPublished', { count: selectedExams.length })
+          : t('bulkExamsUnpublished', { count: selectedExams.length }),
+      });
+    } catch {
+      setMessage({ type: 'error', text: t('bulkExamUpdateError') });
+    } finally {
+      setExamBulkAction(null);
+    }
+  };
+
+  const handleBulkDeleteExams = async () => {
+    if (selectedExams.length === 0) return;
+    const ids = selectedExams.map((exam) => exam.id);
+    setExamBulkAction('delete');
+    try {
+      await Promise.all(ids.map((id) => deleteExam.mutateAsync(id)));
+      if (editingExamId && ids.includes(editingExamId)) resetExamDraft();
+      setSelectedExamIds([]);
+      setExamBulkDeleteOpen(false);
+      setMessage({
+        type: 'success',
+        text: t('bulkExamsDeleted', { count: ids.length }),
+      });
+    } catch {
+      setMessage({ type: 'error', text: t('bulkExamDeleteError') });
+    } finally {
+      setExamBulkAction(null);
+    }
+  };
+
   return (
     <AuthGuard>
       <div className="min-h-screen flex bg-background">
@@ -344,7 +457,10 @@ export default function AdminExamsPage() {
                 <Label>{t('unit')}</Label>
                 <select
                   value={unitId}
-                  onChange={(event) => setUnitId(event.target.value)}
+                  onChange={(event) => {
+                    setUnitId(event.target.value);
+                    setSelectedExamIds([]);
+                  }}
                   className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   disabled={!courseId}
                 >
@@ -371,93 +487,232 @@ export default function AdminExamsPage() {
                       <h2 className="text-base font-semibold">{t('examTemplates')}</h2>
                       <p className="text-sm text-muted-foreground">{t('examTemplatesDesc')}</p>
                     </div>
-                    <Badge variant="secondary">{exams.length}</Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">{filteredExams.length}</Badge>
+                      {exams.length > 0 && (
+                        <>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={selectAllExams}
+                            disabled={filteredExams.length === 0}
+                          >
+                            {t('selectAllItems')}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={clearSelectedExams}
+                            disabled={selectedExamIds.length === 0}
+                          >
+                            {t('clearSelection')}
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mb-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_auto]">
+                    <Input
+                      value={examSearch}
+                      onChange={(event) => setExamSearch(event.target.value)}
+                      placeholder={t('searchExams')}
+                    />
+                    <select
+                      value={examStatusFilter}
+                      onChange={(event) =>
+                        setExamStatusFilter(event.target.value as 'all' | 'published' | 'draft')
+                      }
+                      className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    >
+                      <option value="all">{t('allStatuses')}</option>
+                      <option value="published">{t('publishedOnly')}</option>
+                      <option value="draft">{t('draftOnly')}</option>
+                    </select>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={clearExamFilters}
+                      disabled={!examSearch && examStatusFilter === 'all'}
+                    >
+                      {t('clearFilters')}
+                    </Button>
                   </div>
 
                   {examsLoading ? (
                     <LoadingRow label={t('loading')} />
                   ) : exams.length === 0 ? (
                     <EmptyState title={t('noExams')} />
+                  ) : filteredExams.length === 0 ? (
+                    <EmptyState title={t('noFilteredExams')} />
                   ) : (
                     <div className="grid gap-3">
-                      {exams.map((exam) => (
-                        <article key={exam.id} className="rounded-lg border p-4">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <h3 className="text-sm font-semibold">{exam.title}</h3>
-                              <p className="mt-1 text-xs text-muted-foreground">
-                                {exam.unit?.title || t('allUnits')}
-                              </p>
-                            </div>
-                            <Badge variant={exam.isPublished ? 'success' : 'outline'}>
-                              {exam.isPublished ? t('published') : t('draft')}
-                            </Badge>
-                          </div>
-                          {exam.description && (
-                            <p className="mt-2 text-sm text-muted-foreground">{exam.description}</p>
-                          )}
-                          <div className="mt-3 flex flex-wrap gap-3 text-xs text-muted-foreground">
-                            <span>{t('durationValue', { minutes: exam.durationMinutes })}</span>
-                            <span>{t('passingScoreValue', { value: exam.passingScore ?? 0 })}</span>
-                            <span>{t('sectionCount', { count: exam._count?.sections ?? 0 })}</span>
-                            <span>{t('attemptCount', { count: exam._count?.attempts ?? 0 })}</span>
-                          </div>
-                          <div className="mt-4 flex flex-wrap gap-2">
+                      {selectedExamIds.length > 0 && (
+                        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/40 p-3">
+                          <span className="text-sm font-medium">
+                            {t('selectedItemsValue', { count: selectedExamIds.length })}
+                          </span>
+                          <div className="flex flex-wrap gap-2">
                             <Button
                               type="button"
                               size="sm"
                               variant="outline"
                               className="gap-2"
-                              disabled={templateLoading && templateExamId === exam.id}
-                              onClick={() => handleEditExam(exam.id)}
+                              disabled={examBulkPending}
+                              onClick={() => handleBulkExamPublish(true)}
                             >
-                              {templateLoading &&
-                              templateExamId === exam.id &&
-                              templateAction === 'edit' ? (
+                              {examBulkAction === 'publish' ? (
                                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                               ) : (
-                                <PencilLine className="h-3.5 w-3.5" />
+                                <CheckCircle2 className="h-3.5 w-3.5" />
                               )}
-                              {t('editExam')}
+                              {t('publishSelected')}
                             </Button>
                             <Button
                               type="button"
                               size="sm"
                               variant="outline"
                               className="gap-2"
-                              disabled={templateLoading && templateExamId === exam.id}
-                              onClick={() => loadExamTemplate(exam.id, 'load')}
+                              disabled={examBulkPending}
+                              onClick={() => handleBulkExamPublish(false)}
                             >
-                              {templateLoading &&
-                              templateExamId === exam.id &&
-                              templateAction === 'load' ? (
+                              {examBulkAction === 'unpublish' ? (
                                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                               ) : (
-                                <Eye className="h-3.5 w-3.5" />
+                                <X className="h-3.5 w-3.5" />
                               )}
-                              {t('loadExamToDraft')}
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="ghost"
-                              className="gap-2"
-                              disabled={templateLoading && templateExamId === exam.id}
-                              onClick={() => loadExamTemplate(exam.id, 'duplicate')}
-                            >
-                              <Copy className="h-3.5 w-3.5" />
-                              {t('duplicateExam')}
+                              {t('unpublishSelected')}
                             </Button>
                             <Button
                               type="button"
                               size="sm"
                               variant="ghost"
                               className="gap-2 text-destructive hover:text-destructive"
-                              onClick={() => handleDeleteExam(exam)}
+                              disabled={examBulkPending}
+                              onClick={() => setExamBulkDeleteOpen(true)}
                             >
                               <Trash2 className="h-3.5 w-3.5" />
-                              {t('deleteExam')}
+                              {t('deleteSelected')}
                             </Button>
+                          </div>
+                        </div>
+                      )}
+                      {filteredExams.map((exam) => (
+                        <article key={exam.id} className="rounded-lg border p-4">
+                          <div className="flex items-start gap-3">
+                            <input
+                              type="checkbox"
+                              className="mt-1"
+                              aria-label={t('selectItem')}
+                              checked={selectedExamIds.includes(exam.id)}
+                              onChange={(event) =>
+                                toggleExamSelection(exam.id, event.target.checked)
+                              }
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-start justify-between gap-3">
+                                <div>
+                                  <h3 className="text-sm font-semibold">{exam.title}</h3>
+                                  <p className="mt-1 text-xs text-muted-foreground">
+                                    {exam.unit?.title || t('allUnits')}
+                                  </p>
+                                </div>
+                                <Badge variant={exam.isPublished ? 'success' : 'outline'}>
+                                  {exam.isPublished ? t('published') : t('draft')}
+                                </Badge>
+                              </div>
+                              {exam.description && (
+                                <p className="mt-2 text-sm text-muted-foreground">
+                                  {exam.description}
+                                </p>
+                              )}
+                              <div className="mt-3 flex flex-wrap gap-3 text-xs text-muted-foreground">
+                                <span>{t('durationValue', { minutes: exam.durationMinutes })}</span>
+                                <span>
+                                  {t('passingScoreValue', { value: exam.passingScore ?? 0 })}
+                                </span>
+                                <span>
+                                  {t('sectionCount', { count: exam._count?.sections ?? 0 })}
+                                </span>
+                                <span>
+                                  {t('attemptCount', { count: exam._count?.attempts ?? 0 })}
+                                </span>
+                              </div>
+                              <div className="mt-4 flex flex-wrap gap-2">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  className="gap-2"
+                                  disabled={updateExam.isPending}
+                                  onClick={() => handleToggleExamPublished(exam)}
+                                >
+                                  {exam.isPublished ? (
+                                    <X className="h-3.5 w-3.5" />
+                                  ) : (
+                                    <CheckCircle2 className="h-3.5 w-3.5" />
+                                  )}
+                                  {exam.isPublished ? t('unpublish') : t('publish')}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  className="gap-2"
+                                  disabled={templateLoading && templateExamId === exam.id}
+                                  onClick={() => handleEditExam(exam.id)}
+                                >
+                                  {templateLoading &&
+                                  templateExamId === exam.id &&
+                                  templateAction === 'edit' ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  ) : (
+                                    <PencilLine className="h-3.5 w-3.5" />
+                                  )}
+                                  {t('editExam')}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  className="gap-2"
+                                  disabled={templateLoading && templateExamId === exam.id}
+                                  onClick={() => loadExamTemplate(exam.id, 'load')}
+                                >
+                                  {templateLoading &&
+                                  templateExamId === exam.id &&
+                                  templateAction === 'load' ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  ) : (
+                                    <Eye className="h-3.5 w-3.5" />
+                                  )}
+                                  {t('loadExamToDraft')}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  className="gap-2"
+                                  disabled={templateLoading && templateExamId === exam.id}
+                                  onClick={() => loadExamTemplate(exam.id, 'duplicate')}
+                                >
+                                  <Copy className="h-3.5 w-3.5" />
+                                  {t('duplicateExam')}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  className="gap-2 text-destructive hover:text-destructive"
+                                  onClick={() => handleDeleteExam(exam)}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                  {t('deleteExam')}
+                                </Button>
+                              </div>
+                            </div>
                           </div>
                         </article>
                       ))}
@@ -657,6 +912,16 @@ export default function AdminExamsPage() {
               onError: () => setMessage({ type: 'error', text: t('examDeleteError') }),
             });
           }}
+        />
+        <DeleteConfirmDialog
+          open={examBulkDeleteOpen}
+          title={t('deleteSelected')}
+          description={t('confirmBulkDeleteExams', { count: selectedExamIds.length })}
+          confirmLabel={t('deleteSelected')}
+          cancelLabel={t('cancel')}
+          pending={examBulkAction === 'delete'}
+          onOpenChange={setExamBulkDeleteOpen}
+          onConfirm={handleBulkDeleteExams}
         />
       </div>
     </AuthGuard>

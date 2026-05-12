@@ -50,6 +50,10 @@ import {
   X,
 } from 'lucide-react';
 
+function includesNormalized(haystack: string, needle: string) {
+  return haystack.toLowerCase().includes(needle.toLowerCase());
+}
+
 export default function AdminPracticePage() {
   const t = useTranslations('Admin');
   const { data: courseData, isLoading: coursesLoading } = useCourses({ limit: 100 });
@@ -70,6 +74,19 @@ export default function AdminPracticePage() {
   const [editingExerciseSetId, setEditingExerciseSetId] = useState<string | null>(null);
   const [questionToDelete, setQuestionToDelete] = useState<PracticeQuestion | null>(null);
   const [exerciseSetToDelete, setExerciseSetToDelete] = useState<PracticeExerciseSet | null>(null);
+  const [questionBulkDeleteOpen, setQuestionBulkDeleteOpen] = useState(false);
+  const [questionBulkAction, setQuestionBulkAction] = useState<'delete' | null>(null);
+  const [questionSearch, setQuestionSearch] = useState('');
+  const [questionTypeFilter, setQuestionTypeFilter] = useState<'all' | PracticeQuestionType>('all');
+  const [selectedExerciseSetIds, setSelectedExerciseSetIds] = useState<string[]>([]);
+  const [exerciseSetSearch, setExerciseSetSearch] = useState('');
+  const [exerciseSetStatusFilter, setExerciseSetStatusFilter] = useState<
+    'all' | 'published' | 'draft'
+  >('all');
+  const [exerciseSetBulkDeleteOpen, setExerciseSetBulkDeleteOpen] = useState(false);
+  const [exerciseSetBulkAction, setExerciseSetBulkAction] = useState<
+    'publish' | 'unpublish' | 'delete' | null
+  >(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const { data: selectedCourse } = useCourse(courseId);
@@ -87,6 +104,42 @@ export default function AdminPracticePage() {
   const deleteExerciseSet = useDeletePracticeExerciseSet();
   const questionSaving = createQuestion.isPending || updateQuestion.isPending;
   const exerciseSetSaving = createExerciseSet.isPending || updateExerciseSet.isPending;
+  const filteredQuestions = useMemo(() => {
+    const search = questionSearch.trim();
+    return questions.filter((question) => {
+      const typeMatches = questionTypeFilter === 'all' || question.type === questionTypeFilter;
+      const textMatches =
+        !search ||
+        includesNormalized(question.prompt, search) ||
+        question.skillTags.some((tag) => includesNormalized(tag, search));
+      return typeMatches && textMatches;
+    });
+  }, [questionSearch, questionTypeFilter, questions]);
+  const filteredExerciseSets = useMemo(() => {
+    const search = exerciseSetSearch.trim();
+    return exerciseSets.filter((set) => {
+      const statusMatches =
+        exerciseSetStatusFilter === 'all' ||
+        (exerciseSetStatusFilter === 'published' && set.isPublished) ||
+        (exerciseSetStatusFilter === 'draft' && !set.isPublished);
+      const textMatches =
+        !search ||
+        includesNormalized(set.title, search) ||
+        includesNormalized(set.description ?? '', search) ||
+        includesNormalized(set.unit?.title ?? '', search);
+      return statusMatches && textMatches;
+    });
+  }, [exerciseSetSearch, exerciseSetStatusFilter, exerciseSets]);
+  const selectedQuestions = useMemo(
+    () => questions.filter((question) => selectedQuestionIds.includes(question.id)),
+    [questions, selectedQuestionIds],
+  );
+  const selectedExerciseSets = useMemo(
+    () => exerciseSets.filter((set) => selectedExerciseSetIds.includes(set.id)),
+    [exerciseSets, selectedExerciseSetIds],
+  );
+  const questionBulkPending = questionBulkAction !== null;
+  const exerciseSetBulkPending = exerciseSetBulkAction !== null;
   const questionDraft = useMemo(
     () =>
       buildPracticeQuestionDraft({
@@ -119,6 +172,7 @@ export default function AdminPracticePage() {
   useEffect(() => {
     setUnitId('');
     setSelectedQuestionIds([]);
+    setSelectedExerciseSetIds([]);
     setEditingQuestionId(null);
     setEditingExerciseSetId(null);
   }, [courseId]);
@@ -275,12 +329,37 @@ export default function AdminPracticePage() {
     setQuestionToDelete(question);
   };
 
+  const handleBulkDeleteQuestions = async () => {
+    if (selectedQuestions.length === 0) return;
+    const ids = selectedQuestions.map((question) => question.id);
+    setQuestionBulkAction('delete');
+    try {
+      await Promise.all(ids.map((id) => deleteQuestion.mutateAsync(id)));
+      if (editingQuestionId && ids.includes(editingQuestionId)) resetQuestionDraft();
+      setSelectedQuestionIds([]);
+      setQuestionBulkDeleteOpen(false);
+      setMessage({
+        type: 'success',
+        text: t('bulkQuestionsDeleted', { count: ids.length }),
+      });
+    } catch {
+      setMessage({ type: 'error', text: t('bulkQuestionDeleteError') });
+    } finally {
+      setQuestionBulkAction(null);
+    }
+  };
+
   const selectAllQuestions = () => {
-    setSelectedQuestionIds(questions.map((question) => question.id));
+    setSelectedQuestionIds(filteredQuestions.map((question) => question.id));
   };
 
   const clearSelectedQuestions = () => {
     setSelectedQuestionIds([]);
+  };
+
+  const clearQuestionFilters = () => {
+    setQuestionSearch('');
+    setQuestionTypeFilter('all');
   };
 
   const handleSubmitExerciseSet = (event: FormEvent) => {
@@ -337,6 +416,87 @@ export default function AdminPracticePage() {
     setExerciseSetToDelete(set);
   };
 
+  const toggleExerciseSetSelection = (setId: string, checked: boolean) => {
+    setSelectedExerciseSetIds((current) =>
+      checked
+        ? current.includes(setId)
+          ? current
+          : [...current, setId]
+        : current.filter((id) => id !== setId),
+    );
+  };
+
+  const selectAllExerciseSets = () => {
+    setSelectedExerciseSetIds(filteredExerciseSets.map((set) => set.id));
+  };
+
+  const clearSelectedExerciseSets = () => {
+    setSelectedExerciseSetIds([]);
+  };
+
+  const clearExerciseSetFilters = () => {
+    setExerciseSetSearch('');
+    setExerciseSetStatusFilter('all');
+  };
+
+  const handleToggleExerciseSetPublished = (set: PracticeExerciseSet) => {
+    const nextPublished = !set.isPublished;
+    updateExerciseSet.mutate(
+      { id: set.id, payload: { isPublished: nextPublished } },
+      {
+        onSuccess: () =>
+          setMessage({
+            type: 'success',
+            text: nextPublished ? t('practiceSetPublished') : t('practiceSetUnpublished'),
+          }),
+        onError: () => setMessage({ type: 'error', text: t('practiceSetPublishUpdateError') }),
+      },
+    );
+  };
+
+  const handleBulkExerciseSetPublish = async (nextPublished: boolean) => {
+    if (selectedExerciseSets.length === 0) return;
+    setExerciseSetBulkAction(nextPublished ? 'publish' : 'unpublish');
+    try {
+      await Promise.all(
+        selectedExerciseSets.map((set) =>
+          updateExerciseSet.mutateAsync({ id: set.id, payload: { isPublished: nextPublished } }),
+        ),
+      );
+      setSelectedExerciseSetIds([]);
+      setMessage({
+        type: 'success',
+        text: nextPublished
+          ? t('bulkPracticeSetsPublished', { count: selectedExerciseSets.length })
+          : t('bulkPracticeSetsUnpublished', { count: selectedExerciseSets.length }),
+      });
+    } catch {
+      setMessage({ type: 'error', text: t('bulkPracticeSetUpdateError') });
+    } finally {
+      setExerciseSetBulkAction(null);
+    }
+  };
+
+  const handleBulkDeleteExerciseSets = async () => {
+    if (selectedExerciseSets.length === 0) return;
+    const ids = selectedExerciseSets.map((set) => set.id);
+    setExerciseSetBulkAction('delete');
+    try {
+      await Promise.all(ids.map((id) => deleteExerciseSet.mutateAsync(id)));
+      if (editingExerciseSetId && ids.includes(editingExerciseSetId)) resetExerciseSetDraft();
+      setSelectedExerciseSetIds([]);
+      setExerciseSetBulkDeleteOpen(false);
+      setMessage({
+        type: 'success',
+        text: t('bulkPracticeSetsDeleted', { count: ids.length }),
+      });
+    } catch {
+      setMessage({ type: 'error', text: t('bulkPracticeSetDeleteError') });
+    } finally {
+      setExerciseSetBulkAction(null);
+    }
+  };
+
   return (
     <AuthGuard>
       <div className="min-h-screen flex bg-background">
@@ -387,6 +547,7 @@ export default function AdminPracticePage() {
                   onChange={(event) => {
                     setUnitId(event.target.value);
                     setSelectedQuestionIds([]);
+                    setSelectedExerciseSetIds([]);
                   }}
                   className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   disabled={!courseId}
@@ -416,125 +577,188 @@ export default function AdminPracticePage() {
                         <p className="text-sm text-muted-foreground">{t('questionBankDesc')}</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant="secondary">{questions.length}</Badge>
-                        <Button variant="outline" size="sm" onClick={selectAllQuestions}>
+                        <Badge variant="secondary">{filteredQuestions.length}</Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={selectAllQuestions}
+                          disabled={filteredQuestions.length === 0}
+                        >
                           {t('selectAllQuestions')}
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={clearSelectedQuestions}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={clearSelectedQuestions}
+                          disabled={selectedQuestionIds.length === 0}
+                        >
                           {t('clearSelection')}
                         </Button>
                       </div>
+                    </div>
+
+                    <div className="mb-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_auto]">
+                      <Input
+                        value={questionSearch}
+                        onChange={(event) => setQuestionSearch(event.target.value)}
+                        placeholder={t('searchQuestions')}
+                      />
+                      <select
+                        value={questionTypeFilter}
+                        onChange={(event) =>
+                          setQuestionTypeFilter(event.target.value as 'all' | PracticeQuestionType)
+                        }
+                        className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      >
+                        <option value="all">{t('allQuestionTypes')}</option>
+                        <option value="MULTIPLE_CHOICE">{t('multipleChoice')}</option>
+                        <option value="FILL_BLANK">{t('fillBlank')}</option>
+                        <option value="AI_EVALUATED_AUDIO">{t('aiEvaluatedAudio')}</option>
+                        <option value="AI_EVALUATED_TEXT">{t('aiEvaluatedText')}</option>
+                      </select>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={clearQuestionFilters}
+                        disabled={!questionSearch && questionTypeFilter === 'all'}
+                      >
+                        {t('clearFilters')}
+                      </Button>
                     </div>
 
                     {questionsLoading ? (
                       <LoadingRow label={t('loading')} />
                     ) : questions.length === 0 ? (
                       <EmptyState title={t('noPracticeQuestions')} />
+                    ) : filteredQuestions.length === 0 ? (
+                      <EmptyState title={t('noFilteredPracticeQuestions')} />
                     ) : (
-                      <div className="divide-y rounded-lg border">
-                        {questions.map((question) => (
-                          <label
-                            key={question.id}
-                            className="flex cursor-pointer items-start gap-3 px-4 py-3"
-                          >
-                            <input
-                              type="checkbox"
-                              className="mt-1"
-                              checked={selectedQuestionIds.includes(question.id)}
-                              onChange={(event) => {
-                                setSelectedQuestionIds((current) =>
-                                  event.target.checked
-                                    ? [...current, question.id]
-                                    : current.filter((id) => id !== question.id),
-                                );
-                              }}
-                            />
-                            <div className="min-w-0 flex-1">
-                              <div className="flex flex-wrap items-start justify-between gap-2">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <Badge variant="outline">
-                                    {question.type === 'MULTIPLE_CHOICE'
-                                      ? t('multipleChoice')
-                                      : question.type === 'FILL_BLANK'
-                                        ? t('fillBlank')
-                                        : question.type === 'AI_EVALUATED_AUDIO'
-                                          ? t('aiEvaluatedAudio')
-                                          : t('aiEvaluatedText')}
-                                  </Badge>
-                                  {question.skillTags.map((tag) => (
-                                    <Badge key={tag} variant="secondary">
-                                      {tag}
-                                    </Badge>
-                                  ))}
-                                </div>
-                                <div className="flex shrink-0 items-center gap-1">
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7"
-                                    onClick={(event) => {
-                                      event.preventDefault();
-                                      event.stopPropagation();
-                                      handleEditQuestion(question);
-                                    }}
-                                    title={t('editQuestion')}
-                                    aria-label={t('editQuestion')}
-                                  >
-                                    <PencilLine className="h-3.5 w-3.5" />
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7"
-                                    onClick={(event) => {
-                                      event.preventDefault();
-                                      event.stopPropagation();
-                                      handleUseQuestionAsDraft(question);
-                                    }}
-                                    title={t('useQuestionAsDraft')}
-                                    aria-label={t('useQuestionAsDraft')}
-                                  >
-                                    <Plus className="h-3.5 w-3.5" />
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7"
-                                    onClick={(event) => {
-                                      event.preventDefault();
-                                      event.stopPropagation();
-                                      handleDuplicateQuestion(question);
-                                    }}
-                                    title={t('duplicateQuestion')}
-                                    aria-label={t('duplicateQuestion')}
-                                  >
-                                    <Copy className="h-3.5 w-3.5" />
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7 text-destructive hover:text-destructive"
-                                    onClick={(event) => {
-                                      event.preventDefault();
-                                      event.stopPropagation();
-                                      handleDeleteQuestion(question);
-                                    }}
-                                    title={t('deleteQuestion')}
-                                    aria-label={t('deleteQuestion')}
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </Button>
-                                </div>
-                              </div>
-                              <p className="mt-2 text-sm font-medium">{question.prompt}</p>
+                      <>
+                        {selectedQuestionIds.length > 0 && (
+                          <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/40 p-3">
+                            <span className="text-sm font-medium">
+                              {t('selectedItemsValue', { count: selectedQuestionIds.length })}
+                            </span>
+                            <div className="flex flex-wrap gap-2">
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                className="gap-2 text-destructive hover:text-destructive"
+                                disabled={questionBulkPending}
+                                onClick={() => setQuestionBulkDeleteOpen(true)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                {t('deleteSelected')}
+                              </Button>
                             </div>
-                          </label>
-                        ))}
-                      </div>
+                          </div>
+                        )}
+                        <div className="divide-y rounded-lg border">
+                          {filteredQuestions.map((question) => (
+                            <label
+                              key={question.id}
+                              className="flex cursor-pointer items-start gap-3 px-4 py-3"
+                            >
+                              <input
+                                type="checkbox"
+                                className="mt-1"
+                                checked={selectedQuestionIds.includes(question.id)}
+                                onChange={(event) => {
+                                  setSelectedQuestionIds((current) =>
+                                    event.target.checked
+                                      ? [...current, question.id]
+                                      : current.filter((id) => id !== question.id),
+                                  );
+                                }}
+                              />
+                              <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-start justify-between gap-2">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <Badge variant="outline">
+                                      {question.type === 'MULTIPLE_CHOICE'
+                                        ? t('multipleChoice')
+                                        : question.type === 'FILL_BLANK'
+                                          ? t('fillBlank')
+                                          : question.type === 'AI_EVALUATED_AUDIO'
+                                            ? t('aiEvaluatedAudio')
+                                            : t('aiEvaluatedText')}
+                                    </Badge>
+                                    {question.skillTags.map((tag) => (
+                                      <Badge key={tag} variant="secondary">
+                                        {tag}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                  <div className="flex shrink-0 items-center gap-1">
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7"
+                                      onClick={(event) => {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                        handleEditQuestion(question);
+                                      }}
+                                      title={t('editQuestion')}
+                                      aria-label={t('editQuestion')}
+                                    >
+                                      <PencilLine className="h-3.5 w-3.5" />
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7"
+                                      onClick={(event) => {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                        handleUseQuestionAsDraft(question);
+                                      }}
+                                      title={t('useQuestionAsDraft')}
+                                      aria-label={t('useQuestionAsDraft')}
+                                    >
+                                      <Plus className="h-3.5 w-3.5" />
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7"
+                                      onClick={(event) => {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                        handleDuplicateQuestion(question);
+                                      }}
+                                      title={t('duplicateQuestion')}
+                                      aria-label={t('duplicateQuestion')}
+                                    >
+                                      <Copy className="h-3.5 w-3.5" />
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7 text-destructive hover:text-destructive"
+                                      onClick={(event) => {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                        handleDeleteQuestion(question);
+                                      }}
+                                      title={t('deleteQuestion')}
+                                      aria-label={t('deleteQuestion')}
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </div>
+                                </div>
+                                <p className="mt-2 text-sm font-medium">{question.prompt}</p>
+                              </div>
+                            </label>
+                          ))}
+                        </div>
+                      </>
                     )}
                   </section>
 
@@ -544,57 +768,193 @@ export default function AdminPracticePage() {
                         <h2 className="text-base font-semibold">{t('exerciseSets')}</h2>
                         <p className="text-sm text-muted-foreground">{t('exerciseSetsDesc')}</p>
                       </div>
-                      <Badge variant="secondary">{exerciseSets.length}</Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary">{filteredExerciseSets.length}</Badge>
+                        {exerciseSets.length > 0 && (
+                          <>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={selectAllExerciseSets}
+                              disabled={filteredExerciseSets.length === 0}
+                            >
+                              {t('selectAllItems')}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={clearSelectedExerciseSets}
+                              disabled={selectedExerciseSetIds.length === 0}
+                            >
+                              {t('clearSelection')}
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="mb-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_auto]">
+                      <Input
+                        value={exerciseSetSearch}
+                        onChange={(event) => setExerciseSetSearch(event.target.value)}
+                        placeholder={t('searchExerciseSets')}
+                      />
+                      <select
+                        value={exerciseSetStatusFilter}
+                        onChange={(event) =>
+                          setExerciseSetStatusFilter(
+                            event.target.value as 'all' | 'published' | 'draft',
+                          )
+                        }
+                        className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      >
+                        <option value="all">{t('allStatuses')}</option>
+                        <option value="published">{t('publishedOnly')}</option>
+                        <option value="draft">{t('draftOnly')}</option>
+                      </select>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={clearExerciseSetFilters}
+                        disabled={!exerciseSetSearch && exerciseSetStatusFilter === 'all'}
+                      >
+                        {t('clearFilters')}
+                      </Button>
                     </div>
 
                     {setsLoading ? (
                       <LoadingRow label={t('loading')} />
                     ) : exerciseSets.length === 0 ? (
                       <EmptyState title={t('noExerciseSets')} />
+                    ) : filteredExerciseSets.length === 0 ? (
+                      <EmptyState title={t('noFilteredExerciseSets')} />
                     ) : (
                       <div className="grid gap-3">
-                        {exerciseSets.map((set) => (
-                          <div key={set.id} className="rounded-lg border p-4">
-                            <div className="flex items-start justify-between gap-3">
-                              <div>
-                                <h3 className="text-sm font-semibold">{set.title}</h3>
-                                <p className="mt-1 text-xs text-muted-foreground">
-                                  {set.unit?.title || t('allUnits')}
-                                </p>
-                              </div>
-                              <div className="flex shrink-0 items-center gap-1">
-                                <Badge variant={set.isPublished ? 'success' : 'outline'}>
-                                  {set.isPublished ? t('published') : t('draft')}
-                                </Badge>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7"
-                                  onClick={() => handleEditExerciseSet(set)}
-                                  title={t('editExerciseSet')}
-                                  aria-label={t('editExerciseSet')}
-                                >
-                                  <PencilLine className="h-3.5 w-3.5" />
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7 text-destructive hover:text-destructive"
-                                  onClick={() => handleDeleteExerciseSet(set)}
-                                  title={t('deleteExerciseSet')}
-                                  aria-label={t('deleteExerciseSet')}
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
-                              </div>
+                        {selectedExerciseSetIds.length > 0 && (
+                          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/40 p-3">
+                            <span className="text-sm font-medium">
+                              {t('selectedItemsValue', { count: selectedExerciseSetIds.length })}
+                            </span>
+                            <div className="flex flex-wrap gap-2">
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                className="gap-2"
+                                disabled={exerciseSetBulkPending}
+                                onClick={() => handleBulkExerciseSetPublish(true)}
+                              >
+                                {exerciseSetBulkAction === 'publish' ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <CheckCircle2 className="h-3.5 w-3.5" />
+                                )}
+                                {t('publishSelected')}
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                className="gap-2"
+                                disabled={exerciseSetBulkPending}
+                                onClick={() => handleBulkExerciseSetPublish(false)}
+                              >
+                                {exerciseSetBulkAction === 'unpublish' ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <X className="h-3.5 w-3.5" />
+                                )}
+                                {t('unpublishSelected')}
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                className="gap-2 text-destructive hover:text-destructive"
+                                disabled={exerciseSetBulkPending}
+                                onClick={() => setExerciseSetBulkDeleteOpen(true)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                {t('deleteSelected')}
+                              </Button>
                             </div>
-                            <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
-                              <span>
-                                {t('questionCount', { count: set._count?.questions ?? 0 })}
-                              </span>
-                              <span>{t('attemptCount', { count: set._count?.attempts ?? 0 })}</span>
+                          </div>
+                        )}
+                        {filteredExerciseSets.map((set) => (
+                          <div key={set.id} className="rounded-lg border p-4">
+                            <div className="flex items-start gap-3">
+                              <input
+                                type="checkbox"
+                                className="mt-1"
+                                aria-label={t('selectItem')}
+                                checked={selectedExerciseSetIds.includes(set.id)}
+                                onChange={(event) =>
+                                  toggleExerciseSetSelection(set.id, event.target.checked)
+                                }
+                              />
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div>
+                                    <h3 className="text-sm font-semibold">{set.title}</h3>
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                      {set.unit?.title || t('allUnits')}
+                                    </p>
+                                  </div>
+                                  <div className="flex shrink-0 items-center gap-1">
+                                    <Badge variant={set.isPublished ? 'success' : 'outline'}>
+                                      {set.isPublished ? t('published') : t('draft')}
+                                    </Badge>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7"
+                                      disabled={updateExerciseSet.isPending}
+                                      onClick={() => handleToggleExerciseSetPublished(set)}
+                                      title={set.isPublished ? t('unpublish') : t('publish')}
+                                      aria-label={set.isPublished ? t('unpublish') : t('publish')}
+                                    >
+                                      {set.isPublished ? (
+                                        <X className="h-3.5 w-3.5" />
+                                      ) : (
+                                        <CheckCircle2 className="h-3.5 w-3.5" />
+                                      )}
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7"
+                                      onClick={() => handleEditExerciseSet(set)}
+                                      title={t('editExerciseSet')}
+                                      aria-label={t('editExerciseSet')}
+                                    >
+                                      <PencilLine className="h-3.5 w-3.5" />
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7 text-destructive hover:text-destructive"
+                                      onClick={() => handleDeleteExerciseSet(set)}
+                                      title={t('deleteExerciseSet')}
+                                      aria-label={t('deleteExerciseSet')}
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </div>
+                                </div>
+                                <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
+                                  <span>
+                                    {t('questionCount', { count: set._count?.questions ?? 0 })}
+                                  </span>
+                                  <span>
+                                    {t('attemptCount', { count: set._count?.attempts ?? 0 })}
+                                  </span>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         ))}
@@ -875,6 +1235,28 @@ export default function AdminPracticePage() {
               onError: () => setMessage({ type: 'error', text: t('practiceSetDeleteError') }),
             });
           }}
+        />
+        <DeleteConfirmDialog
+          open={questionBulkDeleteOpen}
+          title={t('deleteSelected')}
+          description={t('confirmBulkDeleteQuestions', { count: selectedQuestionIds.length })}
+          confirmLabel={t('deleteSelected')}
+          cancelLabel={t('cancel')}
+          pending={questionBulkAction === 'delete'}
+          onOpenChange={setQuestionBulkDeleteOpen}
+          onConfirm={handleBulkDeleteQuestions}
+        />
+        <DeleteConfirmDialog
+          open={exerciseSetBulkDeleteOpen}
+          title={t('deleteSelected')}
+          description={t('confirmBulkDeleteExerciseSets', {
+            count: selectedExerciseSetIds.length,
+          })}
+          confirmLabel={t('deleteSelected')}
+          cancelLabel={t('cancel')}
+          pending={exerciseSetBulkAction === 'delete'}
+          onOpenChange={setExerciseSetBulkDeleteOpen}
+          onConfirm={handleBulkDeleteExerciseSets}
         />
       </div>
     </AuthGuard>

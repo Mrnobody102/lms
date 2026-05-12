@@ -225,24 +225,36 @@ export default function CourseEditorPage() {
     );
   };
 
-  const handleEnrollStudent = (userId: string) => {
-    enrollStudent.mutate(
-      { courseId, userId },
-      {
-        onSuccess: () => showMsg('success', 'studentEnrolled'),
-        onError: () => showMsg('error', 'studentEnrollError'),
-      },
-    );
+  const handleBulkDeleteLessons = async (lessonIds: string[]): Promise<void> => {
+    try {
+      await Promise.all(lessonIds.map((id) => deleteLesson.mutateAsync({ id, courseId })));
+      showMsg('success', 'lessonsDeleted');
+    } catch {
+      showMsg('error', 'lessonDeleteError');
+      throw new Error('Failed to delete selected lessons');
+    }
   };
 
-  const handleUnenrollStudent = (userId: string) => {
-    unenrollStudent.mutate(
-      { courseId, userId },
-      {
-        onSuccess: () => showMsg('success', 'studentUnenrolled'),
-        onError: () => showMsg('error', 'studentUnenrollError'),
-      },
-    );
+  const handleEnrollStudent = async (userId: string): Promise<boolean> => {
+    try {
+      await enrollStudent.mutateAsync({ courseId, userId });
+      showMsg('success', 'studentEnrolled');
+      return true;
+    } catch {
+      showMsg('error', 'studentEnrollError');
+      return false;
+    }
+  };
+
+  const handleUnenrollStudent = async (userId: string): Promise<boolean> => {
+    try {
+      await unenrollStudent.mutateAsync({ courseId, userId });
+      showMsg('success', 'studentUnenrolled');
+      return true;
+    } catch {
+      showMsg('error', 'studentUnenrollError');
+      return false;
+    }
   };
 
   const handleAddUnit = (data: { title: string; order?: number }): Promise<boolean> => {
@@ -500,6 +512,7 @@ export default function CourseEditorPage() {
                     onReorderUnit={handleReorderUnit}
                     onReorder={handleReorderLesson}
                     onDuplicate={handleDuplicateLesson}
+                    onBulkDelete={handleBulkDeleteLessons}
                     getPreviewUrl={getLessonPreviewUrl}
                   />
                 </div>

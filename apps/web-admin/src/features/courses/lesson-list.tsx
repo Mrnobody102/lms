@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { CourseUnit, Lesson } from '@/lib/course-api';
+import { CourseUnit, Lesson, LessonType } from '@/lib/course-api';
 import {
   Video,
   FileText,
@@ -21,6 +21,7 @@ import {
   ChevronDown,
   Copy,
   ExternalLink,
+  Loader2,
 } from 'lucide-react';
 import { Button, Badge, Input } from '@/components/ui';
 
@@ -59,6 +60,7 @@ interface LessonListProps {
   units?: CourseUnit[];
   onEdit: (lesson: Lesson) => void;
   onDelete: (lessonId: string) => void;
+  onBulkDelete?: (lessonIds: string[]) => Promise<void>;
   onAddClick: (unitId?: string | null) => void;
   onAddUnit?: (data: { title: string; order?: number }) => Promise<boolean>;
   onUpdateUnit?: (unitId: string, data: { title?: string; order?: number }) => Promise<boolean>;
@@ -70,11 +72,18 @@ interface LessonListProps {
   getPreviewUrl?: (lesson: Lesson) => string | null;
 }
 
+type LessonStatusFilter = 'all' | 'ready' | 'draft';
+
+function includesNormalized(haystack: string, needle: string) {
+  return haystack.toLowerCase().includes(needle.toLowerCase());
+}
+
 export function LessonList({
   lessons,
   units = [],
   onEdit,
   onDelete,
+  onBulkDelete,
   onAddClick,
   onAddUnit,
   onUpdateUnit,
@@ -91,22 +100,50 @@ export function LessonList({
   const [newUnitTitle, setNewUnitTitle] = useState('');
   const [isAddingUnit, setIsAddingUnit] = useState(false);
   const [editingUnit, setEditingUnit] = useState<{ id: string; title: string } | null>(null);
+  const [lessonSearch, setLessonSearch] = useState('');
+  const [lessonTypeFilter, setLessonTypeFilter] = useState<'all' | LessonType>('all');
+  const [lessonStatusFilter, setLessonStatusFilter] = useState<LessonStatusFilter>('all');
+  const [selectedLessonIds, setSelectedLessonIds] = useState<string[]>([]);
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const sortedLessons = useMemo(() => [...lessons].sort(sortByOrder), [lessons]);
   const sortedUnits = useMemo(() => [...units].sort(sortByOrder), [units]);
+  const hasActiveFilters =
+    Boolean(lessonSearch.trim()) || lessonTypeFilter !== 'all' || lessonStatusFilter !== 'all';
+  const filteredLessons = useMemo(() => {
+    const search = lessonSearch.trim();
+    return sortedLessons.filter((lesson) => {
+      const status = getLessonStatus(lesson);
+      const typeMatches = lessonTypeFilter === 'all' || lesson.type === lessonTypeFilter;
+      const statusMatches = lessonStatusFilter === 'all' || status === lessonStatusFilter;
+      const textMatches =
+        !search ||
+        includesNormalized(lesson.title, search) ||
+        includesNormalized(getLessonSummary(lesson, t) ?? '', search);
+      return typeMatches && statusMatches && textMatches;
+    });
+  }, [lessonSearch, lessonStatusFilter, lessonTypeFilter, sortedLessons, t]);
   const lessonGroups = useMemo(
     () =>
-      sortedUnits.map((unit) => ({
-        unit,
-        lessons: getLessonsForUnit(unit, sortedLessons),
-      })),
-    [sortedLessons, sortedUnits],
+      sortedUnits
+        .map((unit) => ({
+          unit,
+          lessons: getLessonsForUnit(unit, filteredLessons),
+        }))
+        .filter((group) => !hasActiveFilters || group.lessons.length > 0),
+    [filteredLessons, hasActiveFilters, sortedUnits],
   );
   const groupedLessonIds = new Set(
     lessonGroups.flatMap((group) => group.lessons.map((lesson) => lesson.id)),
   );
-  const ungroupedLessons = sortedLessons.filter((lesson) => !groupedLessonIds.has(lesson.id));
+  const ungroupedLessons = filteredLessons.filter((lesson) => !groupedLessonIds.has(lesson.id));
   const totalLessons = sortedLessons.length;
+  const visibleLessons = filteredLessons.length;
+  const readyLessonCount = sortedLessons.filter(
+    (lesson) => getLessonStatus(lesson) === 'ready',
+  ).length;
+  const selectedLessons = sortedLessons.filter((lesson) => selectedLessonIds.includes(lesson.id));
 
   const handleAddUnit = async () => {
     if (!newUnitTitle.trim() || !onAddUnit) return;
@@ -131,6 +168,43 @@ export function LessonList({
     }
   };
 
+  const toggleLessonSelection = (lessonId: string, checked: boolean) => {
+    setSelectedLessonIds((current) =>
+      checked
+        ? current.includes(lessonId)
+          ? current
+          : [...current, lessonId]
+        : current.filter((id) => id !== lessonId),
+    );
+  };
+
+  const selectVisibleLessons = () => {
+    setSelectedLessonIds(filteredLessons.map((lesson) => lesson.id));
+  };
+
+  const clearSelectedLessons = () => {
+    setSelectedLessonIds([]);
+  };
+
+  const clearLessonFilters = () => {
+    setLessonSearch('');
+    setLessonTypeFilter('all');
+    setLessonStatusFilter('all');
+  };
+
+  const handleBulkDelete = async () => {
+    if (!onBulkDelete || selectedLessons.length === 0) return;
+
+    setBulkDeleting(true);
+    try {
+      await onBulkDelete(selectedLessons.map((lesson) => lesson.id));
+      setSelectedLessonIds([]);
+      setConfirmBulkDelete(false);
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
   return (
     <div className="flex flex-col">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
@@ -139,6 +213,9 @@ export function LessonList({
           <h3 className="font-semibold text-base">{t('curriculum')}</h3>
           <Badge variant="secondary" className="text-xs">
             {totalLessons}
+          </Badge>
+          <Badge variant="outline" className="text-xs">
+            {t('readyLessonsValue', { count: readyLessonCount })}
           </Badge>
         </div>
         <div className="flex items-center gap-2">
@@ -163,6 +240,97 @@ export function LessonList({
           </Button>
         </div>
       </div>
+
+      <div className="mb-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_180px_auto]">
+        <Input
+          value={lessonSearch}
+          onChange={(event) => setLessonSearch(event.target.value)}
+          placeholder={t('searchLessons')}
+        />
+        <select
+          value={lessonTypeFilter}
+          onChange={(event) => setLessonTypeFilter(event.target.value as 'all' | LessonType)}
+          className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+        >
+          <option value="all">{t('allLessonTypes')}</option>
+          <option value="video">{t('lessonTypeVideo')}</option>
+          <option value="text">{t('lessonTypeText')}</option>
+          <option value="quiz">{t('lessonTypeQuiz')}</option>
+          <option value="simulation">{t('lessonTypeSimulation')}</option>
+          <option value="micro_card">{t('lessonTypeMicroCard')}</option>
+        </select>
+        <select
+          value={lessonStatusFilter}
+          onChange={(event) => setLessonStatusFilter(event.target.value as LessonStatusFilter)}
+          className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+        >
+          <option value="all">{t('allStatuses')}</option>
+          <option value="ready">{t('readyOnly')}</option>
+          <option value="draft">{t('draftOnly')}</option>
+        </select>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={clearLessonFilters}
+          disabled={!hasActiveFilters}
+        >
+          {t('clearFilters')}
+        </Button>
+      </div>
+
+      {selectedLessonIds.length > 0 && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/40 p-3">
+          <span className="text-sm font-medium">
+            {t('selectedLessonsValue', { count: selectedLessonIds.length })}
+          </span>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={selectVisibleLessons}
+              disabled={visibleLessons === 0}
+            >
+              {t('selectVisibleLessons')}
+            </Button>
+            <Button type="button" size="sm" variant="ghost" onClick={clearSelectedLessons}>
+              {t('clearSelection')}
+            </Button>
+            {onBulkDelete && (
+              <Button
+                type="button"
+                size="sm"
+                variant="destructive"
+                onClick={() => setConfirmBulkDelete(true)}
+              >
+                {t('deleteSelected')}
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {confirmBulkDelete && selectedLessonIds.length > 0 && (
+        <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-destructive/20 bg-destructive/5 p-3">
+          <span className="text-sm text-destructive">
+            {t('confirmBulkDeleteLessons', { count: selectedLessonIds.length })}
+          </span>
+          <div className="flex shrink-0 gap-2">
+            <Button size="sm" variant="outline" onClick={() => setConfirmBulkDelete(false)}>
+              {t('cancel')}
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={handleBulkDelete}
+              disabled={bulkDeleting}
+            >
+              {bulkDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              {t('deleteSelected')}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {isAddingUnit && (
         <div className="mb-4 flex items-center gap-2 rounded-lg border bg-muted/20 p-3">
@@ -200,6 +368,10 @@ export function LessonList({
             <Plus className="w-4 h-4" />
             {t('addLessonTitle')}
           </Button>
+        </div>
+      ) : hasActiveFilters && visibleLessons === 0 ? (
+        <div className="rounded-lg border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
+          {t('noFilteredLessons')}
         </div>
       ) : (
         <div className="space-y-4">
@@ -332,6 +504,8 @@ export function LessonList({
                 lessons={unitLessons}
                 confirmDelete={confirmDelete}
                 setConfirmDelete={setConfirmDelete}
+                selectedLessonIds={selectedLessonIds}
+                onToggleSelection={toggleLessonSelection}
                 onEdit={onEdit}
                 onDelete={onDelete}
                 onReorder={onReorder}
@@ -365,6 +539,8 @@ export function LessonList({
                 lessons={ungroupedLessons}
                 confirmDelete={confirmDelete}
                 setConfirmDelete={setConfirmDelete}
+                selectedLessonIds={selectedLessonIds}
+                onToggleSelection={toggleLessonSelection}
                 onEdit={onEdit}
                 onDelete={onDelete}
                 onReorder={onReorder}
@@ -384,6 +560,8 @@ function LessonRows({
   lessons,
   confirmDelete,
   setConfirmDelete,
+  selectedLessonIds,
+  onToggleSelection,
   onEdit,
   onDelete,
   onReorder,
@@ -394,6 +572,8 @@ function LessonRows({
   lessons: Lesson[];
   confirmDelete: string | null;
   setConfirmDelete: (lessonId: string | null) => void;
+  selectedLessonIds: string[];
+  onToggleSelection: (lessonId: string, checked: boolean) => void;
   onEdit: (lesson: Lesson) => void;
   onDelete: (lessonId: string) => void;
   onReorder?: (lessonId: string, direction: 'up' | 'down') => void;
@@ -407,12 +587,13 @@ function LessonRows({
 
   return (
     <div>
-      <div className="grid grid-cols-[2rem_7rem_1fr_5rem_9.5rem] gap-2 px-4 py-2.5 bg-muted/20 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+      <div className="grid grid-cols-[2rem_2rem_7rem_1fr_5rem_9.5rem] gap-2 px-4 py-2.5 bg-muted/20 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <span className="text-center">{t('selectItem')}</span>
         <span className="text-center">#</span>
-        <span>Type</span>
-        <span>Title</span>
-        <span className="text-right">Duration</span>
-        <span className="text-right">Actions</span>
+        <span>{t('type')}</span>
+        <span>{t('title')}</span>
+        <span className="text-right">{t('duration')}</span>
+        <span className="text-right">{t('actions')}</span>
       </div>
       {lessons.map((lesson, idx) => {
         const typeConfig = getTypeConfig(t);
@@ -422,8 +603,16 @@ function LessonRows({
         return (
           <div
             key={lesson.id}
-            className="grid grid-cols-[2rem_7rem_1fr_5rem_9.5rem] gap-2 px-4 py-3 items-center border-t hover:bg-muted/30 transition-colors group"
+            className="grid grid-cols-[2rem_2rem_7rem_1fr_5rem_9.5rem] gap-2 px-4 py-3 items-center border-t hover:bg-muted/30 transition-colors group"
           >
+            <div className="flex justify-center">
+              <input
+                type="checkbox"
+                checked={selectedLessonIds.includes(lesson.id)}
+                onChange={(event) => onToggleSelection(lesson.id, event.target.checked)}
+                aria-label={t('selectItem')}
+              />
+            </div>
             <span className="text-center text-sm font-semibold text-muted-foreground">
               {String(idx + 1).padStart(2, '0')}
             </span>
@@ -516,7 +705,7 @@ function LessonRows({
             </div>
 
             {confirmDelete === lesson.id && (
-              <div className="col-span-5 bg-destructive/5 border border-destructive/20 rounded-lg p-3 flex items-center justify-between gap-3">
+              <div className="col-span-6 bg-destructive/5 border border-destructive/20 rounded-lg p-3 flex items-center justify-between gap-3">
                 <span className="text-sm text-destructive">{t('confirmDeleteLesson')}</span>
                 <div className="flex gap-2 shrink-0">
                   <Button size="sm" variant="outline" onClick={() => setConfirmDelete(null)}>
@@ -602,4 +791,30 @@ function getQuizQuestionCount(quiz: unknown) {
 
   const record = quiz as Record<string, unknown>;
   return Array.isArray(record.questions) ? record.questions.length : 0;
+}
+
+function getLessonStatus(lesson: Lesson): 'ready' | 'draft' {
+  if (lesson.duration <= 0) return 'draft';
+
+  if (lesson.type === 'video') {
+    return lesson.videoUrl?.trim() ? 'ready' : 'draft';
+  }
+
+  if (lesson.type === 'text') {
+    return lesson.content?.trim() ? 'ready' : 'draft';
+  }
+
+  if (lesson.type === 'simulation') {
+    return lesson.aiPrompt?.trim() ? 'ready' : 'draft';
+  }
+
+  if (lesson.type === 'micro_card') {
+    return parseMicroCardSummary(lesson.content) ? 'ready' : 'draft';
+  }
+
+  if (lesson.type === 'quiz') {
+    return getQuizQuestionCount(lesson.quiz) > 0 ? 'ready' : 'draft';
+  }
+
+  return 'draft';
 }

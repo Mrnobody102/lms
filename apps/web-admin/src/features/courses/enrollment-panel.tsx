@@ -13,8 +13,8 @@ interface EnrollmentPanelProps {
   enrollments: CourseEnrollment[];
   enrolling: boolean;
   unenrolling: boolean;
-  onEnroll: (userId: string) => void;
-  onUnenroll: (userId: string) => void;
+  onEnroll: (userId: string) => Promise<boolean>;
+  onUnenroll: (userId: string) => Promise<boolean>;
 }
 
 export function EnrollmentPanel({
@@ -27,6 +27,10 @@ export function EnrollmentPanel({
 }: EnrollmentPanelProps) {
   const t = useTranslations('Admin');
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'enrolled' | 'not_enrolled'>('all');
+  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
+  const [bulkMode, setBulkMode] = useState<'enroll' | 'unenroll' | null>(null);
+  const [bulkConfirm, setBulkConfirm] = useState(false);
   const { data, isLoading } = useStudents({ search: search.trim() || undefined });
 
   const enrolledUserIds = useMemo(
@@ -34,7 +38,20 @@ export function EnrollmentPanel({
     [enrollments],
   );
 
-  const students = data?.data ?? [];
+  const students = useMemo(() => data?.data ?? [], [data]);
+  const filteredStudents = useMemo(() => {
+    return students.filter((student) => {
+      const isEnrolled = enrolledUserIds.has(student.id);
+      if (statusFilter === 'enrolled') return isEnrolled;
+      if (statusFilter === 'not_enrolled') return !isEnrolled;
+      return true;
+    });
+  }, [enrolledUserIds, statusFilter, students]);
+  const selectedStudents = useMemo(
+    () => filteredStudents.filter((student) => selectedStudentIds.includes(student.id)),
+    [filteredStudents, selectedStudentIds],
+  );
+  const hasFilters = Boolean(search.trim()) || statusFilter !== 'all';
 
   return (
     <section className="space-y-4" aria-labelledby={`${courseId}-enrollments-heading`}>
@@ -47,15 +64,136 @@ export function EnrollmentPanel({
         </p>
       </div>
 
-      <div className="flex h-10 items-center rounded-md border border-input bg-background text-foreground transition-colors focus-within:ring-2 focus-within:ring-primary/20">
-        <Search className="ml-3.5 h-4 w-4 shrink-0 text-muted-foreground pointer-events-none" />
-        <Input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder={t('searchStudents')}
-          className="h-full min-w-0 flex-1 border-0 bg-transparent px-3 py-0 shadow-none focus-visible:ring-0"
-        />
+      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_auto]">
+        <div className="flex h-10 items-center rounded-md border border-input bg-background text-foreground transition-colors focus-within:ring-2 focus-within:ring-primary/20">
+          <Search className="ml-3.5 h-4 w-4 shrink-0 text-muted-foreground pointer-events-none" />
+          <Input
+            value={search}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setSelectedStudentIds([]);
+            }}
+            placeholder={t('searchStudents')}
+            className="h-full min-w-0 flex-1 border-0 bg-transparent px-3 py-0 shadow-none focus-visible:ring-0"
+          />
+        </div>
+        <select
+          value={statusFilter}
+          onChange={(event) => {
+            setStatusFilter(event.target.value as 'all' | 'enrolled' | 'not_enrolled');
+            setSelectedStudentIds([]);
+          }}
+          className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+        >
+          <option value="all">{t('allStatuses')}</option>
+          <option value="enrolled">{t('enrolledOnly')}</option>
+          <option value="not_enrolled">{t('notEnrolledOnly')}</option>
+        </select>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => {
+            setSearch('');
+            setStatusFilter('all');
+            setSelectedStudentIds([]);
+          }}
+          disabled={!hasFilters}
+        >
+          {t('clearFilters')}
+        </Button>
       </div>
+
+      {selectedStudentIds.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/40 p-3">
+          <span className="text-sm font-medium">
+            {t('selectedStudentsValue', { count: selectedStudentIds.length })}
+          </span>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setSelectedStudentIds(filteredStudents.map((student) => student.id))}
+              disabled={filteredStudents.length === 0}
+            >
+              {t('selectVisibleStudents')}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => setSelectedStudentIds([])}
+            >
+              {t('clearSelection')}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="gap-1.5"
+              onClick={() => {
+                setBulkMode('enroll');
+                setBulkConfirm(true);
+              }}
+              disabled={selectedStudents.every((student) => enrolledUserIds.has(student.id))}
+            >
+              <UserPlus className="h-4 w-4" />
+              {t('enrollSelected')}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="gap-1.5"
+              onClick={() => {
+                setBulkMode('unenroll');
+                setBulkConfirm(true);
+              }}
+              disabled={selectedStudents.every((student) => !enrolledUserIds.has(student.id))}
+            >
+              <UserMinus className="h-4 w-4" />
+              {t('unenrollSelected')}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {bulkConfirm && bulkMode && selectedStudents.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/20 bg-destructive/5 p-3">
+          <span className="text-sm text-destructive">
+            {bulkMode === 'enroll'
+              ? t('confirmBulkEnrollStudents', { count: selectedStudents.length })
+              : t('confirmBulkUnenrollStudents', { count: selectedStudents.length })}
+          </span>
+          <div className="flex shrink-0 gap-2">
+            <Button size="sm" variant="outline" onClick={() => setBulkConfirm(false)}>
+              {t('cancel')}
+            </Button>
+            <Button
+              size="sm"
+              variant={bulkMode === 'enroll' ? 'default' : 'destructive'}
+              disabled={enrolling || unenrolling}
+              onClick={async () => {
+                const ids = selectedStudents.map((student) => student.id);
+                for (const id of ids) {
+                  if (bulkMode === 'enroll' && !enrolledUserIds.has(id)) {
+                    await onEnroll(id);
+                  }
+                  if (bulkMode === 'unenroll' && enrolledUserIds.has(id)) {
+                    await onUnenroll(id);
+                  }
+                }
+                setSelectedStudentIds([]);
+                setBulkConfirm(false);
+                setBulkMode(null);
+              }}
+            >
+              {enrolling || unenrolling ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              {bulkMode === 'enroll' ? t('enrollSelected') : t('unenrollSelected')}
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
         {isLoading ? (
@@ -67,8 +205,12 @@ export function EnrollmentPanel({
           <div className="rounded-md border p-3 text-sm text-muted-foreground">
             {t('noStudents')}
           </div>
+        ) : filteredStudents.length === 0 ? (
+          <div className="rounded-md border p-3 text-sm text-muted-foreground">
+            {t('noFilteredStudents')}
+          </div>
         ) : (
-          students.map((student) => {
+          filteredStudents.map((student) => {
             const isEnrolled = enrolledUserIds.has(student.id);
             const isBusy = enrolling || unenrolling;
 
@@ -78,6 +220,16 @@ export function EnrollmentPanel({
                 student={student}
                 isEnrolled={isEnrolled}
                 isBusy={isBusy}
+                selected={selectedStudentIds.includes(student.id)}
+                onToggleSelect={(checked) =>
+                  setSelectedStudentIds((current) =>
+                    checked
+                      ? current.includes(student.id)
+                        ? current
+                        : [...current, student.id]
+                      : current.filter((id) => id !== student.id),
+                  )
+                }
                 onEnroll={onEnroll}
                 onUnenroll={onUnenroll}
               />
@@ -93,22 +245,35 @@ function StudentEnrollmentRow({
   student,
   isEnrolled,
   isBusy,
+  selected,
+  onToggleSelect,
   onEnroll,
   onUnenroll,
 }: {
   student: AdminUser;
   isEnrolled: boolean;
   isBusy: boolean;
-  onEnroll: (userId: string) => void;
-  onUnenroll: (userId: string) => void;
+  selected: boolean;
+  onToggleSelect: (checked: boolean) => void;
+  onEnroll: (userId: string) => Promise<boolean>;
+  onUnenroll: (userId: string) => Promise<boolean>;
 }) {
   const t = useTranslations('Admin');
 
   return (
     <div className="flex items-center justify-between gap-3 rounded-md border p-3">
-      <div className="min-w-0">
-        <p className="truncate text-sm font-medium">{student.fullName || student.email}</p>
-        <p className="truncate text-xs text-muted-foreground">{student.email}</p>
+      <div className="flex items-start gap-3">
+        <input
+          type="checkbox"
+          className="mt-1"
+          checked={selected}
+          onChange={(event) => onToggleSelect(event.target.checked)}
+          aria-label={t('selectItem')}
+        />
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium">{student.fullName || student.email}</p>
+          <p className="truncate text-xs text-muted-foreground">{student.email}</p>
+        </div>
       </div>
       <div className="flex shrink-0 items-center gap-2">
         {isEnrolled && <Badge variant="secondary">{t('enrolled')}</Badge>}
@@ -119,9 +284,9 @@ function StudentEnrollmentRow({
           disabled={isBusy}
           onClick={() => {
             if (isEnrolled) {
-              onUnenroll(student.id);
+              void onUnenroll(student.id);
             } else {
-              onEnroll(student.id);
+              void onEnroll(student.id);
             }
           }}
           className="gap-1.5"
