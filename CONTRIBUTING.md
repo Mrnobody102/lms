@@ -27,8 +27,12 @@ Chúng tôi tuân thủ chuẩn [Conventional Commits](https://www.conventionalc
 ## 2. Quy Chuẩn Code (Code Style)
 
 - Chúng tôi sử dụng **ESLint** và **Prettier**.
-- Code sẽ được tự động format khi lưu (nếu cài đặt VS Code đúng) và được kiểm tra tự động khi commit thông qua Husky + lint-staged.
-- **Không** được bỏ qua bước kiểm tra này (hạn chế dùng `--no-verify`).
+- **Quy tắc bắt buộc**:
+  - Không sử dụng `any`. Dùng interface hoặc `unknown`.
+  - Không để lại import không sử dụng (`unused-imports`).
+  - Sắp xếp import theo thứ tự chuẩn.
+  - Mỗi thay đổi lớn phải đi kèm unit/integration test.
+- Code sẽ được tự động format khi lưu và được kiểm tra tự động khi commit.
 
 ## 3. Quy Trình Làm Việc (Workflow)
 
@@ -53,12 +57,23 @@ pnpm db:migrate   # Chạy migration
 pnpm db:seed      # Tạo dữ liệu mẫu
 pnpm db:studio    # Mở Prisma Studio
 
+# Validation (Quan trọng cho AI Agent)
+powershell -ExecutionPolicy Bypass -File ./scripts/validate-ai-work.ps1
+
 # Testing
 pnpm test         # Chạy unit tests (Vitest)
 pnpm test:e2e     # Chạy E2E tests (Playwright)
 ```
 
-## 5. Khắc Phục Sự Cố
+## 5. Quy trình cho AI Coding Agent
+
+Mọi AI Agent khi làm việc trong dự án này phải:
+
+1. Đọc kỹ `AGENTS.md` trước khi bắt đầu.
+2. Tuân thủ định dạng API response mới (`TransformInterceptor`).
+3. Chạy script validate ở bước trên trước khi báo cáo hoàn thành.
+
+## 6. Khắc Phục Sự Cố
 
 - Nếu gặp lỗi types, hãy thử chạy `pnpm install` ở thư mục gốc.
 - Nếu path alias không nhận, hãy kiểm tra `tsconfig.json` trong package/app tương ứng.

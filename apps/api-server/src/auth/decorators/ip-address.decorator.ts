@@ -11,5 +11,5 @@ export const IpAddress = createParamDecorator((data: unknown, ctx: ExecutionCont
     return ips.trim();
   }
 
-  return request.ip || request.socket.remoteAddress;
+  return request.ip || request.socket?.remoteAddress || 'unknown';
 });

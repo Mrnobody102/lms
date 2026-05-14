@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
+import { Prisma } from '@repo/database';
 
 export enum AuditAction {
   LOGIN_SUCCESS = 'LOGIN_SUCCESS',
@@ -42,7 +43,7 @@ export class AuditLogService {
           status: options.status,
           ipAddress: options.ipAddress,
           userAgent: options.userAgent,
-          metadata: options.metadata || {},
+          metadata: (options.metadata || {}) as Prisma.InputJsonValue,
         },
       });
     } catch (error) {

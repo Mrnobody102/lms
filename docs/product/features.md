@@ -10,7 +10,7 @@ Tài liệu này mô tả feature map cấp sản phẩm. Trạng thái chi ti�
 
 | Module             | Trạng thái     | Ghi chú                                                                                              |
 | ------------------ | -------------- | ---------------------------------------------------------------------------------------------------- |
-| Multi-tenant auth  | Đã có nền      | Cookie-first, tenant-aware, còn cần tiếp tục verify khi mở feature mới                               |
+| Multi-tenant auth  | Ổn định        | Cookie-first, tenant-aware, full interceptor support.                                                |
 | Course builder     | Đang làm       | CRUD course/unit/lesson, admin edit UI đã có                                                         |
 | Enrollment/access  | Đang làm       | DB/API/UI đã có, còn reporting/bulk/class                                                            |
 | Student learning   | MVP            | Course list, lesson view, mark completed                                                             |

@@ -13,19 +13,25 @@ module.exports = {
     node: true,
     browser: true,
   },
-  plugins: ['@typescript-eslint'],
+  plugins: ['@typescript-eslint', 'unused-imports', 'simple-import-sort'],
   rules: {
     // This project uses App Router, not Pages Router
     '@next/next/no-html-link-for-pages': 'off',
     'no-unused-vars': 'off',
-    '@typescript-eslint/no-unused-vars': [
-      'error',
+    '@typescript-eslint/no-unused-vars': 'off',
+    'unused-imports/no-unused-imports': 'error',
+    'unused-imports/no-unused-vars': [
+      'warn',
       {
-        argsIgnorePattern: '^_',
-        caughtErrorsIgnorePattern: '^_',
+        vars: 'all',
         varsIgnorePattern: '^_',
+        args: 'after-used',
+        argsIgnorePattern: '^_',
       },
     ],
+    'simple-import-sort/imports': 'error',
+    'simple-import-sort/exports': 'error',
+    '@typescript-eslint/no-explicit-any': 'error',
   },
   settings: {
     'import/resolver': {

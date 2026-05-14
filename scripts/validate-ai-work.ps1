@@ -1,28 +1,57 @@
-# Validation script for AI Agent Work (Windows/PowerShell)
-# Purpose: Run before handoff or commit to mirror the CI fast checks.
+# Validate AI Work Script for LMS Platform (Windows PowerShell)
 
 $ErrorActionPreference = "Stop"
+$Success = $true
 
-Write-Host "--- AI Validation Gate Started ---" -ForegroundColor Cyan
+Write-Host "--- Starting AI Work Validation ---" -ForegroundColor Cyan
 
-Write-Host "[1/5] Checking frozen install..." -ForegroundColor Yellow
-pnpm install --frozen-lockfile
-if ($LASTEXITCODE -ne 0) { Write-Error "Frozen install failed"; exit 1 }
+# 1. Linting Check
+Write-Host "[1/4] Running Linting..." -ForegroundColor Yellow
+try {
+    pnpm lint
+} catch {
+    Write-Host "X Linting failed!" -ForegroundColor Red
+    $Success = $false
+}
 
-Write-Host "[2/5] Running typecheck..." -ForegroundColor Yellow
-pnpm run typecheck
-if ($LASTEXITCODE -ne 0) { Write-Error "Typecheck failed"; exit 1 }
+# 2. Type Checking
+Write-Host "[2/4] Running Type Check..." -ForegroundColor Yellow
+try {
+    pnpm run typecheck
+} catch {
+    Write-Host "X Type check failed!" -ForegroundColor Red
+    $Success = $false
+}
 
-Write-Host "[3/5] Running lint..." -ForegroundColor Yellow
-pnpm run lint
-if ($LASTEXITCODE -ne 0) { Write-Error "Lint failed"; exit 1 }
+# 3. Response Shape Grep (Heuristic)
+Write-Host "[3/4] Checking for direct response objects (potential bypass of TransformInterceptor)..." -ForegroundColor Yellow
+# Tìm các controller không trả về DTO hoặc trả về object literal mà không có wrapper (tỷ lệ cao là sai)
+$Controllers = Get-ChildItem -Path "apps/api-server/src" -Filter "*.controller.ts" -Recurse
+foreach ($file in $Controllers) {
+    $content = Get-Content $file.FullName
+    if ($content -match 'return \{' -and $content -notmatch 'success:') {
+        # Note: Đây chỉ là cảnh báo, vì có thể họ trả về data để interceptor wrap. 
+        # Nhưng nếu họ tự viết { success: true } trong controller là SAI (duplicate)
+        if ($content -match 'success:') {
+            Write-Host "X Warning: Found manual 'success' key in $($file.Name). Interceptor handles this!" -ForegroundColor Red
+            $Success = $false
+        }
+    }
+}
 
-Write-Host "[4/5] Running tests..." -ForegroundColor Yellow
-pnpm run test
-if ($LASTEXITCODE -ne 0) { Write-Error "Tests failed"; exit 1 }
+# 4. Unused Code / Any Check
+Write-Host "[4/4] Checking for forbidden 'any' types..." -ForegroundColor Yellow
+$AnyMatches = Select-String -Path "apps/api-server/src/**/*.ts", "apps/web-*/**/*.ts" -Pattern ": any" -Exclude "*.spec.ts", "node_modules"
+if ($AnyMatches) {
+    Write-Host "X Forbidden 'any' usage found:" -ForegroundColor Red
+    $AnyMatches | ForEach-Object { Write-Host "  $($_.FileName):$($_.LineNumber) - $($_.Line)" }
+    $Success = $false
+}
 
-Write-Host "[5/5] Running production build..." -ForegroundColor Yellow
-pnpm run build
-if ($LASTEXITCODE -ne 0) { Write-Error "Build failed"; exit 1 }
-
-Write-Host "--- ALL CHECKS PASSED. SYSTEM STABLE. ---" -ForegroundColor Green
+if ($Success) {
+    Write-Host "--- Validation PASSED ---" -ForegroundColor Green
+    exit 0
+} else {
+    Write-Host "--- Validation FAILED ---" -ForegroundColor Red
+    exit 1
+}

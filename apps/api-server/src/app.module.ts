@@ -1,7 +1,7 @@
 import { Module, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
-import { APP_GUARD, APP_FILTER } from '@nestjs/core';
+import { APP_GUARD, APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
 import { CsrfMiddleware } from './common/middleware/csrf.middleware';
@@ -9,6 +9,7 @@ import { AppThrottlerGuard } from './common/guards/throttler.guard';
 import { RedisThrottlerStorage } from './common/throttling/redis-throttler.storage';
 import { LoggerService } from './common/services/logger.service';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { RequestLoggingMiddleware } from './common/middleware/request-logging.middleware';
 import { RequestMetricsMiddleware } from './common/metrics/request-metrics.middleware';
 import { envSchema } from './config/env.validation';
@@ -84,6 +85,10 @@ import { MailModule } from './mail/mail.module';
     {
       provide: APP_FILTER,
       useClass: HttpExceptionFilter,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: TransformInterceptor,
     },
     LoggerService,
   ],

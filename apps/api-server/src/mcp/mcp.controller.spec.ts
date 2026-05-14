@@ -97,7 +97,7 @@ describe('McpAuthGuard', () => {
           query: {},
         }),
       }),
-    } as any;
+    } as unknown as any;
 
     expect(guard.canActivate(mockContext)).toBe(true);
   });
@@ -111,7 +111,7 @@ describe('McpAuthGuard', () => {
           query: {},
         }),
       }),
-    } as any;
+    } as unknown as any;
 
     expect(() => guard.canActivate(mockContext)).toThrow('Invalid MCP API Key');
   });
@@ -129,7 +129,7 @@ describe('McpAuthGuard', () => {
           query: { apiKey: 'valid-key' },
         }),
       }),
-    } as any;
+    } as unknown as any;
 
     expect(guard.canActivate(mockContext)).toBe(true);
   });

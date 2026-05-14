@@ -8,7 +8,7 @@ const i18nProxy = createMiddleware({
   localePrefix: 'always',
 });
 
-export default function proxy(request: NextRequest) {
+export default function middleware(request: NextRequest) {
   const i18nResponse = i18nProxy(request);
 
   const securityHeaders = {
@@ -28,6 +28,18 @@ export default function proxy(request: NextRequest) {
   Object.entries(securityHeaders).forEach(([key, value]) => {
     i18nResponse.headers.set(key, value);
   });
+
+  if (i18nResponse.status !== 200) {
+    return i18nResponse;
+  }
+
+  const { pathname } = request.nextUrl;
+  const isPublicPath =
+    pathname.includes('/api/') || pathname.includes('/_next/') || pathname.includes('/favicon');
+
+  if (isPublicPath) {
+    return i18nResponse;
+  }
 
   return i18nResponse;
 }

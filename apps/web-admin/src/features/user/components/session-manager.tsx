@@ -53,7 +53,7 @@ export function SessionManager() {
       const response = await defaultApiClient.get<Session[]>('/user-sessions/me');
       setSessions(response.data);
     } catch (_error) {
-      console.error('Failed to fetch sessions:', error);
+      console.error('Failed to fetch sessions:', _error);
     } finally {
       setLoading(false);
     }

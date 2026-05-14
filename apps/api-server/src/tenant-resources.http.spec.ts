@@ -24,6 +24,10 @@ import { PrismaService } from './common/services/prisma.service';
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
 import { LearningAccessService } from './common/services/learning-access.service';
 import { MailService } from './mail/mail.service';
+import { AuditLogService } from './common/services/audit-log.service';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { LoggerService } from './common/services/logger.service';
 
 vi.mock('bcrypt', () => ({
   hash: vi.fn(),
@@ -695,6 +699,14 @@ describe('Tenant resource HTTP flow', () => {
           provide: MailService,
           useValue: { sendPasswordResetEmail: vi.fn().mockResolvedValue(undefined) },
         },
+        {
+          provide: LoggerService,
+          useValue: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn(), log: vi.fn() },
+        },
+        {
+          provide: AuditLogService,
+          useValue: { log: vi.fn().mockResolvedValue(undefined) },
+        },
         { provide: PrismaService, useValue: prisma },
         {
           provide: ConfigService,
@@ -710,6 +722,9 @@ describe('Tenant resource HTTP flow', () => {
 
     app = module.createNestApplication();
     app.use(cookieParser());
+    const logger = app.get(LoggerService);
+    app.useGlobalFilters(new HttpExceptionFilter(logger));
+    app.useGlobalInterceptors(new TransformInterceptor());
     app.useGlobalPipes(
       new ValidationPipe({
         transform: true,
@@ -751,16 +766,20 @@ describe('Tenant resource HTTP flow', () => {
     const response = await agent.get('/courses').set('x-tenant-id', tenantOneId).expect(200);
 
     expect(response.body).toEqual({
-      data: [
-        expect.objectContaining({
-          id: courseOneId,
-          tenantId: tenantOneId,
+      success: true,
+      data: {
+        data: [
+          expect.objectContaining({
+            id: courseOneId,
+            tenantId: tenantOneId,
+          }),
+        ],
+        meta: expect.objectContaining({
+          total: 1,
+          totalPages: 1,
         }),
-      ],
-      meta: expect.objectContaining({
-        total: 1,
-        totalPages: 1,
-      }),
+      },
+      timestamp: expect.any(String),
     });
   }, 15000);
 
@@ -784,17 +803,21 @@ describe('Tenant resource HTTP flow', () => {
       .expect(200);
 
     expect(response.body).toEqual({
-      data: [
-        expect.objectContaining({
-          id: lessonOneId,
-          tenantId: tenantOneId,
-          courseId: courseOneId,
+      success: true,
+      data: {
+        data: [
+          expect.objectContaining({
+            id: lessonOneId,
+            tenantId: tenantOneId,
+            courseId: courseOneId,
+          }),
+        ],
+        meta: expect.objectContaining({
+          total: 1,
+          totalPages: 1,
         }),
-      ],
-      meta: expect.objectContaining({
-        total: 1,
-        totalPages: 1,
-      }),
+      },
+      timestamp: expect.any(String),
     });
   });
 
@@ -822,21 +845,24 @@ describe('Tenant resource HTTP flow', () => {
       })
       .expect(201);
 
-    expect(activityResponse.body).toEqual(
-      expect.objectContaining({
+    expect(activityResponse.body).toEqual({
+      success: true,
+      data: expect.objectContaining({
         lessonId: lessonOneId,
         courseId: courseOneId,
         type: LearningActivityType.LESSON_OPENED,
       }),
-    );
+      timestamp: expect.any(String),
+    });
 
     const summary = await agent
       .get('/progress/summary')
       .set('x-tenant-id', tenantOneId)
       .expect(200);
 
-    expect(summary.body).toEqual(
-      expect.objectContaining({
+    expect(summary.body).toEqual({
+      success: true,
+      data: expect.objectContaining({
         activeCourse: expect.objectContaining({
           course: expect.objectContaining({ id: courseOneId }),
           continueLesson: expect.objectContaining({ id: lessonOneId }),
@@ -852,7 +878,8 @@ describe('Tenant resource HTTP flow', () => {
           completionPercentage: 0,
         }),
       }),
-    );
+      timestamp: expect.any(String),
+    });
   });
 
   it('should update and read course progress inside the authenticated tenant', async () => {
@@ -867,45 +894,54 @@ describe('Tenant resource HTTP flow', () => {
       })
       .expect(201);
 
-    expect(updateResponse.body).toEqual(
-      expect.objectContaining({
+    expect(updateResponse.body).toEqual({
+      success: true,
+      data: expect.objectContaining({
         lessonId: lessonOneId,
         tenantId: tenantOneId,
         status: ProgressStatus.COMPLETED,
       }),
-    );
+      timestamp: expect.any(String),
+    });
 
     const courseProgress = await agent
       .get(`/progress/course/${courseOneId}`)
       .set('x-tenant-id', tenantOneId)
       .expect(200);
 
-    expect(courseProgress.body).toEqual([
-      expect.objectContaining({
-        lessonId: lessonOneId,
-        status: ProgressStatus.COMPLETED,
-      }),
-    ]);
+    expect(courseProgress.body).toEqual({
+      success: true,
+      data: [
+        expect.objectContaining({
+          lessonId: lessonOneId,
+          status: ProgressStatus.COMPLETED,
+        }),
+      ],
+      timestamp: expect.any(String),
+    });
 
     const lessonProgress = await agent
       .get(`/progress/lesson/${lessonOneId}`)
       .set('x-tenant-id', tenantOneId)
       .expect(200);
 
-    expect(lessonProgress.body).toEqual(
-      expect.objectContaining({
+    expect(lessonProgress.body).toEqual({
+      success: true,
+      data: expect.objectContaining({
         lessonId: lessonOneId,
         status: ProgressStatus.COMPLETED,
       }),
-    );
+      timestamp: expect.any(String),
+    });
 
     const summary = await agent
       .get('/progress/summary')
       .set('x-tenant-id', tenantOneId)
       .expect(200);
 
-    expect(summary.body).toEqual(
-      expect.objectContaining({
+    expect(summary.body).toEqual({
+      success: true,
+      data: expect.objectContaining({
         activeCourse: null,
         totals: expect.objectContaining({
           courses: 1,
@@ -916,7 +952,8 @@ describe('Tenant resource HTTP flow', () => {
           completionPercentage: 100,
         }),
       }),
-    );
+      timestamp: expect.any(String),
+    });
   });
 
   it('should reject progress writes for lessons outside active enrollment', async () => {
