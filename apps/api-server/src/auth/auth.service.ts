@@ -15,6 +15,9 @@ import { CSRF_COOKIE_NAME } from '../common/middleware/csrf.middleware';
 import { parseDurationToMs } from '../config/duration';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class AuthService {
@@ -24,6 +27,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly mailService: MailService,
   ) {}
 
   async register(registerDto: RegisterDto, tenantId: string | undefined, res: Response) {
@@ -87,6 +91,7 @@ export class AuthService {
       const token = this.generateToken(createdUser);
       this.setAuthCookie(res, token);
       this.setCsrfCookie(res);
+      await this.setRefreshCookie(res, createdUser.id, tenantId);
 
       const { tokenVersion: _tokenVersion, ...user } = createdUser;
 
@@ -165,6 +170,7 @@ export class AuthService {
     const token = this.generateToken(user);
     this.setAuthCookie(res, token);
     this.setCsrfCookie(res);
+    await this.setRefreshCookie(res, user.id, tenantId);
 
     const { password: _password, tokenVersion: _tokenVersion, ...userWithoutPassword } = user;
 
@@ -173,14 +179,194 @@ export class AuthService {
     };
   }
 
-  logout(res: Response) {
+  async logout(cookies: Record<string, string>, res: Response) {
+    const refreshToken = cookies['refresh_token'];
+
+    if (refreshToken) {
+      try {
+        const hash = await this.hashToken(refreshToken);
+        await this.prisma.refreshToken.delete({
+          where: { tokenHash: hash },
+        });
+      } catch (e) {
+        this.logger.warn('Failed to revoke refresh token during logout', e);
+      }
+    }
+
     this.clearAuthCookie(res);
     this.clearCsrfCookie(res);
+    this.clearRefreshCookie(res);
 
     return {
       success: true,
       message: 'Logged out successfully',
     };
+  }
+
+  async refresh(cookies: Record<string, string>, tenantId: string | undefined, res: Response) {
+    if (!tenantId) {
+      throw new BadRequestException('Tenant context is required');
+    }
+
+    const refreshTokenStr = cookies['refresh_token'];
+    if (!refreshTokenStr) {
+      this.clearAuthCookie(res);
+      this.clearCsrfCookie(res);
+      throw new UnauthorizedException('No refresh token provided');
+    }
+
+    const hash = await this.hashToken(refreshTokenStr);
+
+    const storedToken = await this.prisma.refreshToken.findUnique({
+      where: { tokenHash: hash },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            isActive: true,
+            tenantId: true,
+            tokenVersion: true,
+          },
+        },
+      },
+    });
+
+    if (!storedToken || storedToken.revokedAt || storedToken.expiresAt < new Date()) {
+      this.clearAuthCookie(res);
+      this.clearCsrfCookie(res);
+      this.clearRefreshCookie(res);
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
+
+    if (!storedToken.user.isActive || storedToken.user.tenantId !== tenantId) {
+      this.clearAuthCookie(res);
+      this.clearCsrfCookie(res);
+      this.clearRefreshCookie(res);
+      throw new UnauthorizedException('Invalid user account');
+    }
+
+    // Revoke old token
+    await this.prisma.refreshToken.update({
+      where: { id: storedToken.id },
+      data: { revokedAt: new Date() },
+    });
+
+    // Issue new tokens
+    const newAccessToken = this.generateToken(storedToken.user);
+    this.setAuthCookie(res, newAccessToken);
+    this.setCsrfCookie(res);
+    await this.setRefreshCookie(res, storedToken.user.id, tenantId);
+
+    return { success: true };
+  }
+
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto, tenantId: string | undefined) {
+    if (!tenantId) {
+      throw new BadRequestException('Tenant context is required');
+    }
+
+    const email = this.normalizeEmail(forgotPasswordDto.email);
+    const user = await this.prisma.user.findFirst({
+      where: { email, tenantId, deletedAt: null, isActive: true },
+      select: { id: true },
+    });
+
+    if (!user) {
+      // Do not reveal if email exists or not
+      return { success: true, message: 'If your email is registered, a reset link will be sent.' };
+    }
+
+    // Generate short-lived token (15 mins)
+    const resetSecret =
+      this.configService.get<string>('JWT_RESET_SECRET') ||
+      this.configService.get<string>('JWT_SECRET');
+    const resetTokenStr = this.jwtService.sign(
+      { sub: user.id, type: 'reset' },
+      { secret: resetSecret, expiresIn: '15m' },
+    );
+
+    const tokenHash = await bcrypt.hash(resetTokenStr, 10);
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+
+    await this.prisma.user.update({
+      where: { id_tenantId: { id: user.id, tenantId } },
+      data: {
+        passwordResetTokenHash: tokenHash,
+        passwordResetExpiresAt: expiresAt,
+      },
+    });
+
+    const appUrl = this.configService.get<string>('APP_PUBLIC_URL') || 'http://localhost:3000';
+    const locale = forgotPasswordDto.locale || 'vi';
+    const resetUrl = `${appUrl}/${locale}/reset-password?token=${encodeURIComponent(resetTokenStr)}`;
+
+    // Fire and forget email
+    this.mailService.sendPasswordResetEmail(email, resetUrl, locale).catch((e) => {
+      this.logger.error(`Failed to send password reset email to ${email}`, e);
+    });
+
+    return { success: true, message: 'If your email is registered, a reset link will be sent.' };
+  }
+
+  async resetPassword(resetPasswordDto: ResetPasswordDto, tenantId: string | undefined) {
+    if (!tenantId) {
+      throw new BadRequestException('Tenant context is required');
+    }
+
+    const resetSecret =
+      this.configService.get<string>('JWT_RESET_SECRET') ||
+      this.configService.get<string>('JWT_SECRET');
+
+    let decoded: { sub: string; type: string };
+    try {
+      decoded = this.jwtService.verify(resetPasswordDto.token, { secret: resetSecret });
+    } catch (_e) {
+      throw new UnauthorizedException('Invalid or expired reset token');
+    }
+
+    if (decoded.type !== 'reset' || !decoded.sub) {
+      throw new UnauthorizedException('Invalid token type');
+    }
+
+    const userId = decoded.sub;
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, tenantId, deletedAt: null, isActive: true },
+    });
+
+    if (!user || !user.passwordResetTokenHash || !user.passwordResetExpiresAt) {
+      throw new UnauthorizedException('Invalid or expired reset token');
+    }
+
+    if (user.passwordResetExpiresAt < new Date()) {
+      throw new UnauthorizedException('Reset token has expired');
+    }
+
+    const isValidHash = await bcrypt.compare(resetPasswordDto.token, user.passwordResetTokenHash);
+    if (!isValidHash) {
+      throw new UnauthorizedException('Invalid reset token');
+    }
+
+    const hashedPassword = await bcrypt.hash(resetPasswordDto.newPassword, 12);
+
+    await this.prisma.user.update({
+      where: { id_tenantId: { id: userId, tenantId } },
+      data: {
+        password: hashedPassword,
+        passwordResetTokenHash: null,
+        passwordResetExpiresAt: null,
+        tokenVersion: { increment: 1 },
+      },
+    });
+
+    // Revoke all refresh tokens
+    await this.prisma.refreshToken.updateMany({
+      where: { userId, tenantId },
+      data: { revokedAt: new Date() },
+    });
+
+    return { success: true, message: 'Password reset successfully' };
   }
 
   private generateToken(user: {
@@ -255,5 +441,53 @@ export class AuthService {
       domain,
       path: '/',
     };
+  }
+
+  private async hashToken(token: string): Promise<string> {
+    const { createHash } = await import('crypto');
+    return createHash('sha256').update(token).digest('hex');
+  }
+
+  private async setRefreshCookie(res: Response, userId: string, tenantId: string): Promise<void> {
+    const refreshStr = randomBytes(40).toString('hex');
+    const hash = await this.hashToken(refreshStr);
+    const msTTL = parseDurationToMs(
+      this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') ?? '30d',
+    );
+
+    // Cleanup: Remove expired or revoked tokens for this user/tenant to prevent bloat
+    try {
+      await this.prisma.refreshToken.deleteMany({
+        where: {
+          userId,
+          tenantId,
+          OR: [{ expiresAt: { lt: new Date() } }, { revokedAt: { not: null } }],
+        },
+      });
+    } catch (e) {
+      this.logger.warn(`Failed to cleanup old refresh tokens for user ${userId}`, e);
+    }
+
+    await this.prisma.refreshToken.create({
+      data: {
+        userId,
+        tenantId,
+        tokenHash: hash,
+        expiresAt: new Date(Date.now() + msTTL),
+      },
+    });
+
+    res.cookie('refresh_token', refreshStr, {
+      ...this.getCookieOptions(),
+      httpOnly: true,
+      maxAge: msTTL,
+    });
+  }
+
+  private clearRefreshCookie(res: Response): void {
+    res.clearCookie('refresh_token', {
+      ...this.getCookieOptions(),
+      httpOnly: true,
+    });
   }
 }

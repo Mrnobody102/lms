@@ -24,6 +24,7 @@ import { PracticeModule } from './practice/practice.module';
 import { ExamModule } from './exam/exam.module';
 import { HealthModule } from './common/health/health.module';
 import { MetricsModule } from './common/metrics/metrics.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -72,6 +73,7 @@ import { MetricsModule } from './common/metrics/metrics.module';
     ExamModule,
     MetricsModule,
     HealthModule,
+    MailModule,
   ],
   controllers: [],
   providers: [

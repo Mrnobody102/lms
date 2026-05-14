@@ -23,6 +23,7 @@ import { ProgressService } from './progress/progress.service';
 import { PrismaService } from './common/services/prisma.service';
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
 import { LearningAccessService } from './common/services/learning-access.service';
+import { MailService } from './mail/mail.service';
 
 vi.mock('bcrypt', () => ({
   hash: vi.fn(),
@@ -64,6 +65,12 @@ describe('Tenant resource HTTP flow', () => {
       findFirst: ReturnType<typeof vi.fn>;
       update: ReturnType<typeof vi.fn>;
       upsert: ReturnType<typeof vi.fn>;
+    };
+    refreshToken: {
+      create: ReturnType<typeof vi.fn>;
+      findUnique: ReturnType<typeof vi.fn>;
+      update: ReturnType<typeof vi.fn>;
+      updateMany: ReturnType<typeof vi.fn>;
     };
   };
 
@@ -250,6 +257,9 @@ describe('Tenant resource HTTP flow', () => {
               createdAt: currentUser.createdAt,
               updatedAt: currentUser.updatedAt,
               tenant: {
+                id: currentUser.tenantId,
+                name: 'Tenant One',
+                slug: 'tenant-one',
                 isActive: true,
               },
             });
@@ -653,6 +663,12 @@ describe('Tenant resource HTTP flow', () => {
         update: vi.fn(),
         upsert: vi.fn(),
       },
+      refreshToken: {
+        create: vi.fn(),
+        findUnique: vi.fn(),
+        update: vi.fn(),
+        updateMany: vi.fn(),
+      },
     };
 
     vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
@@ -675,6 +691,10 @@ describe('Tenant resource HTTP flow', () => {
         JwtStrategy,
         JwtAuthGuard,
         RolesGuard,
+        {
+          provide: MailService,
+          useValue: { sendPasswordResetEmail: vi.fn().mockResolvedValue(undefined) },
+        },
         { provide: PrismaService, useValue: prisma },
         {
           provide: ConfigService,

@@ -8,10 +8,12 @@ const AUTH_UNAUTHORIZED_EVENT = 'lms:auth:unauthorized';
 declare module 'axios' {
   interface AxiosRequestConfig {
     skipUnauthorizedRedirect?: boolean;
+    _retry?: boolean;
   }
 
   interface InternalAxiosRequestConfig {
     skipUnauthorizedRedirect?: boolean;
+    _retry?: boolean;
   }
 }
 
@@ -105,6 +107,23 @@ export function createApiClient(config: ApiClientConfig = {}): AxiosInstance {
     withCredentials: true,
   });
 
+  let isRefreshing = false;
+  let failedQueue: Array<{
+    resolve: (value: unknown) => void;
+    reject: (reason?: unknown) => void;
+  }> = [];
+
+  const processQueue = (error: unknown) => {
+    failedQueue.forEach((prom) => {
+      if (error) {
+        prom.reject(error);
+      } else {
+        prom.resolve(undefined);
+      }
+    });
+    failedQueue = [];
+  };
+
   api.interceptors.request.use((requestConfig: InternalAxiosRequestConfig) => {
     const tenantHint = resolveTenantHint(tenantId);
     if (tenantHint && (sendTenantHeaderInProduction || isLocalBrowserHost())) {
@@ -127,7 +146,7 @@ export function createApiClient(config: ApiClientConfig = {}): AxiosInstance {
       }
       return response;
     },
-    (error: unknown) => {
+    async (error: unknown) => {
       const axiosError = error as {
         code?: string;
         config?: InternalAxiosRequestConfig;
@@ -137,6 +156,53 @@ export function createApiClient(config: ApiClientConfig = {}): AxiosInstance {
 
       if (axiosError.code === 'ECONNABORTED' || axiosError.message?.includes('timeout')) {
         axiosError.message = 'Request timed out. Please try again.';
+      }
+
+      const originalRequest = axiosError.config;
+
+      if (
+        axiosError.response?.status === 401 &&
+        originalRequest &&
+        !originalRequest._retry &&
+        !originalRequest.url?.includes('/auth/refresh') &&
+        !originalRequest.url?.includes('/auth/login') &&
+        typeof window !== 'undefined'
+      ) {
+        if (isRefreshing) {
+          return new Promise((resolve, reject) => {
+            failedQueue.push({ resolve, reject });
+          })
+            .then(() => api(originalRequest))
+            .catch((err) => Promise.reject(err));
+        }
+
+        originalRequest._retry = true;
+        isRefreshing = true;
+
+        try {
+          await api.post('/auth/refresh');
+          processQueue(null);
+          return api(originalRequest);
+        } catch (refreshError) {
+          processQueue(refreshError);
+
+          if (axiosError.config?.skipUnauthorizedRedirect === true) {
+            return Promise.reject(error);
+          }
+
+          clearLegacyAuthState();
+          dispatchUnauthorizedEvent();
+
+          if (onUnauthorized) {
+            onUnauthorized();
+          } else {
+            const locale = detectLocale(supportedLocales, defaultLocale);
+            window.location.assign(buildLoginRedirectUrl(locale, getReturnUrl()));
+          }
+          return Promise.reject(refreshError);
+        } finally {
+          isRefreshing = false;
+        }
       }
 
       if (axiosError.response?.status === 401 && typeof window !== 'undefined') {

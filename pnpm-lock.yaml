@@ -142,6 +142,9 @@ importers:
       ioredis:
         specifier: ^5.4.1
         version: 5.10.1
+      nodemailer:
+        specifier: ^8.0.7
+        version: 8.0.7
       passport:
         specifier: ^0.6.0
         version: 0.6.0
@@ -194,6 +197,9 @@ importers:
       '@types/node':
         specifier: ^20.3.1
         version: 20.19.30
+      '@types/nodemailer':
+        specifier: ^8.0.0
+        version: 8.0.0
       '@types/passport-jwt':
         specifier: ^3.0.8
         version: 3.0.13
@@ -4298,6 +4304,12 @@ packages:
     resolution:
       {
         integrity: sha512-/rpCXHlCWeqClNBwUhDcusJxXYDjZTyE8v5oTO7WbL8eij2nKhUeU89/6xgjU7N4/Vh3He0BtyhJdQbDyhiXAw==,
+      }
+
+  '@types/nodemailer@8.0.0':
+    resolution:
+      {
+        integrity: sha512-fyf8jWULsCo0d0BuoQ75i6IeoHs47qcqxWc7yUdUcV0pOZGjUTTOvwdG1PRXUDqN/8A64yQdQdnA2pZgcdi+cA==,
       }
 
   '@types/passport-jwt@3.0.13':
@@ -8430,6 +8442,13 @@ packages:
       {
         integrity: sha512-nmh3lCkYZ3grZvqcCH+fjmQ7X+H0OeZgP40OierEaAptX4XofMh5kwNbWh7lBduUzCcV/8kZ+NDLCwm2iorIlA==,
       }
+
+  nodemailer@8.0.7:
+    resolution:
+      {
+        integrity: sha512-pkjE4mkBzQjdJT4/UmlKl3pX0rC9fZmjh7c6C9o7lv66Ac6w9WCnzPzhbPNxwZAzlF4mdq4CSWB5+FbK6FWCow==,
+      }
+    engines: { node: '>=6.0.0' }
 
   normalize-path@3.0.0:
     resolution:
@@ -12982,6 +13001,10 @@ snapshots:
     dependencies:
       undici-types: 7.16.0
 
+  '@types/nodemailer@8.0.0':
+    dependencies:
+      '@types/node': 20.19.30
+
   '@types/passport-jwt@3.0.13':
     dependencies:
       '@types/express': 5.0.6
@@ -15840,6 +15863,8 @@ snapshots:
   node-gyp-build@4.8.4: {}
 
   node-releases@2.0.27: {}
+
+  nodemailer@8.0.7: {}
 
   normalize-path@3.0.0: {}
 

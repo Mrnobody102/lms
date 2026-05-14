@@ -68,10 +68,15 @@ export const envSchema = z
 
     // Auth
     JWT_SECRET: z.string().min(32),
+    JWT_RESET_SECRET: z.string().min(32).optional(),
     JWT_EXPIRES_IN: z
       .string()
       .regex(DURATION_PATTERN, 'JWT_EXPIRES_IN must use a duration like 15m, 1h, or 7d')
       .default('7d'),
+    JWT_REFRESH_EXPIRES_IN: z
+      .string()
+      .regex(DURATION_PATTERN, 'JWT_REFRESH_EXPIRES_IN must use a duration like 7d or 30d')
+      .default('30d'),
 
     // CORS
     CORS_ORIGINS: commaSeparatedUrlSchema.optional(),
@@ -102,6 +107,14 @@ export const envSchema = z
     // Throttler (optional overrides)
     THROTTLER_TTL: z.coerce.number().optional(),
     THROTTLER_LIMIT: z.coerce.number().optional(),
+
+    // Mail
+    MAIL_ENABLED: booleanEnvSchema,
+    MAIL_HOST: z.string().optional(),
+    MAIL_PORT: z.coerce.number().optional(),
+    MAIL_USER: z.string().optional(),
+    MAIL_PASS: z.string().optional(),
+    MAIL_FROM: z.string().optional(),
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV === 'production' && !env.REDIS_URL) {
@@ -134,6 +147,25 @@ export const envSchema = z
         path: ['MCP_API_KEY'],
         message: 'MCP_API_KEY is required when MCP is enabled in production',
       });
+    }
+
+    if (env.NODE_ENV === 'production' && !env.JWT_RESET_SECRET) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['JWT_RESET_SECRET'],
+        message: 'JWT_RESET_SECRET is required in production',
+      });
+    }
+
+    if (env.MAIL_ENABLED) {
+      if (!env.MAIL_HOST || !env.MAIL_PORT || !env.MAIL_USER || !env.MAIL_PASS) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['MAIL_ENABLED'],
+          message:
+            'SMTP credentials (host, port, user, pass) are required when MAIL_ENABLED is true',
+        });
+      }
     }
   });
 

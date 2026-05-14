@@ -204,7 +204,21 @@
       "loginTab": "Login",
       "registerTab": "Join Now",
       "showPassword": "Show password",
-      "hidePassword": "Hide password"
+      "hidePassword": "Hide password",
+      "forgotPasswordTitle": "Forgot Password?",
+      "forgotPasswordDesc": "Enter your email and we'll send you a link to reset your password.",
+      "resetPasswordTitle": "Reset Password",
+      "resetPasswordDesc": "Please enter your new password.",
+      "newPassword": "New Password",
+      "confirmPassword": "Confirm New Password",
+      "sendResetLink": "Send Reset Link",
+      "backToLogin": "Back to Login",
+      "resetSuccess": "Password reset successful!",
+      "resetSuccessDesc": "Your password has been changed. You can now log in with your new password.",
+      "forgotEmailSent": "Link sent!",
+      "forgotEmailSentDesc": "If your email exists in our system, you will receive a reset link shortly.",
+      "resetting": "Resetting password...",
+      "sendingLink": "Sending link..."
     },
     "courses": {
       "title": "All Courses",

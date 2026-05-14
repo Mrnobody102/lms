@@ -204,7 +204,21 @@
       "loginTab": "Đăng nhập",
       "registerTab": "Tham gia ngay",
       "showPassword": "Hiện mật khẩu",
-      "hidePassword": "Ẩn mật khẩu"
+      "hidePassword": "Ẩn mật khẩu",
+      "forgotPasswordTitle": "Quên mật khẩu?",
+      "forgotPasswordDesc": "Nhập email của bạn và chúng tôi sẽ gửi liên kết để đặt lại mật khẩu.",
+      "resetPasswordTitle": "Đặt lại mật khẩu",
+      "resetPasswordDesc": "Vui lòng nhập mật khẩu mới của bạn.",
+      "newPassword": "Mật khẩu mới",
+      "confirmPassword": "Xác nhận mật khẩu mới",
+      "sendResetLink": "Gửi liên kết đặt lại",
+      "backToLogin": "Quay lại đăng nhập",
+      "resetSuccess": "Đặt lại mật khẩu thành công!",
+      "resetSuccessDesc": "Mật khẩu của bạn đã được thay đổi. Bây giờ bạn có thể đăng nhập bằng mật khẩu mới.",
+      "forgotEmailSent": "Liên kết đã được gửi!",
+      "forgotEmailSentDesc": "Nếu email của bạn tồn tại trong hệ thống, bạn sẽ sớm nhận được liên kết đặt lại mật khẩu.",
+      "resetting": "Đang đặt lại mật khẩu...",
+      "sendingLink": "Đang gửi liên kết..."
     },
     "courses": {
       "title": "Tất cả khóa học",

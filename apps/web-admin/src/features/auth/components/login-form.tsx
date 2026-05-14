@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useAuthStore } from '../auth.store';
 import { Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { Link } from '@/navigation';
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -73,6 +74,14 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
           >
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
+        </div>
+        <div className="flex justify-end">
+          <Link
+            href="/forgot-password"
+            className="text-[11px] font-medium text-blue-600 hover:text-blue-500 transition-colors"
+          >
+            {t('auth.forgotPassword')}
+          </Link>
         </div>
       </div>
 

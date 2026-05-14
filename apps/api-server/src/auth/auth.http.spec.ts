@@ -10,6 +10,7 @@ import type { INestApplication } from '@nestjs/common';
 import type { NextFunction, Request, Response } from 'express';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { MailService } from '../mail/mail.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { JwtStrategy } from './strategies/jwt.strategy';
@@ -35,6 +36,12 @@ describe('Auth HTTP flow', () => {
     };
     tenant: {
       findFirst: ReturnType<typeof vi.fn>;
+    };
+    refreshToken: {
+      create: ReturnType<typeof vi.fn>;
+      findUnique: ReturnType<typeof vi.fn>;
+      update: ReturnType<typeof vi.fn>;
+      updateMany: ReturnType<typeof vi.fn>;
     };
   };
 
@@ -201,6 +208,12 @@ describe('Auth HTTP flow', () => {
           return Promise.resolve(null);
         }),
       },
+      refreshToken: {
+        create: vi.fn(),
+        findUnique: vi.fn(),
+        update: vi.fn(),
+        updateMany: vi.fn(),
+      },
     };
 
     vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
@@ -220,6 +233,10 @@ describe('Auth HTTP flow', () => {
         JwtStrategy,
         JwtAuthGuard,
         RolesGuard,
+        {
+          provide: MailService,
+          useValue: { sendPasswordResetEmail: vi.fn().mockResolvedValue(undefined) },
+        },
         { provide: PrismaService, useValue: prisma },
         {
           provide: ConfigService,

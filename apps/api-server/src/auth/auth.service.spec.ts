@@ -15,9 +15,14 @@ describe('AuthService', () => {
     user: {
       findFirst: ReturnType<typeof vi.fn>;
       create: ReturnType<typeof vi.fn>;
+      update: ReturnType<typeof vi.fn>;
     };
     tenant: {
       findFirst: ReturnType<typeof vi.fn>;
+    };
+    refreshToken: {
+      create: ReturnType<typeof vi.fn>;
+      updateMany: ReturnType<typeof vi.fn>;
     };
   };
   let jwtService: {
@@ -33,9 +38,14 @@ describe('AuthService', () => {
       user: {
         findFirst: vi.fn(),
         create: vi.fn(),
+        update: vi.fn(),
       },
       tenant: {
         findFirst: vi.fn(),
+      },
+      refreshToken: {
+        create: vi.fn(),
+        updateMany: vi.fn(),
       },
     };
 
@@ -55,7 +65,16 @@ describe('AuthService', () => {
       clearCookie: vi.fn(),
     } as unknown as Response;
 
-    service = new AuthService(prisma as any, jwtService as any, configService as any);
+    const mailService = {
+      sendPasswordResetEmail: vi.fn().mockResolvedValue(undefined),
+    };
+
+    service = new AuthService(
+      prisma as any,
+      jwtService as any,
+      configService as any,
+      mailService as any,
+    );
   });
 
   describe('register', () => {
@@ -366,8 +385,8 @@ describe('AuthService', () => {
   });
 
   describe('logout', () => {
-    it('should clear the auth cookie', () => {
-      const result = service.logout(response);
+    it('should clear the auth cookie', async () => {
+      const result = await service.logout({}, response);
 
       expect(response.clearCookie).toHaveBeenCalledWith(
         'access_token',
