@@ -66,14 +66,14 @@ export function ChangePasswordForm() {
 
       {success && (
         <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-xl text-green-400 text-sm">
-          {t('accountSettings.security.changeSuccess')}
+          {t('settings.security.changeSuccess')}
         </div>
       )}
 
       <div className="space-y-4 max-w-md">
         {/* Current Password */}
         <div className="space-y-2">
-          <Label>{t('accountSettings.security.currentPassword')}</Label>
+          <Label>{t('settings.security.currentPassword')}</Label>
           <div className="relative">
             <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -90,7 +90,7 @@ export function ChangePasswordForm() {
 
         {/* New Password */}
         <div className="space-y-2">
-          <Label>{t('accountSettings.security.newPassword')}</Label>
+          <Label>{t('settings.security.newPassword')}</Label>
           <div className="relative">
             <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -108,14 +108,12 @@ export function ChangePasswordForm() {
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
-          <p className="text-[10px] text-muted-foreground">
-            {t('accountSettings.security.passwordHelp')}
-          </p>
+          <p className="text-[10px] text-muted-foreground">{t('settings.security.passwordHelp')}</p>
         </div>
 
         {/* Confirm New Password */}
         <div className="space-y-2">
-          <Label>{t('accountSettings.security.confirmPassword')}</Label>
+          <Label>{t('settings.security.confirmPassword')}</Label>
           <div className="relative">
             <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -134,12 +132,12 @@ export function ChangePasswordForm() {
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              {t('accountSettings.security.changing')}
+              {t('settings.security.changing')}
             </>
           ) : (
             <>
               <ShieldCheck className="w-4 h-4 mr-2" />
-              {t('accountSettings.security.changePassword')}
+              {t('settings.security.changePassword')}
             </>
           )}
         </Button>

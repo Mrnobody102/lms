@@ -38,7 +38,7 @@ export function AdminSidebar() {
     { name: t('exams'), icon: FileCheck2, href: '/exams' },
     { name: t('finance'), icon: DollarSign, href: '/finance' },
     { name: t('schedule'), icon: Calendar, href: '/schedule' },
-    { name: t('settings'), icon: Settings, href: '/settings' },
+    { name: t('settingsLabel'), icon: Settings, href: '/settings' },
   ];
 
   const isActive = (href: string) => {
@@ -163,7 +163,7 @@ export function AdminSidebar() {
                 onClick={() => setDropdownOpen(false)}
               >
                 <User className="w-4 h-4" />
-                {t('settings')}
+                {t('settingsLabel')}
               </Link>
               <button
                 onClick={() => {

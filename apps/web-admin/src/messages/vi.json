@@ -10,7 +10,7 @@
     "exams": "Kiểm tra",
     "finance": "Tài chính",
     "schedule": "Lịch học",
-    "settings": "Cài đặt",
+    "settingsLabel": "Cài đặt",
     "brandName": "LMS Admin",
     "profileNameFallback": "Quản trị viên",
     "profileEmailFallback": "admin@example.com",
@@ -43,32 +43,6 @@
       "forgotEmailSentDesc": "Kiểm tra hòm thư của bạn để lấy liên kết đặt lại mật khẩu.",
       "resetting": "Đang đặt lại...",
       "sendingLink": "Đang gửi..."
-    },
-    "accountSettings": {
-      "title": "Cài đặt tài khoản",
-      "subtitle": "Quản lý thông tin quản trị và bảo mật.",
-      "profile": {
-        "title": "Thông tin cá nhân",
-        "description": "Cập nhật thông tin admin của bạn.",
-        "fullName": "Họ và tên",
-        "email": "Email quản trị",
-        "phoneNumber": "Số điện thoại liên hệ",
-        "avatar": "Ảnh đại diện",
-        "saveChanges": "Lưu thay đổi",
-        "updating": "Đang cập nhật...",
-        "updateSuccess": "Cập nhật thành công."
-      },
-      "security": {
-        "title": "Bảo mật quản trị",
-        "description": "Cập nhật mật khẩu để bảo vệ quyền quản trị.",
-        "currentPassword": "Mật khẩu hiện tại",
-        "newPassword": "Mật khẩu mới",
-        "confirmPassword": "Xác nhận mật khẩu mới",
-        "changePassword": "Đổi mật khẩu",
-        "changing": "Đang thay đổi...",
-        "changeSuccess": "Đổi mật khẩu thành công. Vui lòng đăng nhập lại.",
-        "passwordHelp": "Mật khẩu quản trị cần độ bảo mật cao (8+ ký tự, đủ loại ký tự)."
-      }
     },
     "revenue": "Tổng doanh thu",
     "totalStudents": "Tổng học viên",
@@ -464,13 +438,47 @@
     "validationChecklist": "Danh sách kiểm tra",
     "readyToSave": "Sẵn sàng lưu",
     "needsAttention": "Cần xem lại",
-    "brandName": "Quản trị Trung tâm",
-    "themeToggle": "Đổi giao diện",
-    "profileNameFallback": "Quản trị viên",
-    "profileEmailFallback": "Chưa có email",
-    "logout": "Đăng xuất",
-    "footer": {
-      "copyright": "© 2026 LMS Platform"
+    "settings": {
+      "title": "Cài đặt tài khoản",
+      "subtitle": "Quản lý thông tin cá nhân và cài đặt bảo mật của bạn.",
+      "profile": {
+        "title": "Thông tin cá nhân",
+        "description": "Cập nhật thông tin hiển thị của bạn.",
+        "fullName": "Họ và tên",
+        "email": "Địa chỉ Email",
+        "phoneNumber": "Số điện thoại",
+        "avatar": "Ảnh đại diện",
+        "saveChanges": "Lưu thay đổi",
+        "updating": "Đang cập nhật...",
+        "updateSuccess": "Cập nhật thông tin thành công."
+      },
+      "security": {
+        "title": "Bảo mật",
+        "description": "Cập nhật mật khẩu để bảo vệ tài khoản.",
+        "currentPassword": "Mật khẩu hiện tại",
+        "newPassword": "Mật khẩu mới",
+        "confirmPassword": "Xác nhận mật khẩu mới",
+        "changePassword": "Đổi mật khẩu",
+        "changing": "Đang thay đổi...",
+        "changeSuccess": "Đổi mật khẩu thành công. Vui lòng đăng nhập lại.",
+        "passwordHelp": "Mật khẩu phải từ 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt."
+      },
+      "sessions": {
+        "title": "Quản lý phiên đăng nhập",
+        "description": "Danh sách các thiết bị đã đăng nhập vào tài khoản của bạn.",
+        "active": "Đang hoạt động",
+        "lastActive": "Hoạt động lần cuối",
+        "device": "Thiết bị",
+        "location": "Vị trí (IP)",
+        "revoke": "Đăng xuất",
+        "revokeAll": "Đăng xuất tất cả thiết bị khác",
+        "currentDevice": "Thiết bị này",
+        "revokeSuccess": "Đã đăng xuất thiết bị thành công.",
+        "revokeError": "Không thể đăng xuất thiết bị. Vui lòng thử lại.",
+        "unknownDevice": "Thiết bị không xác định",
+        "unknownOS": "Hệ điều hành không xác định",
+        "unknownBrowser": "Trình duyệt không xác định"
+      }
     }
   },
   "Common": {

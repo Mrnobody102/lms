@@ -245,6 +245,22 @@
         "changing": "Đang thay đổi...",
         "changeSuccess": "Đổi mật khẩu thành công. Vui lòng đăng nhập lại.",
         "passwordHelp": "Mật khẩu phải từ 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt."
+      },
+      "sessions": {
+        "title": "Quản lý phiên đăng nhập",
+        "description": "Danh sách các thiết bị đã đăng nhập vào tài khoản của bạn.",
+        "active": "Đang hoạt động",
+        "lastActive": "Hoạt động lần cuối",
+        "device": "Thiết bị",
+        "location": "Vị trí (IP)",
+        "revoke": "Đăng xuất",
+        "revokeAll": "Đăng xuất tất cả thiết bị khác",
+        "currentDevice": "Thiết bị này",
+        "revokeSuccess": "Đã đăng xuất thiết bị thành công.",
+        "revokeError": "Không thể đăng xuất thiết bị. Vui lòng thử lại.",
+        "unknownDevice": "Thiết bị không xác định",
+        "unknownOS": "Hệ điều hành không xác định",
+        "unknownBrowser": "Trình duyệt không xác định"
       }
     },
     "courses": {

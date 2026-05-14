@@ -245,6 +245,22 @@
         "changing": "Changing...",
         "changeSuccess": "Password changed successfully. Please log in again.",
         "passwordHelp": "Password must be at least 8 characters, including uppercase, lowercase, numbers, and special characters."
+      },
+      "sessions": {
+        "title": "Active Sessions",
+        "description": "List of devices currently logged into your account.",
+        "active": "Active now",
+        "lastActive": "Last active",
+        "device": "Device",
+        "location": "Location (IP)",
+        "revoke": "Log out",
+        "revokeAll": "Log out all other devices",
+        "currentDevice": "This device",
+        "revokeSuccess": "Successfully logged out device.",
+        "revokeError": "Failed to log out device. Please try again.",
+        "unknownDevice": "Unknown Device",
+        "unknownOS": "Unknown OS",
+        "unknownBrowser": "Unknown Browser"
       }
     },
     "courses": {

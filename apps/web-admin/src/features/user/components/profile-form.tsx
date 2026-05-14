@@ -58,14 +58,14 @@ export function ProfileForm() {
 
       {success && (
         <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-xl text-green-400 text-sm">
-          {t('accountSettings.profile.updateSuccess')}
+          {t('settings.profile.updateSuccess')}
         </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Full Name */}
         <div className="space-y-2">
-          <Label>{t('accountSettings.profile.fullName')}</Label>
+          <Label>{t('settings.profile.fullName')}</Label>
           <div className="relative">
             <User className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -80,7 +80,7 @@ export function ProfileForm() {
 
         {/* Email (Read-only) */}
         <div className="space-y-2 opacity-70">
-          <Label>{t('accountSettings.profile.email')}</Label>
+          <Label>{t('settings.profile.email')}</Label>
           <div className="relative">
             <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -93,7 +93,7 @@ export function ProfileForm() {
 
         {/* Phone Number */}
         <div className="space-y-2">
-          <Label>{t('accountSettings.profile.phoneNumber')}</Label>
+          <Label>{t('settings.profile.phoneNumber')}</Label>
           <div className="relative">
             <Phone className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -107,7 +107,7 @@ export function ProfileForm() {
 
         {/* Avatar URL */}
         <div className="space-y-2">
-          <Label>{t('accountSettings.profile.avatar')}</Label>
+          <Label>{t('settings.profile.avatar')}</Label>
           <div className="relative">
             <ImageIcon className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -125,12 +125,12 @@ export function ProfileForm() {
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              {t('accountSettings.profile.updating')}
+              {t('settings.profile.updating')}
             </>
           ) : (
             <>
               <Save className="w-4 h-4 mr-2" />
-              {t('accountSettings.profile.saveChanges')}
+              {t('settings.profile.saveChanges')}
             </>
           )}
         </Button>

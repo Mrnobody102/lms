@@ -11,6 +11,7 @@ import type { NextFunction, Request, Response } from 'express';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { MailService } from '../mail/mail.service';
+import { AuditLogService } from '../common/services/audit-log.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { JwtStrategy } from './strategies/jwt.strategy';
@@ -42,6 +43,7 @@ describe('Auth HTTP flow', () => {
       findUnique: ReturnType<typeof vi.fn>;
       update: ReturnType<typeof vi.fn>;
       updateMany: ReturnType<typeof vi.fn>;
+      deleteMany: ReturnType<typeof vi.fn>;
     };
   };
 
@@ -213,6 +215,7 @@ describe('Auth HTTP flow', () => {
         findUnique: vi.fn(),
         update: vi.fn(),
         updateMany: vi.fn(),
+        deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
     };
 
@@ -236,6 +239,10 @@ describe('Auth HTTP flow', () => {
         {
           provide: MailService,
           useValue: { sendPasswordResetEmail: vi.fn().mockResolvedValue(undefined) },
+        },
+        {
+          provide: AuditLogService,
+          useValue: { log: vi.fn() },
         },
         { provide: PrismaService, useValue: prisma },
         {

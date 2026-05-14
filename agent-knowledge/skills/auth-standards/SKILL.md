@@ -14,10 +14,12 @@ Authentication flow for the LMS platform using HttpOnly auth cookies for browser
 ## Core Capabilities
 
 - **auth_store_management**: Managing login state and safe user info via Zustand; never treat localStorage as auth authority.
-- **secure_cookie_handling**: Browser sessions use the `access_token` HttpOnly cookie and `csrf_token` readable cookie for state-changing requests.
+- **secure_cookie_handling**: Browser sessions use the `access_token` (short-lived) and `refresh_token` (long-lived) HttpOnly cookies, plus a CSRF double-submit cookie.
 - **multi_tenant_auth**: Enforcing tenant isolation with backend tenant middleware and tenant-scoped queries.
 - **centralized_401_handling**: Axios response interceptor clears legacy local auth data and redirects to login.
-- **dto_alignment**: Frontend-backend field alignment (fullName, password minLength 8, tenantId).
+- **account_protection**: Implementing brute-force protection via account lockout (5 failed attempts = 15m lockout).
+- **security_auditing**: Mandatory audit logging for all sensitive authentication events (login, logout, registration, password resets).
+- **session_control**: Multi-device session management using token hashing to identify and revoke specific active sessions.
 
 ## When to Use
 
@@ -74,12 +76,14 @@ Browser API calls must use the shared `@repo/api-client` client:
 
 | Pitfall                                                   | Fix                                                                                               |
 | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Storing JWTs in `localStorage` for browser auth           | Use the HttpOnly `access_token` cookie; Zustand may persist only safe user data.                  |
+| Storing JWTs in `localStorage` for browser auth           | Use HttpOnly `access_token` and `refresh_token` cookies.                                          |
 | Missing CSRF header on cookie-backed state changes        | Use `@repo/api-client`; it reads `csrf_token` and sends `x-csrf-token`.                           |
 | Sending `x-tenant-id` from production browsers by default | Resolve tenant by host/domain unless a trusted deployment explicitly opts in.                     |
 | Clearing only user but not legacy token keys              | Clear `token`, `user`, and `tenantId` on logout/401 to remove old sessions.                       |
 | Not handling 401 on all API calls                         | The Axios response interceptor handles 401 globally for all apps using the shared `api` instance. |
 | Hardcoding tenant context in services                     | Use request tenant scope and tenant-aware Prisma filters.                                         |
+| Ignoring failed login attempts                            | Implement account lockout logic in `AuthService` to prevent brute-force attacks.                  |
+| Not logging sensitive authentication actions              | Use `AuditLogService` to record all login, logout, and security state changes.                    |
 
 ## Best Practices
 

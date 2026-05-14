@@ -11,6 +11,7 @@ import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 import type { CookieOptions, Response } from 'express';
 import { PrismaService } from '../common/services/prisma.service';
+import { AuditLogService, AuditAction, AuditStatus } from '../common/services/audit-log.service';
 import { CSRF_COOKIE_NAME } from '../common/middleware/csrf.middleware';
 import { parseDurationToMs } from '../config/duration';
 import { LoginDto } from './dto/login.dto';
@@ -28,6 +29,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly mailService: MailService,
+    private readonly auditLog: AuditLogService,
   ) {}
 
   async register(registerDto: RegisterDto, tenantId: string | undefined, res: Response) {
@@ -95,6 +97,13 @@ export class AuthService {
 
       const { tokenVersion: _tokenVersion, ...user } = createdUser;
 
+      await this.auditLog.log({
+        userId: user.id,
+        tenantId,
+        action: AuditAction.REGISTER,
+        status: AuditStatus.SUCCESS,
+      });
+
       return {
         user,
       };
@@ -107,7 +116,13 @@ export class AuthService {
     }
   }
 
-  async login(loginDto: LoginDto, tenantId: string | undefined, res: Response) {
+  async login(
+    loginDto: LoginDto,
+    tenantId: string | undefined,
+    res: Response,
+    ipAddress?: string,
+    userAgent?: string,
+  ) {
     if (!tenantId) {
       throw new BadRequestException('Tenant context is required');
     }
@@ -143,14 +158,35 @@ export class AuthService {
         isActive: true,
         tenantId: true,
         tokenVersion: true,
+        failedLoginAttempts: true,
+        lockoutUntil: true,
         createdAt: true,
         updatedAt: true,
       },
     });
 
     if (!user) {
-      this.logger.warn(`Login failed - invalid credentials: tenantId=${tenantId}`);
+      this.logger.warn(`Login failed - user not found: ${email} in tenant ${tenantId}`);
       throw this.invalidCredentials();
+    }
+
+    // Check for lockout
+    if (user.lockoutUntil && user.lockoutUntil > new Date()) {
+      const waitMinutes = Math.ceil((user.lockoutUntil.getTime() - Date.now()) / 60000);
+
+      await this.auditLog.log({
+        userId: user.id,
+        tenantId,
+        action: AuditAction.LOGIN_FAILURE,
+        status: AuditStatus.FAILURE,
+        ipAddress,
+        userAgent,
+        metadata: { reason: 'Account locked', waitMinutes },
+      });
+
+      throw new BadRequestException(
+        `Account is temporarily locked. Try again in ${waitMinutes} minutes.`,
+      );
     }
 
     if (!user.isActive) {
@@ -162,24 +198,78 @@ export class AuthService {
 
     if (!isPasswordValid) {
       this.logger.warn(`Login failed - invalid password: id=${user.id}`);
+
+      // Increment failed attempts
+      const newAttempts = user.failedLoginAttempts + 1;
+      const lockoutUntil = newAttempts >= 5 ? new Date(Date.now() + 15 * 60 * 1000) : null;
+
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          failedLoginAttempts: { increment: 1 },
+          lockoutUntil,
+        },
+      });
+
+      await this.auditLog.log({
+        userId: user.id,
+        tenantId,
+        action: AuditAction.LOGIN_FAILURE,
+        status: AuditStatus.FAILURE,
+        ipAddress,
+        userAgent,
+        metadata: { reason: 'Invalid password', attempts: newAttempts },
+      });
+
       throw this.invalidCredentials();
     }
+
+    // Reset failed attempts on success
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        failedLoginAttempts: 0,
+        lockoutUntil: null,
+      },
+    });
 
     this.logger.log(`User logged in: id=${user.id}, role=${user.role}`);
 
     const token = this.generateToken(user);
     this.setAuthCookie(res, token);
     this.setCsrfCookie(res);
-    await this.setRefreshCookie(res, user.id, tenantId);
+    await this.setRefreshCookie(res, user.id, tenantId, ipAddress, userAgent);
 
-    const { password: _password, tokenVersion: _tokenVersion, ...userWithoutPassword } = user;
+    await this.auditLog.log({
+      userId: user.id,
+      tenantId,
+      action: AuditAction.LOGIN_SUCCESS,
+      status: AuditStatus.SUCCESS,
+      ipAddress,
+      userAgent,
+    });
+
+    const {
+      password: _password,
+      tokenVersion: _tokenVersion,
+      failedLoginAttempts: _fla,
+      lockoutUntil: _lu,
+      ...userWithoutPassword
+    } = user;
 
     return {
       user: userWithoutPassword,
     };
   }
 
-  async logout(cookies: Record<string, string>, res: Response) {
+  async logout(
+    cookies: Record<string, string>,
+    res: Response,
+    userId: string,
+    tenantId: string,
+    ipAddress?: string,
+    userAgent?: string,
+  ) {
     const refreshToken = cookies['refresh_token'];
 
     if (refreshToken) {
@@ -193,6 +283,15 @@ export class AuthService {
       }
     }
 
+    await this.auditLog.log({
+      userId,
+      tenantId,
+      action: AuditAction.LOGOUT,
+      status: AuditStatus.SUCCESS,
+      ipAddress,
+      userAgent,
+    });
+
     this.clearAuthCookie(res);
     this.clearCsrfCookie(res);
     this.clearRefreshCookie(res);
@@ -203,7 +302,13 @@ export class AuthService {
     };
   }
 
-  async refresh(cookies: Record<string, string>, tenantId: string | undefined, res: Response) {
+  async refresh(
+    cookies: Record<string, string>,
+    tenantId: string | undefined,
+    res: Response,
+    ipAddress?: string,
+    userAgent?: string,
+  ) {
     if (!tenantId) {
       throw new BadRequestException('Tenant context is required');
     }
@@ -257,7 +362,7 @@ export class AuthService {
     const newAccessToken = this.generateToken(storedToken.user);
     this.setAuthCookie(res, newAccessToken);
     this.setCsrfCookie(res);
-    await this.setRefreshCookie(res, storedToken.user.id, tenantId);
+    await this.setRefreshCookie(res, storedToken.user.id, tenantId, ipAddress, userAgent);
 
     return { success: true };
   }
@@ -277,6 +382,13 @@ export class AuthService {
       // Do not reveal if email exists or not
       return { success: true, message: 'If your email is registered, a reset link will be sent.' };
     }
+
+    await this.auditLog.log({
+      userId: user.id,
+      tenantId,
+      action: AuditAction.PASSWORD_RESET_REQUEST,
+      status: AuditStatus.SUCCESS,
+    });
 
     // Generate short-lived token (15 mins)
     const resetSecret =
@@ -365,6 +477,13 @@ export class AuthService {
       where: { userId, tenantId },
     });
 
+    await this.auditLog.log({
+      userId,
+      tenantId,
+      action: AuditAction.PASSWORD_RESET_SUCCESS,
+      status: AuditStatus.SUCCESS,
+    });
+
     return { success: true, message: 'Password reset successfully' };
   }
 
@@ -442,12 +561,18 @@ export class AuthService {
     };
   }
 
-  private async hashToken(token: string): Promise<string> {
+  public async hashToken(token: string): Promise<string> {
     const { createHash } = await import('crypto');
     return createHash('sha256').update(token).digest('hex');
   }
 
-  private async setRefreshCookie(res: Response, userId: string, tenantId: string): Promise<void> {
+  private async setRefreshCookie(
+    res: Response,
+    userId: string,
+    tenantId: string,
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<void> {
     const refreshStr = randomBytes(40).toString('hex');
     const hash = await this.hashToken(refreshStr);
     const msTTL = parseDurationToMs(
@@ -472,6 +597,8 @@ export class AuthService {
         userId,
         tenantId,
         tokenHash: hash,
+        ipAddress,
+        userAgent,
         expiresAt: new Date(Date.now() + msTTL),
       },
     });

@@ -1,12 +1,16 @@
 import { Injectable, UnauthorizedException, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../common/services/prisma.service';
+import { AuditLogService, AuditAction, AuditStatus } from '../common/services/audit-log.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class UserService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private auditLog: AuditLogService,
+  ) {}
 
   async getProfile(userId: string) {
     const user = await this.prisma.user.findFirst({
@@ -66,6 +70,13 @@ export class UserService {
       },
     });
 
+    await this.auditLog.log({
+      userId,
+      tenantId,
+      action: AuditAction.PROFILE_UPDATE,
+      status: AuditStatus.SUCCESS,
+    });
+
     return user;
   }
 
@@ -104,6 +115,13 @@ export class UserService {
     // Revoke all refresh tokens to force re-login on all devices
     await this.prisma.refreshToken.deleteMany({
       where: { userId, tenantId },
+    });
+
+    await this.auditLog.log({
+      userId,
+      tenantId,
+      action: AuditAction.PASSWORD_CHANGE,
+      status: AuditStatus.SUCCESS,
     });
 
     return { message: 'Password changed successfully' };

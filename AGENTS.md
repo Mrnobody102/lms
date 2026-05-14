@@ -8,6 +8,18 @@ Keep it short, operational, and consistent with the repo's CI.
 
 Per-app `AGENTS.md` files exist in `apps/*/` and `packages/database/` for scoped context.
 
+## AI Governance & Automation
+
+This project uses a tiered rule system to ensure consistency across AI agent sessions:
+
+1. **Global Standards**: Defined in `CLAUDE.md` and `CURSOR.md` at the root. Always followed.
+2. **Automated Rules**: Located in `.cursor/rules/*.mdc`. These rules automatically attach to your context based on the files you are editing:
+   - `api-server.mdc`: Backend standards (NestJS, Security).
+   - `web-portals.mdc`: Frontend standards (Next.js, i18n, UI).
+   - `monorepo.mdc`: Cross-package integrity.
+   - `database.mdc`: Prisma and migration safety.
+3. **Skill Knowledge**: Deep-dive patterns in `agent-knowledge/skills/`.
+
 ## Project Snapshot
 
 - Monorepo: pnpm 9 + Turborepo.

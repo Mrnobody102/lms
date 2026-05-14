@@ -23,6 +23,7 @@ describe('AuthService', () => {
     refreshToken: {
       create: ReturnType<typeof vi.fn>;
       updateMany: ReturnType<typeof vi.fn>;
+      deleteMany: ReturnType<typeof vi.fn>;
     };
   };
   let jwtService: {
@@ -46,6 +47,7 @@ describe('AuthService', () => {
       refreshToken: {
         create: vi.fn(),
         updateMany: vi.fn(),
+        deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
     };
 
@@ -69,11 +71,16 @@ describe('AuthService', () => {
       sendPasswordResetEmail: vi.fn().mockResolvedValue(undefined),
     };
 
+    const auditLog = {
+      log: vi.fn().mockResolvedValue(undefined),
+    };
+
     service = new AuthService(
       prisma as any,
       jwtService as any,
       configService as any,
       mailService as any,
+      auditLog as any,
     );
   });
 
@@ -386,7 +393,7 @@ describe('AuthService', () => {
 
   describe('logout', () => {
     it('should clear the auth cookie', async () => {
-      const result = await service.logout({}, response);
+      const result = await service.logout({}, response, 'user-1', 'tenant-1');
 
       expect(response.clearCookie).toHaveBeenCalledWith(
         'access_token',

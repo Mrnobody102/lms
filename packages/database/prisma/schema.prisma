@@ -98,6 +98,8 @@ model User {
   tokenVersion     Int                  @default(0)
   passwordResetTokenHash String?
   passwordResetExpiresAt DateTime?
+  failedLoginAttempts    Int               @default(0)
+  lockoutUntil           DateTime?
   tenantId         String
   tenant           Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   progress         UserLessonProgress[]
@@ -106,6 +108,7 @@ model User {
   practiceAttempts PracticeAttempt[]
   examAttempts     ExamAttempt[]
   refreshTokens    RefreshToken[]
+  auditLogs        AuditLog[]
   createdAt        DateTime             @default(now())
   updatedAt        DateTime             @updatedAt
 
@@ -122,12 +125,32 @@ model RefreshToken {
   user      User      @relation(fields: [userId, tenantId], references: [id, tenantId], onDelete: Cascade)
   tenantId  String
   tokenHash String    @unique
+  ipAddress String?
+  userAgent String?
   expiresAt DateTime
   revokedAt DateTime?
   createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@index([tenantId, userId])
   @@index([expiresAt])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenantId  String
+  action    String   // e.g., 'LOGIN', 'PASSWORD_CHANGE', 'PROFILE_UPDATE'
+  status    String   // 'SUCCESS', 'FAILURE'
+  ipAddress String?
+  userAgent String?
+  metadata  Json?    // Any extra context
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, userId])
+  @@index([action])
+  @@index([createdAt])
 }
 
 model Course {

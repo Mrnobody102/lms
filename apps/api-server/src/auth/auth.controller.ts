@@ -1,8 +1,23 @@
-import { Controller, Post, Body, Req, Res, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Req,
+  Res,
+  HttpCode,
+  HttpStatus,
+  Headers,
+  UseGuards,
+} from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { IpAddress } from './decorators/ip-address.decorator';
+import { UserAgent } from './decorators/user-agent.decorator';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { CurrentUser } from './decorators/current-user.decorator';
+import { AuthenticatedUser } from '../common/interfaces/authenticated-request.interface';
 import { RegisterDto } from './dto/register.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
@@ -29,26 +44,35 @@ export class AuthController {
   }
 
   @Post('login')
-  @HttpCode(HttpStatus.OK)
+  @HttpCode(200)
   @Throttle({ auth: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Login with email and password' })
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   async login(
     @Body() loginDto: LoginDto,
-    @Req() req: TenantAwareRequest,
+    @Headers('x-tenant-id') tenantId: string | undefined,
     @Res({ passthrough: true }) res: Response,
+    @IpAddress() ipAddress: string,
+    @UserAgent() userAgent: string,
   ) {
-    return this.authService.login(loginDto, req.tenantId, res);
+    return this.authService.login(loginDto, tenantId, res, ipAddress, userAgent);
   }
 
   @Post('logout')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Logout current session' })
   @ApiResponse({ status: 200, description: 'Logout successful' })
-  async logout(@Req() req: TenantAwareRequest, @Res({ passthrough: true }) res: Response) {
+  async logout(
+    @Req() req: TenantAwareRequest,
+    @Res({ passthrough: true }) res: Response,
+    @CurrentUser() user: AuthenticatedUser,
+    @IpAddress() ipAddress: string,
+    @UserAgent() userAgent: string,
+  ) {
     // Pass cookies object down so service can read refresh_token before clearing
-    return this.authService.logout(req.cookies, res);
+    return this.authService.logout(req.cookies, res, user.id, user.tenantId, ipAddress, userAgent);
   }
 
   @Post('refresh')
@@ -57,8 +81,13 @@ export class AuthController {
   @ApiOperation({ summary: 'Refresh access token using refresh token cookie' })
   @ApiResponse({ status: 200, description: 'Token refreshed successfully' })
   @ApiResponse({ status: 401, description: 'Invalid or missing refresh token' })
-  async refresh(@Req() req: TenantAwareRequest, @Res({ passthrough: true }) res: Response) {
-    return this.authService.refresh(req.cookies, req.tenantId, res);
+  async refresh(
+    @Req() req: TenantAwareRequest,
+    @Res({ passthrough: true }) res: Response,
+    @IpAddress() ipAddress: string,
+    @UserAgent() userAgent: string,
+  ) {
+    return this.authService.refresh(req.cookies, req.tenantId, res, ipAddress, userAgent);
   }
 
   @Post('forgot-password')

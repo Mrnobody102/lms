@@ -10,7 +10,7 @@
     "exams": "Exams",
     "finance": "Finance",
     "schedule": "Schedule",
-    "settings": "Settings",
+    "settingsLabel": "Settings",
     "brandName": "LMS Admin",
     "profileNameFallback": "Administrator",
     "profileEmailFallback": "admin@example.com",
@@ -43,32 +43,6 @@
       "forgotEmailSentDesc": "Check your inbox for the password reset link.",
       "resetting": "Resetting...",
       "sendingLink": "Sending link..."
-    },
-    "accountSettings": {
-      "title": "Account Settings",
-      "subtitle": "Manage your administrative information and security.",
-      "profile": {
-        "title": "Personal Information",
-        "description": "Update your admin profile information.",
-        "fullName": "Full Name",
-        "email": "Admin Email",
-        "phoneNumber": "Contact Number",
-        "avatar": "Avatar URL",
-        "saveChanges": "Save Changes",
-        "updating": "Updating...",
-        "updateSuccess": "Update successful."
-      },
-      "security": {
-        "title": "Admin Security",
-        "description": "Update your password to protect admin access.",
-        "currentPassword": "Current Password",
-        "newPassword": "New Password",
-        "confirmPassword": "Confirm New Password",
-        "changePassword": "Change Password",
-        "changing": "Changing...",
-        "changeSuccess": "Password changed successfully. Please log in again.",
-        "passwordHelp": "Admin passwords require high security (8+ chars, mixed types)."
-      }
     },
     "revenue": "Total Revenue",
     "totalStudents": "Total Students",
@@ -464,13 +438,47 @@
     "validationChecklist": "Validation checklist",
     "readyToSave": "Ready to save",
     "needsAttention": "Needs attention",
-    "brandName": "Center Admin",
-    "themeToggle": "Toggle theme",
-    "profileNameFallback": "Admin user",
-    "profileEmailFallback": "Email unavailable",
-    "logout": "Logout",
-    "footer": {
-      "copyright": "© 2026 LMS Platform"
+    "settings": {
+      "title": "Account Settings",
+      "subtitle": "Manage your personal information and security settings.",
+      "profile": {
+        "title": "Personal Information",
+        "description": "Update your display information.",
+        "fullName": "Full Name",
+        "email": "Email Address",
+        "phoneNumber": "Phone Number",
+        "avatar": "Avatar URL",
+        "saveChanges": "Save Changes",
+        "updating": "Updating...",
+        "updateSuccess": "Profile updated successfully."
+      },
+      "security": {
+        "title": "Security",
+        "description": "Update your password to protect your account.",
+        "currentPassword": "Current Password",
+        "newPassword": "New Password",
+        "confirmPassword": "Confirm New Password",
+        "changePassword": "Change Password",
+        "changing": "Changing...",
+        "changeSuccess": "Password changed successfully. Please log in again.",
+        "passwordHelp": "Password must be at least 8 characters, including uppercase, lowercase, numbers, and special characters."
+      },
+      "sessions": {
+        "title": "Active Sessions",
+        "description": "List of devices currently logged into your account.",
+        "active": "Active now",
+        "lastActive": "Last active",
+        "device": "Device",
+        "location": "Location (IP)",
+        "revoke": "Log out",
+        "revokeAll": "Log out all other devices",
+        "currentDevice": "This device",
+        "revokeSuccess": "Successfully logged out device.",
+        "revokeError": "Failed to log out device. Please try again.",
+        "unknownDevice": "Unknown Device",
+        "unknownOS": "Unknown OS",
+        "unknownBrowser": "Unknown Browser"
+      }
     }
   },
   "Common": {
