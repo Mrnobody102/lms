@@ -21,6 +21,8 @@ export interface AuthState {
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   clearError: () => void;
+  setUser: (user: AuthUser | null) => void;
+  setTenantId: (tenantId: string | null) => void;
 }
 
 export interface CreateAuthStoreOptions {
@@ -132,6 +134,21 @@ export function createAuthStore(options: CreateAuthStoreOptions) {
       error: null,
 
       clearError: () => set({ error: null }),
+
+      setUser: (user: AuthUser | null) => {
+        persistAuthUser(user);
+        set({ user, isAuthenticated: !!user });
+      },
+
+      setTenantId: (tenantId: string | null) => {
+        if (typeof window !== 'undefined') {
+          if (tenantId) {
+            localStorage.setItem('tenantId', tenantId);
+          } else {
+            localStorage.removeItem('tenantId');
+          }
+        }
+      },
 
       checkAuth: async () => {
         if (typeof window === 'undefined') {

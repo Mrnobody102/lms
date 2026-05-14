@@ -39,9 +39,9 @@ export class UserService {
     return user;
   }
 
-  async updateProfile(userId: string, updateProfileDto: UpdateProfileDto) {
+  async updateProfile(userId: string, tenantId: string, updateProfileDto: UpdateProfileDto) {
     const existingUser = await this.prisma.user.findFirst({
-      where: { id: userId, deletedAt: null },
+      where: { id: userId, tenantId, deletedAt: null },
       select: { id: true },
     });
 
@@ -50,7 +50,7 @@ export class UserService {
     }
 
     const user = await this.prisma.user.update({
-      where: { id: userId },
+      where: { id_tenantId: { id: userId, tenantId } },
       data: updateProfileDto,
       select: {
         id: true,
@@ -69,10 +69,10 @@ export class UserService {
     return user;
   }
 
-  async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {
+  async changePassword(userId: string, tenantId: string, changePasswordDto: ChangePasswordDto) {
     // Get current user with password
     const user = await this.prisma.user.findFirst({
-      where: { id: userId, deletedAt: null },
+      where: { id: userId, tenantId, deletedAt: null },
     });
 
     if (!user) {
@@ -92,13 +92,18 @@ export class UserService {
     // Hash new password (OWASP recommends cost factor >= 12)
     const hashedPassword = await bcrypt.hash(changePasswordDto.newPassword, 12);
 
-    // Update password
+    // Update password and increment version to revoke all existing access tokens
     await this.prisma.user.update({
-      where: { id: userId },
+      where: { id_tenantId: { id: userId, tenantId } },
       data: {
         password: hashedPassword,
         tokenVersion: { increment: 1 },
       },
+    });
+
+    // Revoke all refresh tokens to force re-login on all devices
+    await this.prisma.refreshToken.deleteMany({
+      where: { userId, tenantId },
     });
 
     return { message: 'Password changed successfully' };

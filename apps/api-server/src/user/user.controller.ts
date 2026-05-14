@@ -32,7 +32,7 @@ export class UserController {
     @CurrentUser() user: AuthenticatedUser,
     @Body() updateProfileDto: UpdateProfileDto,
   ) {
-    return this.userService.updateProfile(user.id, updateProfileDto);
+    return this.userService.updateProfile(user.id, user.tenantId, updateProfileDto);
   }
 
   @Put('change-password')
@@ -45,6 +45,6 @@ export class UserController {
     @CurrentUser() user: AuthenticatedUser,
     @Body() changePasswordDto: ChangePasswordDto,
   ) {
-    return this.userService.changePassword(user.id, changePasswordDto);
+    return this.userService.changePassword(user.id, user.tenantId, changePasswordDto);
   }
 }

@@ -7,7 +7,8 @@
       "blog": "Blog",
       "practice": "Practice",
       "home": "Home",
-      "exams": "Exams"
+      "exams": "Exams",
+      "settings": "Settings"
     },
     "themeToggle": "Toggle theme",
     "hero": {
@@ -219,6 +220,32 @@
       "forgotEmailSentDesc": "If your email exists in our system, you will receive a reset link shortly.",
       "resetting": "Resetting password...",
       "sendingLink": "Sending link..."
+    },
+    "settings": {
+      "title": "Account Settings",
+      "subtitle": "Manage your personal information and security settings.",
+      "profile": {
+        "title": "Personal Information",
+        "description": "Update your display information.",
+        "fullName": "Full Name",
+        "email": "Email Address",
+        "phoneNumber": "Phone Number",
+        "avatar": "Avatar URL",
+        "saveChanges": "Save Changes",
+        "updating": "Updating...",
+        "updateSuccess": "Profile updated successfully."
+      },
+      "security": {
+        "title": "Security",
+        "description": "Update your password to protect your account.",
+        "currentPassword": "Current Password",
+        "newPassword": "New Password",
+        "confirmPassword": "Confirm New Password",
+        "changePassword": "Change Password",
+        "changing": "Changing...",
+        "changeSuccess": "Password changed successfully. Please log in again.",
+        "passwordHelp": "Password must be at least 8 characters, including uppercase, lowercase, numbers, and special characters."
+      }
     },
     "courses": {
       "title": "All Courses",

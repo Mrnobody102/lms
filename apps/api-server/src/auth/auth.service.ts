@@ -360,10 +360,9 @@ export class AuthService {
       },
     });
 
-    // Revoke all refresh tokens
-    await this.prisma.refreshToken.updateMany({
+    // Revoke all refresh tokens to force re-login on all devices
+    await this.prisma.refreshToken.deleteMany({
       where: { userId, tenantId },
-      data: { revokedAt: new Date() },
     });
 
     return { success: true, message: 'Password reset successfully' };

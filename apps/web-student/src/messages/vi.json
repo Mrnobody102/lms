@@ -7,7 +7,8 @@
       "blog": "Blog",
       "practice": "Luyện tập",
       "home": "Trang chủ",
-      "exams": "Kiểm tra"
+      "exams": "Kiểm tra",
+      "settings": "Cài đặt"
     },
     "themeToggle": "Đổi giao diện",
     "hero": {
@@ -219,6 +220,32 @@
       "forgotEmailSentDesc": "Nếu email của bạn tồn tại trong hệ thống, bạn sẽ sớm nhận được liên kết đặt lại mật khẩu.",
       "resetting": "Đang đặt lại mật khẩu...",
       "sendingLink": "Đang gửi liên kết..."
+    },
+    "settings": {
+      "title": "Cài đặt tài khoản",
+      "subtitle": "Quản lý thông tin cá nhân và cài đặt bảo mật của bạn.",
+      "profile": {
+        "title": "Thông tin cá nhân",
+        "description": "Cập nhật thông tin hiển thị của bạn.",
+        "fullName": "Họ và tên",
+        "email": "Địa chỉ Email",
+        "phoneNumber": "Số điện thoại",
+        "avatar": "Ảnh đại diện",
+        "saveChanges": "Lưu thay đổi",
+        "updating": "Đang cập nhật...",
+        "updateSuccess": "Cập nhật thông tin thành công."
+      },
+      "security": {
+        "title": "Bảo mật",
+        "description": "Cập nhật mật khẩu để bảo vệ tài khoản.",
+        "currentPassword": "Mật khẩu hiện tại",
+        "newPassword": "Mật khẩu mới",
+        "confirmPassword": "Xác nhận mật khẩu mới",
+        "changePassword": "Đổi mật khẩu",
+        "changing": "Đang thay đổi...",
+        "changeSuccess": "Đổi mật khẩu thành công. Vui lòng đăng nhập lại.",
+        "passwordHelp": "Mật khẩu phải từ 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt."
+      }
     },
     "courses": {
       "title": "Tất cả khóa học",

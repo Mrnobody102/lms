@@ -11,6 +11,11 @@
     "finance": "Finance",
     "schedule": "Schedule",
     "settings": "Settings",
+    "brandName": "LMS Admin",
+    "profileNameFallback": "Administrator",
+    "profileEmailFallback": "admin@example.com",
+    "themeToggle": "Toggle Theme",
+    "logout": "Logout",
     "auth": {
       "email": "Email",
       "emailPlaceholder": "name@center.example",
@@ -38,6 +43,32 @@
       "forgotEmailSentDesc": "Check your inbox for the password reset link.",
       "resetting": "Resetting...",
       "sendingLink": "Sending link..."
+    },
+    "accountSettings": {
+      "title": "Account Settings",
+      "subtitle": "Manage your administrative information and security.",
+      "profile": {
+        "title": "Personal Information",
+        "description": "Update your admin profile information.",
+        "fullName": "Full Name",
+        "email": "Admin Email",
+        "phoneNumber": "Contact Number",
+        "avatar": "Avatar URL",
+        "saveChanges": "Save Changes",
+        "updating": "Updating...",
+        "updateSuccess": "Update successful."
+      },
+      "security": {
+        "title": "Admin Security",
+        "description": "Update your password to protect admin access.",
+        "currentPassword": "Current Password",
+        "newPassword": "New Password",
+        "confirmPassword": "Confirm New Password",
+        "changePassword": "Change Password",
+        "changing": "Changing...",
+        "changeSuccess": "Password changed successfully. Please log in again.",
+        "passwordHelp": "Admin passwords require high security (8+ chars, mixed types)."
+      }
     },
     "revenue": "Total Revenue",
     "totalStudents": "Total Students",
