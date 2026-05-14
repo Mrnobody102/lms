@@ -98,21 +98,33 @@ export class AuthService {
       const { tokenVersion: _tokenVersion, ...user } = createdUser;
 
       await this.auditLog.log({
-        userId: user.id,
-        tenantId,
         action: AuditAction.REGISTER,
         status: AuditStatus.SUCCESS,
+        userId: createdUser.id,
+        tenantId,
+        metadata: { role: createdUser.role },
       });
 
-      return {
-        user,
-      };
-    } catch (error) {
-      if (this.isUniqueConstraintError(error)) {
-        this.logger.warn(`Registration failed - email already exists: tenantId=${tenantId}`);
+      return { user };
+    } catch (_error: unknown) {
+      this.logger.error(
+        `Registration error: tenantId=${tenantId}`,
+        _error instanceof Error ? _error.stack : undefined,
+      );
+      await this.auditLog.log({
+        action: AuditAction.REGISTER,
+        status: AuditStatus.FAILURE,
+        tenantId,
+        metadata: {
+          error: _error instanceof Error ? _error.message : 'Unknown error',
+          email,
+        },
+      });
+
+      if (this.isUniqueConstraintError(_error)) {
         throw new ConflictException('Email already registered');
       }
-      throw error;
+      throw _error;
     }
   }
 
@@ -134,6 +146,14 @@ export class AuthService {
 
     if (!tenant) {
       this.logger.warn(`Login failed - inactive tenant: ${tenantId}`);
+      await this.auditLog.log({
+        action: AuditAction.LOGIN_FAILURE,
+        status: AuditStatus.FAILURE,
+        tenantId,
+        ipAddress,
+        userAgent,
+        metadata: { reason: 'Inactive or invalid tenant', email: loginDto.email },
+      });
       throw this.invalidCredentials();
     }
 
@@ -167,6 +187,14 @@ export class AuthService {
 
     if (!user) {
       this.logger.warn(`Login failed - user not found: ${email} in tenant ${tenantId}`);
+      await this.auditLog.log({
+        action: AuditAction.LOGIN_FAILURE,
+        status: AuditStatus.FAILURE,
+        tenantId,
+        ipAddress,
+        userAgent,
+        metadata: { reason: 'User not found', email },
+      });
       throw this.invalidCredentials();
     }
 
@@ -317,6 +345,14 @@ export class AuthService {
     if (!refreshTokenStr) {
       this.clearAuthCookie(res);
       this.clearCsrfCookie(res);
+      await this.auditLog.log({
+        action: AuditAction.SESSION_REFRESH,
+        status: AuditStatus.FAILURE,
+        tenantId,
+        ipAddress,
+        userAgent,
+        metadata: { reason: 'No refresh token provided' },
+      });
       throw new UnauthorizedException('No refresh token provided');
     }
 
@@ -342,6 +378,15 @@ export class AuthService {
       this.clearAuthCookie(res);
       this.clearCsrfCookie(res);
       this.clearRefreshCookie(res);
+      await this.auditLog.log({
+        userId: storedToken?.userId,
+        action: AuditAction.SESSION_REFRESH,
+        status: AuditStatus.FAILURE,
+        tenantId,
+        ipAddress,
+        userAgent,
+        metadata: { reason: 'Invalid or expired refresh token' },
+      });
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
 
@@ -349,6 +394,15 @@ export class AuthService {
       this.clearAuthCookie(res);
       this.clearCsrfCookie(res);
       this.clearRefreshCookie(res);
+      await this.auditLog.log({
+        userId: storedToken.userId,
+        action: AuditAction.SESSION_REFRESH,
+        status: AuditStatus.FAILURE,
+        tenantId,
+        ipAddress,
+        userAgent,
+        metadata: { reason: 'Invalid user account or wrong tenant' },
+      });
       throw new UnauthorizedException('Invalid user account');
     }
 
@@ -363,6 +417,15 @@ export class AuthService {
     this.setAuthCookie(res, newAccessToken);
     this.setCsrfCookie(res);
     await this.setRefreshCookie(res, storedToken.user.id, tenantId, ipAddress, userAgent);
+
+    await this.auditLog.log({
+      userId: storedToken.userId,
+      action: AuditAction.SESSION_REFRESH,
+      status: AuditStatus.SUCCESS,
+      tenantId,
+      ipAddress,
+      userAgent,
+    });
 
     return { success: true };
   }
@@ -379,6 +442,12 @@ export class AuthService {
     });
 
     if (!user) {
+      await this.auditLog.log({
+        action: AuditAction.PASSWORD_RESET_REQUEST,
+        status: AuditStatus.FAILURE,
+        tenantId,
+        metadata: { reason: 'User not found', email },
+      });
       // Do not reveal if email exists or not
       return { success: true, message: 'If your email is registered, a reset link will be sent.' };
     }
@@ -435,10 +504,22 @@ export class AuthService {
     try {
       decoded = this.jwtService.verify(resetPasswordDto.token, { secret: resetSecret });
     } catch (_e) {
+      await this.auditLog.log({
+        action: AuditAction.PASSWORD_RESET,
+        status: AuditStatus.FAILURE,
+        tenantId,
+        metadata: { reason: 'Token verification failed' },
+      });
       throw new UnauthorizedException('Invalid or expired reset token');
     }
 
     if (decoded.type !== 'reset' || !decoded.sub) {
+      await this.auditLog.log({
+        action: AuditAction.PASSWORD_RESET,
+        status: AuditStatus.FAILURE,
+        tenantId,
+        metadata: { reason: 'Invalid token type' },
+      });
       throw new UnauthorizedException('Invalid token type');
     }
 
@@ -448,15 +529,36 @@ export class AuthService {
     });
 
     if (!user || !user.passwordResetTokenHash || !user.passwordResetExpiresAt) {
+      await this.auditLog.log({
+        userId,
+        action: AuditAction.PASSWORD_RESET,
+        status: AuditStatus.FAILURE,
+        tenantId,
+        metadata: { reason: 'Invalid or missing user reset hash' },
+      });
       throw new UnauthorizedException('Invalid or expired reset token');
     }
 
     if (user.passwordResetExpiresAt < new Date()) {
+      await this.auditLog.log({
+        userId,
+        action: AuditAction.PASSWORD_RESET,
+        status: AuditStatus.FAILURE,
+        tenantId,
+        metadata: { reason: 'Reset token expired' },
+      });
       throw new UnauthorizedException('Reset token has expired');
     }
 
     const isValidHash = await bcrypt.compare(resetPasswordDto.token, user.passwordResetTokenHash);
     if (!isValidHash) {
+      await this.auditLog.log({
+        userId,
+        action: AuditAction.PASSWORD_RESET,
+        status: AuditStatus.FAILURE,
+        tenantId,
+        metadata: { reason: 'Hash mismatch' },
+      });
       throw new UnauthorizedException('Invalid reset token');
     }
 

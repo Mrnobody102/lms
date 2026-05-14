@@ -41,6 +41,7 @@ describe('Tenant resource HTTP flow', () => {
     user: {
       findUnique: ReturnType<typeof vi.fn>;
       findFirst: ReturnType<typeof vi.fn>;
+      update: ReturnType<typeof vi.fn>;
     };
     tenant: {
       findFirst: ReturnType<typeof vi.fn>;
@@ -278,6 +279,16 @@ describe('Tenant resource HTTP flow', () => {
 
           return Promise.resolve(matchesLogin ? currentUser : null);
         }),
+        update: vi
+          .fn()
+          .mockImplementation(
+            ({ where, data }: { where: { id: string }; data: Record<string, unknown> }) => {
+              if (where.id === currentUser.id) {
+                return Promise.resolve({ ...currentUser, ...data });
+              }
+              return Promise.resolve(null);
+            },
+          ),
       },
       tenant: {
         findFirst: vi.fn().mockImplementation(({ where }: { where: Record<string, unknown> }) => {

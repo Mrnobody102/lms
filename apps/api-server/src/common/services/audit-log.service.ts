@@ -9,8 +9,10 @@ export enum AuditAction {
   PASSWORD_CHANGE = 'PASSWORD_CHANGE',
   PASSWORD_RESET_REQUEST = 'PASSWORD_RESET_REQUEST',
   PASSWORD_RESET_SUCCESS = 'PASSWORD_RESET_SUCCESS',
+  PASSWORD_RESET = 'PASSWORD_RESET',
   PROFILE_UPDATE = 'PROFILE_UPDATE',
   SESSION_REVOKE = 'SESSION_REVOKE',
+  SESSION_REFRESH = 'SESSION_REFRESH',
   REGISTER = 'REGISTER',
 }
 
@@ -20,7 +22,7 @@ export enum AuditStatus {
 }
 
 interface LogOptions {
-  userId: string;
+  userId?: string;
   tenantId: string;
   action: AuditAction;
   status: AuditStatus;
