@@ -55,7 +55,7 @@ export function LoginModal() {
                 type={showPassword ? 'text' : 'password'}
                 required
                 className="h-full min-w-0 flex-1 bg-transparent px-4 text-sm font-medium outline-none placeholder:text-muted-foreground"
-                placeholder="********"
+                placeholder={t('passwordPlaceholder')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />

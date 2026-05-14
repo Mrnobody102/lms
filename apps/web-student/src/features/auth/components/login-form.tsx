@@ -71,7 +71,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
               setPassword(e.target.value);
               if (error) clearError();
             }}
-            placeholder="********"
+            placeholder={t('auth.passwordPlaceholder')}
             className="pl-10 pr-12"
           />
           <button

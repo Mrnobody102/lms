@@ -95,7 +95,10 @@ export class UserService {
     // Update password
     await this.prisma.user.update({
       where: { id: userId },
-      data: { password: hashedPassword },
+      data: {
+        password: hashedPassword,
+        tokenVersion: { increment: 1 },
+      },
     });
 
     return { message: 'Password changed successfully' };

@@ -95,6 +95,7 @@ model User {
   role             Role                 @default(STUDENT)
   isActive         Boolean              @default(true)
   deletedAt        DateTime?
+  tokenVersion     Int                  @default(0)
   tenantId         String
   tenant           Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   progress         UserLessonProgress[]

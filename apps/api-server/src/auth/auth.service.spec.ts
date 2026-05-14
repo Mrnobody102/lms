@@ -131,6 +131,7 @@ describe('AuthService', () => {
         email: 'student@example.com',
         role: 'STUDENT',
         tenantId: 'tenant-1',
+        tokenVersion: 0,
       });
       expect(response.cookie).toHaveBeenCalledWith(
         'access_token',
@@ -330,6 +331,7 @@ describe('AuthService', () => {
         email: 'student@example.com',
         role: 'STUDENT',
         tenantId: 'tenant-1',
+        tokenVersion: 0,
       });
       expect(response.cookie).toHaveBeenCalledWith(
         'access_token',
@@ -359,6 +361,7 @@ describe('AuthService', () => {
         }),
       });
       expect(result.user).not.toHaveProperty('password');
+      expect(result.user).not.toHaveProperty('tokenVersion');
     });
   });
 

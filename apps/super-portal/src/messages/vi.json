@@ -11,7 +11,10 @@
     },
     "stats": {
       "totalTenants": "Tổng số đối tác",
-      "active": "Đang hoạt động"
+      "active": "Đang hoạt động",
+      "databaseQueries": "Truy vấn cơ sở dữ liệu / giây",
+      "serverHealth": "Tình trạng máy chủ",
+      "allSystemsOperational": "Mọi hệ thống đang hoạt động ổn định"
     },
     "tenants": {
       "list": "Danh sách Đối tác",
@@ -93,6 +96,7 @@
     "email": "Email",
     "emailPlaceholder": "admin@example.com",
     "password": "Mật khẩu",
+    "passwordPlaceholder": "Tối thiểu 8 ký tự",
     "submitting": "Đang đăng nhập...",
     "welcome": "Chào mừng quay lại",
     "loginError": "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.",

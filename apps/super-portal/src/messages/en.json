@@ -11,7 +11,10 @@
     },
     "stats": {
       "totalTenants": "Total Active Tenants",
-      "active": "Active"
+      "active": "Active",
+      "databaseQueries": "Database queries / sec",
+      "serverHealth": "Server health",
+      "allSystemsOperational": "All systems operational"
     },
     "tenants": {
       "list": "Tenant List",
@@ -93,6 +96,7 @@
     "email": "Email",
     "emailPlaceholder": "admin@example.com",
     "password": "Password",
+    "passwordPlaceholder": "At least 8 characters",
     "submitting": "Logging in...",
     "welcome": "Welcome back",
     "loginError": "Login failed. Please check your credentials.",

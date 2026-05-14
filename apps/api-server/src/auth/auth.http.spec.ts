@@ -48,6 +48,7 @@ describe('Auth HTTP flow', () => {
     role: 'STUDENT',
     isActive: true,
     tenantId: 'tenant-1',
+    tokenVersion: 0,
     createdAt: new Date('2026-04-21T00:00:00.000Z'),
     updatedAt: new Date('2026-04-21T00:00:00.000Z'),
     deletedAt: null,
@@ -70,6 +71,7 @@ describe('Auth HTTP flow', () => {
             role: currentUser.role,
             isActive: currentUser.isActive,
             tenantId: currentUser.tenantId,
+            tokenVersion: currentUser.tokenVersion,
             createdAt: currentUser.createdAt,
             updatedAt: currentUser.updatedAt,
             tenant: {
@@ -110,6 +112,7 @@ describe('Auth HTTP flow', () => {
                     role: currentUser.role,
                     isActive: currentUser.isActive,
                     tenantId: currentUser.tenantId,
+                    tokenVersion: currentUser.tokenVersion,
                     createdAt: currentUser.createdAt,
                     updatedAt: currentUser.updatedAt,
                     tenant: {
@@ -128,7 +131,34 @@ describe('Auth HTTP flow', () => {
             },
           ),
         create: vi.fn(),
-        update: vi.fn(),
+        update: vi
+          .fn()
+          .mockImplementation(
+            ({ data }: { data: { password?: string; tokenVersion?: { increment?: number } } }) => {
+              if (typeof data.password === 'string') {
+                currentUser.password = data.password;
+              }
+
+              const tokenVersionIncrement = data.tokenVersion?.increment ?? 0;
+              if (tokenVersionIncrement > 0) {
+                currentUser.tokenVersion += tokenVersionIncrement;
+              }
+
+              return Promise.resolve({
+                id: currentUser.id,
+                email: currentUser.email,
+                fullName: currentUser.fullName,
+                phoneNumber: currentUser.phoneNumber,
+                avatarUrl: currentUser.avatarUrl,
+                role: currentUser.role,
+                isActive: currentUser.isActive,
+                tenantId: currentUser.tenantId,
+                tokenVersion: currentUser.tokenVersion,
+                createdAt: currentUser.createdAt,
+                updatedAt: currentUser.updatedAt,
+              });
+            },
+          ),
       },
       tenant: {
         findFirst: vi.fn().mockImplementation(({ where }: { where: Record<string, unknown> }) => {
@@ -302,6 +332,28 @@ describe('Auth HTTP flow', () => {
     expect(logoutResponse.headers['set-cookie']).toEqual(
       expect.arrayContaining([expect.stringContaining('access_token=')]),
     );
+
+    await agent.get('/users/me').set('x-tenant-id', 'tenant-1').expect(401);
+  });
+
+  it('should invalidate the old session after password change', async () => {
+    await agent
+      .post('/auth/login')
+      .set('x-tenant-id', 'tenant-1')
+      .send({
+        email: 'student@example.com',
+        password: 'Student@123',
+      })
+      .expect(200);
+
+    await agent
+      .put('/users/change-password')
+      .set('x-tenant-id', 'tenant-1')
+      .send({
+        currentPassword: 'Student@123',
+        newPassword: 'NewPassword123!',
+      })
+      .expect(200);
 
     await agent.get('/users/me').set('x-tenant-id', 'tenant-1').expect(401);
   });

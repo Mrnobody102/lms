@@ -15,6 +15,7 @@
       "email": "Email",
       "emailPlaceholder": "name@center.example",
       "password": "Password",
+      "passwordPlaceholder": "At least 8 characters",
       "loginButton": "Login",
       "forgotPassword": "Forgot password?",
       "adminPortal": "Admin Portal",

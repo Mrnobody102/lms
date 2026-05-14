@@ -1,4 +1,5 @@
 import { Controller, Get, Put, Body, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -35,6 +36,7 @@ export class UserController {
   }
 
   @Put('change-password')
+  @Throttle({ auth: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: "Change current user's password" })
   @ApiResponse({ status: 200, description: 'Password changed successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })

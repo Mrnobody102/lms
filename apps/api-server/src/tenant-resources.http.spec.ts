@@ -86,6 +86,7 @@ describe('Tenant resource HTTP flow', () => {
     role: Role.STUDENT,
     isActive: true,
     tenantId: tenantOneId,
+    tokenVersion: 0,
     createdAt: new Date('2026-04-21T00:00:00.000Z'),
     updatedAt: new Date('2026-04-21T00:00:00.000Z'),
     deletedAt: null,
@@ -226,6 +227,7 @@ describe('Tenant resource HTTP flow', () => {
             role: currentUser.role,
             isActive: currentUser.isActive,
             tenantId: currentUser.tenantId,
+            tokenVersion: currentUser.tokenVersion,
             createdAt: currentUser.createdAt,
             updatedAt: currentUser.updatedAt,
             tenant: {
@@ -244,6 +246,7 @@ describe('Tenant resource HTTP flow', () => {
               role: currentUser.role,
               isActive: currentUser.isActive,
               tenantId: currentUser.tenantId,
+              tokenVersion: currentUser.tokenVersion,
               createdAt: currentUser.createdAt,
               updatedAt: currentUser.updatedAt,
               tenant: {

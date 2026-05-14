@@ -10,6 +10,7 @@ export interface JwtPayload {
   email: string;
   role: string;
   tenantId: string;
+  tokenVersion?: number;
 }
 
 @Injectable()
@@ -47,6 +48,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         role: true,
         isActive: true,
         tenantId: true,
+        tokenVersion: true,
         createdAt: true,
         updatedAt: true,
         tenant: {
@@ -65,7 +67,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Token tenant mismatch');
     }
 
-    const { tenant: _tenant, ...safeUser } = user;
+    if ((payload.tokenVersion ?? 0) !== user.tokenVersion) {
+      throw new UnauthorizedException('Token has been revoked');
+    }
+
+    const { tenant: _tenant, tokenVersion: _tokenVersion, ...safeUser } = user;
     return safeUser;
   }
 }

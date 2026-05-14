@@ -59,7 +59,7 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(registerDto.password, 12);
 
     try {
-      const user = await this.prisma.user.create({
+      const createdUser = await this.prisma.user.create({
         data: {
           email,
           password: hashedPassword,
@@ -76,16 +76,19 @@ export class AuthService {
           role: true,
           isActive: true,
           tenantId: true,
+          tokenVersion: true,
           createdAt: true,
           updatedAt: true,
         },
       });
 
-      this.logger.log(`User registered: id=${user.id}, role=${user.role}`);
+      this.logger.log(`User registered: id=${createdUser.id}, role=${createdUser.role}`);
 
-      const token = this.generateToken(user);
+      const token = this.generateToken(createdUser);
       this.setAuthCookie(res, token);
       this.setCsrfCookie(res);
+
+      const { tokenVersion: _tokenVersion, ...user } = createdUser;
 
       return {
         user,
@@ -124,6 +127,20 @@ export class AuthService {
         tenantId,
         deletedAt: null,
       },
+      select: {
+        id: true,
+        email: true,
+        password: true,
+        fullName: true,
+        phoneNumber: true,
+        avatarUrl: true,
+        role: true,
+        isActive: true,
+        tenantId: true,
+        tokenVersion: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
 
     if (!user) {
@@ -149,7 +166,7 @@ export class AuthService {
     this.setAuthCookie(res, token);
     this.setCsrfCookie(res);
 
-    const { password: _password, ...userWithoutPassword } = user;
+    const { password: _password, tokenVersion: _tokenVersion, ...userWithoutPassword } = user;
 
     return {
       user: userWithoutPassword,
@@ -166,12 +183,19 @@ export class AuthService {
     };
   }
 
-  private generateToken(user: { id: string; email: string; role: string; tenantId: string }) {
+  private generateToken(user: {
+    id: string;
+    email: string;
+    role: string;
+    tenantId: string;
+    tokenVersion?: number;
+  }) {
     const payload = {
       sub: user.id,
       email: user.email,
       role: user.role,
       tenantId: user.tenantId,
+      tokenVersion: user.tokenVersion ?? 0,
     };
 
     return this.jwtService.sign(payload);

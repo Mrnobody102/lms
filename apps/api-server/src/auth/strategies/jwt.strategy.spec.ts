@@ -35,6 +35,7 @@ describe('JwtStrategy', () => {
       role: 'STUDENT',
       isActive: false,
       tenantId: 'tenant-1',
+      tokenVersion: 0,
       createdAt: new Date('2026-04-21T00:00:00.000Z'),
       updatedAt: new Date('2026-04-21T00:00:00.000Z'),
       tenant: {
@@ -48,6 +49,7 @@ describe('JwtStrategy', () => {
         email: 'student@example.com',
         role: 'STUDENT',
         tenantId: 'tenant-1',
+        tokenVersion: 0,
       }),
     ).rejects.toBeInstanceOf(UnauthorizedException);
   });
@@ -62,6 +64,7 @@ describe('JwtStrategy', () => {
       role: 'STUDENT',
       isActive: true,
       tenantId: 'tenant-2',
+      tokenVersion: 0,
       createdAt: new Date('2026-04-21T00:00:00.000Z'),
       updatedAt: new Date('2026-04-21T00:00:00.000Z'),
       tenant: {
@@ -75,6 +78,36 @@ describe('JwtStrategy', () => {
         email: 'student@example.com',
         role: 'STUDENT',
         tenantId: 'tenant-1',
+        tokenVersion: 0,
+      }),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+
+  it('should reject when the token version is stale', async () => {
+    prisma.user.findFirst.mockResolvedValue({
+      id: 'user-1',
+      email: 'student@example.com',
+      fullName: 'Student User',
+      phoneNumber: null,
+      avatarUrl: null,
+      role: 'STUDENT',
+      isActive: true,
+      tenantId: 'tenant-1',
+      tokenVersion: 2,
+      createdAt: new Date('2026-04-21T00:00:00.000Z'),
+      updatedAt: new Date('2026-04-21T00:00:00.000Z'),
+      tenant: {
+        isActive: true,
+      },
+    });
+
+    await expect(
+      strategy.validate({
+        sub: 'user-1',
+        email: 'student@example.com',
+        role: 'STUDENT',
+        tenantId: 'tenant-1',
+        tokenVersion: 1,
       }),
     ).rejects.toBeInstanceOf(UnauthorizedException);
   });
@@ -89,6 +122,7 @@ describe('JwtStrategy', () => {
       role: 'STUDENT',
       isActive: true,
       tenantId: 'tenant-1',
+      tokenVersion: 0,
       createdAt: new Date('2026-04-21T00:00:00.000Z'),
       updatedAt: new Date('2026-04-21T00:00:00.000Z'),
       tenant: {
@@ -101,6 +135,7 @@ describe('JwtStrategy', () => {
       email: 'student@example.com',
       role: 'STUDENT',
       tenantId: 'tenant-1',
+      tokenVersion: 0,
     } satisfies JwtPayload);
 
     expect(result).toEqual(
@@ -111,5 +146,6 @@ describe('JwtStrategy', () => {
       }),
     );
     expect(result).not.toHaveProperty('tenant');
+    expect(result).not.toHaveProperty('tokenVersion');
   });
 });

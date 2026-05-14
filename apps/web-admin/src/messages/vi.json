@@ -15,6 +15,7 @@
       "email": "Email",
       "emailPlaceholder": "ten@trungtam.example",
       "password": "Mật khẩu",
+      "passwordPlaceholder": "Tối thiểu 8 ký tự",
       "loginButton": "Đăng nhập",
       "forgotPassword": "Quên mật khẩu?",
       "adminPortal": "Admin Portal",
