@@ -613,6 +613,8 @@ export default function AdminPracticePage() {
                         <option value="all">{t('allQuestionTypes')}</option>
                         <option value="MULTIPLE_CHOICE">{t('multipleChoice')}</option>
                         <option value="FILL_BLANK">{t('fillBlank')}</option>
+                        <option value="MATCHING">{t('matching')}</option>
+                        <option value="ORDERING">{t('ordering')}</option>
                         <option value="AI_EVALUATED_AUDIO">{t('aiEvaluatedAudio')}</option>
                         <option value="AI_EVALUATED_TEXT">{t('aiEvaluatedText')}</option>
                       </select>
@@ -1025,6 +1027,8 @@ export default function AdminPracticePage() {
                         >
                           <option value="MULTIPLE_CHOICE">{t('multipleChoice')}</option>
                           <option value="FILL_BLANK">{t('fillBlank')}</option>
+                          <option value="MATCHING">{t('matching')}</option>
+                          <option value="ORDERING">{t('ordering')}</option>
                           <option value="AI_EVALUATED_AUDIO">{t('aiEvaluatedAudio')}</option>
                           <option value="AI_EVALUATED_TEXT">{t('aiEvaluatedText')}</option>
                         </select>
@@ -1056,6 +1060,30 @@ export default function AdminPracticePage() {
                         </div>
                       )}
 
+                      {questionType === 'MATCHING' && (
+                        <div className="space-y-1.5">
+                          <Label>{t('matchingOptions')}</Label>
+                          <textarea
+                            value={optionsText}
+                            onChange={(event) => setOptionsText(event.target.value)}
+                            className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                            placeholder={t('matchingOptionsPlaceholder')}
+                          />
+                        </div>
+                      )}
+
+                      {questionType === 'ORDERING' && (
+                        <div className="space-y-1.5">
+                          <Label>{t('orderingOptions')}</Label>
+                          <textarea
+                            value={optionsText}
+                            onChange={(event) => setOptionsText(event.target.value)}
+                            className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                            placeholder={t('orderingOptionsPlaceholder')}
+                          />
+                        </div>
+                      )}
+
                       <div className="space-y-1.5">
                         <Label>{t('correctAnswer')}</Label>
                         <Input
@@ -1064,7 +1092,11 @@ export default function AdminPracticePage() {
                           placeholder={
                             questionType === 'MULTIPLE_CHOICE'
                               ? t('correctAnswerIndexPlaceholder')
-                              : t('correctAnswerTextPlaceholder')
+                              : questionType === 'MATCHING'
+                                ? t('matchingAnswerPlaceholder')
+                                : questionType === 'ORDERING'
+                                  ? t('orderingAnswerPlaceholder')
+                                  : t('correctAnswerTextPlaceholder')
                           }
                         />
                       </div>
@@ -1316,6 +1348,30 @@ function DeleteConfirmDialog({
   );
 }
 
+function parseMatchingOptions(text: string) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+function parseMatchingAnswer(text: string) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+function parseOrderingAnswer(text: string) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
 function buildPracticeQuestionDraft(params: {
   courseId: string;
   questionType: PracticeQuestionType;
@@ -1329,23 +1385,46 @@ function buildPracticeQuestionDraft(params: {
   const hasCorrectAnswer = params.correctAnswer.trim().length > 0;
   const correctAnswerIndex = Number(params.correctAnswer);
   const correctAnswerIsNumeric = hasCorrectAnswer && Number.isInteger(correctAnswerIndex);
-  const correctAnswerInRange =
-    params.questionType === 'MULTIPLE_CHOICE'
-      ? correctAnswerIsNumeric && correctAnswerIndex >= 0 && correctAnswerIndex < options.length
-      : hasCorrectAnswer;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let parsedOptions: any = options;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let finalCorrectAnswer: any = params.correctAnswer.trim();
+  let correctAnswerValid = false;
+  let optionsValid = true;
+
+  if (params.questionType === 'MULTIPLE_CHOICE') {
+    correctAnswerValid =
+      correctAnswerIsNumeric && correctAnswerIndex >= 0 && correctAnswerIndex < options.length;
+    finalCorrectAnswer = correctAnswerIndex;
+    optionsValid = options.length >= 2;
+  } else if (params.questionType === 'MATCHING') {
+    parsedOptions = parseMatchingOptions(params.optionsText);
+    optionsValid =
+      parsedOptions && Array.isArray(parsedOptions.left) && Array.isArray(parsedOptions.right);
+    finalCorrectAnswer = parseMatchingAnswer(params.correctAnswer);
+    correctAnswerValid = finalCorrectAnswer && typeof finalCorrectAnswer === 'object';
+  } else if (params.questionType === 'ORDERING') {
+    parsedOptions = options;
+    optionsValid = options.length >= 2;
+    finalCorrectAnswer = parseOrderingAnswer(params.correctAnswer);
+    correctAnswerValid = Array.isArray(finalCorrectAnswer);
+  } else {
+    correctAnswerValid = hasCorrectAnswer;
+    parsedOptions = undefined;
+  }
 
   const checks = {
     course: Boolean(params.courseId),
     prompt: params.prompt.trim().length > 0,
-    options: params.questionType !== 'MULTIPLE_CHOICE' || options.length >= 2,
-    correctAnswer: correctAnswerInRange,
+    options: optionsValid,
+    correctAnswer: correctAnswerValid,
   };
 
   return {
-    options,
+    options: parsedOptions,
     skillTags,
-    correctAnswerValue:
-      params.questionType === 'MULTIPLE_CHOICE' ? correctAnswerIndex : params.correctAnswer.trim(),
+    correctAnswerValue: finalCorrectAnswer,
     correctAnswerIsNumeric,
     checks,
     isReady: Object.values(checks).every(Boolean),
@@ -1377,6 +1456,8 @@ function getPracticeQuestionTypeLabel(
 ) {
   if (type === 'MULTIPLE_CHOICE') return t('multipleChoice');
   if (type === 'FILL_BLANK') return t('fillBlank');
+  if (type === 'MATCHING') return t('matching');
+  if (type === 'ORDERING') return t('ordering');
   if (type === 'AI_EVALUATED_AUDIO') return t('aiEvaluatedAudio');
   return t('aiEvaluatedText');
 }

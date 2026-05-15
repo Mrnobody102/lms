@@ -125,9 +125,13 @@ export default function PracticeAttemptReviewPage() {
                             ? t('practice.multipleChoice')
                             : answer.question.type === 'FILL_BLANK'
                               ? t('practice.fillBlank')
-                              : answer.question.type === 'AI_EVALUATED_AUDIO'
-                                ? t('practice.aiAudio')
-                                : t('practice.aiText')}
+                              : answer.question.type === 'MATCHING'
+                                ? t('practice.matching')
+                                : answer.question.type === 'ORDERING'
+                                  ? t('practice.ordering')
+                                  : answer.question.type === 'AI_EVALUATED_AUDIO'
+                                    ? t('practice.aiAudio')
+                                    : t('practice.aiText')}
                         </span>
                         {answer.question.skillTags.map((tag) => (
                           <span
@@ -207,6 +211,21 @@ function formatPracticeAnswer(
       ? question.options.map((item) => String(item))
       : [];
     return options[value] ?? String(value);
+  }
+
+  if (question.type === 'MATCHING' || question.type === 'ORDERING') {
+    try {
+      if (typeof value === 'string') {
+        const parsed = JSON.parse(value);
+        if (typeof parsed === 'object') {
+          return JSON.stringify(parsed, null, 2);
+        }
+      } else if (typeof value === 'object') {
+        return JSON.stringify(value, null, 2);
+      }
+    } catch {
+      // fallback
+    }
   }
 
   return String(value ?? '');

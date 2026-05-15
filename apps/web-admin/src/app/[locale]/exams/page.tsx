@@ -1095,7 +1095,14 @@ function QuestionDraftCard({
           >
             <option value="MULTIPLE_CHOICE">{t('multipleChoice')}</option>
             <option value="FILL_BLANK">{t('fillBlank')}</option>
+            <option value="MATCHING">{t('matching')}</option>
+            <option value="ORDERING">{t('ordering')}</option>
+            <option value="AI_EVALUATED_AUDIO">{t('aiEvaluatedAudio')}</option>
+            <option value="AI_EVALUATED_TEXT">{t('aiEvaluatedText')}</option>
           </select>
+          {(draft.type === 'AI_EVALUATED_AUDIO' || draft.type === 'AI_EVALUATED_TEXT') && (
+            <p className="text-xs text-muted-foreground">{t('aiQuestionHint')}</p>
+          )}
         </div>
 
         {draft.type === 'MULTIPLE_CHOICE' && (
@@ -1110,6 +1117,30 @@ function QuestionDraftCard({
           </div>
         )}
 
+        {draft.type === 'MATCHING' && (
+          <div className="space-y-1.5">
+            <Label>{t('matchingOptions')}</Label>
+            <textarea
+              value={draft.optionsText}
+              onChange={(event) => onChange({ optionsText: event.target.value })}
+              className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              placeholder={t('matchingOptionsPlaceholder')}
+            />
+          </div>
+        )}
+
+        {draft.type === 'ORDERING' && (
+          <div className="space-y-1.5">
+            <Label>{t('orderingOptions')}</Label>
+            <textarea
+              value={draft.optionsText}
+              onChange={(event) => onChange({ optionsText: event.target.value })}
+              className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              placeholder={t('orderingOptionsPlaceholder')}
+            />
+          </div>
+        )}
+
         <div className="grid grid-cols-[1fr_90px] gap-3">
           <div className="space-y-1.5">
             <Label>{t('correctAnswer')}</Label>
@@ -1119,7 +1150,11 @@ function QuestionDraftCard({
               placeholder={
                 draft.type === 'MULTIPLE_CHOICE'
                   ? t('correctAnswerIndexPlaceholder')
-                  : t('correctAnswerTextPlaceholder')
+                  : draft.type === 'MATCHING'
+                    ? t('matchingAnswerPlaceholder')
+                    : draft.type === 'ORDERING'
+                      ? t('orderingAnswerPlaceholder')
+                      : t('correctAnswerTextPlaceholder')
               }
             />
           </div>
@@ -1188,6 +1223,30 @@ function buildExamDraft(params: {
   };
 }
 
+function parseMatchingOptions(text: string) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+function parseMatchingAnswer(text: string) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+function parseOrderingAnswer(text: string) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
 function buildExamQuestionPayload(draft: ExamQuestionDraft) {
   const options = parseList(draft.optionsText);
   const points = parsePositiveNumber(draft.points);
@@ -1195,24 +1254,45 @@ function buildExamQuestionPayload(draft: ExamQuestionDraft) {
   const hasCorrectAnswer = draft.correctAnswer.trim().length > 0;
   const correctAnswerIndex = Number(draft.correctAnswer);
   const correctAnswerIsNumeric = hasCorrectAnswer && Number.isInteger(correctAnswerIndex);
-  const correctAnswerInRange =
-    draft.type === 'MULTIPLE_CHOICE'
-      ? correctAnswerIsNumeric && correctAnswerIndex >= 0 && correctAnswerIndex < options.length
-      : hasCorrectAnswer;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let parsedOptions: any = options;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let finalCorrectAnswer: any = draft.correctAnswer.trim();
+  let correctAnswerValid = false;
+  let optionsValid = true;
+
+  if (draft.type === 'MULTIPLE_CHOICE') {
+    correctAnswerValid =
+      correctAnswerIsNumeric && correctAnswerIndex >= 0 && correctAnswerIndex < options.length;
+    finalCorrectAnswer = correctAnswerIndex;
+    optionsValid = options.length >= 2;
+  } else if (draft.type === 'MATCHING') {
+    parsedOptions = parseMatchingOptions(draft.optionsText);
+    optionsValid =
+      parsedOptions && Array.isArray(parsedOptions.left) && Array.isArray(parsedOptions.right);
+    finalCorrectAnswer = parseMatchingAnswer(draft.correctAnswer);
+    correctAnswerValid = finalCorrectAnswer && typeof finalCorrectAnswer === 'object';
+  } else if (draft.type === 'ORDERING') {
+    parsedOptions = options;
+    optionsValid = options.length >= 2;
+    finalCorrectAnswer = parseOrderingAnswer(draft.correctAnswer);
+    correctAnswerValid = Array.isArray(finalCorrectAnswer);
+  } else {
+    correctAnswerValid = hasCorrectAnswer;
+    parsedOptions = undefined;
+  }
+
   const valid =
-    draft.prompt.trim().length > 0 &&
-    (draft.type !== 'MULTIPLE_CHOICE' || options.length >= 2) &&
-    correctAnswerInRange &&
-    points !== null;
+    draft.prompt.trim().length > 0 && optionsValid && correctAnswerValid && points !== null;
 
   return {
     valid,
     payload: {
       type: draft.type,
       prompt: draft.prompt.trim(),
-      options: draft.type === 'MULTIPLE_CHOICE' ? options : undefined,
-      correctAnswer:
-        draft.type === 'MULTIPLE_CHOICE' ? correctAnswerIndex : draft.correctAnswer.trim(),
+      options: parsedOptions,
+      correctAnswer: finalCorrectAnswer,
       explanation: draft.explanation.trim() || undefined,
       points: points ?? 1,
       skillTags,
@@ -1254,14 +1334,20 @@ function hydrateDraftFromExam(
 }
 
 function mapExamQuestionToDraft(question: Exam['sections'][number]['questions'][number]) {
+  let optionsText = '';
+  if (question.type === 'MULTIPLE_CHOICE' || question.type === 'ORDERING') {
+    optionsText = Array.isArray(question.options)
+      ? question.options.map((option) => String(option)).join('\n')
+      : '';
+  } else if (question.type === 'MATCHING') {
+    optionsText = JSON.stringify(question.options, null, 2);
+  }
+
   return {
     ...createExamQuestionDraft(question.type),
     type: question.type,
     prompt: question.prompt,
-    optionsText:
-      question.type === 'MULTIPLE_CHOICE' && Array.isArray(question.options)
-        ? question.options.map((option) => String(option)).join('\n')
-        : '',
+    optionsText,
     correctAnswer: formatDraftValue(question.correctAnswer),
     points: String(question.points ?? 1),
     skillTags: question.skillTags.join(', '),

@@ -164,31 +164,39 @@ export default function CourseEditorPage() {
     }
   };
 
-  const handleReorderLesson = async (lessonId: string, direction: 'up' | 'down') => {
-    const lesson = lessons.find((item) => item.id === lessonId);
+  const handleReorderLesson = async (activeId: string, overId: string) => {
+    if (activeId === overId) return;
+
+    const lesson = lessons.find((item) => item.id === activeId);
     if (!lesson) return;
 
     const siblings = lessonsForUnit(lessons, lesson.unitId).sort((a, b) => a.order - b.order);
-    const index = siblings.findIndex((item) => item.id === lessonId);
-    const nextIndex = direction === 'up' ? index - 1 : index + 1;
+    const oldIndex = siblings.findIndex((item) => item.id === activeId);
+    const newIndex = siblings.findIndex((item) => item.id === overId);
 
-    if (index < 0 || nextIndex < 0 || nextIndex >= siblings.length) return;
+    if (oldIndex < 0 || newIndex < 0) return;
 
-    const target = siblings[nextIndex];
+    // To prevent rapid successive updates causing a race condition in optimistic UI,
+    // we'll send a bulk update or sequentially update the affected items.
+    // For simplicity, we can update the order of all items between oldIndex and newIndex.
+    const newOrder = [...siblings];
+    const [movedItem] = newOrder.splice(oldIndex, 1);
+    newOrder.splice(newIndex, 0, movedItem);
 
     try {
-      await Promise.all([
-        updateLesson.mutateAsync({
-          id: lesson.id,
-          courseId,
-          data: { order: target.order },
+      // Reassign orders based on new index
+      await Promise.all(
+        newOrder.map((item, index) => {
+          if (item.order !== index) {
+            return updateLesson.mutateAsync({
+              id: item.id,
+              courseId,
+              data: { order: index },
+            });
+          }
+          return Promise.resolve();
         }),
-        updateLesson.mutateAsync({
-          id: target.id,
-          courseId,
-          data: { order: lesson.order },
-        }),
-      ]);
+      );
       showMsg('success', 'lessonReordered');
     } catch {
       showMsg('error', 'lessonReorderError');
@@ -350,30 +358,35 @@ export default function CourseEditorPage() {
     }
   };
 
-  const handleReorderUnit = async (unitId: string, direction: 'up' | 'down') => {
-    const unit = units.find((item) => item.id === unitId);
+  const handleReorderUnit = async (activeId: string, overId: string) => {
+    if (activeId === overId) return;
+
+    const unit = units.find((item) => item.id === activeId);
     if (!unit) return;
 
     const orderedUnits = [...units].sort((a, b) => a.order - b.order);
-    const index = orderedUnits.findIndex((item) => item.id === unitId);
-    const nextIndex = direction === 'up' ? index - 1 : index + 1;
-    if (index < 0 || nextIndex < 0 || nextIndex >= orderedUnits.length) return;
+    const oldIndex = orderedUnits.findIndex((item) => item.id === activeId);
+    const newIndex = orderedUnits.findIndex((item) => item.id === overId);
 
-    const target = orderedUnits[nextIndex];
+    if (oldIndex < 0 || newIndex < 0) return;
+
+    const newOrder = [...orderedUnits];
+    const [movedItem] = newOrder.splice(oldIndex, 1);
+    newOrder.splice(newIndex, 0, movedItem);
 
     try {
-      await Promise.all([
-        updateCourseUnit.mutateAsync({
-          courseId,
-          unitId: unit.id,
-          data: { order: target.order },
+      await Promise.all(
+        newOrder.map((item, index) => {
+          if (item.order !== index) {
+            return updateCourseUnit.mutateAsync({
+              courseId,
+              unitId: item.id,
+              data: { order: index },
+            });
+          }
+          return Promise.resolve();
         }),
-        updateCourseUnit.mutateAsync({
-          courseId,
-          unitId: target.id,
-          data: { order: unit.order },
-        }),
-      ]);
+      );
       showMsg('success', 'unitReordered');
     } catch {
       showMsg('error', 'unitReorderError');

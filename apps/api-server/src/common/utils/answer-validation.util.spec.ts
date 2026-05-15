@@ -55,4 +55,66 @@ describe('answer validation utilities', () => {
       }),
     ).toBe(longAnswer);
   });
+
+  it('should normalize matching question payloads', () => {
+    expect(
+      normalizeQuestionPayload({
+        type: PracticeQuestionType.MATCHING,
+        options: { left: ['A', 'B'], right: ['1', '2'] },
+        correctAnswer: { A: '1', B: '2' },
+      }),
+    ).toEqual({
+      options: { left: ['A', 'B'], right: ['1', '2'] },
+      correctAnswer: { A: '1', B: '2' },
+    });
+  });
+
+  it('should correctly grade matching answers', () => {
+    expect(
+      isNormalizedAnswerCorrect({
+        type: PracticeQuestionType.MATCHING,
+        answer: { A: '1', B: '2' },
+        correctAnswer: { A: '1', B: '2' },
+      }),
+    ).toBe(true);
+
+    expect(
+      isNormalizedAnswerCorrect({
+        type: PracticeQuestionType.MATCHING,
+        answer: { A: '2', B: '1' },
+        correctAnswer: { A: '1', B: '2' },
+      }),
+    ).toBe(false);
+  });
+
+  it('should normalize ordering question payloads', () => {
+    expect(
+      normalizeQuestionPayload({
+        type: PracticeQuestionType.ORDERING,
+        options: ['Step 1', 'Step 2', 'Step 3'],
+        correctAnswer: ['Step 2', 'Step 1', 'Step 3'],
+      }),
+    ).toEqual({
+      options: ['Step 1', 'Step 2', 'Step 3'],
+      correctAnswer: ['Step 2', 'Step 1', 'Step 3'],
+    });
+  });
+
+  it('should correctly grade ordering answers', () => {
+    expect(
+      isNormalizedAnswerCorrect({
+        type: PracticeQuestionType.ORDERING,
+        answer: ['Step 2', 'Step 1', 'Step 3'],
+        correctAnswer: ['Step 2', 'Step 1', 'Step 3'],
+      }),
+    ).toBe(true);
+
+    expect(
+      isNormalizedAnswerCorrect({
+        type: PracticeQuestionType.ORDERING,
+        answer: ['Step 1', 'Step 2', 'Step 3'],
+        correctAnswer: ['Step 2', 'Step 1', 'Step 3'],
+      }),
+    ).toBe(false);
+  });
 });

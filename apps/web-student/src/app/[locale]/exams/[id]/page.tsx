@@ -14,6 +14,9 @@ import {
   ExamQuestion,
 } from '@/lib/exam-api';
 import { Link } from '@/navigation';
+import { MatchingQuestion } from '@/components/lessons/matching-question';
+import { OrderingQuestion } from '@/components/lessons/ordering-question';
+import { AIEvaluationInput } from '@/components/lessons/ai-evaluation-input';
 
 export default function ExamAttemptPage() {
   const t = useTranslations('Student');
@@ -315,7 +318,17 @@ function QuestionCard({
         <div className="min-w-0 flex-1">
           <div className="mb-2 flex flex-wrap gap-2">
             <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
-              {question.type === 'MULTIPLE_CHOICE' ? t('exam.multipleChoice') : t('exam.fillBlank')}
+              {question.type === 'MULTIPLE_CHOICE'
+                ? t('exam.multipleChoice')
+                : question.type === 'FILL_BLANK'
+                  ? t('exam.fillBlank')
+                  : question.type === 'MATCHING'
+                    ? t('exam.matching')
+                    : question.type === 'ORDERING'
+                      ? t('exam.ordering')
+                      : question.type === 'AI_EVALUATED_AUDIO'
+                        ? t('exam.aiAudio')
+                        : t('exam.aiText')}
             </span>
             <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
               {t('exam.pointsValue', { points: question.points })}
@@ -352,13 +365,30 @@ function QuestionCard({
             </label>
           ))}
         </div>
-      ) : (
+      ) : question.type === 'MATCHING' ? (
+        <MatchingQuestion
+          options={question.options as { left: string[]; right: string[] }}
+          value={value}
+          disabled={disabled}
+          onChange={onChange}
+        />
+      ) : question.type === 'ORDERING' ? (
+        <OrderingQuestion options={options} value={value} disabled={disabled} onChange={onChange} />
+      ) : question.type === 'FILL_BLANK' ? (
         <input
           value={value}
           disabled={disabled}
           onChange={(event) => onChange(event.target.value)}
           placeholder={t('exam.fillBlankPlaceholder')}
           className="h-11 w-full rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+        />
+      ) : (
+        <AIEvaluationInput
+          type={question.type as 'AI_EVALUATED_AUDIO' | 'AI_EVALUATED_TEXT'}
+          value={value}
+          disabled={disabled}
+          onChange={onChange}
+          aiFeedback={feedback?.aiFeedback}
         />
       )}
 
@@ -465,6 +495,21 @@ function getOptions(value: unknown) {
 function formatAnswer(question: ExamQuestion | undefined, value: unknown) {
   if (question?.type === 'MULTIPLE_CHOICE' && typeof value === 'number') {
     return getOptions(question.options)[value] ?? String(value);
+  }
+
+  if (question?.type === 'MATCHING' || question?.type === 'ORDERING') {
+    try {
+      if (typeof value === 'string') {
+        const parsed = JSON.parse(value);
+        if (typeof parsed === 'object') {
+          return JSON.stringify(parsed, null, 2);
+        }
+      } else if (typeof value === 'object') {
+        return JSON.stringify(value, null, 2);
+      }
+    } catch {
+      // fallback
+    }
   }
 
   return String(value ?? '');

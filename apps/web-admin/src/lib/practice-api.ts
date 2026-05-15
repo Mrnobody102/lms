@@ -3,6 +3,8 @@ import api from './api';
 export type PracticeQuestionType =
   | 'MULTIPLE_CHOICE'
   | 'FILL_BLANK'
+  | 'MATCHING'
+  | 'ORDERING'
   | 'AI_EVALUATED_AUDIO'
   | 'AI_EVALUATED_TEXT';
 

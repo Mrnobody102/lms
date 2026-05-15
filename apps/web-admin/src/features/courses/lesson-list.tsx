@@ -17,13 +17,29 @@ import {
   FolderPlus,
   Save,
   X,
-  ChevronUp,
-  ChevronDown,
   Copy,
   ExternalLink,
   Loader2,
+  GripVertical,
 } from 'lucide-react';
 import { Button, Badge, Input } from '@/components/ui';
+
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 function getTypeConfig(t: ReturnType<typeof useTranslations>) {
   return {
@@ -66,8 +82,8 @@ interface LessonListProps {
   onUpdateUnit?: (unitId: string, data: { title?: string; order?: number }) => Promise<boolean>;
   onDeleteUnit?: (unitId: string) => void;
   onDuplicateUnit?: (unit: CourseUnit) => void;
-  onReorderUnit?: (unitId: string, direction: 'up' | 'down') => void;
-  onReorder?: (lessonId: string, direction: 'up' | 'down') => void;
+  onReorderUnit?: (activeId: string, overId: string) => void;
+  onReorder?: (activeId: string, overId: string) => void;
   onDuplicate?: (lesson: Lesson) => void;
   getPreviewUrl?: (lesson: Lesson) => string | null;
 }
@@ -107,10 +123,19 @@ export function LessonList({
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
   const sortedLessons = useMemo(() => [...lessons].sort(sortByOrder), [lessons]);
   const sortedUnits = useMemo(() => [...units].sort(sortByOrder), [units]);
+
   const hasActiveFilters =
     Boolean(lessonSearch.trim()) || lessonTypeFilter !== 'all' || lessonStatusFilter !== 'all';
+
   const filteredLessons = useMemo(() => {
     const search = lessonSearch.trim();
     return sortedLessons.filter((lesson) => {
@@ -124,6 +149,7 @@ export function LessonList({
       return typeMatches && statusMatches && textMatches;
     });
   }, [lessonSearch, lessonStatusFilter, lessonTypeFilter, sortedLessons, t]);
+
   const lessonGroups = useMemo(
     () =>
       sortedUnits
@@ -134,6 +160,7 @@ export function LessonList({
         .filter((group) => !hasActiveFilters || group.lessons.length > 0),
     [filteredLessons, hasActiveFilters, sortedUnits],
   );
+
   const groupedLessonIds = new Set(
     lessonGroups.flatMap((group) => group.lessons.map((lesson) => lesson.id)),
   );
@@ -202,6 +229,13 @@ export function LessonList({
       setConfirmBulkDelete(false);
     } finally {
       setBulkDeleting(false);
+    }
+  };
+
+  const handleUnitDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id && onReorderUnit) {
+      onReorderUnit(active.id.toString(), over.id.toString());
     }
   };
 
@@ -375,146 +409,45 @@ export function LessonList({
         </div>
       ) : (
         <div className="space-y-4">
-          {lessonGroups.map(({ unit, lessons: unitLessons }, unitIndex) => (
-            <section key={unit.id} className="overflow-hidden rounded-lg border">
-              <div className="flex items-center justify-between gap-3 border-b bg-muted/40 px-4 py-3">
-                {editingUnit?.id === unit.id ? (
-                  <div className="flex flex-1 items-center gap-2">
-                    <Input
-                      value={editingUnit.title}
-                      onChange={(event) =>
-                        setEditingUnit({ id: unit.id, title: event.target.value })
-                      }
-                      className="h-9"
-                    />
-                    <Button
-                      size="sm"
-                      onClick={handleUpdateUnit}
-                      disabled={!editingUnit.title.trim()}
-                    >
-                      <Save className="h-4 w-4" />
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => setEditingUnit(null)}>
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <>
-                    <div className="min-w-0">
-                      <h4 className="truncate text-sm font-semibold">{unit.title}</h4>
-                      <p className="text-xs text-muted-foreground">
-                        {t('unitLessonCount', { count: unitLessons.length })}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-1">
-                      {onReorderUnit && (
-                        <>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            disabled={unitIndex === 0}
-                            title={t('moveUp')}
-                            aria-label={t('moveUp')}
-                            onClick={() => onReorderUnit(unit.id, 'up')}
-                          >
-                            <ChevronUp className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            disabled={unitIndex === lessonGroups.length - 1}
-                            title={t('moveDown')}
-                            aria-label={t('moveDown')}
-                            onClick={() => onReorderUnit(unit.id, 'down')}
-                          >
-                            <ChevronDown className="h-4 w-4" />
-                          </Button>
-                        </>
-                      )}
-                      {onDuplicateUnit && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          title={t('duplicateUnit')}
-                          aria-label={t('duplicateUnit')}
-                          onClick={() => onDuplicateUnit(unit)}
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                      )}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => onAddClick(unit.id)}
-                        className="gap-1.5"
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                        {t('newLesson')}
-                      </Button>
-                      {onUpdateUnit && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => setEditingUnit({ id: unit.id, title: unit.title })}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      )}
-                      {onDeleteUnit && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive/70 hover:text-destructive"
-                          onClick={() => setConfirmDeleteUnit(unit.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {confirmDeleteUnit === unit.id && (
-                <div className="flex items-center justify-between gap-3 border-b border-destructive/20 bg-destructive/5 p-3">
-                  <span className="text-sm text-destructive">{t('confirmDeleteUnit')}</span>
-                  <div className="flex shrink-0 gap-2">
-                    <Button size="sm" variant="outline" onClick={() => setConfirmDeleteUnit(null)}>
-                      {t('cancel')}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => {
-                        onDeleteUnit?.(unit.id);
-                        setConfirmDeleteUnit(null);
-                      }}
-                    >
-                      {t('deleteUnit')}
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              <LessonRows
-                lessons={unitLessons}
-                confirmDelete={confirmDelete}
-                setConfirmDelete={setConfirmDelete}
-                selectedLessonIds={selectedLessonIds}
-                onToggleSelection={toggleLessonSelection}
-                onEdit={onEdit}
-                onDelete={onDelete}
-                onReorder={onReorder}
-                onDuplicate={onDuplicate}
-                getPreviewUrl={getPreviewUrl}
-                t={t}
-              />
-            </section>
-          ))}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleUnitDragEnd}
+          >
+            <SortableContext
+              items={lessonGroups.map((g) => g.unit.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {lessonGroups.map(({ unit, lessons: unitLessons }) => (
+                <SortableUnit
+                  key={unit.id}
+                  unit={unit}
+                  unitLessons={unitLessons}
+                  editingUnit={editingUnit}
+                  setEditingUnit={setEditingUnit}
+                  onUpdateUnit={onUpdateUnit}
+                  handleUpdateUnit={handleUpdateUnit}
+                  onAddClick={onAddClick}
+                  onDuplicateUnit={onDuplicateUnit}
+                  onDeleteUnit={onDeleteUnit}
+                  confirmDeleteUnit={confirmDeleteUnit}
+                  setConfirmDeleteUnit={setConfirmDeleteUnit}
+                  t={t}
+                  onReorderUnit={onReorderUnit}
+                  onReorder={onReorder}
+                  confirmDelete={confirmDelete}
+                  setConfirmDelete={setConfirmDelete}
+                  selectedLessonIds={selectedLessonIds}
+                  toggleLessonSelection={toggleLessonSelection}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  onDuplicate={onDuplicate}
+                  getPreviewUrl={getPreviewUrl}
+                  sensors={sensors}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
 
           {ungroupedLessons.length > 0 && (
             <section className="overflow-hidden rounded-lg border border-dashed">
@@ -547,12 +480,202 @@ export function LessonList({
                 onDuplicate={onDuplicate}
                 getPreviewUrl={getPreviewUrl}
                 t={t}
+                sensors={sensors}
               />
             </section>
           )}
         </div>
       )}
     </div>
+  );
+}
+
+interface SortableUnitProps {
+  unit: CourseUnit;
+  unitLessons: Lesson[];
+  editingUnit: { id: string; title: string } | null;
+  setEditingUnit: (unit: { id: string; title: string } | null) => void;
+  onUpdateUnit?: (unitId: string, data: { title?: string; order?: number }) => Promise<boolean>;
+  handleUpdateUnit: () => Promise<void>;
+  onAddClick: (unitId?: string | null) => void;
+  onDuplicateUnit?: (unit: CourseUnit) => void;
+  onDeleteUnit?: (unitId: string) => void;
+  confirmDeleteUnit: string | null;
+  setConfirmDeleteUnit: (id: string | null) => void;
+  t: ReturnType<typeof useTranslations>;
+  onReorderUnit?: (activeId: string, overId: string) => void;
+  onReorder?: (activeId: string, overId: string) => void;
+  confirmDelete: string | null;
+  setConfirmDelete: (id: string | null) => void;
+  selectedLessonIds: string[];
+  toggleLessonSelection: (lessonId: string, checked: boolean) => void;
+  onEdit: (lesson: Lesson) => void;
+  onDelete: (lessonId: string) => void;
+  onDuplicate?: (lesson: Lesson) => void;
+  getPreviewUrl?: (lesson: Lesson) => string | null;
+  sensors: ReturnType<typeof useSensors>;
+}
+
+function SortableUnit({
+  unit,
+  unitLessons,
+  editingUnit,
+  setEditingUnit,
+  onUpdateUnit,
+  handleUpdateUnit,
+  onAddClick,
+  onDuplicateUnit,
+  onDeleteUnit,
+  confirmDeleteUnit,
+  setConfirmDeleteUnit,
+  t,
+  onReorderUnit,
+  onReorder,
+  confirmDelete,
+  setConfirmDelete,
+  selectedLessonIds,
+  toggleLessonSelection,
+  onEdit,
+  onDelete,
+  onDuplicate,
+  getPreviewUrl,
+  sensors,
+}: SortableUnitProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: unit.id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 1 : 0,
+    position: 'relative' as const,
+  };
+
+  return (
+    <section
+      ref={setNodeRef}
+      style={style}
+      className={`overflow-hidden rounded-lg border ${isDragging ? 'shadow-xl ring-2 ring-primary/20 bg-background opacity-90' : ''}`}
+    >
+      <div className="flex items-center justify-between gap-3 border-b bg-muted/40 px-4 py-3">
+        {editingUnit?.id === unit.id ? (
+          <div className="flex flex-1 items-center gap-2">
+            <Input
+              value={editingUnit.title}
+              onChange={(event) => setEditingUnit({ id: unit.id, title: event.target.value })}
+              className="h-9"
+            />
+            <Button size="sm" onClick={handleUpdateUnit} disabled={!editingUnit.title.trim()}>
+              <Save className="h-4 w-4" />
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setEditingUnit(null)}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-2">
+              {onReorderUnit && (
+                <div
+                  {...attributes}
+                  {...listeners}
+                  className="cursor-grab hover:text-primary active:cursor-grabbing text-muted-foreground p-1"
+                >
+                  <GripVertical className="h-4 w-4" />
+                </div>
+              )}
+              <div className="min-w-0">
+                <h4 className="truncate text-sm font-semibold">{unit.title}</h4>
+                <p className="text-xs text-muted-foreground">
+                  {t('unitLessonCount', { count: unitLessons.length })}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex shrink-0 items-center gap-1">
+              {onDuplicateUnit && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  title={t('duplicateUnit')}
+                  aria-label={t('duplicateUnit')}
+                  onClick={() => onDuplicateUnit(unit)}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              )}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onAddClick(unit.id)}
+                className="gap-1.5"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                {t('newLesson')}
+              </Button>
+              {onUpdateUnit && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setEditingUnit({ id: unit.id, title: unit.title })}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              )}
+              {onDeleteUnit && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-destructive/70 hover:text-destructive"
+                  onClick={() => setConfirmDeleteUnit(unit.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+
+      {confirmDeleteUnit === unit.id && (
+        <div className="flex items-center justify-between gap-3 border-b border-destructive/20 bg-destructive/5 p-3">
+          <span className="text-sm text-destructive">{t('confirmDeleteUnit')}</span>
+          <div className="flex shrink-0 gap-2">
+            <Button size="sm" variant="outline" onClick={() => setConfirmDeleteUnit(null)}>
+              {t('cancel')}
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={() => {
+                onDeleteUnit?.(unit.id);
+                setConfirmDeleteUnit(null);
+              }}
+            >
+              {t('deleteUnit')}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <LessonRows
+        lessons={unitLessons}
+        confirmDelete={confirmDelete}
+        setConfirmDelete={setConfirmDelete}
+        selectedLessonIds={selectedLessonIds}
+        onToggleSelection={toggleLessonSelection}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onReorder={onReorder}
+        onDuplicate={onDuplicate}
+        getPreviewUrl={getPreviewUrl}
+        t={t}
+        sensors={sensors}
+      />
+    </section>
   );
 }
 
@@ -568,6 +691,7 @@ function LessonRows({
   onDuplicate,
   getPreviewUrl,
   t,
+  sensors,
 }: {
   lessons: Lesson[];
   confirmDelete: string | null;
@@ -576,18 +700,27 @@ function LessonRows({
   onToggleSelection: (lessonId: string, checked: boolean) => void;
   onEdit: (lesson: Lesson) => void;
   onDelete: (lessonId: string) => void;
-  onReorder?: (lessonId: string, direction: 'up' | 'down') => void;
+  onReorder?: (activeId: string, overId: string) => void;
   onDuplicate?: (lesson: Lesson) => void;
   getPreviewUrl?: (lesson: Lesson) => string | null;
   t: ReturnType<typeof useTranslations>;
+  sensors: ReturnType<typeof useSensors>;
 }) {
   if (lessons.length === 0) {
     return <div className="px-4 py-6 text-sm text-muted-foreground">{t('noLessonsInUnit')}</div>;
   }
 
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id && onReorder) {
+      onReorder(active.id.toString(), over.id.toString());
+    }
+  };
+
   return (
     <div>
-      <div className="grid grid-cols-[2rem_2rem_7rem_1fr_5rem_9.5rem] gap-2 px-4 py-2.5 bg-muted/20 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+      <div className="grid grid-cols-[2rem_2rem_2rem_7rem_1fr_5rem_9.5rem] gap-2 px-4 py-2.5 bg-muted/20 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <span className="w-4" /> {/* spacer for drag handle */}
         <span className="text-center">{t('selectItem')}</span>
         <span className="text-center">#</span>
         <span>{t('type')}</span>
@@ -595,138 +728,188 @@ function LessonRows({
         <span className="text-right">{t('duration')}</span>
         <span className="text-right">{t('actions')}</span>
       </div>
-      {lessons.map((lesson, idx) => {
-        const typeConfig = getTypeConfig(t);
-        const cfg = typeConfig[lesson.type as keyof typeof typeConfig] ?? typeConfig.text;
-        const summary = getLessonSummary(lesson, t);
-        const previewUrl = getPreviewUrl?.(lesson) ?? null;
-        return (
-          <div
-            key={lesson.id}
-            className="grid grid-cols-[2rem_2rem_7rem_1fr_5rem_9.5rem] gap-2 px-4 py-3 items-center border-t hover:bg-muted/30 transition-colors group"
-          >
-            <div className="flex justify-center">
-              <input
-                type="checkbox"
-                checked={selectedLessonIds.includes(lesson.id)}
-                onChange={(event) => onToggleSelection(lesson.id, event.target.checked)}
-                aria-label={t('selectItem')}
-              />
-            </div>
-            <span className="text-center text-sm font-semibold text-muted-foreground">
-              {String(idx + 1).padStart(2, '0')}
-            </span>
-            <div className="flex items-center gap-1.5">
-              <Badge className={`${cfg.color} border-0 font-medium text-[10px] px-1.5 py-0`}>
-                {cfg.label}
-              </Badge>
-            </div>
-            <div className="min-w-0 pr-2">
-              <p className="truncate text-sm font-medium">{lesson.title}</p>
-              {summary && <p className="truncate text-xs text-muted-foreground">{summary}</p>}
-            </div>
-            <div className="flex items-center justify-end gap-1 text-xs text-muted-foreground">
-              <Clock className="w-3 h-3" />
-              <span>{lesson.duration}m</span>
-            </div>
-            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              {onReorder && (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    disabled={idx === 0}
-                    title={t('moveUp')}
-                    aria-label={t('moveUp')}
-                    onClick={() => onReorder(lesson.id, 'up')}
-                  >
-                    <ChevronUp className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    disabled={idx === lessons.length - 1}
-                    title={t('moveDown')}
-                    aria-label={t('moveDown')}
-                    onClick={() => onReorder(lesson.id, 'down')}
-                  >
-                    <ChevronDown className="h-3.5 w-3.5" />
-                  </Button>
-                </>
-              )}
-              {previewUrl && (
-                <Button
-                  asChild
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                  title={t('lessonPreview')}
-                  aria-label={t('lessonPreview')}
-                >
-                  <a href={previewUrl} target="_blank" rel="noreferrer">
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                </Button>
-              )}
-              {onDuplicate && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                  title={t('duplicateLesson')}
-                  aria-label={t('duplicateLesson')}
-                  onClick={() => onDuplicate(lesson)}
-                >
-                  <Copy className="w-3.5 h-3.5" />
-                </Button>
-              )}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                title={t('editLesson')}
-                aria-label={t('editLesson')}
-                onClick={() => onEdit(lesson)}
-              >
-                <Pencil className="w-3.5 h-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-destructive/70 hover:text-destructive"
-                title={t('deleteCourse')}
-                aria-label={t('deleteCourse')}
-                onClick={() => setConfirmDelete(lesson.id)}
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </Button>
-            </div>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={lessons.map((l) => l.id)} strategy={verticalListSortingStrategy}>
+          {lessons.map((lesson, idx) => (
+            <SortableLesson
+              key={lesson.id}
+              lesson={lesson}
+              idx={idx}
+              confirmDelete={confirmDelete}
+              setConfirmDelete={setConfirmDelete}
+              selectedLessonIds={selectedLessonIds}
+              onToggleSelection={onToggleSelection}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onDuplicate={onDuplicate}
+              getPreviewUrl={getPreviewUrl}
+              t={t}
+              onReorder={!!onReorder}
+            />
+          ))}
+        </SortableContext>
+      </DndContext>
+    </div>
+  );
+}
 
-            {confirmDelete === lesson.id && (
-              <div className="col-span-6 bg-destructive/5 border border-destructive/20 rounded-lg p-3 flex items-center justify-between gap-3">
-                <span className="text-sm text-destructive">{t('confirmDeleteLesson')}</span>
-                <div className="flex gap-2 shrink-0">
-                  <Button size="sm" variant="outline" onClick={() => setConfirmDelete(null)}>
-                    {t('cancel')}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => {
-                      onDelete(lesson.id);
-                      setConfirmDelete(null);
-                    }}
-                  >
-                    {t('deleteCourse')}
-                  </Button>
-                </div>
-              </div>
-            )}
+interface SortableLessonProps {
+  lesson: Lesson;
+  idx: number;
+  confirmDelete: string | null;
+  setConfirmDelete: (id: string | null) => void;
+  selectedLessonIds: string[];
+  onToggleSelection: (lessonId: string, checked: boolean) => void;
+  onEdit: (lesson: Lesson) => void;
+  onDelete: (lessonId: string) => void;
+  onDuplicate?: (lesson: Lesson) => void;
+  getPreviewUrl?: (lesson: Lesson) => string | null;
+  t: ReturnType<typeof useTranslations>;
+  onReorder: boolean;
+}
+
+function SortableLesson({
+  lesson,
+  idx,
+  confirmDelete,
+  setConfirmDelete,
+  selectedLessonIds,
+  onToggleSelection,
+  onEdit,
+  onDelete,
+  onDuplicate,
+  getPreviewUrl,
+  t,
+  onReorder,
+}: SortableLessonProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: lesson.id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 1 : 0,
+    position: 'relative' as const,
+  };
+
+  const typeConfig = getTypeConfig(t);
+  const cfg = typeConfig[lesson.type as keyof typeof typeConfig] ?? typeConfig.text;
+  const summary = getLessonSummary(lesson, t);
+  const previewUrl = getPreviewUrl?.(lesson) ?? null;
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`grid grid-cols-[2rem_2rem_2rem_7rem_1fr_5rem_9.5rem] gap-2 px-4 py-3 items-center border-t hover:bg-muted/30 transition-colors group ${
+        isDragging ? 'shadow-lg ring-1 ring-primary/20 bg-background opacity-90' : ''
+      }`}
+    >
+      <div className="flex items-center justify-center">
+        {onReorder && (
+          <div
+            {...attributes}
+            {...listeners}
+            className="cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-foreground p-1"
+          >
+            <GripVertical className="h-4 w-4" />
           </div>
-        );
-      })}
+        )}
+      </div>
+      <div className="flex justify-center">
+        <input
+          type="checkbox"
+          checked={selectedLessonIds.includes(lesson.id)}
+          onChange={(event) => onToggleSelection(lesson.id, event.target.checked)}
+          aria-label={t('selectItem')}
+        />
+      </div>
+      <span className="text-center text-sm font-semibold text-muted-foreground">
+        {String(idx + 1).padStart(2, '0')}
+      </span>
+      <div className="flex items-center gap-1.5">
+        <Badge className={`${cfg.color} border-0 font-medium text-[10px] px-1.5 py-0`}>
+          {cfg.label}
+        </Badge>
+      </div>
+      <div className="min-w-0 pr-2">
+        <p className="truncate text-sm font-medium">{lesson.title}</p>
+        {summary && <p className="truncate text-xs text-muted-foreground">{summary}</p>}
+      </div>
+      <div className="flex items-center justify-end gap-1 text-xs text-muted-foreground">
+        <Clock className="w-3 h-3" />
+        <span>{lesson.duration}m</span>
+      </div>
+      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        {previewUrl && (
+          <Button
+            asChild
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+            title={t('lessonPreview')}
+            aria-label={t('lessonPreview')}
+          >
+            <a href={previewUrl} target="_blank" rel="noreferrer">
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </Button>
+        )}
+        {onDuplicate && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+            title={t('duplicateLesson')}
+            aria-label={t('duplicateLesson')}
+            onClick={() => onDuplicate(lesson)}
+          >
+            <Copy className="w-3.5 h-3.5" />
+          </Button>
+        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+          title={t('editLesson')}
+          aria-label={t('editLesson')}
+          onClick={() => onEdit(lesson)}
+        >
+          <Pencil className="w-3.5 h-3.5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-destructive/70 hover:text-destructive"
+          title={t('deleteCourse')}
+          aria-label={t('deleteCourse')}
+          onClick={() => setConfirmDelete(lesson.id)}
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </Button>
+      </div>
+
+      {confirmDelete === lesson.id && (
+        <div className="col-span-7 bg-destructive/5 border border-destructive/20 rounded-lg p-3 flex items-center justify-between gap-3 mt-2">
+          <span className="text-sm text-destructive">{t('confirmDeleteLesson')}</span>
+          <div className="flex gap-2 shrink-0">
+            <Button size="sm" variant="outline" onClick={() => setConfirmDelete(null)}>
+              {t('cancel')}
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={() => {
+                onDelete(lesson.id);
+                setConfirmDelete(null);
+              }}
+            >
+              {t('deleteCourse')}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

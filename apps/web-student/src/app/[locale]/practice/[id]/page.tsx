@@ -13,6 +13,8 @@ import {
 } from '@/lib/practice-api';
 import { Link } from '@/navigation';
 import { AIEvaluationInput } from '@/components/lessons/ai-evaluation-input';
+import { MatchingQuestion } from '@/components/lessons/matching-question';
+import { OrderingQuestion } from '@/components/lessons/ordering-question';
 
 export default function PracticeAttemptPage() {
   const t = useTranslations('Student');
@@ -51,13 +53,26 @@ export default function PracticeAttemptPage() {
     }
 
     submitAttempt.mutate(
-      questions.map((question) => ({
-        questionId: question.id,
-        answer:
-          question.type === 'MULTIPLE_CHOICE'
-            ? Number(answers[question.id])
-            : answers[question.id].trim(),
-      })),
+      questions.map((question) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let answerValue: any = answers[question.id];
+        if (question.type === 'MULTIPLE_CHOICE') {
+          answerValue = Number(answerValue);
+        } else if (question.type === 'MATCHING' || question.type === 'ORDERING') {
+          try {
+            answerValue = JSON.parse(answerValue);
+          } catch {
+            // fallback
+          }
+        } else {
+          answerValue = answerValue.trim();
+        }
+
+        return {
+          questionId: question.id,
+          answer: answerValue,
+        };
+      }),
       {
         onSuccess: (data) => {
           setResult(data);
@@ -219,9 +234,13 @@ function QuestionCard({
                 ? t('practice.multipleChoice')
                 : question.type === 'FILL_BLANK'
                   ? t('practice.fillBlank')
-                  : question.type === 'AI_EVALUATED_AUDIO'
-                    ? t('practice.aiAudio')
-                    : t('practice.aiText')}
+                  : question.type === 'MATCHING'
+                    ? t('practice.matching')
+                    : question.type === 'ORDERING'
+                      ? t('practice.ordering')
+                      : question.type === 'AI_EVALUATED_AUDIO'
+                        ? t('practice.aiAudio')
+                        : t('practice.aiText')}
             </span>
             {question.skillTags.map((tag) => (
               <span
@@ -255,6 +274,15 @@ function QuestionCard({
             </label>
           ))}
         </div>
+      ) : question.type === 'MATCHING' ? (
+        <MatchingQuestion
+          options={question.options as { left: string[]; right: string[] }}
+          value={value}
+          disabled={disabled}
+          onChange={onChange}
+        />
+      ) : question.type === 'ORDERING' ? (
+        <OrderingQuestion options={options} value={value} disabled={disabled} onChange={onChange} />
       ) : question.type === 'FILL_BLANK' ? (
         <input
           value={value}
@@ -265,7 +293,7 @@ function QuestionCard({
         />
       ) : (
         <AIEvaluationInput
-          type={question.type}
+          type={question.type as 'AI_EVALUATED_AUDIO' | 'AI_EVALUATED_TEXT'}
           value={value}
           disabled={disabled}
           onChange={onChange}
@@ -372,6 +400,21 @@ function isAiQuestionType(type: PracticeQuestion['type']) {
 function formatAnswer(question: PracticeQuestion | undefined, value: unknown) {
   if (question?.type === 'MULTIPLE_CHOICE' && typeof value === 'number') {
     return getOptions(question.options)[value] ?? String(value);
+  }
+
+  if (question?.type === 'MATCHING' || question?.type === 'ORDERING') {
+    try {
+      if (typeof value === 'string') {
+        const parsed = JSON.parse(value);
+        if (typeof parsed === 'object') {
+          return JSON.stringify(parsed, null, 2);
+        }
+      } else if (typeof value === 'object') {
+        return JSON.stringify(value, null, 2);
+      }
+    } catch {
+      // fallback
+    }
   }
 
   return String(value ?? '');

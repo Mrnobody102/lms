@@ -7,6 +7,7 @@ import { StudentNav } from '@/components/layout/student-nav';
 import { useExamAttempt } from '@/hooks/use-exams';
 import { ExamQuestion } from '@/lib/exam-api';
 import { Link } from '@/navigation';
+import { AIFeedbackPanel } from '@/components/lessons/ai-feedback-panel';
 
 export default function ExamAttemptReviewPage() {
   const t = useTranslations('Student');
@@ -145,7 +146,15 @@ export default function ExamAttemptReviewPage() {
                           <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
                             {answer.question.type === 'MULTIPLE_CHOICE'
                               ? t('exam.multipleChoice')
-                              : t('exam.fillBlank')}
+                              : answer.question.type === 'FILL_BLANK'
+                                ? t('exam.fillBlank')
+                                : answer.question.type === 'MATCHING'
+                                  ? t('exam.matching')
+                                  : answer.question.type === 'ORDERING'
+                                    ? t('exam.ordering')
+                                    : answer.question.type === 'AI_EVALUATED_AUDIO'
+                                      ? t('exam.aiAudio')
+                                      : t('exam.aiText')}
                           </span>
                           <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
                             {t('exam.pointsValue', { points: answer.question.points })}
@@ -188,7 +197,7 @@ export default function ExamAttemptReviewPage() {
                           value: formatExamAnswer(answer.question, answer.answer),
                         })}
                       </p>
-                      {!answer.isCorrect && (
+                      {!answer.isCorrect && !isAiQuestionType(answer.question.type) && (
                         <p className="mt-2">
                           {t('exam.correctAnswerValue', {
                             value: formatExamAnswer(answer.question, answer.question.correctAnswer),
@@ -197,6 +206,13 @@ export default function ExamAttemptReviewPage() {
                       )}
                       {answer.question.explanation && (
                         <p className="mt-2 text-muted-foreground">{answer.question.explanation}</p>
+                      )}
+                      {isAiQuestionType(answer.question.type) && (
+                        <AIFeedbackPanel
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                          aiFeedback={(answer as any).aiFeedback}
+                          className="mt-4"
+                        />
                       )}
                     </div>
                   </section>
@@ -229,7 +245,26 @@ function formatExamAnswer(question: ExamQuestion & { correctAnswer?: unknown }, 
     return options[value] ?? String(value);
   }
 
+  if (question.type === 'MATCHING' || question.type === 'ORDERING') {
+    try {
+      if (typeof value === 'string') {
+        const parsed = JSON.parse(value);
+        if (typeof parsed === 'object') {
+          return JSON.stringify(parsed, null, 2);
+        }
+      } else if (typeof value === 'object') {
+        return JSON.stringify(value, null, 2);
+      }
+    } catch {
+      // fallback
+    }
+  }
+
   return String(value ?? '');
+}
+
+function isAiQuestionType(type: ExamQuestion['type']) {
+  return type === 'AI_EVALUATED_AUDIO' || type === 'AI_EVALUATED_TEXT';
 }
 
 function buildAnswerStats(answers: Array<{ isCorrect: boolean }>) {

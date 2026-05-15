@@ -1,6 +1,12 @@
 import api from './api';
 
-export type ExamQuestionType = 'MULTIPLE_CHOICE' | 'FILL_BLANK';
+export type ExamQuestionType =
+  | 'MULTIPLE_CHOICE'
+  | 'FILL_BLANK'
+  | 'MATCHING'
+  | 'ORDERING'
+  | 'AI_EVALUATED_AUDIO'
+  | 'AI_EVALUATED_TEXT';
 
 export interface ExamQuestion {
   id: string;
