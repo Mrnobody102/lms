@@ -70,6 +70,11 @@ export class CourseService {
         skip,
         take: limit,
         include: {
+          level: {
+            include: {
+              program: true,
+            },
+          },
           lessons: {
             where: { deletedAt: null },
             orderBy: { order: 'asc' },
@@ -114,6 +119,11 @@ export class CourseService {
         : options,
     );
     const include: Prisma.CourseInclude = {
+      level: {
+        include: {
+          program: true,
+        },
+      },
       units: {
         where: { deletedAt: null },
         orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],

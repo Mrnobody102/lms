@@ -1,6 +1,6 @@
 # Kế Hoạch Triển Khai LMS Platform
 
-Cập nhật lần cuối: 2026-04-27
+Cập nhật lần cuối: 2026-05-15
 
 ## Định hướng sản phẩm
 
@@ -207,7 +207,7 @@ Còn cần:
 
 Mục tiêu: phục vụ menu "Báo cáo" cho student và admin.
 
-Trạng thái: đã có nền cơ bản.
+Trạng thái: đã có nền cơ bản và bước đầu drill-down theo Program/Level/Unit/Skill cho admin.
 
 Student reports:
 
@@ -222,12 +222,15 @@ Admin reports:
 - Student activity.
 - Enrollment progress.
 - Practice/exam performance.
+- Drill-down Program → Level → Course → Unit/Students/Skills (admin `/reports`).
+- CSV export cho course-students, course-units, skills snapshot.
 
 Còn cần:
 
 - Drill-down theo class/cohort nếu thêm model lớp.
-- Export/filter nâng cao nếu cần vận hành thật.
-- Reporting theo unit/skill sâu hơn cho admin.
+- Time-series trends (week/month) cho skill mastery và activity.
+- Export/filter nâng cao theo range thời gian.
+- Reporting theo unit/skill cho student-side đã có; có thể thêm so sánh giữa các khóa.
 
 ### P7. Activation Và Licensing
 
@@ -259,9 +262,9 @@ Phạm vi:
 
 ## Thứ tự làm tiếp đề xuất
 
-1. Program/level hierarchy để phân cấp nội dung HSK sâu hơn (Program -> Level -> Course).
-2. Reporting nâng cao theo unit/practice/exam và Program/Level drill-down.
-3. AI conversation.
+1. AI conversation (Epic K).
+2. Reporting time-series + cohort drill-down (sau khi cohort/class model có).
+3. Question types mở rộng (matching/ordering) và media upload pipeline cho listening.
 
 ## Definition Of Done Cấp Dự Án
 

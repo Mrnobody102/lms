@@ -323,6 +323,7 @@
       "examPanelDesc": "Đề kiểm tra đã xuất bản gắn với khóa học này.",
       "noPractice": "Chưa có bộ luyện tập được xuất bản.",
       "noExams": "Chưa có đề kiểm tra được xuất bản.",
+      "otherCourses": "Khóa học khác",
       "lessonType": {
         "video": "Video",
         "text": "Bài đọc",

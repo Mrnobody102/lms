@@ -37,6 +37,15 @@ export interface Course {
   _count?: { lessons: number };
   description?: string | null;
   totalDuration?: number;
+  levelId?: string | null;
+  level?: {
+    id: string;
+    title: string;
+    program?: {
+      id: string;
+      title: string;
+    };
+  } | null;
 }
 
 export const courseApi = {

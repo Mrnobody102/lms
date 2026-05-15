@@ -24,6 +24,7 @@ import {
   type CourseProgressState,
 } from '../../../lib/course-progress-utils';
 import { Link } from '../../../navigation';
+import type { Course } from '../../../lib/course-api';
 
 type StatusFilter = 'all' | CourseProgressState;
 
@@ -67,6 +68,138 @@ export default function CoursesPage() {
       return matchesFilter && matchesQuery;
     });
   }, [courses, filter, progressByCourseId, query]);
+
+  const { groupedCourses, ungroupedCourses } = useMemo(() => {
+    const groups: Record<
+      string,
+      { title: string; levels: Record<string, { title: string; courses: Course[] }> }
+    > = {};
+    const ungrouped: Course[] = [];
+
+    for (const course of filteredCourses) {
+      if (course.level && course.level.program) {
+        const progId = course.level.program.id;
+        const lvlId = course.level.id;
+
+        if (!groups[progId]) {
+          groups[progId] = { title: course.level.program.title, levels: {} };
+        }
+        if (!groups[progId].levels[lvlId]) {
+          groups[progId].levels[lvlId] = { title: course.level.title, courses: [] };
+        }
+        groups[progId].levels[lvlId].courses.push(course);
+      } else {
+        ungrouped.push(course);
+      }
+    }
+
+    return { groupedCourses: groups, ungroupedCourses: ungrouped };
+  }, [filteredCourses]);
+
+  const renderCourseCard = (course: Course) => {
+    const progress = progressByCourseId.get(course.id);
+    const lessonCount = course._count?.lessons ?? course.lessons?.length ?? 0;
+    const totalDuration =
+      course.totalDuration ??
+      (course.lessons?.reduce(
+        (acc: number, lesson: { duration?: number }) => acc + (lesson.duration || 0),
+        0,
+      ) ||
+        0);
+    const firstLessonId = course.lessons?.[0]?.id;
+    const state = progress ? getCourseProgressState(progress) : 'notStarted';
+    const completedLessons = progress?.completedLessons ?? 0;
+    const totalLessons = progress?.totalLessons ?? lessonCount;
+    const completionPercentage = progress?.completionPercentage ?? 0;
+    const canOpen = Boolean(
+      firstLessonId || progress?.continueLesson || progress?.lastAccessedLesson,
+    );
+    const href = progress
+      ? getCourseProgressHref(progress, firstLessonId)
+      : firstLessonId
+        ? `/lessons/${firstLessonId}`
+        : '/courses';
+
+    return (
+      <article
+        key={course.id}
+        className="group flex min-h-[300px] flex-col overflow-hidden rounded-md border bg-card transition-all hover:border-primary/30 hover:shadow-md"
+      >
+        <div className="flex flex-1 flex-col p-6">
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <GraduationCap className="h-5 w-5" />
+            </div>
+            <CourseStatusBadge state={state} />
+          </div>
+
+          <h3 className="line-clamp-2 text-base font-semibold leading-snug transition-colors group-hover:text-primary">
+            {course.title}
+          </h3>
+          <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
+            {course.description || t('courses.noDescription')}
+          </p>
+
+          <div className="mt-5 flex flex-wrap gap-3">
+            <CourseMeta icon={BookOpen} value={t('courses.lessonsCount', { count: lessonCount })} />
+            <CourseMeta icon={MapIcon} value={t('courses.duration', { minutes: totalDuration })} />
+            {progress && (
+              <CourseMeta
+                icon={Clock3}
+                value={t('dashboard.sessionValue', {
+                  count: progress.activitySessions,
+                })}
+              />
+            )}
+          </div>
+
+          <div className="mt-5">
+            <div className="mb-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+              <span>
+                {t('courses.completedCount', {
+                  completed: completedLessons,
+                  total: totalLessons,
+                })}
+              </span>
+              <span className="font-semibold text-foreground">{completionPercentage}%</span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-primary"
+                style={{ width: `${completionPercentage}%` }}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-2 px-6 pb-6 sm:grid-cols-2">
+          <Link
+            href={`/courses/${course.id}`}
+            className="flex w-full items-center justify-center gap-2 rounded-md border px-5 py-3 text-sm font-medium transition-all hover:bg-muted active:scale-[0.98]"
+          >
+            {t('courses.viewDetail')}
+          </Link>
+          {canOpen ? (
+            <Link
+              href={href}
+              className="flex w-full items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-sm font-medium text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98]"
+            >
+              {state === 'completed'
+                ? t('courses.reviewCourse')
+                : state === 'inProgress'
+                  ? t('courses.continueCourse')
+                  : t('courses.startNow')}
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          ) : (
+            <span className="flex w-full items-center justify-center rounded-md border px-5 py-3 text-sm font-medium text-muted-foreground">
+              {t('courses.noLessons')}
+            </span>
+          )}
+        </div>
+      </article>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background font-sans">
@@ -157,120 +290,35 @@ export default function CoursesPage() {
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {filteredCourses.map((course) => {
-                    const progress = progressByCourseId.get(course.id);
-                    const lessonCount = course._count?.lessons ?? course.lessons?.length ?? 0;
-                    const totalDuration =
-                      course.totalDuration ??
-                      (course.lessons?.reduce(
-                        (acc: number, lesson: { duration?: number }) =>
-                          acc + (lesson.duration || 0),
-                        0,
-                      ) ||
-                        0);
-                    const firstLessonId = course.lessons?.[0]?.id;
-                    const state = progress ? getCourseProgressState(progress) : 'notStarted';
-                    const completedLessons = progress?.completedLessons ?? 0;
-                    const totalLessons = progress?.totalLessons ?? lessonCount;
-                    const completionPercentage = progress?.completionPercentage ?? 0;
-                    const canOpen = Boolean(
-                      firstLessonId || progress?.continueLesson || progress?.lastAccessedLesson,
-                    );
-                    const href = progress
-                      ? getCourseProgressHref(progress, firstLessonId)
-                      : firstLessonId
-                        ? `/lessons/${firstLessonId}`
-                        : '/courses';
-
-                    return (
-                      <article
-                        key={course.id}
-                        className="group flex min-h-[300px] flex-col overflow-hidden rounded-md border bg-card transition-all hover:border-primary/30 hover:shadow-md"
-                      >
-                        <div className="flex flex-1 flex-col p-6">
-                          <div className="mb-4 flex items-start justify-between gap-3">
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-                              <GraduationCap className="h-5 w-5" />
-                            </div>
-                            <CourseStatusBadge state={state} />
-                          </div>
-
-                          <h3 className="line-clamp-2 text-base font-semibold leading-snug transition-colors group-hover:text-primary">
-                            {course.title}
-                          </h3>
-                          <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
-                            {course.description || t('courses.noDescription')}
-                          </p>
-
-                          <div className="mt-5 flex flex-wrap gap-3">
-                            <CourseMeta
-                              icon={BookOpen}
-                              value={t('courses.lessonsCount', { count: lessonCount })}
-                            />
-                            <CourseMeta
-                              icon={MapIcon}
-                              value={t('courses.duration', { minutes: totalDuration })}
-                            />
-                            {progress && (
-                              <CourseMeta
-                                icon={Clock3}
-                                value={t('dashboard.sessionValue', {
-                                  count: progress.activitySessions,
-                                })}
-                              />
-                            )}
-                          </div>
-
-                          <div className="mt-5">
-                            <div className="mb-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
-                              <span>
-                                {t('courses.completedCount', {
-                                  completed: completedLessons,
-                                  total: totalLessons,
-                                })}
-                              </span>
-                              <span className="font-semibold text-foreground">
-                                {completionPercentage}%
-                              </span>
-                            </div>
-                            <div className="h-2 overflow-hidden rounded-full bg-muted">
-                              <div
-                                className="h-full rounded-full bg-primary"
-                                style={{ width: `${completionPercentage}%` }}
-                              />
-                            </div>
+                <div className="flex flex-col gap-10">
+                  {Object.values(groupedCourses).map((program) => (
+                    <div key={program.title} className="space-y-6">
+                      <h2 className="text-2xl font-bold tracking-tight text-primary">
+                        {program.title}
+                      </h2>
+                      {Object.values(program.levels).map((level) => (
+                        <div key={level.title} className="space-y-4">
+                          <h3 className="text-xl font-semibold border-b pb-2">{level.title}</h3>
+                          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                            {level.courses.map((course) => renderCourseCard(course))}
                           </div>
                         </div>
+                      ))}
+                    </div>
+                  ))}
 
-                        <div className="grid gap-2 px-6 pb-6 sm:grid-cols-2">
-                          <Link
-                            href={`/courses/${course.id}`}
-                            className="flex w-full items-center justify-center gap-2 rounded-md border px-5 py-3 text-sm font-medium transition-all hover:bg-muted active:scale-[0.98]"
-                          >
-                            {t('courses.viewDetail')}
-                          </Link>
-                          {canOpen ? (
-                            <Link
-                              href={href}
-                              className="flex w-full items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-sm font-medium text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98]"
-                            >
-                              {state === 'completed'
-                                ? t('courses.reviewCourse')
-                                : state === 'inProgress'
-                                  ? t('courses.continueCourse')
-                                  : t('courses.startNow')}
-                              <ArrowRight className="h-4 w-4" />
-                            </Link>
-                          ) : (
-                            <span className="flex w-full items-center justify-center rounded-md border px-5 py-3 text-sm font-medium text-muted-foreground">
-                              {t('courses.noLessons')}
-                            </span>
-                          )}
-                        </div>
-                      </article>
-                    );
-                  })}
+                  {ungroupedCourses.length > 0 && (
+                    <div className="space-y-6">
+                      {Object.values(groupedCourses).length > 0 && (
+                        <h2 className="text-2xl font-bold tracking-tight text-primary">
+                          {t('courses.otherCourses')}
+                        </h2>
+                      )}
+                      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        {ungroupedCourses.map((course) => renderCourseCard(course))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </section>

@@ -1,6 +1,6 @@
 # Backlog Kỹ Thuật Và Theo Dõi Tiến Độ
 
-Cập nhật lần cuối: 2026-04-27
+Cập nhật lần cuối: 2026-05-15
 
 ## Mục tiêu
 
@@ -170,7 +170,7 @@ Task:
 - [x] Student lesson sidebar theo unit/chapter
 - [x] Test ordering và soft-delete ở service level
 - [ ] Drag/drop reorder unit và lesson trong admin UI
-- [ ] Progress/reporting aggregate theo unit
+- [x] Progress/reporting aggregate theo unit (admin `/reports/courses/:id` tab Units)
 
 ### Epic G. Practice Engine
 
@@ -186,7 +186,7 @@ Task:
 - [x] Student UI làm bài practice và xem feedback
 - [x] Student-facing practice reads không lộ đáp án/giải thích trước submit
 - [x] Practice attempt history/review UI cho student
-- [ ] Practice report theo unit/skill
+- [x] Practice report theo unit/skill (admin `/reports` skills panel + course units tab)
 
 ### Epic H. Quiz / Exam Attempt Và Grading
 
@@ -215,6 +215,10 @@ Task:
 - [x] Enrollment progress report
 - [x] Practice/exam accuracy report
 - [x] Admin report dashboard cơ bản
+- [x] Admin drill-down Program → Level → Course → Unit/Students/Skills
+- [x] CSV export cho course-students, course-units, skills snapshot
+- [ ] Time-series trends (skill mastery / activity theo week/month)
+- [ ] Cohort/class drill-down (sau khi có cohort model)
 
 ### Epic J. Activation Và License
 
@@ -240,9 +244,11 @@ Task:
 
 Thứ tự nên làm tiếp:
 
-1. Mở activation/license nếu cần kiểm soát entitlement.
-2. Bổ sung reporting theo unit/skill sâu hơn nếu cần drill-down chi tiết.
-3. Mở rộng question types: matching, ordering, listening.
+1. AI Conversation (Epic K) — schema AiConversation/AiMessage, quota, safety per-tenant, UI chat student/admin.
+2. Question types mở rộng: matching, ordering (schema flexible đủ — `correctAnswer: Json`).
+3. Drag/drop reorder unit & lesson admin UI (backend `order: Int` đã sẵn).
+4. Media upload pipeline cho listening question type.
+5. Reporting time-series trends + cohort drill-down (sau khi có cohort model).
 
 ## Checklist xác minh gần nhất
 

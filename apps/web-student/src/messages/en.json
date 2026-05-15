@@ -323,6 +323,7 @@
       "examPanelDesc": "Published exams linked to this course.",
       "noPractice": "No practice sets published yet.",
       "noExams": "No exams published yet.",
+      "otherCourses": "Other courses",
       "lessonType": {
         "video": "Video",
         "text": "Text",

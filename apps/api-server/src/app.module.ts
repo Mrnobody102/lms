@@ -17,6 +17,7 @@ import { PrismaModule } from './common/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { AdminModule } from './admin/admin.module';
+import { AdminReportsModule } from './admin-reports/admin-reports.module';
 import { McpModule } from './mcp/mcp.module';
 import { LessonModule } from './lesson/lesson.module';
 import { CourseModule } from './course/course.module';
@@ -68,6 +69,7 @@ import { MailModule } from './mail/mail.module';
     AuthModule,
     UserModule,
     AdminModule,
+    AdminReportsModule,
     McpModule,
     LessonModule,
     CourseModule,

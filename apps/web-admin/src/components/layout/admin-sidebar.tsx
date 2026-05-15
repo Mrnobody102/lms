@@ -15,6 +15,7 @@ import {
   Sun,
   ChevronDown,
   Layers,
+  BarChart3,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -38,6 +39,7 @@ export function AdminSidebar() {
     { name: t('courses'), icon: BookOpen, href: '/courses' },
     { name: t('practice'), icon: Dumbbell, href: '/practice' },
     { name: t('exams'), icon: FileCheck2, href: '/exams' },
+    { name: t('reports.navLabel'), icon: BarChart3, href: '/reports' },
     { name: t('finance'), icon: DollarSign, href: '/finance' },
     { name: t('schedule'), icon: Calendar, href: '/schedule' },
     { name: t('settingsLabel'), icon: Settings, href: '/settings' },

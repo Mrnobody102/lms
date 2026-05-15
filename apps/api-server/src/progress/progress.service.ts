@@ -3,6 +3,7 @@ import { LearningActivityType, ProgressStatus, Role } from '@repo/database';
 import { LearningAccessService } from '../common/services/learning-access.service';
 import { PrismaService } from '../common/services/prisma.service';
 import { buildActivityCalendar } from '../common/utils/activity-calendar.util';
+import { buildAnswerAccuracy } from '../common/utils/answer-accuracy.util';
 
 @Injectable()
 export class ProgressService {
@@ -353,57 +354,31 @@ export class ProgressService {
       },
     });
 
-    const unitStats: Record<string, { title: string; correct: number; total: number }> = {};
-    const skillStats: Record<string, { correct: number; total: number }> = {};
-
-    const process = (
-      isCorrect: boolean,
-      unitId: string | null,
-      unitTitle: string | null,
-      skillTags: string[],
-    ) => {
-      if (unitId) {
-        if (!unitStats[unitId]) {
-          unitStats[unitId] = { title: unitTitle || 'Unknown Unit', correct: 0, total: 0 };
-        }
-        unitStats[unitId].total += 1;
-        if (isCorrect) unitStats[unitId].correct += 1;
-      }
-
-      skillTags.forEach((tag) => {
-        if (!skillStats[tag]) {
-          skillStats[tag] = { correct: 0, total: 0 };
-        }
-        skillStats[tag].total += 1;
-        if (isCorrect) skillStats[tag].correct += 1;
-      });
-    };
+    const unitAnswers: Array<{
+      isCorrect: boolean;
+      unitId: string | null;
+      unitTitle: string | null;
+      skillTags: string[];
+    }> = [];
 
     practiceAnswers.forEach((a) => {
-      process(a.isCorrect, a.question.unitId, a.question.unit?.title || null, a.question.skillTags);
+      unitAnswers.push({
+        isCorrect: a.isCorrect,
+        unitId: a.question.unitId,
+        unitTitle: a.question.unit?.title || null,
+        skillTags: a.question.skillTags,
+      });
     });
 
     examAnswers.forEach((a) => {
-      process(
-        a.isCorrect,
-        a.question.section.exam.unitId,
-        a.question.section.exam.unit?.title || null,
-        a.question.skillTags,
-      );
+      unitAnswers.push({
+        isCorrect: a.isCorrect,
+        unitId: a.question.section.exam.unitId,
+        unitTitle: a.question.section.exam.unit?.title || null,
+        skillTags: a.question.skillTags,
+      });
     });
 
-    return {
-      accuracyByUnit: Object.entries(unitStats).map(([id, stats]) => ({
-        id,
-        title: stats.title,
-        accuracy: Math.round((stats.correct / stats.total) * 100),
-        totalQuestions: stats.total,
-      })),
-      accuracyBySkill: Object.entries(skillStats).map(([skill, stats]) => ({
-        skill,
-        accuracy: Math.round((stats.correct / stats.total) * 100),
-        totalQuestions: stats.total,
-      })),
-    };
+    return buildAnswerAccuracy(unitAnswers);
   }
 }
