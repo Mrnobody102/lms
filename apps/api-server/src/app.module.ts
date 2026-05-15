@@ -24,6 +24,7 @@ import { ProgressModule } from './progress/progress.module';
 import { PracticeModule } from './practice/practice.module';
 import { ExamModule } from './exam/exam.module';
 import { HealthModule } from './common/health/health.module';
+import { ActivationModule } from './activation/activation.module';
 import { MetricsModule } from './common/metrics/metrics.module';
 import { MailModule } from './mail/mail.module';
 
@@ -72,6 +73,7 @@ import { MailModule } from './mail/mail.module';
     ProgressModule,
     PracticeModule,
     ExamModule,
+    ActivationModule,
     MetricsModule,
     HealthModule,
     MailModule,

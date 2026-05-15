@@ -3,6 +3,7 @@
 import {
   Dumbbell,
   FileCheck2,
+  KeyRound,
   LogIn,
   LogOut,
   User as UserIcon,
@@ -49,6 +50,13 @@ export function StudentNav({ showLinks = false }: StudentNavProps) {
           >
             <FileCheck2 className="h-3.5 w-3.5" />
             {t('nav.exams')}
+          </Link>
+          <Link
+            href="/activation"
+            className="inline-flex items-center gap-1.5 hover:text-primary transition-colors"
+          >
+            <KeyRound className="h-3.5 w-3.5" />
+            {t('nav.activation', { fallback: 'Mã kích hoạt' })}
           </Link>
           <Link href="#" className="hover:text-primary transition-colors">
             {t('nav.hsk')}

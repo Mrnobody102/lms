@@ -1,5 +1,16 @@
 {
   "Student": {
+    "activation": {
+      "title": "Enter Activation Code",
+      "description": "Enter your activation code to unlock a course or learning program.",
+      "inputLabel": "Activation Code",
+      "submitButton": "Activate Now",
+      "successTitle": "Activation Successful!",
+      "successMessage": "Your code has been successfully redeemed. New content has been unlocked.",
+      "goToCourses": "Go to My Courses",
+      "errorRedeeming": "There was an error redeeming the code. Please try again later.",
+      "loginRequired": "Please log in to redeem an activation code."
+    },
     "nav": {
       "courses": "Courses",
       "hsk": "HSK Roadmap",
@@ -8,6 +19,7 @@
       "practice": "Practice",
       "home": "Home",
       "exams": "Exams",
+      "activation": "Activation Code",
       "settings": "Settings"
     },
     "themeToggle": "Toggle theme",

@@ -1,5 +1,16 @@
 {
   "Student": {
+    "activation": {
+      "title": "Nhập mã kích hoạt",
+      "description": "Nhập mã kích hoạt của bạn để mở khóa khóa học hoặc chương trình học.",
+      "inputLabel": "Mã kích hoạt",
+      "submitButton": "Kích hoạt ngay",
+      "successTitle": "Kích hoạt thành công!",
+      "successMessage": "Mã của bạn đã được kích hoạt thành công. Nội dung mới đã được mở khóa.",
+      "goToCourses": "Đi đến Khóa học của tôi",
+      "errorRedeeming": "Có lỗi xảy ra khi kích hoạt mã. Vui lòng thử lại sau.",
+      "loginRequired": "Vui lòng đăng nhập để nhập mã kích hoạt."
+    },
     "nav": {
       "courses": "Khóa học",
       "hsk": "Lộ trình HSK",
@@ -8,6 +19,7 @@
       "practice": "Luyện tập",
       "home": "Trang chủ",
       "exams": "Kiểm tra",
+      "activation": "Mã kích hoạt",
       "settings": "Cài đặt"
     },
     "themeToggle": "Đổi giao diện",

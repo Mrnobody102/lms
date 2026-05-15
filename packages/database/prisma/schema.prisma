@@ -78,6 +78,8 @@ model Tenant {
   practiceAttempts PracticeAttempt[]
   exams            Exam[]
   examAttempts     ExamAttempt[]
+  activationCodes  ActivationCode[]
+  redemptions      ActivationRedemption[]
   isActive         Boolean               @default(true)
   createdAt        DateTime              @default(now())
   updatedAt        DateTime              @default(now()) @updatedAt
@@ -109,6 +111,7 @@ model User {
   examAttempts     ExamAttempt[]
   refreshTokens    RefreshToken[]
   auditLogs        AuditLog[]
+  redemptions      ActivationRedemption[]
   createdAt        DateTime             @default(now())
   updatedAt        DateTime             @updatedAt
 
@@ -175,6 +178,7 @@ model Course {
   aiSettings       Json?
   createdAt        DateTime              @default(now())
   updatedAt        DateTime              @updatedAt
+  activationCodes  ActivationCode[]
 
   @@unique([tenantId, slug])
   @@unique([id, tenantId])
@@ -493,4 +497,41 @@ model ExamAnswer {
   @@unique([attemptId, questionId])
   @@index([tenantId, attemptId])
   @@index([questionId])
+}
+
+model ActivationCode {
+  id               String                 @id @default(uuid())
+  tenantId         String
+  tenant           Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  code             String
+  description      String?
+  maxUses          Int                    @default(1)
+  usedCount        Int                    @default(0)
+  expiresAt        DateTime?
+  courseId         String?
+  course           Course?                @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  isActive         Boolean                @default(true)
+  deletedAt        DateTime?
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  redemptions      ActivationRedemption[]
+
+  @@unique([id, tenantId])
+  @@unique([tenantId, code])
+  @@index([tenantId, isActive, deletedAt])
+  @@index([courseId])
+}
+
+model ActivationRedemption {
+  id               String         @id @default(uuid())
+  tenantId         String
+  tenant           Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  activationCodeId String
+  activationCode   ActivationCode @relation(fields: [activationCodeId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  userId           String
+  user             User           @relation(fields: [userId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  redeemedAt       DateTime       @default(now())
+
+  @@index([tenantId, userId])
+  @@index([activationCodeId])
 }
