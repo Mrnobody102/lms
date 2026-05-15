@@ -14,6 +14,7 @@ import {
   Moon,
   Sun,
   ChevronDown,
+  Layers,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -33,6 +34,7 @@ export function AdminSidebar() {
   const menuItems = [
     { name: t('dashboard'), icon: LayoutDashboard, href: '/' },
     { name: t('students'), icon: Users, href: '/students' },
+    { name: t('programs'), icon: Layers, href: '/programs' },
     { name: t('courses'), icon: BookOpen, href: '/courses' },
     { name: t('practice'), icon: Dumbbell, href: '/practice' },
     { name: t('exams'), icon: FileCheck2, href: '/exams' },

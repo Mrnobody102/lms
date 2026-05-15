@@ -6,6 +6,7 @@ import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AdminHeader } from '@/components/layout/admin-header';
 import { AuthGuard } from '@/components/layout/auth-guard';
 import { useCreateCourse } from '@/hooks/use-courses';
+import { usePrograms } from '@/hooks/use-programs';
 import { Button, Input, Label, Alert, AlertDescription } from '@/components/ui';
 import { ArrowLeft, Plus, Loader2, AlertCircle, BookOpen } from 'lucide-react';
 import { Link, useRouter } from '@/navigation';
@@ -15,9 +16,11 @@ export default function NewCoursePage() {
   const t = useTranslations('Admin');
   const router = useRouter();
   const [title, setTitle] = useState('');
+  const [levelId, setLevelId] = useState<string>('');
   const [aiEnabled, setAiEnabled] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
   const { mutate: createCourse, isPending: loading, error: createError } = useCreateCourse();
+  const { data: programs } = usePrograms();
   const [localError, setLocalError] = useState<string | null>(null);
 
   const handleCreateCourse = (e: React.FormEvent) => {
@@ -25,7 +28,11 @@ export default function NewCoursePage() {
     if (!title.trim()) return;
     setLocalError(null);
     createCourse(
-      { title, aiSettings: buildCourseAiSettings(aiEnabled, aiPrompt) },
+      {
+        title,
+        aiSettings: buildCourseAiSettings(aiEnabled, aiPrompt),
+        levelId: levelId || undefined,
+      },
       {
         onSuccess: (newCourse) => {
           router.push(`/courses/${newCourse.id}/edit`);
@@ -82,6 +89,30 @@ export default function NewCoursePage() {
                     placeholder={t('courseNamePlaceholder')}
                     className="text-base"
                   />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium">{t('levelOptional')}</Label>
+                  <select
+                    value={levelId}
+                    onChange={(e) => setLevelId(e.target.value)}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
+                  >
+                    <option value="">{t('none')}</option>
+                    {programs?.map((p) => {
+                      if (!p.levels || p.levels.length === 0) return null;
+                      return (
+                        <optgroup key={p.id} label={p.title}>
+                          {p.levels.map((l) => (
+                            <option key={l.id} value={l.id}>
+                              {l.title}
+                            </option>
+                          ))}
+                        </optgroup>
+                      );
+                    })}
+                  </select>
+                  <p className="text-xs text-muted-foreground">{t('levelOptionalDesc')}</p>
                 </div>
                 <div className="rounded-lg border bg-muted/20 p-4 space-y-4">
                   <div className="flex items-start justify-between gap-4">

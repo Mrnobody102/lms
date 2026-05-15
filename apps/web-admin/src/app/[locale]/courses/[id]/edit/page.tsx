@@ -66,6 +66,7 @@ export default function CourseEditorPage() {
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [localTitle, setLocalTitle] = useState('');
+  const [localLevelId, setLocalLevelId] = useState<string>('');
   const [localAiEnabled, setLocalAiEnabled] = useState(false);
   const [localAiPrompt, setLocalAiPrompt] = useState('');
 
@@ -73,6 +74,7 @@ export default function CourseEditorPage() {
     if (!course) return;
 
     setLocalTitle(course.title);
+    setLocalLevelId(course.levelId || '');
     const aiSettings = normalizeCourseAiSettings(course.aiSettings);
     setLocalAiEnabled(aiSettings.enabled);
     setLocalAiPrompt(aiSettings.prompt);
@@ -90,6 +92,7 @@ export default function CourseEditorPage() {
         id: courseId,
         data: {
           title: localTitle,
+          levelId: localLevelId || undefined,
           aiSettings: buildCourseAiSettings(localAiEnabled, localAiPrompt),
         },
       },
@@ -489,6 +492,8 @@ export default function CourseEditorPage() {
                   <CourseForm
                     title={localTitle}
                     onTitleChange={setLocalTitle}
+                    levelId={localLevelId}
+                    onLevelIdChange={setLocalLevelId}
                     aiEnabled={localAiEnabled}
                     onAiEnabledChange={setLocalAiEnabled}
                     aiPrompt={localAiPrompt}

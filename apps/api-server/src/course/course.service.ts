@@ -21,6 +21,7 @@ export class CourseService {
     description?: string;
     totalDuration?: number;
     aiSettings?: Record<string, unknown>;
+    levelId?: string;
   }) {
     return this.prisma.$transaction(async (tx) => {
       const course = await tx.course.create({
@@ -30,6 +31,7 @@ export class CourseService {
           description: data.description,
           totalDuration: data.totalDuration,
           aiSettings: this.toJsonInput(data.aiSettings),
+          levelId: data.levelId,
           tenantId: data.tenantId,
         },
       });
@@ -215,6 +217,7 @@ export class CourseService {
       description?: string;
       totalDuration?: number;
       aiSettings?: Record<string, unknown>;
+      levelId?: string;
     },
   ) {
     // Ensure course exists and belongs to tenant
@@ -225,6 +228,7 @@ export class CourseService {
       slug: data.slug,
       description: data.description,
       totalDuration: data.totalDuration,
+      levelId: data.levelId,
       aiSettings: this.toJsonInput(data.aiSettings),
     };
 

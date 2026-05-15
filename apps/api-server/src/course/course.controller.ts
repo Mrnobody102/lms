@@ -37,7 +37,7 @@ export class CourseController {
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Tạo khóa học mới' })
   create(@Body() createCourseDto: CreateCourseDto, @Request() req: AuthenticatedRequest) {
-    const { title, slug, description, totalDuration, aiSettings } = createCourseDto;
+    const { title, slug, description, totalDuration, aiSettings, levelId } = createCourseDto;
 
     return this.courseService.create({
       title,
@@ -45,6 +45,7 @@ export class CourseController {
       description,
       totalDuration,
       aiSettings,
+      levelId,
       tenantId: getScopedTenantId(req),
     });
   }
@@ -150,6 +151,7 @@ export class CourseController {
       description: updateCourseDto.description,
       totalDuration: updateCourseDto.totalDuration,
       aiSettings: updateCourseDto.aiSettings,
+      levelId: updateCourseDto.levelId,
     });
   }
 

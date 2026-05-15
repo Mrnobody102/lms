@@ -4,9 +4,13 @@ import { useTranslations } from 'next-intl';
 import { Button, Input, Label } from '@/components/ui';
 import { Save, Loader2 } from 'lucide-react';
 
+import { usePrograms } from '@/hooks/use-programs';
+
 interface CourseFormProps {
   title: string;
   onTitleChange: (title: string) => void;
+  levelId?: string;
+  onLevelIdChange?: (levelId: string) => void;
   aiEnabled: boolean;
   onAiEnabledChange: (enabled: boolean) => void;
   aiPrompt: string;
@@ -18,6 +22,8 @@ interface CourseFormProps {
 export function CourseForm({
   title,
   onTitleChange,
+  levelId,
+  onLevelIdChange,
   aiEnabled,
   onAiEnabledChange,
   aiPrompt,
@@ -26,6 +32,7 @@ export function CourseForm({
   saving,
 }: CourseFormProps) {
   const t = useTranslations('Admin');
+  const { data: programs } = usePrograms();
 
   return (
     <div className="space-y-4">
@@ -38,6 +45,33 @@ export function CourseForm({
           className="text-base font-medium"
         />
       </div>
+
+      {onLevelIdChange && (
+        <div className="space-y-1.5">
+          <Label className="text-sm font-medium">{t('levelOptional')}</Label>
+          <select
+            value={levelId || ''}
+            onChange={(e) => onLevelIdChange(e.target.value)}
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
+          >
+            <option value="">{t('none')}</option>
+            {programs?.map((p) => {
+              if (!p.levels || p.levels.length === 0) return null;
+              return (
+                <optgroup key={p.id} label={p.title}>
+                  {p.levels.map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.title}
+                    </option>
+                  ))}
+                </optgroup>
+              );
+            })}
+          </select>
+          <p className="text-xs text-muted-foreground">{t('levelOptionalDesc')}</p>
+        </div>
+      )}
+
       <div className="rounded-lg border bg-muted/20 p-4 space-y-4">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">

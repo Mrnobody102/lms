@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsInt, Matches, MaxLength, IsObject } from 'class-validator';
+import { IsString, IsOptional, IsInt, Matches, MaxLength, IsObject, IsUUID } from 'class-validator';
 
 export class CreateCourseDto {
   @ApiProperty({ example: 'Lập trình Next.js cơ bản', description: 'Course title' })
@@ -38,4 +38,9 @@ export class CreateCourseDto {
   @IsObject()
   @IsOptional()
   aiSettings?: Record<string, unknown>;
+
+  @ApiPropertyOptional({ description: 'The level this course belongs to' })
+  @IsOptional()
+  @IsUUID()
+  levelId?: string;
 }

@@ -34,6 +34,7 @@ export interface Course {
   id: string;
   title: string;
   description?: string | null;
+  levelId?: string | null;
   aiSettings?: CourseAiSettings | null;
   lessons: Lesson[];
   units?: CourseUnit[];
@@ -47,6 +48,7 @@ export interface CourseCreateInput {
   description?: string;
   totalDuration?: number;
   aiSettings?: CourseAiSettings;
+  levelId?: string;
 }
 
 export type CourseUpdateInput = Partial<CourseCreateInput>;

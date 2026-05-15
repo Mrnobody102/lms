@@ -231,6 +231,8 @@ Còn cần:
 
 ### P7. Activation Và Licensing
 
+Trạng thái: đã hoàn thành MVP.
+
 Mục tiêu: phục vụ flow "Nhập mã kích hoạt".
 
 Phạm vi:
@@ -257,10 +259,9 @@ Phạm vi:
 
 ## Thứ tự làm tiếp đề xuất
 
-1. Activation/license.
-2. Reporting nâng cao theo unit/practice/exam nếu cần drill-down sâu hơn.
-3. Program/level hierarchy nếu nội dung HSK cần nhiều cấp hơn.
-4. AI conversation.
+1. Program/level hierarchy để phân cấp nội dung HSK sâu hơn (Program -> Level -> Course).
+2. Reporting nâng cao theo unit/practice/exam và Program/Level drill-down.
+3. AI conversation.
 
 ## Definition Of Done Cấp Dự Án
 

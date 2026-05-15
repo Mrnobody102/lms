@@ -80,6 +80,8 @@ model Tenant {
   examAttempts     ExamAttempt[]
   activationCodes  ActivationCode[]
   redemptions      ActivationRedemption[]
+  programs         Program[]
+  levels           Level[]
   isActive         Boolean               @default(true)
   createdAt        DateTime              @default(now())
   updatedAt        DateTime              @default(now()) @updatedAt
@@ -165,6 +167,8 @@ model Course {
   deletedAt        DateTime?
   tenantId         String
   tenant           Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  levelId          String?
+  level            Level?                @relation(fields: [levelId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
   units            CourseUnit[]
   lessons          Lesson[]
   enrollments      CourseEnrollment[]
@@ -184,6 +188,44 @@ model Course {
   @@unique([id, tenantId])
   @@index([tenantId, isActive])
   @@index([tenantId, deletedAt])
+  @@index([levelId])
+}
+
+model Program {
+  id               String      @id @default(uuid())
+  title            String
+  slug             String?
+  description      String?
+  isActive         Boolean     @default(true)
+  deletedAt        DateTime?
+  tenantId         String
+  tenant           Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  levels           Level[]
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@unique([id, tenantId])
+  @@index([tenantId, isActive, deletedAt])
+}
+
+model Level {
+  id               String      @id @default(uuid())
+  title            String
+  description      String?
+  order            Int         @default(0)
+  isActive         Boolean     @default(true)
+  deletedAt        DateTime?
+  tenantId         String
+  tenant           Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  programId        String
+  program          Program     @relation(fields: [programId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  courses          Course[]
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@unique([id, tenantId])
+  @@index([tenantId, programId, deletedAt])
+  @@index([programId, order])
 }
 
 model CourseUnit {
