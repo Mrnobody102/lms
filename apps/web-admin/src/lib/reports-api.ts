@@ -144,6 +144,12 @@ export const reportsApi = {
       .then((r) => r.data as SkillsAccuracyResponse);
   },
 
+  getActivityTrend(filters: { courseId?: string; programId?: string } = {}) {
+    return api
+      .get('/admin/reports/activity-trend', { params: filters })
+      .then((r) => r.data as { trend: Array<{ date: string; opened: number; completed: number }> });
+  },
+
   /**
    * Trigger an authenticated CSV download. Uses the same axios client so cookies/CSRF flow.
    */

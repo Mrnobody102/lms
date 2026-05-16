@@ -1255,10 +1255,8 @@ function buildExamQuestionPayload(draft: ExamQuestionDraft) {
   const correctAnswerIndex = Number(draft.correctAnswer);
   const correctAnswerIsNumeric = hasCorrectAnswer && Number.isInteger(correctAnswerIndex);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let parsedOptions: any = options;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let finalCorrectAnswer: any = draft.correctAnswer.trim();
+  let parsedOptions: unknown = options;
+  let finalCorrectAnswer: unknown = draft.correctAnswer.trim();
   let correctAnswerValid = false;
   let optionsValid = true;
 
@@ -1268,16 +1266,23 @@ function buildExamQuestionPayload(draft: ExamQuestionDraft) {
     finalCorrectAnswer = correctAnswerIndex;
     optionsValid = options.length >= 2;
   } else if (draft.type === 'MATCHING') {
-    parsedOptions = parseMatchingOptions(draft.optionsText);
+    const matchingOptions = parseMatchingOptions(draft.optionsText) as {
+      left: string[];
+      right: string[];
+    } | null;
+    parsedOptions = matchingOptions;
     optionsValid =
-      parsedOptions && Array.isArray(parsedOptions.left) && Array.isArray(parsedOptions.right);
+      Boolean(matchingOptions) &&
+      Array.isArray(matchingOptions?.left) &&
+      Array.isArray(matchingOptions?.right);
     finalCorrectAnswer = parseMatchingAnswer(draft.correctAnswer);
-    correctAnswerValid = finalCorrectAnswer && typeof finalCorrectAnswer === 'object';
+    correctAnswerValid = Boolean(finalCorrectAnswer) && typeof finalCorrectAnswer === 'object';
   } else if (draft.type === 'ORDERING') {
     parsedOptions = options;
     optionsValid = options.length >= 2;
-    finalCorrectAnswer = parseOrderingAnswer(draft.correctAnswer);
-    correctAnswerValid = Array.isArray(finalCorrectAnswer);
+    const orderingAnswer = parseOrderingAnswer(draft.correctAnswer);
+    finalCorrectAnswer = orderingAnswer;
+    correctAnswerValid = Array.isArray(orderingAnswer);
   } else {
     correctAnswerValid = hasCorrectAnswer;
     parsedOptions = undefined;

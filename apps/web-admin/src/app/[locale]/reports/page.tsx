@@ -10,6 +10,7 @@ import { Link } from '@/navigation';
 import { AlertCircle, ChevronRight, Layers } from 'lucide-react';
 import { AccuracyCell, ProgressBarCell, ReportTable } from '@/components/reports/report-table';
 import { SkillAccuracyPanel } from '@/components/reports/skill-accuracy-panel';
+import { ActivityTrendPanel } from '@/components/reports/activity-trend-panel';
 import type { ProgramRollupRow, UnassignedRollupRow } from '@/lib/reports-api';
 
 type Row = ProgramRollupRow | UnassignedRollupRow;
@@ -40,7 +41,8 @@ export default function ReportsHomePage() {
             ) : (
               <div className="space-y-6">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  <div className="lg:col-span-2">
+                  <div className="lg:col-span-2 space-y-6">
+                    <ActivityTrendPanel />
                     {isLoading ? (
                       <div className="rounded-md border bg-card p-6 space-y-2">
                         {Array.from({ length: 3 }).map((_, i) => (

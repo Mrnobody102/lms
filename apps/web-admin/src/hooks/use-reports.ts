@@ -46,3 +46,10 @@ export function useSkillsReport(filters: { courseId?: string; programId?: string
     queryFn: () => reportsApi.getSkills(filters),
   });
 }
+
+export function useActivityTrend(filters: { courseId?: string; programId?: string } = {}) {
+  return useQuery({
+    queryKey: ['reports', 'activity-trend', filters],
+    queryFn: () => reportsApi.getActivityTrend(filters),
+  });
+}

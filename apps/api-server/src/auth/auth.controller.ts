@@ -1,14 +1,4 @@
-import {
-  Controller,
-  Post,
-  Body,
-  Req,
-  Res,
-  HttpCode,
-  HttpStatus,
-  Headers,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Post, Body, Req, Res, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
@@ -51,12 +41,12 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   async login(
     @Body() loginDto: LoginDto,
-    @Headers('x-tenant-id') tenantId: string | undefined,
+    @Req() req: TenantAwareRequest,
     @Res({ passthrough: true }) res: Response,
     @IpAddress() ipAddress: string,
     @UserAgent() userAgent: string,
   ) {
-    return this.authService.login(loginDto, tenantId, res, ipAddress, userAgent);
+    return this.authService.login(loginDto, req.tenantId, res, ipAddress, userAgent);
   }
 
   @Post('logout')

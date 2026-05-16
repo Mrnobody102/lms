@@ -10,6 +10,7 @@ import { Button, Input, Separator, Skeleton, Alert, AlertDescription } from '@/c
 import { FolderTree, AlertCircle, Search, Edit2, Trash2, Layers } from 'lucide-react';
 import { Link } from '@/navigation';
 import { Badge } from '@/components/ui';
+import { useDebounce } from '@/hooks/use-debounce';
 
 export default function ProgramsPage() {
   const t = useTranslations('Admin');
@@ -17,9 +18,10 @@ export default function ProgramsPage() {
 
   const { data: programs, isLoading, error } = usePrograms();
   const deleteProgram = useDeleteProgram();
+  const debouncedSearch = useDebounce(search, 300);
 
   const filteredPrograms = (programs || []).filter((p) =>
-    p.title.toLowerCase().includes(search.toLowerCase()),
+    p.title.toLowerCase().includes(debouncedSearch.toLowerCase()),
   );
 
   const errorMessage = error instanceof Error ? error.message : error ? String(error) : null;

@@ -982,7 +982,9 @@ export default function AdminPracticePage() {
                       },
                       {
                         label: t('answerOptions'),
-                        value: questionDraft.options.length,
+                        value: Array.isArray(questionDraft.options)
+                          ? questionDraft.options.length
+                          : 0,
                       },
                       {
                         label: t('skillTags'),
@@ -1144,7 +1146,7 @@ export default function AdminPracticePage() {
                         value: setTitle.trim() || t('exerciseSetTitlePlaceholder'),
                       },
                       {
-                        label: t('questionCount'),
+                        label: t('questionCount', { count: selectedQuestionIds.length }),
                         value: selectedQuestionIds.length,
                       },
                     ]}
@@ -1386,10 +1388,8 @@ function buildPracticeQuestionDraft(params: {
   const correctAnswerIndex = Number(params.correctAnswer);
   const correctAnswerIsNumeric = hasCorrectAnswer && Number.isInteger(correctAnswerIndex);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let parsedOptions: any = options;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let finalCorrectAnswer: any = params.correctAnswer.trim();
+  let parsedOptions: unknown = options;
+  let finalCorrectAnswer: unknown = params.correctAnswer.trim();
   let correctAnswerValid = false;
   let optionsValid = true;
 
@@ -1399,16 +1399,23 @@ function buildPracticeQuestionDraft(params: {
     finalCorrectAnswer = correctAnswerIndex;
     optionsValid = options.length >= 2;
   } else if (params.questionType === 'MATCHING') {
-    parsedOptions = parseMatchingOptions(params.optionsText);
+    const matchingOptions = parseMatchingOptions(params.optionsText) as {
+      left: string[];
+      right: string[];
+    } | null;
+    parsedOptions = matchingOptions;
     optionsValid =
-      parsedOptions && Array.isArray(parsedOptions.left) && Array.isArray(parsedOptions.right);
+      Boolean(matchingOptions) &&
+      Array.isArray(matchingOptions?.left) &&
+      Array.isArray(matchingOptions?.right);
     finalCorrectAnswer = parseMatchingAnswer(params.correctAnswer);
-    correctAnswerValid = finalCorrectAnswer && typeof finalCorrectAnswer === 'object';
+    correctAnswerValid = Boolean(finalCorrectAnswer) && typeof finalCorrectAnswer === 'object';
   } else if (params.questionType === 'ORDERING') {
     parsedOptions = options;
     optionsValid = options.length >= 2;
-    finalCorrectAnswer = parseOrderingAnswer(params.correctAnswer);
-    correctAnswerValid = Array.isArray(finalCorrectAnswer);
+    const orderingAnswer = parseOrderingAnswer(params.correctAnswer);
+    finalCorrectAnswer = orderingAnswer;
+    correctAnswerValid = Array.isArray(orderingAnswer);
   } else {
     correctAnswerValid = hasCorrectAnswer;
     parsedOptions = undefined;

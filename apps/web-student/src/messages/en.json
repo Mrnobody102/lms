@@ -272,7 +272,8 @@
         "revokeError": "Failed to log out device. Please try again.",
         "unknownDevice": "Unknown Device",
         "unknownOS": "Unknown OS",
-        "unknownBrowser": "Unknown Browser"
+        "unknownBrowser": "Unknown Browser",
+        "noSessions": "No active sessions found."
       }
     },
     "courses": {

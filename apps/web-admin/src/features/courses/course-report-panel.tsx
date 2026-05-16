@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { Activity, BarChart3, CheckCircle2, Clock3, Loader2, Search, Users } from 'lucide-react';
 import { Badge, Button, Input } from '@/components/ui';
 import { CourseEnrollmentReport } from '@/lib/course-api';
+import { useDebounce } from '@/hooks/use-debounce';
 
 interface CourseReportPanelProps {
   report?: CourseEnrollmentReport;
@@ -18,9 +19,10 @@ export function CourseReportPanel({ report, loading = false }: CourseReportPanel
   const [statusFilter, setStatusFilter] = useState<
     'all' | 'COMPLETED' | 'IN_PROGRESS' | 'NOT_STARTED'
   >('all');
+  const debouncedSearch = useDebounce(search, 300);
   const students = useMemo(() => report?.students ?? [], [report]);
   const filteredStudents = useMemo(() => {
-    const term = search.trim();
+    const term = debouncedSearch.trim();
     return students.filter((student) => {
       const statusMatches = statusFilter === 'all' || student.status === statusFilter;
       const textMatches =
@@ -29,7 +31,7 @@ export function CourseReportPanel({ report, loading = false }: CourseReportPanel
         student.email.toLowerCase().includes(term.toLowerCase());
       return statusMatches && textMatches;
     });
-  }, [search, statusFilter, students]);
+  }, [debouncedSearch, statusFilter, students]);
 
   if (loading) {
     return (

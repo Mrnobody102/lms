@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { useTheme } from 'next-themes';
 import { useAuthStore } from '@/features/auth/auth.store';
 import { cn } from '@/lib/utils';
 import { Link, usePathname, useRouter } from '@/navigation';
@@ -30,7 +31,7 @@ export function AdminSidebar() {
   const router = useRouter();
   const { user, logout } = useAuthStore();
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const { theme, setTheme } = useTheme();
 
   const menuItems = [
     { name: t('dashboard'), icon: LayoutDashboard, href: '/' },
@@ -57,8 +58,7 @@ export function AdminSidebar() {
   };
 
   const toggleTheme = () => {
-    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
-    document.documentElement.classList.toggle('dark');
+    setTheme(theme === 'light' ? 'dark' : 'light');
   };
 
   return (

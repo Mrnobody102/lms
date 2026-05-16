@@ -25,12 +25,12 @@ export default async function RootLayout(props: {
 
   return (
     <html lang={locale} suppressHydrationWarning>
-      <body className="font-sans">
-        <NextIntlClientProvider messages={messages} locale={locale}>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <body className="font-sans" suppressHydrationWarning>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <NextIntlClientProvider messages={messages} locale={locale}>
             <QueryProvider>{children}</QueryProvider>
-          </ThemeProvider>
-        </NextIntlClientProvider>
+          </NextIntlClientProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

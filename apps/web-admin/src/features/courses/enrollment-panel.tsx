@@ -7,6 +7,7 @@ import { Button, Badge, Input } from '@/components/ui';
 import { AdminUser } from '@/lib/admin-user-api';
 import { CourseEnrollment } from '@/lib/course-api';
 import { useStudents } from '@/hooks/use-admin-users';
+import { useDebounce } from '@/hooks/use-debounce';
 
 interface EnrollmentPanelProps {
   courseId: string;
@@ -31,7 +32,8 @@ export function EnrollmentPanel({
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [bulkMode, setBulkMode] = useState<'enroll' | 'unenroll' | null>(null);
   const [bulkConfirm, setBulkConfirm] = useState(false);
-  const { data, isLoading } = useStudents({ search: search.trim() || undefined });
+  const debouncedSearch = useDebounce(search, 300);
+  const { data, isLoading } = useStudents({ search: debouncedSearch.trim() || undefined });
 
   const enrolledUserIds = useMemo(
     () => new Set(enrollments.map((enrollment) => enrollment.userId)),

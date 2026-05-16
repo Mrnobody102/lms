@@ -646,7 +646,7 @@ export class ExamService {
 
   private scoreAnswer(
     question: { type: ExamQuestionType; correctAnswer?: unknown },
-    answer: number | string,
+    answer: unknown,
   ) {
     return isNormalizedAnswerCorrect({
       type: question.type,

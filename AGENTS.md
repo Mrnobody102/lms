@@ -14,7 +14,7 @@ Every AI agent MUST follow these "Hard Rules" to maintain monorepo integrity:
 2.  **Tenant Isolation**: Every tenant-scoped Prisma read/write MUST include `tenantId` context. Use `LearningAccessService` for enrollment checks.
 3.  **Clean Test Lifecycle**: Every integration test (`.spec.ts`) MUST ensure `app.close()` is called in `afterAll` or `afterEach` and database state is deterministic.
 4.  **No `any` Policy**: Do not use `any`. Define interfaces or use `unknown` with type guards.
-5.  **Middleware vs Proxy**: Use `middleware.ts` for all Next.js portals. `proxy.ts` is deprecated.
+5.  **Proxy vs Middleware**: Use `proxy.ts` for all Next.js portals. `middleware.ts` is deprecated.
 6.  **Strict Linting**: Follow `unused-imports` and `import-sorting` rules. Run `pnpm lint` before finishing.
 7.  **i18n Sync**: Always update both `vi.json` and `en.json` when adding UI text.
 

@@ -8,7 +8,7 @@ const i18nProxy = createMiddleware({
   localePrefix: 'always',
 });
 
-export default function middleware(request: NextRequest) {
+export default function proxy(request: NextRequest) {
   const i18nResponse = i18nProxy(request);
 
   const securityHeaders = {
@@ -18,11 +18,14 @@ export default function middleware(request: NextRequest) {
     'X-Content-Type-Options': 'nosniff',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
-    'Content-Security-Policy': buildContentSecurityPolicy([process.env.NEXT_PUBLIC_API_URL], {
-      includeLocalhost: process.env.NODE_ENV !== 'production',
-      allowUnsafeInline: process.env.NODE_ENV !== 'production',
-      allowUnsafeEval: process.env.NODE_ENV !== 'production',
-    }),
+    'Content-Security-Policy': buildContentSecurityPolicy(
+      [process.env.NEXT_PUBLIC_API_URL, process.env.NEXT_PUBLIC_WEB_STUDENT_URL],
+      {
+        includeLocalhost: process.env.NODE_ENV !== 'production',
+        allowUnsafeInline: process.env.NODE_ENV !== 'production',
+        allowUnsafeEval: process.env.NODE_ENV !== 'production',
+      },
+    ),
   };
 
   Object.entries(securityHeaders).forEach(([key, value]) => {

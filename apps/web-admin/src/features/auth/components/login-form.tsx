@@ -47,14 +47,14 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
             if (error) clearError();
           }}
           placeholder={t('auth.emailPlaceholder')}
-          className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-foreground placeholder:text-zinc-400 transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:placeholder:text-zinc-500 dark:focus:border-blue-400 dark:focus:ring-blue-400/20"
+          className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-foreground placeholder:text-zinc-400 transition-all focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-zinc-700 dark:bg-zinc-800 dark:placeholder:text-zinc-500 dark:focus:border-primary dark:focus:ring-primary/20"
         />
       </div>
 
       {/* Password */}
       <div className="space-y-3">
         <label className="text-sm font-medium text-foreground">{t('auth.password')}</label>
-        <div className="flex h-12 items-center rounded-xl border border-zinc-200 bg-zinc-50 text-foreground transition-all focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:focus-within:border-blue-400 dark:focus-within:ring-blue-400/20">
+        <div className="flex h-12 items-center rounded-xl border border-zinc-200 bg-zinc-50 text-foreground transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 dark:border-zinc-700 dark:bg-zinc-800 dark:focus-within:border-primary dark:focus-within:ring-primary/20">
           <input
             type={showPassword ? 'text' : 'password'}
             required
@@ -69,7 +69,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="flex h-full w-12 shrink-0 items-center justify-center rounded-r-xl text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30"
+            className="flex h-full w-12 shrink-0 items-center justify-center rounded-r-xl text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
             aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
           >
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -78,7 +78,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
         <div className="flex justify-end">
           <Link
             href="/forgot-password"
-            className="text-[11px] font-medium text-blue-600 hover:text-blue-500 transition-colors"
+            className="text-[11px] font-medium text-primary hover:text-primary/80 transition-colors"
           >
             {t('auth.forgotPassword')}
           </Link>
@@ -89,7 +89,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
       <button
         type="submit"
         disabled={loading}
-        className="mt-0 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 font-semibold text-white transition-colors hover:bg-blue-500 disabled:bg-blue-600/50 dark:bg-blue-600 dark:hover:bg-blue-500"
+        className="mt-0 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 font-semibold text-white transition-colors hover:opacity-90 disabled:bg-primary/50"
       >
         {loading ? (
           <>

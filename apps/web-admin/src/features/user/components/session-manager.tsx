@@ -41,7 +41,7 @@ interface Session {
 }
 
 export function SessionManager() {
-  const t = useTranslations('settings.sessions');
+  const t = useTranslations('Admin.settings.sessions');
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [revokingId, setRevokingId] = useState<string | null>(null);
@@ -172,7 +172,7 @@ export function SessionManager() {
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Globe className="h-3.5 w-3.5" />
-                      {session.ipAddress || 'Unknown IP'}
+                      {session.ipAddress || t('location')}
                     </div>
                     <div className="flex items-center gap-1">
                       <Clock className="h-3.5 w-3.5" />
@@ -204,7 +204,7 @@ export function SessionManager() {
           {sessions.length === 0 && !loading && (
             <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
               <Info className="mb-2 h-12 w-12 opacity-20" />
-              <p>No active sessions found.</p>
+              <p>{t('noSessions')}</p>
             </div>
           )}
         </div>

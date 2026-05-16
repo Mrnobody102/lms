@@ -4,6 +4,7 @@ import {
   ExamAttemptStatus,
   PracticeAttemptStatus,
   ProgressStatus,
+  LearningActivityType,
 } from '@repo/database';
 import { PrismaService } from '../common/services/prisma.service';
 import { buildAnswerAccuracy, type AccuracyReport } from '../common/utils/answer-accuracy.util';
@@ -488,6 +489,55 @@ export class AdminReportsService {
       return { in: courses.map((c) => c.id) };
     }
     return undefined;
+  }
+
+  async getActivityTrend(
+    tenantId: string,
+    filters: { courseId?: string; programId?: string } = {},
+  ) {
+    const courseFilter = await this.resolveCourseFilter(tenantId, filters);
+
+    // Get last 7 days
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - 6);
+    startDate.setHours(0, 0, 0, 0);
+
+    const records = await this.prisma.learningActivity.findMany({
+      where: {
+        tenantId,
+        occurredAt: { gte: startDate },
+        ...(courseFilter ? { courseId: courseFilter } : {}),
+      },
+      select: {
+        occurredAt: true,
+        type: true,
+      },
+    });
+
+    // Bucket by day (YYYY-MM-DD)
+    const trendMap = new Map<string, { date: string; opened: number; completed: number }>();
+
+    // Initialize the last 7 days with 0
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(startDate);
+      d.setDate(d.getDate() + i);
+      const dateStr = d.toISOString().split('T')[0];
+      trendMap.set(dateStr, { date: dateStr, opened: 0, completed: 0 });
+    }
+
+    for (const record of records) {
+      const dateStr = record.occurredAt.toISOString().split('T')[0];
+      const bucket = trendMap.get(dateStr);
+      if (bucket) {
+        if (record.type === LearningActivityType.LESSON_OPENED) bucket.opened += 1;
+        if (record.type === LearningActivityType.LESSON_COMPLETED) bucket.completed += 1;
+      }
+    }
+
+    return {
+      trend: Array.from(trendMap.values()),
+    };
   }
 
   private async computeUnitAccuracy(tenantId: string, courseId: string) {

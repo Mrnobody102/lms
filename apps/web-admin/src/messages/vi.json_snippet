@@ -1,0 +1,15 @@
+        "noSessions": "Không tìm thấy phiên đăng nhập nào."
+      }
+    },
+    "footer": {
+      "copyright": "© 2026 LMS Platform. Bảo lưu mọi quyền."
+    }
+  },
+  "Common": {
+    "search": "Tìm kiếm...",
+    "notifications": "Thông báo",
+    "profile": "Hồ sơ",
+    "minutesAgo": "phút trước",
+    "copyright": "© 2026 LMS Platform"
+  }
+}

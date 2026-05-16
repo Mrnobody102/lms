@@ -117,7 +117,7 @@ export class UserSessionController {
       metadata: { sessionId },
     });
 
-    return { success: true };
+    return {};
   }
 
   @Delete('revoke-others')
@@ -154,6 +154,6 @@ export class UserSessionController {
       metadata: { count: result.count, type: 'others' },
     });
 
-    return { success: true, count: result.count };
+    return { count: result.count };
   }
 }

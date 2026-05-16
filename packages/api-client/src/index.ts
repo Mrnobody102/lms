@@ -197,7 +197,10 @@ export function createApiClient(config: ApiClientConfig = {}): AxiosInstance {
             onUnauthorized();
           } else {
             const locale = detectLocale(supportedLocales, defaultLocale);
-            window.location.assign(buildLoginRedirectUrl(locale, getReturnUrl()));
+            const redirectUrl = buildLoginRedirectUrl(locale, getReturnUrl());
+            if (window.location.pathname !== `/${locale}/login`) {
+              window.location.assign(redirectUrl);
+            }
           }
           return Promise.reject(refreshError);
         } finally {
@@ -217,7 +220,10 @@ export function createApiClient(config: ApiClientConfig = {}): AxiosInstance {
           onUnauthorized();
         } else {
           const locale = detectLocale(supportedLocales, defaultLocale);
-          window.location.assign(buildLoginRedirectUrl(locale, getReturnUrl()));
+          const redirectUrl = buildLoginRedirectUrl(locale, getReturnUrl());
+          if (window.location.pathname !== `/${locale}/login`) {
+            window.location.assign(redirectUrl);
+          }
         }
       }
 

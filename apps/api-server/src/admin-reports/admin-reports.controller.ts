@@ -127,6 +127,16 @@ export class AdminReportsController {
     sendCsv(res, `course-${courseId}-units.csv`, csv);
   }
 
+  @Get('activity-trend')
+  @ApiOperation({ summary: 'Get daily activity trends (time-series)' })
+  getActivityTrend(
+    @Request() req: AuthenticatedRequest,
+    @Query('courseId') courseId?: string,
+    @Query('programId') programId?: string,
+  ) {
+    return this.reportsService.getActivityTrend(getScopedTenantId(req), { courseId, programId });
+  }
+
   @Get('skills.csv')
   @ApiOperation({ summary: 'CSV export of accuracy-by-skill snapshot' })
   async getSkillsCsv(

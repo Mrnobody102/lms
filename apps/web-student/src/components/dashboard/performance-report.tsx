@@ -4,6 +4,15 @@ import { usePerformance } from '@/hooks/use-performance';
 import { useTranslations } from 'next-intl';
 import { BarChart3, BrainCircuit, TrendingUp } from 'lucide-react';
 import { cn } from '@repo/ui';
+import {
+  Radar,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  ResponsiveContainer,
+  Tooltip,
+} from 'recharts';
 
 export function PerformanceReport() {
   const t = useTranslations('Student');
@@ -90,48 +99,36 @@ export function PerformanceReport() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-          {data.accuracyBySkill.map((skill) => (
-            <div
-              key={skill.skill}
-              className="p-4 rounded-xl bg-muted/30 border border-border/30 flex flex-col items-center text-center group/skill"
-            >
-              <div className="relative w-16 h-16 flex items-center justify-center mb-2">
-                <svg className="w-full h-full -rotate-90">
-                  <circle
-                    cx="32"
-                    cy="32"
-                    r="28"
-                    className="stroke-muted fill-none"
-                    strokeWidth="4"
-                  />
-                  <circle
-                    cx="32"
-                    cy="32"
-                    r="28"
-                    className={cn(
-                      'fill-none transition-all duration-1000 ease-out',
-                      skill.accuracy >= 80
-                        ? 'stroke-success'
-                        : skill.accuracy >= 50
-                          ? 'stroke-orange-500'
-                          : 'stroke-destructive',
-                    )}
-                    strokeWidth="4"
-                    strokeDasharray="175.9"
-                    strokeDashoffset={175.9 - (175.9 * skill.accuracy) / 100}
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <span className="absolute inset-0 flex items-center justify-center text-xs font-black">
-                  {skill.accuracy}%
-                </span>
-              </div>
-              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground group-hover/skill:text-foreground transition-colors">
-                {skill.skill}
-              </span>
-            </div>
-          ))}
+        <div className="w-full h-[300px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data.accuracyBySkill}>
+              <PolarGrid stroke="hsl(var(--muted-foreground))" strokeOpacity={0.2} />
+              <PolarAngleAxis
+                dataKey="skill"
+                tick={{ fill: 'hsl(var(--foreground))', fontSize: 12, fontWeight: 600 }}
+              />
+              <PolarRadiusAxis
+                angle={30}
+                domain={[0, 100]}
+                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'hsl(var(--card))',
+                  borderColor: 'hsl(var(--border))',
+                  borderRadius: '8px',
+                }}
+                itemStyle={{ color: 'hsl(var(--primary))', fontWeight: 600 }}
+              />
+              <Radar
+                name={t('dashboard.accuracyBySkill')}
+                dataKey="accuracy"
+                stroke="hsl(var(--primary))"
+                fill="hsl(var(--primary))"
+                fillOpacity={0.4}
+              />
+            </RadarChart>
+          </ResponsiveContainer>
         </div>
       </section>
     </div>

@@ -2,6 +2,8 @@ import '@repo/ui/styles.css';
 import type { Metadata } from 'next';
 import { ThemeProvider } from '@repo/ui';
 import { QueryProvider } from '@/components/providers';
+import { ProgressBar } from '@/components/common/progress-bar';
+import { Suspense } from 'react';
 
 export const metadata: Metadata = {
   title: 'LMS Admin',
@@ -25,12 +27,15 @@ export default async function RootLayout(props: {
 
   return (
     <html lang={locale} suppressHydrationWarning>
-      <body className="font-sans">
-        <NextIntlClientProvider messages={messages} locale={locale}>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <body className="font-sans" suppressHydrationWarning>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <NextIntlClientProvider messages={messages} locale={locale}>
+            <Suspense fallback={null}>
+              <ProgressBar />
+            </Suspense>
             <QueryProvider>{children}</QueryProvider>
-          </ThemeProvider>
-        </NextIntlClientProvider>
+          </NextIntlClientProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

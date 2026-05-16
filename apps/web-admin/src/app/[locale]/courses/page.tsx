@@ -10,6 +10,7 @@ import { CourseCard } from '@/features/courses/course-card';
 import { Button, Input, Separator, Skeleton, Alert, AlertDescription } from '@/components/ui';
 import { BookOpen, AlertCircle, Search } from 'lucide-react';
 import { Link } from '@/navigation';
+import { useDebounce } from '@/hooks/use-debounce';
 
 export default function CoursesPage() {
   const t = useTranslations('Admin');
@@ -18,10 +19,11 @@ export default function CoursesPage() {
 
   const { data: courseData, isLoading, error } = useCourses();
   const deleteCourse = useDeleteCourse();
+  const debouncedSearch = useDebounce(search, 300);
 
   const allCourses = Array.isArray(courseData?.data) ? courseData.data : [];
   const courses = allCourses.filter((c) => {
-    const matchesSearch = c.title.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = c.title.toLowerCase().includes(debouncedSearch.toLowerCase());
     const lessonCount = c._count?.lessons ?? c.lessons?.length ?? 0;
     const matchesFilter =
       filter === 'all' ||
@@ -113,7 +115,7 @@ export default function CoursesPage() {
             ) : (
               <>
                 <p className="text-sm text-muted-foreground mb-4">
-                  {courses.length} {courses.length === 1 ? 'course' : 'courses'}
+                  {t('coursesFound', { count: courses.length })}
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {courses.map((course) => (

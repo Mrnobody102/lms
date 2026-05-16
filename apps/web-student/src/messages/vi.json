@@ -272,7 +272,8 @@
         "revokeError": "Không thể đăng xuất thiết bị. Vui lòng thử lại.",
         "unknownDevice": "Thiết bị không xác định",
         "unknownOS": "Hệ điều hành không xác định",
-        "unknownBrowser": "Trình duyệt không xác định"
+        "unknownBrowser": "Trình duyệt không xác định",
+        "noSessions": "Không tìm thấy phiên đăng nhập nào."
       }
     },
     "courses": {

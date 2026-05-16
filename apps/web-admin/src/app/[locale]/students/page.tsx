@@ -16,6 +16,7 @@ import {
   UserX2,
   Users,
 } from 'lucide-react';
+import { useDebounce } from '@/hooks/use-debounce';
 
 type StatusFilter = 'all' | 'active' | 'inactive';
 
@@ -23,16 +24,26 @@ export default function AdminStudentsPage() {
   const t = useTranslations('Admin');
   const locale = useLocale();
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>(readInitialStatusFilter);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [bulkAction, setBulkAction] = useState<'activate' | 'deactivate' | null>(null);
   const [bulkConfirm, setBulkConfirm] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  const debouncedSearch = useDebounce(search, 500);
   const isActive = statusFilter === 'all' ? undefined : statusFilter === 'active' ? true : false;
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const initialStatus = new URLSearchParams(window.location.search).get('status');
+      if (initialStatus) {
+        setStatusFilter(normalizeStatusFilter(initialStatus));
+      }
+    }
+  }, []);
+
   const { data, isLoading, isError } = useStudents({
-    search: search.trim() || undefined,
+    search: debouncedSearch.trim() || undefined,
     isActive,
   });
   const updateStudentStatus = useUpdateStudentStatus();
@@ -136,7 +147,7 @@ export default function AdminStudentsPage() {
               {t('studentsFound', { count: total })}
             </div>
 
-            <div className="mb-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_220px_auto]">
+            <div className="mb-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto]">
               <div className="flex h-10 items-center rounded-lg border border-input bg-background text-foreground transition-colors focus-within:ring-2 focus-within:ring-primary/20">
                 <Search className="ml-3.5 h-4 w-4 shrink-0 text-muted-foreground pointer-events-none" />
                 <Input
@@ -374,12 +385,4 @@ export default function AdminStudentsPage() {
 
 function normalizeStatusFilter(value: string | null): StatusFilter {
   return value === 'all' || value === 'inactive' || value === 'active' ? value : 'active';
-}
-
-function readInitialStatusFilter(): StatusFilter {
-  if (typeof window === 'undefined') {
-    return 'active';
-  }
-
-  return normalizeStatusFilter(new URLSearchParams(window.location.search).get('status'));
 }

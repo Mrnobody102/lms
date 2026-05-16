@@ -665,7 +665,7 @@ export class PracticeService {
 
   private scoreAnswer(
     question: { type: PracticeQuestionType; correctAnswer: unknown },
-    answer: number | string,
+    answer: unknown,
   ) {
     return isNormalizedAnswerCorrect({
       type: question.type,
@@ -681,7 +681,7 @@ export class PracticeService {
       correctAnswer: unknown;
       skillTags?: string[];
     };
-    answer: number | string | undefined;
+    answer: unknown;
     courseTitle?: string;
     courseAiSettings?: unknown;
   }): Promise<PracticeAiFeedback | undefined> {
