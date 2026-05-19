@@ -7,6 +7,7 @@ import {
   normalizeQuestionPayload,
   normalizeSubmittedAnswer,
 } from '../common/utils/answer-validation.util';
+import { SkillMasteryService } from '../skill/skill-mastery.service';
 import { CreateExamDto } from './dto/create-exam.dto';
 
 interface ExamUser {
@@ -27,6 +28,7 @@ interface ExamQuestionForScoring {
   correctAnswer?: unknown;
   explanation?: string | null;
   points: number;
+  skillTags?: string[];
 }
 
 interface ExamWithSections {
@@ -43,6 +45,7 @@ export class ExamService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly learningAccess: LearningAccessService,
+    private readonly skillMastery: SkillMasteryService,
   ) {}
 
   async createExam(tenantId: string, data: CreateExamDto) {
@@ -456,6 +459,17 @@ export class ExamService {
       },
       include: { answers: true },
     });
+
+    await this.skillMastery.applyAnswerEvents(
+      tenantId,
+      user.id,
+      results
+        .filter((result) => result.answer !== null)
+        .map((result) => ({
+          skillCodes: questions.find((q) => q.id === result.questionId)?.skillTags ?? [],
+          isCorrect: result.isCorrect,
+        })),
+    );
 
     return {
       attempt: this.withAttemptTiming(submittedAttempt, attempt.exam.durationMinutes),

@@ -27,6 +27,7 @@ import { ExamModule } from './exam/exam.module';
 import { HealthModule } from './common/health/health.module';
 import { ActivationModule } from './activation/activation.module';
 import { ProgramModule } from './program/program.module';
+import { SkillModule } from './skill/skill.module';
 import { MetricsModule } from './common/metrics/metrics.module';
 import { MailModule } from './mail/mail.module';
 
@@ -78,6 +79,7 @@ import { MailModule } from './mail/mail.module';
     ExamModule,
     ActivationModule,
     ProgramModule,
+    SkillModule,
     MetricsModule,
     HealthModule,
     MailModule,

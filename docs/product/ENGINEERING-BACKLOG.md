@@ -1,6 +1,6 @@
 # Backlog Kỹ Thuật Và Theo Dõi Tiến Độ
 
-Cập nhật lần cuối: 2026-05-19
+Cập nhật lần cuối: 2026-05-19 (Batch P9.1 — Skill Mastery Foundation)
 
 ## Mục tiêu
 
@@ -29,7 +29,7 @@ Nguyên tắc:
 | Practice engine                        | Đã có Student UI MVP | Question bank, exercise set, submit attempt/scoring, enrollment authorization, admin/student practice UI; question types: MC, fill-blank, matching, ordering   |
 | Quiz / Exam attempt                    | Đã có Student UI MVP | Exam template, section/question, start/submit attempt, scoring, review, enrollment authorization, admin/student UI; cùng bộ question types                     |
 | Activation / license code              | Đã làm               | Activation code, license grant, redemption history, expiration/usage limits.                                                                                   |
-| Skill mastery + SRS                    | Chưa làm             | `SkillMastery`, `ReviewCard` model, daily review queue, SM-2 scheduling. Priority cao — prerequisite cho mọi adaptive feature.                                 |
+| Skill mastery + SRS                    | Foundation đã làm    | `Skill` catalog + `SkillMastery` EWMA + admin/student UI + practice filter (Batch P9.1). `ReviewCard` SRS Core + daily review queue chưa làm.                  |
 | AI in-context tutor (P8a)              | Chưa làm             | Giải thích lỗi practice/exam review, contextual vocab help. Priority cao nhất trong AI track.                                                                  |
 | AI-generated practice (P8b)            | Chưa làm             | Sinh câu hỏi từ skill yếu, admin duyệt.                                                                                                                        |
 | AI conversation roleplay (P8c)         | Chưa làm             | Scenario-based chat/voice roleplay.                                                                                                                            |
@@ -272,16 +272,22 @@ Trạng thái: chưa làm. Chia thành 3 track con để tránh "chat trước, 
 
 ### Epic L. Spaced Repetition System Và Skill Mastery (P9)
 
-Trạng thái: chưa làm. Cốt lõi học thuật — prerequisite cho mọi adaptive feature.
+Trạng thái: Foundation đã làm (Batch P9.1, 2026-05-19). SRS Core còn pending.
 
-#### Skill Mastery Foundation
+#### Skill Mastery Foundation (Batch P9.1)
 
-- [ ] Model `Skill` (vocabulary, grammar, reading, listening, writing) — tag entity
-- [ ] `SkillMastery(userId, skillId, mastery 0-1, confidence, lastUpdatedAt)` table
-- [ ] Cập nhật `SkillMastery` từ `PracticeAnswer`/`ExamAnswer` (rolling accuracy + decay hoặc Bayesian update đơn giản)
-- [ ] `GET /api/skills/mastery` trả mastery list cho student
-- [ ] Skill filter trên student practice UI (chọn luyện theo kỹ năng yếu)
-- [ ] Skill mastery chart trên student report (time-series)
+- [x] Model `Skill` (catalog: code, name, nameVi, color, sortOrder, isActive, soft-delete)
+- [x] `SkillMastery(userId, skillId, mastery, attempts, correctAttempts, lastUpdatedAt)` table
+- [x] Cập nhật `SkillMastery` từ `PracticeAnswer`/`ExamAnswer` qua EWMA (α=0.7)
+- [x] `GET /api/skills` + `GET /api/skills/mastery` (student order ASC by mastery)
+- [x] `POST/PATCH/DELETE /api/skills` admin CRUD với audit log SKILL_CREATE/UPDATE/DELETE
+- [x] Skill filter trên student practice UI (chip filter, URL-driven `?skill=CODE`)
+- [x] Admin UI `/skills` quản lý catalog với badge color, edit dialog, soft-delete
+- [x] Student dashboard `SkillMasteryPanel` (5 kỹ năng yếu nhất, progress bar, link "Luyện ngay")
+- [x] Seed 5 canonical skill (VOCABULARY/GRAMMAR/READING/LISTENING/WRITING) + normalize legacy tags
+- [x] Best-effort sync trong submit transaction (try/catch không block)
+- [x] Unit tests cho EWMA correctness, multi-skill, empty codes, error swallowing (140 tests pass)
+- [ ] Skill mastery time-series chart trên student report (cần `SkillMasteryHistory` table)
 
 #### SRS Core
 
@@ -311,9 +317,9 @@ Trạng thái: chưa làm. Mở khóa listening question và AI audio scoring.
 
 Thứ tự ưu tiên dựa trên giá trị giáo dục, dependencies và hiện trạng:
 
-1. Audit log + bulk feedback hoàn chỉnh (Epic D close-out): bổ sung audit log cho bulk enroll/unenroll, surface `skippedCount`/`duplicateCount` lên admin UI.
-2. Skill mastery foundation (Epic L phần đầu, P9 prerequisite): thêm `Skill` tag entity, `SkillMastery` table, cập nhật từ practice/exam answers, skill filter trên student practice UI.
-3. SRS review queue MVP (Epic L phần lõi): `ReviewCard` model, daily review trên dashboard, "next best item" recommendation.
+1. ✅ Audit log + bulk feedback hoàn chỉnh (Epic D close-out — DONE).
+2. ✅ Skill mastery foundation (Epic L phần đầu — DONE Batch P9.1, 2026-05-19).
+3. **NEXT**: SRS review queue MVP (Epic L SRS Core): `ReviewCard` model, daily review trên dashboard, "next best item" recommendation.
 4. AI In-Context Tutor (Epic K P8a): nhúng "Giải thích vì sao sai" vào practice/exam review, dùng usage quota.
 5. Media upload pipeline (Epic M): mở khóa listening question và audio AI scoring.
 6. Listening question type (Epic M): sau khi media pipeline sẵn sàng.

@@ -33,6 +33,17 @@
       "roadmap": "Xem Lộ Trình",
       "watchVideo": "Xem Video Giới Thiệu"
     },
+    "skillMastery": {
+      "title": "Mastery theo kỹ năng",
+      "subtitle": "Sắp xếp từ kỹ năng yếu nhất đến mạnh nhất.",
+      "practiceNow": "Luyện ngay",
+      "attempts": "{count, plural, =0 {0 lần làm} other {# lần làm}}",
+      "label": {
+        "weak": "Cần luyện thêm",
+        "progressing": "Đang tiến bộ",
+        "strong": "Đã vững"
+      }
+    },
     "dashboard": {
       "badge": "Bảng học tập",
       "title": "Tiếp tục khóa học",
@@ -346,6 +357,11 @@
       "loadError": "Không thể tải bài luyện tập lúc này.",
       "emptyTitle": "Chưa có bài luyện tập",
       "emptyDesc": "Các khóa học đã enroll chưa có bộ bài luyện tập được xuất bản.",
+      "emptySkillTitle": "Không có bài luyện cho kỹ năng này",
+      "emptySkillDesc": "Không tìm thấy bộ bài luyện nào khớp {skill}. Hãy bỏ filter để xem tất cả.",
+      "skillFilterLabel": "Lọc theo kỹ năng",
+      "skillFilterAll": "Tất cả",
+      "skillFilterClear": "Bỏ filter",
       "questionCount": "{count, plural, =0 {Chưa có câu hỏi} one {# câu hỏi} other {# câu hỏi}}",
       "noDescription": "Chưa có mô tả",
       "courseFallback": "Khóa học",

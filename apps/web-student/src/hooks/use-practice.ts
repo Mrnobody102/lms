@@ -1,7 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { practiceApi } from '@/lib/practice-api';
 
-export function usePracticeExerciseSets(params?: { courseId?: string; unitId?: string }) {
+export function usePracticeExerciseSets(params?: {
+  courseId?: string;
+  unitId?: string;
+  skill?: string;
+}) {
   return useQuery({
     queryKey: ['practice-exercise-sets', params],
     queryFn: () => practiceApi.getExerciseSets(params),

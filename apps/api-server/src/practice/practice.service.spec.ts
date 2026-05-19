@@ -2,6 +2,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { PracticeQuestionType, Role } from '@repo/database';
 import { PracticeService } from './practice.service';
 
+function createSkillMasteryStub() {
+  return {
+    applyAnswerEvents: vi.fn().mockResolvedValue(undefined),
+    getStudentMastery: vi.fn().mockResolvedValue([]),
+  };
+}
+
 describe('PracticeService', () => {
   it('should create an exercise set with ordered questions after validating course ownership', async () => {
     const tx = {
@@ -29,7 +36,11 @@ describe('PracticeService', () => {
     const learningAccess = {
       courseWhere: vi.fn().mockReturnValue({ tenantId: 'tenant-1', id: 'course-1' }),
     };
-    const service = new PracticeService(prisma as never, learningAccess as never);
+    const service = new PracticeService(
+      prisma as never,
+      learningAccess as never,
+      createSkillMasteryStub() as never,
+    );
 
     await expect(
       service.createExerciseSet('tenant-1', {
@@ -101,7 +112,11 @@ describe('PracticeService', () => {
     const learningAccess = {
       ensureCourseAccess: vi.fn().mockResolvedValue(undefined),
     };
-    const service = new PracticeService(prisma as never, learningAccess as never);
+    const service = new PracticeService(
+      prisma as never,
+      learningAccess as never,
+      createSkillMasteryStub() as never,
+    );
 
     const result = await service.submitAttempt(
       'set-1',
@@ -169,7 +184,11 @@ describe('PracticeService', () => {
     const learningAccess = {
       ensureCourseAccess: vi.fn().mockResolvedValue(undefined),
     };
-    const service = new PracticeService(prisma as never, learningAccess as never);
+    const service = new PracticeService(
+      prisma as never,
+      learningAccess as never,
+      createSkillMasteryStub() as never,
+    );
 
     const result = await service.submitAttempt(
       'set-1',
@@ -236,7 +255,11 @@ describe('PracticeService', () => {
     const learningAccess = {
       ensureCourseAccess: vi.fn().mockResolvedValue(undefined),
     };
-    const service = new PracticeService(prisma as never, learningAccess as never);
+    const service = new PracticeService(
+      prisma as never,
+      learningAccess as never,
+      createSkillMasteryStub() as never,
+    );
 
     await expect(
       service.submitAttempt('set-1', 'tenant-1', { id: 'user-1', role: Role.STUDENT }, [
@@ -269,7 +292,11 @@ describe('PracticeService', () => {
     const learningAccess = {
       ensureCourseAccess: vi.fn().mockResolvedValue(undefined),
     };
-    const service = new PracticeService(prisma as never, learningAccess as never);
+    const service = new PracticeService(
+      prisma as never,
+      learningAccess as never,
+      createSkillMasteryStub() as never,
+    );
 
     const result = await service.getExerciseSet('set-1', 'tenant-1', {
       id: 'user-1',
@@ -328,7 +355,11 @@ describe('PracticeService', () => {
     const learningAccess = {
       courseWhere: vi.fn().mockReturnValue({ tenantId: 'tenant-1', userId: 'user-1' }),
     };
-    const service = new PracticeService(prisma as never, learningAccess as never);
+    const service = new PracticeService(
+      prisma as never,
+      learningAccess as never,
+      createSkillMasteryStub() as never,
+    );
 
     const result = await service.listAttempts('tenant-1', { id: 'user-1', role: Role.STUDENT }, {});
 
@@ -394,7 +425,11 @@ describe('PracticeService', () => {
     const learningAccess = {
       ensureCourseAccess: vi.fn().mockResolvedValue(undefined),
     };
-    const service = new PracticeService(prisma as never, learningAccess as never);
+    const service = new PracticeService(
+      prisma as never,
+      learningAccess as never,
+      createSkillMasteryStub() as never,
+    );
 
     const result = await service.getAttempt('attempt-1', 'tenant-1', {
       id: 'user-1',
@@ -443,7 +478,11 @@ describe('PracticeService', () => {
     const learningAccess = {
       courseWhere: vi.fn(),
     };
-    const service = new PracticeService(prisma as never, learningAccess as never);
+    const service = new PracticeService(
+      prisma as never,
+      learningAccess as never,
+      createSkillMasteryStub() as never,
+    );
 
     await service.updateQuestion('question-1', 'tenant-1', {
       prompt: 'New prompt',
@@ -481,7 +520,11 @@ describe('PracticeService', () => {
     const learningAccess = {
       courseWhere: vi.fn(),
     };
-    const service = new PracticeService(prisma as never, learningAccess as never);
+    const service = new PracticeService(
+      prisma as never,
+      learningAccess as never,
+      createSkillMasteryStub() as never,
+    );
 
     await service.removeQuestion('question-1', 'tenant-1');
 

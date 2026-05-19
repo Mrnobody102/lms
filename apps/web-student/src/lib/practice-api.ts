@@ -127,7 +127,7 @@ export interface PracticeAttemptDetail extends PracticeAttemptSummary {
 }
 
 export const practiceApi = {
-  getExerciseSets(params?: { courseId?: string; unitId?: string }) {
+  getExerciseSets(params?: { courseId?: string; unitId?: string; skill?: string }) {
     return api
       .get('/practice/exercise-sets', { params })
       .then((response) => response.data as PracticeExerciseSetSummary[]);

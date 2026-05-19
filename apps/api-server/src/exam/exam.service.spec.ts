@@ -2,6 +2,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { ExamAttemptStatus, ExamQuestionType, Role } from '@repo/database';
 import { ExamService } from './exam.service';
 
+function createSkillMasteryStub() {
+  return {
+    applyAnswerEvents: vi.fn().mockResolvedValue(undefined),
+    getStudentMastery: vi.fn().mockResolvedValue([]),
+  };
+}
+
 describe('ExamService', () => {
   it('should create an exam with ordered sections and questions after validating course ownership', async () => {
     const prisma = {
@@ -19,7 +26,11 @@ describe('ExamService', () => {
     const learningAccess = {
       courseWhere: vi.fn().mockReturnValue({ tenantId: 'tenant-1', id: 'course-1' }),
     };
-    const service = new ExamService(prisma as never, learningAccess as never);
+    const service = new ExamService(
+      prisma as never,
+      learningAccess as never,
+      createSkillMasteryStub() as never,
+    );
 
     await expect(
       service.createExam('tenant-1', {
@@ -132,7 +143,11 @@ describe('ExamService', () => {
     const learningAccess = {
       ensureCourseAccess: vi.fn().mockResolvedValue(undefined),
     };
-    const service = new ExamService(prisma as never, learningAccess as never);
+    const service = new ExamService(
+      prisma as never,
+      learningAccess as never,
+      createSkillMasteryStub() as never,
+    );
 
     const result = await service.submitAttempt(
       'attempt-1',
@@ -226,7 +241,11 @@ describe('ExamService', () => {
     const learningAccess = {
       ensureCourseAccess: vi.fn().mockResolvedValue(undefined),
     };
-    const service = new ExamService(prisma as never, learningAccess as never);
+    const service = new ExamService(
+      prisma as never,
+      learningAccess as never,
+      createSkillMasteryStub() as never,
+    );
 
     await expect(
       service.submitAttempt('attempt-1', 'tenant-1', { id: 'user-1', role: Role.STUDENT }, [
@@ -278,7 +297,11 @@ describe('ExamService', () => {
     const learningAccess = {
       ensureCourseAccess: vi.fn().mockResolvedValue(undefined),
     };
-    const service = new ExamService(prisma as never, learningAccess as never);
+    const service = new ExamService(
+      prisma as never,
+      learningAccess as never,
+      createSkillMasteryStub() as never,
+    );
 
     const result = await service.startAttempt('exam-1', 'tenant-1', {
       id: 'user-1',
@@ -331,7 +354,11 @@ describe('ExamService', () => {
     const learningAccess = {
       ensureCourseAccess: vi.fn().mockResolvedValue(undefined),
     };
-    const service = new ExamService(prisma as never, learningAccess as never);
+    const service = new ExamService(
+      prisma as never,
+      learningAccess as never,
+      createSkillMasteryStub() as never,
+    );
 
     await expect(
       service.submitAttempt('attempt-1', 'tenant-1', { id: 'user-1', role: Role.STUDENT }, [
@@ -367,7 +394,11 @@ describe('ExamService', () => {
     const learningAccess = {
       ensureCourseAccess: vi.fn().mockResolvedValue(undefined),
     };
-    const service = new ExamService(prisma as never, learningAccess as never);
+    const service = new ExamService(
+      prisma as never,
+      learningAccess as never,
+      createSkillMasteryStub() as never,
+    );
 
     const result = await service.getExam('exam-1', 'tenant-1', {
       id: 'user-1',
@@ -402,7 +433,11 @@ describe('ExamService', () => {
     const learningAccess = {
       courseWhere: vi.fn(),
     };
-    const service = new ExamService(prisma as never, learningAccess as never);
+    const service = new ExamService(
+      prisma as never,
+      learningAccess as never,
+      createSkillMasteryStub() as never,
+    );
 
     await service.updateExam('exam-1', 'tenant-1', {
       title: 'Updated exam',
@@ -462,7 +497,11 @@ describe('ExamService', () => {
     const learningAccess = {
       courseWhere: vi.fn(),
     };
-    const service = new ExamService(prisma as never, learningAccess as never);
+    const service = new ExamService(
+      prisma as never,
+      learningAccess as never,
+      createSkillMasteryStub() as never,
+    );
 
     await service.removeExam('exam-1', 'tenant-1');
 
@@ -502,7 +541,11 @@ describe('ExamService', () => {
     const learningAccess = {
       courseWhere: vi.fn().mockReturnValue({ tenantId: 'tenant-1', userId: 'user-1' }),
     };
-    const service = new ExamService(prisma as never, learningAccess as never);
+    const service = new ExamService(
+      prisma as never,
+      learningAccess as never,
+      createSkillMasteryStub() as never,
+    );
 
     const result = await service.listAttempts('tenant-1', { id: 'user-1', role: Role.STUDENT }, {});
 
@@ -552,7 +595,11 @@ describe('ExamService', () => {
     const learningAccess = {
       ensureCourseAccess: vi.fn().mockResolvedValue(undefined),
     };
-    const service = new ExamService(prisma as never, learningAccess as never);
+    const service = new ExamService(
+      prisma as never,
+      learningAccess as never,
+      createSkillMasteryStub() as never,
+    );
 
     const result = await service.getAttempt('attempt-1', 'tenant-1', {
       id: 'user-1',
@@ -607,7 +654,11 @@ describe('ExamService', () => {
     const learningAccess = {
       ensureCourseAccess: vi.fn().mockResolvedValue(undefined),
     };
-    const service = new ExamService(prisma as never, learningAccess as never);
+    const service = new ExamService(
+      prisma as never,
+      learningAccess as never,
+      createSkillMasteryStub() as never,
+    );
 
     const result = await service.getAttempt('attempt-1', 'tenant-1', {
       id: 'user-1',

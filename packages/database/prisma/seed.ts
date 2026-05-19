@@ -118,6 +118,66 @@ async function main() {
   });
   console.log(`Created/Updated Student User: ${student.email}`);
 
+  const canonicalSkills = [
+    {
+      code: 'VOCABULARY',
+      name: 'Vocabulary',
+      nameVi: 'Từ vựng',
+      color: '#22c55e',
+      sortOrder: 10,
+    },
+    {
+      code: 'GRAMMAR',
+      name: 'Grammar',
+      nameVi: 'Ngữ pháp',
+      color: '#3b82f6',
+      sortOrder: 20,
+    },
+    {
+      code: 'READING',
+      name: 'Reading',
+      nameVi: 'Đọc hiểu',
+      color: '#a855f7',
+      sortOrder: 30,
+    },
+    {
+      code: 'LISTENING',
+      name: 'Listening',
+      nameVi: 'Nghe hiểu',
+      color: '#f97316',
+      sortOrder: 40,
+    },
+    {
+      code: 'WRITING',
+      name: 'Writing',
+      nameVi: 'Viết',
+      color: '#ef4444',
+      sortOrder: 50,
+    },
+  ];
+  for (const skill of canonicalSkills) {
+    await prisma.skill.upsert({
+      where: { tenantId_code: { tenantId: tenant.id, code: skill.code } },
+      update: {
+        name: skill.name,
+        nameVi: skill.nameVi,
+        color: skill.color,
+        sortOrder: skill.sortOrder,
+        isActive: true,
+        deletedAt: null,
+      },
+      create: {
+        tenantId: tenant.id,
+        code: skill.code,
+        name: skill.name,
+        nameVi: skill.nameVi,
+        color: skill.color,
+        sortOrder: skill.sortOrder,
+      },
+    });
+  }
+  console.log(`Created/Updated ${canonicalSkills.length} canonical skills`);
+
   const course = await prisma.course.upsert({
     where: {
       tenantId_slug: {
@@ -229,7 +289,7 @@ async function main() {
       prompt: "Từ 'Xin chào' trong tiếng Trung là gì?",
       options: ['Zàijiàn', 'Nǐ hǎo', 'Xièxie', 'Bú kèqì'],
       correctAnswer: 1,
-      skillTags: ['vocabulary'],
+      skillTags: ['VOCABULARY'],
       deletedAt: null,
     },
     create: {
@@ -242,7 +302,7 @@ async function main() {
       options: ['Zàijiàn', 'Nǐ hǎo', 'Xièxie', 'Bú kèqì'],
       correctAnswer: 1,
       explanation: "'Nǐ hǎo' là cách chào cơ bản trong tiếng Trung.",
-      skillTags: ['vocabulary'],
+      skillTags: ['VOCABULARY'],
     },
   });
 
@@ -332,7 +392,7 @@ async function main() {
       options: ['Zàijiàn', 'Nǐ hǎo', 'Xièxie', 'Bú kèqì'],
       correctAnswer: 1,
       points: 1,
-      skillTags: ['vocabulary'],
+      skillTags: ['VOCABULARY'],
     },
     create: {
       id: demoIds.examQuestion,
@@ -344,7 +404,7 @@ async function main() {
       correctAnswer: 1,
       explanation: "'Nǐ hǎo' là cách chào cơ bản trong tiếng Trung.",
       points: 1,
-      skillTags: ['vocabulary'],
+      skillTags: ['VOCABULARY'],
       order: 0,
     },
   });

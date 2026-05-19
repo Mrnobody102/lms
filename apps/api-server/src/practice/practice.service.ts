@@ -7,6 +7,7 @@ import {
   normalizeQuestionPayload,
   normalizeSubmittedAnswer,
 } from '../common/utils/answer-validation.util';
+import { SkillMasteryService } from '../skill/skill-mastery.service';
 import { AiEvaluationService, type PracticeAiFeedback } from './ai-evaluation.service';
 
 interface PracticeUser {
@@ -31,6 +32,7 @@ export class PracticeService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly learningAccess: LearningAccessService,
+    private readonly skillMastery: SkillMasteryService,
     private readonly aiEvaluation: AiEvaluationService = new AiEvaluationService(),
   ) {}
 
@@ -288,7 +290,7 @@ export class PracticeService {
   async listExerciseSets(
     tenantId: string,
     user: PracticeUser,
-    query: { courseId?: string; unitId?: string },
+    query: { courseId?: string; unitId?: string; skill?: string },
   ) {
     const where: Prisma.PracticeExerciseSetWhereInput = {
       tenantId,
@@ -300,6 +302,17 @@ export class PracticeService {
     if (user.role === Role.STUDENT) {
       where.isPublished = true;
       where.course = this.learningAccess.courseWhere(tenantId, user, query.courseId);
+    }
+
+    if (query.skill) {
+      where.questions = {
+        some: {
+          question: {
+            tenantId,
+            skillTags: { has: query.skill },
+          },
+        },
+      };
     }
 
     return this.prisma.practiceExerciseSet.findMany({
@@ -531,6 +544,17 @@ export class PracticeService {
         answers: true,
       },
     });
+
+    await this.skillMastery.applyAnswerEvents(
+      tenantId,
+      user.id,
+      results
+        .filter((result) => result.answer !== null)
+        .map((result) => ({
+          skillCodes: questions.find((q) => q.id === result.questionId)?.skillTags ?? [],
+          isCorrect: result.isCorrect,
+        })),
+    );
 
     return {
       attempt,

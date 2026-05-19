@@ -24,6 +24,7 @@ import { ActivityCalendar } from '../../components/dashboard/activity-calendar';
 import { PerformanceReport } from '../../components/dashboard/performance-report';
 import { CourseProgressPlanner } from '../../components/dashboard/course-progress-planner';
 import { RecentLearningWork } from '../../components/dashboard/recent-learning-work';
+import { SkillMasteryPanel } from '../../components/dashboard/skill-mastery-panel';
 import { getCourseProgressHref } from '../../lib/course-progress-utils';
 
 export default function Home() {
@@ -327,6 +328,12 @@ function LearningDashboard() {
         )}
 
         {!isLoading && courses.length > 0 && <RecentLearningWork />}
+
+        {!isLoading && courses.length > 0 ? (
+          <div className="mt-8">
+            <SkillMasteryPanel locale={locale} />
+          </div>
+        ) : null}
 
         <div className="mt-12">
           <PerformanceReport />

@@ -1,6 +1,6 @@
 # Kế Hoạch Triển Khai LMS Platform
 
-Cập nhật lần cuối: 2026-05-19
+Cập nhật lần cuối: 2026-05-19 (Batch P9.1 — Skill Mastery Foundation)
 
 ## Định hướng sản phẩm
 
@@ -316,7 +316,7 @@ Phạm vi:
 
 Mục tiêu: cốt lõi học thuật của sản phẩm — vũ khí khác biệt với LMS truyền thống.
 
-Trạng thái: chưa có.
+Trạng thái: Skill Mastery Foundation đã có (Batch P9.1); SRS Core chưa làm.
 
 Cơ sở khoa học:
 
@@ -324,23 +324,29 @@ Cơ sở khoa học:
 - **Knowledge tracing**: ước lượng skill mastery của học viên theo Bayesian update đơn giản hoặc rolling accuracy có decay.
 - **Active recall** thay vì passive re-read.
 
-Phạm vi:
+Đã làm (Batch P9.1):
+
+- Model `Skill` (catalog tenant-scoped: code, name, nameVi, color, sortOrder, isActive, soft-delete).
+- Model `SkillMastery(userId, skillId, mastery, attempts, correctAttempts, lastUpdatedAt)` cập nhật từ `PracticeAnswer`/`ExamAnswer` qua EWMA (α=0.7).
+- Hook best-effort sync trong `PracticeService.submitAttempt` và `ExamService.submitAttempt` — không block submit nếu mastery update fail.
+- API: `GET /api/skills`, `POST/PATCH/DELETE /api/skills` (admin với audit log SKILL_CREATE/UPDATE/DELETE), `GET /api/skills/mastery` cho student order ASC.
+- Practice exercise set list filter `?skill=CODE`.
+- Admin UI `/skills` quản lý catalog (badge color, soft-delete, edit dialog).
+- Student dashboard `SkillMasteryPanel` hiển thị 5 kỹ năng yếu nhất với progress bar và link "Luyện ngay".
+- Student practice page có chip filter theo skill, URL-driven (`/practice?skill=CODE`), empty state đặc thù.
+- Seed 5 canonical skill (VOCABULARY/GRAMMAR/READING/LISTENING/WRITING) + normalize legacy `vocabulary` → `VOCABULARY`.
+
+Còn cần (SRS Core):
 
 - Model `ReviewCard(userId, sourceType, sourceId, dueAt, interval, easeFactor, reps, lapses)` cho card từ vocabulary, từ practice question đã trả lời, hoặc từ key concept của lesson.
-- Model `SkillMastery(userId, skillId, mastery 0-1, confidence, lastUpdatedAt)` cập nhật từ `PracticeAnswer`/`ExamAnswer`.
 - `GET /api/srs/queue` trả review queue trong ngày.
 - `POST /api/srs/review` nhận grade (Again/Hard/Good/Easy → SM-2 interval calculation).
 - Daily review card trên Student Dashboard.
-- Skill mastery panel trên student report.
+- Skill mastery time-series chart trên student report (cần history table riêng).
 - "Next best item" recommendation kết hợp:
   - Continue lesson hiện tại (nếu chưa hết).
   - Card SRS đến hạn (cho phục hồi).
   - Practice exercise theo skill yếu nhất.
-
-Phụ thuộc:
-
-- Skill tags trên question (đã có một phần qua enum).
-- Practice/exam answer snapshot (đã có).
 
 ### P10. Media Storage Và Background Jobs
 
@@ -361,9 +367,9 @@ Phụ thuộc cho: P4/P5 listening question, P8c audio scoring.
 
 Thứ tự ưu tiên dựa trên giá trị giáo dục, dependencies và hiện trạng:
 
-1. **Audit log + bulk feedback hoàn chỉnh** (P1 close-out): bổ sung audit log cho bulk enroll/unenroll, surface `skippedCount`/`duplicateCount` lên admin UI.
-2. **Skill mastery model + skill tags filter** (P9 phần đầu, prerequisite cho mọi adaptive feature): thêm `SkillMastery` table, cập nhật từ practice/exam answers, UI filter "luyện theo kỹ năng yếu".
-3. **SRS Review Queue MVP** (P9 phần lõi): card từ vocabulary + practice answer, daily review trên dashboard.
+1. **Audit log + bulk feedback hoàn chỉnh** (P1 close-out) ✅ DONE: bulk enroll/unenroll có audit log + skipped/duplicate count surfaced lên admin UI.
+2. **Skill mastery model + skill tags filter** (P9 phần đầu, prerequisite cho mọi adaptive feature) ✅ DONE — Batch P9.1: `Skill`, `SkillMastery`, EWMA hook, admin/student UI, practice filter.
+3. **SRS Review Queue MVP** (P9 phần lõi): card từ vocabulary + practice answer, daily review trên dashboard, "next best item" recommendation. ← **NEXT**
 4. **AI In-Context Tutor** (P8a): nhúng "Giải thích vì sao sai" vào practice/exam review, dùng usage quota.
 5. **Media upload pipeline** (P10): mở khóa listening question và audio AI scoring.
 6. **Listening question type** (P4/P5 close-out): sau khi P10 sẵn sàng.

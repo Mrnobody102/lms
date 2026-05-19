@@ -86,6 +86,8 @@ model Tenant {
   redemptions      ActivationRedemption[]
   programs         Program[]
   levels           Level[]
+  skills           Skill[]
+  skillMasteries   SkillMastery[]
   isActive         Boolean               @default(true)
   createdAt        DateTime              @default(now())
   updatedAt        DateTime              @default(now()) @updatedAt
@@ -118,6 +120,7 @@ model User {
   refreshTokens    RefreshToken[]
   auditLogs        AuditLog[]
   redemptions      ActivationRedemption[]
+  skillMasteries   SkillMastery[]
   createdAt        DateTime             @default(now())
   updatedAt        DateTime             @updatedAt
 
@@ -580,4 +583,43 @@ model ActivationRedemption {
 
   @@index([tenantId, userId])
   @@index([activationCodeId])
+}
+
+model Skill {
+  id          String         @id @default(uuid())
+  tenantId    String
+  tenant      Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  code        String
+  name        String
+  nameVi      String?
+  color       String?
+  description String?
+  isActive    Boolean        @default(true)
+  sortOrder   Int            @default(0)
+  deletedAt   DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  masteries   SkillMastery[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, deletedAt])
+}
+
+model SkillMastery {
+  id              String   @id @default(uuid())
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User     @relation(fields: [userId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  skillCode       String
+  skill           Skill?   @relation(fields: [tenantId, skillCode], references: [tenantId, code], onDelete: NoAction, onUpdate: Cascade)
+  mastery         Float    @default(0)
+  attempts        Int      @default(0)
+  correctAttempts Int      @default(0)
+  lastUpdatedAt   DateTime @updatedAt
+  createdAt       DateTime @default(now())
+
+  @@unique([tenantId, userId, skillCode])
+  @@index([tenantId, userId])
+  @@index([tenantId, skillCode])
 }

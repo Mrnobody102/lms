@@ -9,23 +9,53 @@ import {
   History,
   Loader2,
   MessageSquare,
+  X,
 } from 'lucide-react';
 import { ReactNode, useMemo } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
+import { useSearchParams } from 'next/navigation';
 import { StudentNav } from '@/components/layout/student-nav';
 import { usePracticeAttempts, usePracticeExerciseSets } from '@/hooks/use-practice';
+import { useSkills } from '@/hooks/use-skills';
 import { getPracticeAttemptStats, type PracticeAttemptSummary } from '@/lib/practice-api';
-import { Link } from '@/navigation';
+import { Link, usePathname, useRouter } from '@/navigation';
 
 export default function PracticePage() {
   const t = useTranslations('Student');
   const locale = useLocale();
-  const { data: exerciseSets = [], isLoading, isError } = usePracticeExerciseSets();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const skillFilter = searchParams.get('skill');
+  const { data: skills = [] } = useSkills();
+  const {
+    data: exerciseSets = [],
+    isLoading,
+    isError,
+  } = usePracticeExerciseSets(skillFilter ? { skill: skillFilter } : undefined);
   const { data: attempts = [], isError: isAttemptsError } = usePracticeAttempts({ limit: 5 });
   const overview = useMemo(
     () => buildPracticeOverview(exerciseSets, attempts),
     [attempts, exerciseSets],
   );
+
+  const setSkill = (code: string | null) => {
+    const params = new URLSearchParams(Array.from(searchParams.entries()));
+    if (code) {
+      params.set('skill', code);
+    } else {
+      params.delete('skill');
+    }
+    const query = params.toString();
+    router.replace((query ? `${pathname}?${query}` : pathname) as never);
+  };
+
+  const activeSkill = skills.find((s) => s.code === skillFilter) || null;
+  const activeSkillLabel = activeSkill
+    ? locale.startsWith('vi') && activeSkill.nameVi
+      ? activeSkill.nameVi
+      : activeSkill.name
+    : skillFilter;
 
   return (
     <div className="min-h-screen bg-background font-sans">
@@ -47,6 +77,60 @@ export default function PracticePage() {
           </Link>
         </header>
 
+        {skills.length > 0 ? (
+          <div className="mb-6 flex flex-wrap items-center gap-2">
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {t('practice.skillFilterLabel')}
+            </span>
+            <button
+              type="button"
+              onClick={() => setSkill(null)}
+              className={
+                'rounded-full border px-3 py-1 text-xs transition ' +
+                (!skillFilter
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-input hover:bg-muted')
+              }
+            >
+              {t('practice.skillFilterAll')}
+            </button>
+            {skills.map((skill) => {
+              const label = locale.startsWith('vi') && skill.nameVi ? skill.nameVi : skill.name;
+              const isActive = skill.code === skillFilter;
+              return (
+                <button
+                  key={skill.id}
+                  type="button"
+                  onClick={() => setSkill(skill.code)}
+                  className={
+                    'rounded-full border px-3 py-1 text-xs transition ' +
+                    (isActive
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-input hover:bg-muted')
+                  }
+                  style={
+                    isActive && skill.color
+                      ? { backgroundColor: skill.color, borderColor: skill.color, color: '#fff' }
+                      : undefined
+                  }
+                >
+                  {label}
+                </button>
+              );
+            })}
+            {skillFilter ? (
+              <button
+                type="button"
+                onClick={() => setSkill(null)}
+                className="inline-flex items-center gap-1 rounded-full border border-input px-3 py-1 text-xs hover:bg-muted"
+              >
+                <X className="h-3 w-3" />
+                {t('practice.skillFilterClear')}
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+
         {isLoading ? (
           <div className="flex items-center gap-2 rounded-md border p-4 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -61,10 +145,24 @@ export default function PracticePage() {
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-primary/10 text-primary">
               <Dumbbell className="h-5 w-5" />
             </div>
-            <h2 className="text-lg font-semibold">{t('practice.emptyTitle')}</h2>
+            <h2 className="text-lg font-semibold">
+              {skillFilter ? t('practice.emptySkillTitle') : t('practice.emptyTitle')}
+            </h2>
             <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-              {t('practice.emptyDesc')}
+              {skillFilter
+                ? t('practice.emptySkillDesc', { skill: activeSkillLabel ?? skillFilter })
+                : t('practice.emptyDesc')}
             </p>
+            {skillFilter ? (
+              <button
+                type="button"
+                onClick={() => setSkill(null)}
+                className="mt-4 inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs hover:bg-muted"
+              >
+                <X className="h-3 w-3" />
+                {t('practice.skillFilterClear')}
+              </button>
+            ) : null}
           </section>
         ) : (
           <div className="space-y-10">
