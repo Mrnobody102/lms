@@ -9,6 +9,15 @@ function createSkillMasteryStub() {
   };
 }
 
+function createSrsStub() {
+  return {
+    upsertCardsForAnswers: vi.fn().mockResolvedValue(undefined),
+    getQueue: vi.fn().mockResolvedValue([]),
+    submitReview: vi.fn(),
+    getDueSummary: vi.fn().mockResolvedValue({ dueNow: 0, dueToday: 0, total: 0 }),
+  };
+}
+
 describe('ExamService', () => {
   it('should create an exam with ordered sections and questions after validating course ownership', async () => {
     const prisma = {
@@ -30,6 +39,7 @@ describe('ExamService', () => {
       prisma as never,
       learningAccess as never,
       createSkillMasteryStub() as never,
+      createSrsStub() as never,
     );
 
     await expect(
@@ -147,6 +157,7 @@ describe('ExamService', () => {
       prisma as never,
       learningAccess as never,
       createSkillMasteryStub() as never,
+      createSrsStub() as never,
     );
 
     const result = await service.submitAttempt(
@@ -245,6 +256,7 @@ describe('ExamService', () => {
       prisma as never,
       learningAccess as never,
       createSkillMasteryStub() as never,
+      createSrsStub() as never,
     );
 
     await expect(
@@ -301,6 +313,7 @@ describe('ExamService', () => {
       prisma as never,
       learningAccess as never,
       createSkillMasteryStub() as never,
+      createSrsStub() as never,
     );
 
     const result = await service.startAttempt('exam-1', 'tenant-1', {
@@ -358,6 +371,7 @@ describe('ExamService', () => {
       prisma as never,
       learningAccess as never,
       createSkillMasteryStub() as never,
+      createSrsStub() as never,
     );
 
     await expect(
@@ -398,6 +412,7 @@ describe('ExamService', () => {
       prisma as never,
       learningAccess as never,
       createSkillMasteryStub() as never,
+      createSrsStub() as never,
     );
 
     const result = await service.getExam('exam-1', 'tenant-1', {
@@ -437,6 +452,7 @@ describe('ExamService', () => {
       prisma as never,
       learningAccess as never,
       createSkillMasteryStub() as never,
+      createSrsStub() as never,
     );
 
     await service.updateExam('exam-1', 'tenant-1', {
@@ -501,6 +517,7 @@ describe('ExamService', () => {
       prisma as never,
       learningAccess as never,
       createSkillMasteryStub() as never,
+      createSrsStub() as never,
     );
 
     await service.removeExam('exam-1', 'tenant-1');
@@ -545,6 +562,7 @@ describe('ExamService', () => {
       prisma as never,
       learningAccess as never,
       createSkillMasteryStub() as never,
+      createSrsStub() as never,
     );
 
     const result = await service.listAttempts('tenant-1', { id: 'user-1', role: Role.STUDENT }, {});
@@ -599,6 +617,7 @@ describe('ExamService', () => {
       prisma as never,
       learningAccess as never,
       createSkillMasteryStub() as never,
+      createSrsStub() as never,
     );
 
     const result = await service.getAttempt('attempt-1', 'tenant-1', {
@@ -658,6 +677,7 @@ describe('ExamService', () => {
       prisma as never,
       learningAccess as never,
       createSkillMasteryStub() as never,
+      createSrsStub() as never,
     );
 
     const result = await service.getAttempt('attempt-1', 'tenant-1', {

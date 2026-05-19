@@ -59,6 +59,11 @@ export interface LearningProgressSummary {
     currentStreak: number;
     completionPercentage: number;
   };
+  srsDue?: {
+    dueNow: number;
+    dueToday: number;
+    total: number;
+  };
 }
 export interface LearningActivityRecord {
   id: string;

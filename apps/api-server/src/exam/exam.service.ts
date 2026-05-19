@@ -1,5 +1,11 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { ExamAttemptStatus, ExamQuestionType, Prisma, Role } from '@repo/database';
+import {
+  ExamAttemptStatus,
+  ExamQuestionType,
+  Prisma,
+  ReviewCardSource,
+  Role,
+} from '@repo/database';
 import { LearningAccessService } from '../common/services/learning-access.service';
 import { PrismaService } from '../common/services/prisma.service';
 import {
@@ -8,6 +14,7 @@ import {
   normalizeSubmittedAnswer,
 } from '../common/utils/answer-validation.util';
 import { SkillMasteryService } from '../skill/skill-mastery.service';
+import { SrsService } from '../srs/srs.service';
 import { CreateExamDto } from './dto/create-exam.dto';
 
 interface ExamUser {
@@ -46,6 +53,7 @@ export class ExamService {
     private readonly prisma: PrismaService,
     private readonly learningAccess: LearningAccessService,
     private readonly skillMastery: SkillMasteryService,
+    private readonly srs: SrsService,
   ) {}
 
   async createExam(tenantId: string, data: CreateExamDto) {
@@ -466,6 +474,19 @@ export class ExamService {
       results
         .filter((result) => result.answer !== null)
         .map((result) => ({
+          skillCodes: questions.find((q) => q.id === result.questionId)?.skillTags ?? [],
+          isCorrect: result.isCorrect,
+        })),
+    );
+
+    await this.srs.upsertCardsForAnswers(
+      tenantId,
+      user.id,
+      results
+        .filter((result) => result.answer !== null)
+        .map((result) => ({
+          sourceType: ReviewCardSource.EXAM_QUESTION,
+          questionId: result.questionId,
           skillCodes: questions.find((q) => q.id === result.questionId)?.skillTags ?? [],
           isCorrect: result.isCorrect,
         })),

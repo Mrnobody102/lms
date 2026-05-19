@@ -29,7 +29,7 @@ Nguyên tắc:
 | Practice engine                        | Đã có Student UI MVP | Question bank, exercise set, submit attempt/scoring, enrollment authorization, admin/student practice UI; question types: MC, fill-blank, matching, ordering   |
 | Quiz / Exam attempt                    | Đã có Student UI MVP | Exam template, section/question, start/submit attempt, scoring, review, enrollment authorization, admin/student UI; cùng bộ question types                     |
 | Activation / license code              | Đã làm               | Activation code, license grant, redemption history, expiration/usage limits.                                                                                   |
-| Skill mastery + SRS                    | Foundation đã làm    | `Skill` catalog + `SkillMastery` EWMA + admin/student UI + practice filter (Batch P9.1). `ReviewCard` SRS Core + daily review queue chưa làm.                  |
+| Skill mastery + SRS                    | Đã làm (MVP)         | `Skill` catalog + `SkillMastery` EWMA (Batch P9.1). Đã hoàn thành SRS Core (`ReviewCard`, daily review queue, dashboard card) (Batch P9.2).                    |
 | AI in-context tutor (P8a)              | Chưa làm             | Giải thích lỗi practice/exam review, contextual vocab help. Priority cao nhất trong AI track.                                                                  |
 | AI-generated practice (P8b)            | Chưa làm             | Sinh câu hỏi từ skill yếu, admin duyệt.                                                                                                                        |
 | AI conversation roleplay (P8c)         | Chưa làm             | Scenario-based chat/voice roleplay.                                                                                                                            |
@@ -272,7 +272,7 @@ Trạng thái: chưa làm. Chia thành 3 track con để tránh "chat trước, 
 
 ### Epic L. Spaced Repetition System Và Skill Mastery (P9)
 
-Trạng thái: Foundation đã làm (Batch P9.1, 2026-05-19). SRS Core còn pending.
+Trạng thái: Đã hoàn thành (Batch P9.1, 2026-05-19 và Batch P9.2, 2026-05-19).
 
 #### Skill Mastery Foundation (Batch P9.1)
 
@@ -289,14 +289,14 @@ Trạng thái: Foundation đã làm (Batch P9.1, 2026-05-19). SRS Core còn pend
 - [x] Unit tests cho EWMA correctness, multi-skill, empty codes, error swallowing (140 tests pass)
 - [ ] Skill mastery time-series chart trên student report (cần `SkillMasteryHistory` table)
 
-#### SRS Core
+#### SRS Core (Batch P9.2)
 
-- [ ] Model `ReviewCard(userId, sourceType, sourceId, dueAt, interval, easeFactor, reps, lapses, lastReviewedAt)`
-- [ ] Seed review card từ vocabulary entity hoặc từ key concept của lesson
-- [ ] `GET /api/srs/queue` trả review queue trong ngày (card đến hạn)
-- [ ] `POST /api/srs/review` nhận grade (Again/Hard/Good/Easy → SM-2 interval update)
-- [ ] Daily review card hiển thị số card đến hạn trên Student Dashboard
-- [ ] Integrate SRS queue với "next best item" recommendation:
+- [x] Model `ReviewCard(userId, sourceType, sourceId, dueAt, interval, easeFactor, reps, lapses, grade, tenantId, skillCodes, questionSnapshot)`
+- [x] Sinh review card từ practice answer (incorrect answers)
+- [x] `GET /api/srs/queue` trả review queue trong ngày (card đến hạn)
+- [x] `POST /api/srs/review` nhận grade (Again/Hard/Good/Easy → SM-2 interval update)
+- [x] Daily review card hiển thị số card đến hạn trên Student Dashboard
+- [x] Integrate SRS queue với "next best item" recommendation:
   - Continue lesson hiện tại (nếu chưa hết)
   - Card SRS đến hạn (phục hồi)
   - Practice exercise theo skill yếu nhất
@@ -319,8 +319,8 @@ Thứ tự ưu tiên dựa trên giá trị giáo dục, dependencies và hiện
 
 1. ✅ Audit log + bulk feedback hoàn chỉnh (Epic D close-out — DONE).
 2. ✅ Skill mastery foundation (Epic L phần đầu — DONE Batch P9.1, 2026-05-19).
-3. **NEXT**: SRS review queue MVP (Epic L SRS Core): `ReviewCard` model, daily review trên dashboard, "next best item" recommendation.
-4. AI In-Context Tutor (Epic K P8a): nhúng "Giải thích vì sao sai" vào practice/exam review, dùng usage quota.
+3. ✅ SRS review queue MVP (Epic L SRS Core): `ReviewCard` model, daily review trên dashboard, "next best item" recommendation (DONE Batch P9.2).
+4. **NEXT**: AI In-Context Tutor (Epic K P8a): nhúng "Giải thích vì sao sai" vào practice/exam review, dùng usage quota.
 5. Media upload pipeline (Epic M): mở khóa listening question và audio AI scoring.
 6. Listening question type (Epic M): sau khi media pipeline sẵn sàng.
 7. Time-series reporting + cohort drill-down (Epic I close-out): khi có dữ liệu skill mastery theo thời gian.

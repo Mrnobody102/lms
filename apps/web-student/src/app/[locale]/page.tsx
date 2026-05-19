@@ -26,6 +26,8 @@ import { CourseProgressPlanner } from '../../components/dashboard/course-progres
 import { RecentLearningWork } from '../../components/dashboard/recent-learning-work';
 import { SkillMasteryPanel } from '../../components/dashboard/skill-mastery-panel';
 import { getCourseProgressHref } from '../../lib/course-progress-utils';
+import { NextBestItem } from '../../components/dashboard/next-best-item';
+import { SrsReviewCard } from '../../components/dashboard/srs-review-card';
 
 export default function Home() {
   const t = useTranslations('Student');
@@ -198,6 +200,8 @@ function LearningDashboard() {
         ) : (
           <div className="grid gap-8 lg:grid-cols-[1.7fr_1fr]">
             <div className="space-y-8">
+              <NextBestItem />
+              <SrsReviewCard />
               {featuredCourse && (
                 <section className="rounded-md border p-6">
                   <div className="flex items-start justify-between gap-4">

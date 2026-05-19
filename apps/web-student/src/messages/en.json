@@ -117,6 +117,45 @@
       "activityCompleted": "Completed",
       "activitySpent": "Spent"
     },
+    "srs": {
+      "loading": "Loading review cards...",
+      "dailyReviewTitle": "Daily Review",
+      "dailyReviewSubtitle": "You have {count} cards to review",
+      "dailyReviewDesc": "Reviewing every day helps you remember longer using spaced repetition.",
+      "dailyReviewCta": "Start reviewing",
+      "dailyReviewEmpty": "Great job!",
+      "dailyReviewEmptyDesc": "You have finished all your reviews for today. Come back tomorrow.",
+      "reviewSessionTitle": "Review Session",
+      "reviewSessionDone": "Daily goal completed",
+      "reviewSessionDoneDesc": "You have reviewed all due cards. Go back to the dashboard.",
+      "reviewQuestionPrompt": "Question",
+      "showAnswer": "Show answer",
+      "grade": {
+        "again": "Again",
+        "hard": "Hard",
+        "good": "Good",
+        "easy": "Easy"
+      },
+      "gradeHint": {
+        "again": "Review again soon",
+        "hard": "See this again a bit later",
+        "good": "Increase interval",
+        "easy": "See this much later"
+      },
+      "nextBestItem": {
+        "title": "Top Priority",
+        "reviewDueValue": "Review {count} cards",
+        "reviewDueDesc": "Time to refresh your memory",
+        "continueLesson": "Continue lesson",
+        "practiceWeakSkill": "Improve skill",
+        "browseCourses": "Explore courses",
+        "browseCoursesDesc": "Find the right course for you",
+        "startCta": "Review now",
+        "continueCta": "Resume",
+        "practiceCta": "Practice",
+        "browseCta": "Explore"
+      }
+    },
     "features": {
       "whyUs": "Why Choose Us?",
       "whyUsDesc": "Modern learning methods combined with AI technology help you remember vocabulary 300% longer than traditional methods.",

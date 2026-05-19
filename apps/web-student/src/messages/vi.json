@@ -117,6 +117,45 @@
       "activityCompleted": "Hoàn thành",
       "activitySpent": "Thời gian"
     },
+    "srs": {
+      "loading": "Đang tải thẻ ôn tập...",
+      "dailyReviewTitle": "Ôn tập hàng ngày",
+      "dailyReviewSubtitle": "Bạn có {count} thẻ cần ôn tập",
+      "dailyReviewDesc": "Ôn tập mỗi ngày giúp bạn ghi nhớ lâu hơn nhờ phương pháp lặp lại ngắt quãng.",
+      "dailyReviewCta": "Bắt đầu ôn tập",
+      "dailyReviewEmpty": "Hoàn thành xuất sắc!",
+      "dailyReviewEmptyDesc": "Bạn đã ôn tập xong tất cả thẻ của hôm nay. Hãy quay lại vào ngày mai nhé.",
+      "reviewSessionTitle": "Phiên ôn tập",
+      "reviewSessionDone": "Đã hoàn thành mục tiêu hôm nay",
+      "reviewSessionDoneDesc": "Bạn đã ôn hết các thẻ đến hạn. Quay lại bảng học tập nhé.",
+      "reviewQuestionPrompt": "Câu hỏi",
+      "showAnswer": "Xem đáp án",
+      "grade": {
+        "again": "Quên",
+        "hard": "Khó",
+        "good": "Nhớ",
+        "easy": "Dễ"
+      },
+      "gradeHint": {
+        "again": "Học lại ngay",
+        "hard": "Sẽ gặp lại sớm",
+        "good": "Tăng khoảng thời gian",
+        "easy": "Gặp lại sau rất lâu"
+      },
+      "nextBestItem": {
+        "title": "Nhiệm vụ ưu tiên",
+        "reviewDueValue": "Ôn tập {count} thẻ",
+        "reviewDueDesc": "Đã đến lúc ôn lại kiến thức",
+        "continueLesson": "Tiếp tục bài học",
+        "practiceWeakSkill": "Cải thiện kỹ năng",
+        "browseCourses": "Khám phá khóa học",
+        "browseCoursesDesc": "Tìm khóa học phù hợp với bạn",
+        "startCta": "Ôn ngay",
+        "continueCta": "Học tiếp",
+        "practiceCta": "Luyện tập",
+        "browseCta": "Khám phá"
+      }
+    },
     "features": {
       "whyUs": "Tại sao chọn chúng tôi?",
       "whyUsDesc": "Phương pháp học hiện đại kết hợp công nghệ AI giúp bạn nhớ từ vựng lâu hơn 300% so với cách học truyền thống.",

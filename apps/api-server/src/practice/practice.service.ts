@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { PracticeQuestionType, Prisma, Role } from '@repo/database';
+import { PracticeQuestionType, Prisma, ReviewCardSource, Role } from '@repo/database';
 import { LearningAccessService } from '../common/services/learning-access.service';
 import { PrismaService } from '../common/services/prisma.service';
 import {
@@ -8,6 +8,7 @@ import {
   normalizeSubmittedAnswer,
 } from '../common/utils/answer-validation.util';
 import { SkillMasteryService } from '../skill/skill-mastery.service';
+import { SrsService } from '../srs/srs.service';
 import { AiEvaluationService, type PracticeAiFeedback } from './ai-evaluation.service';
 
 interface PracticeUser {
@@ -33,6 +34,7 @@ export class PracticeService {
     private readonly prisma: PrismaService,
     private readonly learningAccess: LearningAccessService,
     private readonly skillMastery: SkillMasteryService,
+    private readonly srs: SrsService,
     private readonly aiEvaluation: AiEvaluationService = new AiEvaluationService(),
   ) {}
 
@@ -551,6 +553,19 @@ export class PracticeService {
       results
         .filter((result) => result.answer !== null)
         .map((result) => ({
+          skillCodes: questions.find((q) => q.id === result.questionId)?.skillTags ?? [],
+          isCorrect: result.isCorrect,
+        })),
+    );
+
+    await this.srs.upsertCardsForAnswers(
+      tenantId,
+      user.id,
+      results
+        .filter((result) => result.answer !== null)
+        .map((result) => ({
+          sourceType: ReviewCardSource.PRACTICE_QUESTION,
+          questionId: result.questionId,
           skillCodes: questions.find((q) => q.id === result.questionId)?.skillTags ?? [],
           isCorrect: result.isCorrect,
         })),

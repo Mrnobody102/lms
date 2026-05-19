@@ -28,6 +28,7 @@ import { HealthModule } from './common/health/health.module';
 import { ActivationModule } from './activation/activation.module';
 import { ProgramModule } from './program/program.module';
 import { SkillModule } from './skill/skill.module';
+import { SrsModule } from './srs/srs.module';
 import { MetricsModule } from './common/metrics/metrics.module';
 import { MailModule } from './mail/mail.module';
 
@@ -80,6 +81,7 @@ import { MailModule } from './mail/mail.module';
     ActivationModule,
     ProgramModule,
     SkillModule,
+    SrsModule,
     MetricsModule,
     HealthModule,
     MailModule,

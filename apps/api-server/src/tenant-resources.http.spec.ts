@@ -28,6 +28,7 @@ import { AuditLogService } from './common/services/audit-log.service';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { LoggerService } from './common/services/logger.service';
+import { SrsService } from './srs/srs.service';
 
 vi.mock('bcrypt', () => ({
   hash: vi.fn(),
@@ -702,6 +703,12 @@ describe('Tenant resource HTTP flow', () => {
         CourseService,
         LessonService,
         ProgressService,
+        {
+          provide: SrsService,
+          useValue: {
+            getDueSummary: vi.fn().mockResolvedValue({ dueNow: 0, dueToday: 0, total: 0 }),
+          },
+        },
         LearningAccessService,
         JwtStrategy,
         JwtAuthGuard,

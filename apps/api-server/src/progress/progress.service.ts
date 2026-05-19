@@ -4,12 +4,14 @@ import { LearningAccessService } from '../common/services/learning-access.servic
 import { PrismaService } from '../common/services/prisma.service';
 import { buildActivityCalendar } from '../common/utils/activity-calendar.util';
 import { buildAnswerAccuracy } from '../common/utils/answer-accuracy.util';
+import { SrsService } from '../srs/srs.service';
 
 @Injectable()
 export class ProgressService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly learningAccess: LearningAccessService,
+    private readonly srs: SrsService,
   ) {}
 
   /**
@@ -266,11 +268,13 @@ export class ProgressService {
       activities.map((activity) => activity.occurredAt),
     );
     const activityCalendar = buildActivityCalendar(activities, 14);
+    const srsDue = await this.safeGetDueSummary(tenantId, userId);
 
     return {
       activeCourse: activeCourse ?? null,
       courses: courseSummaries,
       activityCalendar,
+      srsDue,
       totals: {
         courses: courseSummaries.length,
         lessons: totalLessons,
@@ -380,5 +384,13 @@ export class ProgressService {
     });
 
     return buildAnswerAccuracy(unitAnswers);
+  }
+
+  private async safeGetDueSummary(tenantId: string, userId: string) {
+    try {
+      return await this.srs.getDueSummary(tenantId, userId);
+    } catch {
+      return { dueNow: 0, dueToday: 0, total: 0 };
+    }
   }
 }

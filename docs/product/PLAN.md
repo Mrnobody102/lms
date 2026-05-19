@@ -316,7 +316,7 @@ Phạm vi:
 
 Mục tiêu: cốt lõi học thuật của sản phẩm — vũ khí khác biệt với LMS truyền thống.
 
-Trạng thái: Skill Mastery Foundation đã có (Batch P9.1); SRS Core chưa làm.
+Trạng thái: Đã hoàn thành (Batch P9.1 - Skill Mastery Foundation, Batch P9.2 - SRS Core).
 
 Cơ sở khoa học:
 
@@ -336,17 +336,19 @@ Cơ sở khoa học:
 - Student practice page có chip filter theo skill, URL-driven (`/practice?skill=CODE`), empty state đặc thù.
 - Seed 5 canonical skill (VOCABULARY/GRAMMAR/READING/LISTENING/WRITING) + normalize legacy `vocabulary` → `VOCABULARY`.
 
+Đã làm tiếp (Batch P9.2 - SRS Core):
+
+- Model `ReviewCard(userId, sourceType, sourceId, dueAt, interval, easeFactor, reps, lapses, grade, tenantId, skillCodes, questionSnapshot)` hỗ trợ polymorphic source (Practice/Exam).
+- SrsService với thuật toán SuperMemo SM-2 (EaseFactor, Interval).
+- Best-effort hook `upsertCardsForAnswers` trong `PracticeService` và `ExamService` để tạo thẻ ôn tập khi học viên trả lời sai.
+- API: `GET /api/srs/queue`, `POST /api/srs/review/:cardId`, `GET /api/srs/summary`.
+- Mở rộng `ProgressService.getSummary` bao gồm `srsDue`.
+- Web Student UI: component `SrsReviewCard` (Daily review), `NextBestItem` (Priority recommendation), page `/review` (session ôn tập card-by-card).
+
 Còn cần (SRS Core):
 
-- Model `ReviewCard(userId, sourceType, sourceId, dueAt, interval, easeFactor, reps, lapses)` cho card từ vocabulary, từ practice question đã trả lời, hoặc từ key concept của lesson.
-- `GET /api/srs/queue` trả review queue trong ngày.
-- `POST /api/srs/review` nhận grade (Again/Hard/Good/Easy → SM-2 interval calculation).
-- Daily review card trên Student Dashboard.
-- Skill mastery time-series chart trên student report (cần history table riêng).
-- "Next best item" recommendation kết hợp:
-  - Continue lesson hiện tại (nếu chưa hết).
-  - Card SRS đến hạn (cho phục hồi).
-  - Practice exercise theo skill yếu nhất.
+- Lịch sử ôn tập (Review Log) để vẽ biểu đồ và phân tích chi tiết.
+- Tính năng edit custom card cho học viên (nếu cần mở rộng học từ vựng riêng).
 
 ### P10. Media Storage Và Background Jobs
 
@@ -369,8 +371,8 @@ Thứ tự ưu tiên dựa trên giá trị giáo dục, dependencies và hiện
 
 1. **Audit log + bulk feedback hoàn chỉnh** (P1 close-out) ✅ DONE: bulk enroll/unenroll có audit log + skipped/duplicate count surfaced lên admin UI.
 2. **Skill mastery model + skill tags filter** (P9 phần đầu, prerequisite cho mọi adaptive feature) ✅ DONE — Batch P9.1: `Skill`, `SkillMastery`, EWMA hook, admin/student UI, practice filter.
-3. **SRS Review Queue MVP** (P9 phần lõi): card từ vocabulary + practice answer, daily review trên dashboard, "next best item" recommendation. ← **NEXT**
-4. **AI In-Context Tutor** (P8a): nhúng "Giải thích vì sao sai" vào practice/exam review, dùng usage quota.
+3. **SRS Review Queue MVP** (P9 phần lõi) ✅ DONE: Thẻ từ practice answer, daily review trên dashboard, session ôn tập, "next best item" recommendation.
+4. **AI In-Context Tutor** (P8a): nhúng "Giải thích vì sao sai" vào practice/exam review, dùng usage quota. ← **NEXT**
 5. **Media upload pipeline** (P10): mở khóa listening question và audio AI scoring.
 6. **Listening question type** (P4/P5 close-out): sau khi P10 sẵn sàng.
 7. **Time-series reporting + cohort drill-down** (P6 close-out): khi có dữ liệu skill mastery theo thời gian.
