@@ -14,8 +14,12 @@ interface EnrollmentPanelProps {
   enrollments: CourseEnrollment[];
   enrolling: boolean;
   unenrolling: boolean;
+  bulkEnrolling: boolean;
+  bulkUnenrolling: boolean;
   onEnroll: (userId: string) => Promise<boolean>;
   onUnenroll: (userId: string) => Promise<boolean>;
+  onBulkEnroll: (userIds: string[]) => Promise<boolean>;
+  onBulkUnenroll: (userIds: string[]) => Promise<boolean>;
 }
 
 export function EnrollmentPanel({
@@ -23,8 +27,12 @@ export function EnrollmentPanel({
   enrollments,
   enrolling,
   unenrolling,
+  bulkEnrolling,
+  bulkUnenrolling,
   onEnroll,
   onUnenroll,
+  onBulkEnroll,
+  onBulkUnenroll,
 }: EnrollmentPanelProps) {
   const t = useTranslations('Admin');
   const [search, setSearch] = useState('');
@@ -54,6 +62,7 @@ export function EnrollmentPanel({
     [filteredStudents, selectedStudentIds],
   );
   const hasFilters = Boolean(search.trim()) || statusFilter !== 'all';
+  const isBulkBusy = bulkEnrolling || bulkUnenrolling;
 
   return (
     <section className="space-y-4" aria-labelledby={`${courseId}-enrollments-heading`}>
@@ -174,23 +183,34 @@ export function EnrollmentPanel({
             <Button
               size="sm"
               variant={bulkMode === 'enroll' ? 'default' : 'destructive'}
-              disabled={enrolling || unenrolling}
+              disabled={isBulkBusy}
               onClick={async () => {
                 const ids = selectedStudents.map((student) => student.id);
-                for (const id of ids) {
-                  if (bulkMode === 'enroll' && !enrolledUserIds.has(id)) {
-                    await onEnroll(id);
-                  }
-                  if (bulkMode === 'unenroll' && enrolledUserIds.has(id)) {
-                    await onUnenroll(id);
-                  }
+                const targetIds =
+                  bulkMode === 'enroll'
+                    ? ids.filter((id) => !enrolledUserIds.has(id))
+                    : ids.filter((id) => enrolledUserIds.has(id));
+
+                if (targetIds.length === 0) {
+                  setSelectedStudentIds([]);
+                  setBulkConfirm(false);
+                  setBulkMode(null);
+                  return;
                 }
-                setSelectedStudentIds([]);
-                setBulkConfirm(false);
-                setBulkMode(null);
+
+                const succeeded =
+                  bulkMode === 'enroll'
+                    ? await onBulkEnroll(targetIds)
+                    : await onBulkUnenroll(targetIds);
+
+                if (succeeded) {
+                  setSelectedStudentIds([]);
+                  setBulkConfirm(false);
+                  setBulkMode(null);
+                }
               }}
             >
-              {enrolling || unenrolling ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              {isBulkBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               {bulkMode === 'enroll' ? t('enrollSelected') : t('unenrollSelected')}
             </Button>
           </div>
@@ -214,7 +234,7 @@ export function EnrollmentPanel({
         ) : (
           filteredStudents.map((student) => {
             const isEnrolled = enrolledUserIds.has(student.id);
-            const isBusy = enrolling || unenrolling;
+            const isBusy = enrolling || unenrolling || isBulkBusy;
 
             return (
               <StudentEnrollmentRow

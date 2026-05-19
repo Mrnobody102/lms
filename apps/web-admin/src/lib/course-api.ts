@@ -105,6 +105,17 @@ export interface CourseEnrollmentReport {
   students: CourseEnrollmentReportStudent[];
 }
 
+export interface BulkEnrollmentResult {
+  courseId: string;
+  requestedCount: number;
+  uniqueCount: number;
+  processedCount: number;
+  skippedCount: number;
+  duplicateCount: number;
+  processedUserIds: string[];
+  skippedUserIds: string[];
+}
+
 interface PaginatedResponse<T> {
   data: T[];
   meta: { page: number; limit: number; total: number; totalPages: number };
@@ -152,6 +163,18 @@ export const courseApi = {
     return api
       .delete(`/courses/${courseId}/enrollments/${userId}`)
       .then((r) => r.data as CourseEnrollment);
+  },
+
+  bulkEnrollStudents(courseId: string, userIds: string[]) {
+    return api
+      .post(`/courses/${courseId}/enrollments/bulk`, { userIds })
+      .then((r) => r.data as BulkEnrollmentResult);
+  },
+
+  bulkUnenrollStudents(courseId: string, userIds: string[]) {
+    return api
+      .post(`/courses/${courseId}/enrollments/bulk/unenroll`, { userIds })
+      .then((r) => r.data as BulkEnrollmentResult);
   },
 
   getCourseReport(courseId: string) {

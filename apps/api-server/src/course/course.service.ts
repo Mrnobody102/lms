@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { EnrollmentStatus, Prisma, Role } from '@repo/database';
+import { AuditAction, AuditLogService, AuditStatus } from '../common/services/audit-log.service';
 import { LearningAccessService } from '../common/services/learning-access.service';
 import { PrismaService } from '../common/services/prisma.service';
 
@@ -7,11 +8,29 @@ type EnrollmentLearnerStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
 
 const DEFAULT_COURSE_UNIT_TITLE = 'General';
 
+interface BulkEnrollmentResult {
+  courseId: string;
+  requestedCount: number;
+  uniqueCount: number;
+  processedCount: number;
+  skippedCount: number;
+  duplicateCount: number;
+  processedUserIds: string[];
+  skippedUserIds: string[];
+}
+
+export interface EnrollmentAuditContext {
+  actorId: string;
+  ipAddress?: string;
+  userAgent?: string;
+}
+
 @Injectable()
 export class CourseService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly learningAccess: LearningAccessService,
+    private readonly auditLog: AuditLogService,
   ) {}
 
   async create(data: {
@@ -258,7 +277,12 @@ export class CourseService {
     });
   }
 
-  async enrollStudent(courseId: string, tenantId: string, userId: string) {
+  async enrollStudent(
+    courseId: string,
+    tenantId: string,
+    userId: string,
+    audit?: EnrollmentAuditContext,
+  ) {
     await this.findOne(courseId, tenantId);
 
     const student = await this.prisma.user.findFirst({
@@ -276,7 +300,7 @@ export class CourseService {
       throw new BadRequestException('Active student not found in this tenant');
     }
 
-    return this.prisma.courseEnrollment.upsert({
+    const enrollment = await this.prisma.courseEnrollment.upsert({
       where: {
         userId_courseId: {
           userId,
@@ -296,9 +320,126 @@ export class CourseService {
         status: EnrollmentStatus.ACTIVE,
       },
     });
+
+    if (audit) {
+      await this.auditLog.log({
+        userId: audit.actorId,
+        tenantId,
+        action: AuditAction.ENROLLMENT_ENROLL,
+        status: AuditStatus.SUCCESS,
+        ipAddress: audit.ipAddress,
+        userAgent: audit.userAgent,
+        metadata: { courseId, targetUserId: userId },
+      });
+    }
+
+    return enrollment;
   }
 
-  async unenrollStudent(courseId: string, tenantId: string, userId: string) {
+  async bulkEnrollStudents(
+    courseId: string,
+    tenantId: string,
+    userIds: string[],
+    audit?: EnrollmentAuditContext,
+  ): Promise<BulkEnrollmentResult> {
+    await this.findOne(courseId, tenantId);
+
+    const uniqueUserIds = this.uniqueIds(userIds);
+    const students = await this.prisma.user.findMany({
+      where: {
+        id: { in: uniqueUserIds },
+        tenantId,
+        role: Role.STUDENT,
+        deletedAt: null,
+        isActive: true,
+      },
+      select: { id: true },
+    });
+    const activeStudentIds = new Set(students.map((student) => student.id));
+    const invalidUserIds = uniqueUserIds.filter((userId) => !activeStudentIds.has(userId));
+
+    if (invalidUserIds.length > 0) {
+      if (audit) {
+        await this.auditLog.log({
+          userId: audit.actorId,
+          tenantId,
+          action: AuditAction.ENROLLMENT_BULK_ENROLL,
+          status: AuditStatus.FAILURE,
+          ipAddress: audit.ipAddress,
+          userAgent: audit.userAgent,
+          metadata: {
+            courseId,
+            requestedCount: userIds.length,
+            invalidUserIds,
+            reason: 'INVALID_STUDENTS',
+          },
+        });
+      }
+      throw new BadRequestException({
+        message: 'Some active students were not found in this tenant',
+        invalidUserIds,
+      });
+    }
+
+    const enrolledAt = new Date();
+    await this.prisma.$transaction((tx) =>
+      Promise.all(
+        uniqueUserIds.map((userId) =>
+          tx.courseEnrollment.upsert({
+            where: {
+              userId_courseId: {
+                userId,
+                courseId,
+              },
+            },
+            update: {
+              status: EnrollmentStatus.ACTIVE,
+              enrolledAt,
+              unenrolledAt: null,
+              tenantId,
+            },
+            create: {
+              userId,
+              courseId,
+              tenantId,
+              status: EnrollmentStatus.ACTIVE,
+              enrolledAt,
+            },
+          }),
+        ),
+      ),
+    );
+
+    const result = this.buildBulkEnrollmentResult(courseId, userIds, uniqueUserIds, []);
+
+    if (audit) {
+      await this.auditLog.log({
+        userId: audit.actorId,
+        tenantId,
+        action: AuditAction.ENROLLMENT_BULK_ENROLL,
+        status: AuditStatus.SUCCESS,
+        ipAddress: audit.ipAddress,
+        userAgent: audit.userAgent,
+        metadata: {
+          courseId,
+          requestedCount: result.requestedCount,
+          uniqueCount: result.uniqueCount,
+          processedCount: result.processedCount,
+          duplicateCount: result.duplicateCount,
+          processedUserIds: result.processedUserIds,
+        },
+      });
+    }
+
+    return result;
+  }
+
+  async unenrollStudent(
+    courseId: string,
+    tenantId: string,
+    userId: string,
+    audit?: EnrollmentAuditContext,
+  ) {
     await this.findOne(courseId, tenantId);
 
     const enrollment = await this.prisma.courseEnrollment.findFirst({
@@ -314,13 +455,96 @@ export class CourseService {
       throw new NotFoundException('Active enrollment not found in this tenant');
     }
 
-    return this.prisma.courseEnrollment.update({
+    const updated = await this.prisma.courseEnrollment.update({
       where: { id: enrollment.id },
       data: {
         status: EnrollmentStatus.REVOKED,
         unenrolledAt: new Date(),
       },
     });
+
+    if (audit) {
+      await this.auditLog.log({
+        userId: audit.actorId,
+        tenantId,
+        action: AuditAction.ENROLLMENT_UNENROLL,
+        status: AuditStatus.SUCCESS,
+        ipAddress: audit.ipAddress,
+        userAgent: audit.userAgent,
+        metadata: { courseId, targetUserId: userId, enrollmentId: enrollment.id },
+      });
+    }
+
+    return updated;
+  }
+
+  async bulkUnenrollStudents(
+    courseId: string,
+    tenantId: string,
+    userIds: string[],
+    audit?: EnrollmentAuditContext,
+  ): Promise<BulkEnrollmentResult> {
+    await this.findOne(courseId, tenantId);
+
+    const uniqueUserIds = this.uniqueIds(userIds);
+    const activeEnrollments = await this.prisma.courseEnrollment.findMany({
+      where: {
+        courseId,
+        userId: { in: uniqueUserIds },
+        tenantId,
+        status: EnrollmentStatus.ACTIVE,
+      },
+      select: {
+        id: true,
+        userId: true,
+      },
+    });
+    const activeUserIds = new Set(activeEnrollments.map((enrollment) => enrollment.userId));
+    const processedUserIds = uniqueUserIds.filter((userId) => activeUserIds.has(userId));
+    const skippedUserIds = uniqueUserIds.filter((userId) => !activeUserIds.has(userId));
+
+    if (activeEnrollments.length > 0) {
+      await this.prisma.courseEnrollment.updateMany({
+        where: {
+          id: { in: activeEnrollments.map((enrollment) => enrollment.id) },
+          tenantId,
+        },
+        data: {
+          status: EnrollmentStatus.REVOKED,
+          unenrolledAt: new Date(),
+        },
+      });
+    }
+
+    const result = this.buildBulkEnrollmentResult(
+      courseId,
+      userIds,
+      processedUserIds,
+      skippedUserIds,
+    );
+
+    if (audit) {
+      await this.auditLog.log({
+        userId: audit.actorId,
+        tenantId,
+        action: AuditAction.ENROLLMENT_BULK_UNENROLL,
+        status: AuditStatus.SUCCESS,
+        ipAddress: audit.ipAddress,
+        userAgent: audit.userAgent,
+        metadata: {
+          courseId,
+          requestedCount: result.requestedCount,
+          uniqueCount: result.uniqueCount,
+          processedCount: result.processedCount,
+          skippedCount: result.skippedCount,
+          duplicateCount: result.duplicateCount,
+          processedUserIds: result.processedUserIds,
+          skippedUserIds: result.skippedUserIds,
+        },
+      });
+    }
+
+    return result;
   }
 
   async getEnrollmentReport(courseId: string, tenantId: string) {
@@ -575,5 +799,29 @@ export class CourseService {
     }
 
     return value as Prisma.InputJsonValue;
+  }
+
+  private uniqueIds(ids: string[]) {
+    return [...new Set(ids)];
+  }
+
+  private buildBulkEnrollmentResult(
+    courseId: string,
+    requestedUserIds: string[],
+    processedUserIds: string[],
+    skippedUserIds: string[],
+  ): BulkEnrollmentResult {
+    const uniqueCount = this.uniqueIds(requestedUserIds).length;
+
+    return {
+      courseId,
+      requestedCount: requestedUserIds.length,
+      uniqueCount,
+      processedCount: processedUserIds.length,
+      skippedCount: skippedUserIds.length,
+      duplicateCount: requestedUserIds.length - uniqueCount,
+      processedUserIds,
+      skippedUserIds,
+    };
   }
 }

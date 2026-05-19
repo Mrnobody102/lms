@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
-import { EnrollmentStatus, ProgressStatus } from '@repo/database';
+import { EnrollmentStatus, ProgressStatus, Role } from '@repo/database';
+import { AuditAction, AuditStatus } from '../common/services/audit-log.service';
 import { CourseService } from './course.service';
+
+function createAuditLogStub() {
+  return { log: vi.fn().mockResolvedValue(undefined) };
+}
 
 describe('CourseService', () => {
   it('should create a unit after validating the course tenant scope', async () => {
@@ -23,7 +28,11 @@ describe('CourseService', () => {
     const learningAccess = {
       courseWhere: vi.fn().mockReturnValue({ tenantId: 'tenant-1', id: 'course-1' }),
     };
-    const service = new CourseService(prisma as never, learningAccess as never);
+    const service = new CourseService(
+      prisma as never,
+      learningAccess as never,
+      createAuditLogStub() as never,
+    );
 
     await expect(
       service.createUnit('course-1', 'tenant-1', { title: 'Unit 1', order: 1 }),
@@ -65,7 +74,7 @@ describe('CourseService', () => {
         },
       ),
     };
-    const service = new CourseService(prisma as never, {} as never);
+    const service = new CourseService(prisma as never, {} as never, createAuditLogStub() as never);
 
     await expect(service.removeUnit('course-1', 'unit-1', 'tenant-1')).resolves.toEqual(
       expect.objectContaining({ id: 'unit-1' }),
@@ -146,7 +155,11 @@ describe('CourseService', () => {
       courseWhere: vi.fn().mockReturnValue({ tenantId: 'tenant-1', id: 'course-1' }),
     };
 
-    const service = new CourseService(prisma as never, learningAccess as never);
+    const service = new CourseService(
+      prisma as never,
+      learningAccess as never,
+      createAuditLogStub() as never,
+    );
 
     const result = await service.getEnrollmentReport('course-1', 'tenant-1');
 
@@ -182,5 +195,167 @@ describe('CourseService', () => {
         activitySessions: 1,
       }),
     ]);
+  });
+
+  it('should bulk enroll active students in one transaction', async () => {
+    const upsertEnrollment = vi.fn(
+      (args: { where: { userId_courseId: { userId: string; courseId: string } } }) =>
+        Promise.resolve({
+          id: `enrollment-${args.where.userId_courseId.userId}`,
+          userId: args.where.userId_courseId.userId,
+        }),
+    );
+    const prisma = {
+      course: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: 'course-1',
+          title: 'HSK 1 Basics',
+        }),
+      },
+      user: {
+        findMany: vi.fn().mockResolvedValue([{ id: 'user-1' }, { id: 'user-2' }]),
+      },
+      $transaction: vi.fn(
+        async (
+          callback: (tx: {
+            courseEnrollment: { upsert: typeof upsertEnrollment };
+          }) => Promise<unknown>,
+        ) => callback({ courseEnrollment: { upsert: upsertEnrollment } }),
+      ),
+    };
+    const learningAccess = {
+      courseWhere: vi.fn().mockReturnValue({ tenantId: 'tenant-1', id: 'course-1' }),
+    };
+    const auditLog = createAuditLogStub();
+    const service = new CourseService(prisma as never, learningAccess as never, auditLog as never);
+
+    const result = await service.bulkEnrollStudents(
+      'course-1',
+      'tenant-1',
+      ['user-1', 'user-2', 'user-1'],
+      { actorId: 'admin-1', ipAddress: '10.0.0.1', userAgent: 'jest-ua' },
+    );
+
+    expect(prisma.user.findMany).toHaveBeenCalledWith({
+      where: {
+        id: { in: ['user-1', 'user-2'] },
+        tenantId: 'tenant-1',
+        role: Role.STUDENT,
+        deletedAt: null,
+        isActive: true,
+      },
+      select: { id: true },
+    });
+    expect(upsertEnrollment).toHaveBeenCalledTimes(2);
+    expect(result).toEqual({
+      courseId: 'course-1',
+      requestedCount: 3,
+      uniqueCount: 2,
+      processedCount: 2,
+      skippedCount: 0,
+      duplicateCount: 1,
+      processedUserIds: ['user-1', 'user-2'],
+      skippedUserIds: [],
+    });
+    expect(auditLog.log).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'admin-1',
+        tenantId: 'tenant-1',
+        action: AuditAction.ENROLLMENT_BULK_ENROLL,
+        status: AuditStatus.SUCCESS,
+        ipAddress: '10.0.0.1',
+        userAgent: 'jest-ua',
+        metadata: expect.objectContaining({
+          courseId: 'course-1',
+          requestedCount: 3,
+          processedCount: 2,
+          duplicateCount: 1,
+        }),
+      }),
+    );
+  });
+
+  it('should bulk unenroll only active enrollments and report skipped students', async () => {
+    const prisma = {
+      course: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: 'course-1',
+          title: 'HSK 1 Basics',
+        }),
+      },
+      courseEnrollment: {
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: 'enrollment-1',
+            userId: 'user-1',
+          },
+        ]),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
+    };
+    const learningAccess = {
+      courseWhere: vi.fn().mockReturnValue({ tenantId: 'tenant-1', id: 'course-1' }),
+    };
+    const auditLog = createAuditLogStub();
+    const service = new CourseService(prisma as never, learningAccess as never, auditLog as never);
+
+    const result = await service.bulkUnenrollStudents(
+      'course-1',
+      'tenant-1',
+      ['user-1', 'user-2', 'user-1'],
+      { actorId: 'admin-1', ipAddress: '10.0.0.1', userAgent: 'jest-ua' },
+    );
+
+    expect(prisma.courseEnrollment.findMany).toHaveBeenCalledWith({
+      where: {
+        courseId: 'course-1',
+        userId: { in: ['user-1', 'user-2'] },
+        tenantId: 'tenant-1',
+        status: EnrollmentStatus.ACTIVE,
+      },
+      select: {
+        id: true,
+        userId: true,
+      },
+    });
+    expect(prisma.courseEnrollment.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: { in: ['enrollment-1'] },
+        tenantId: 'tenant-1',
+      },
+      data: {
+        status: EnrollmentStatus.REVOKED,
+        unenrolledAt: expect.any(Date) as Date,
+      },
+    });
+    expect(result).toEqual({
+      courseId: 'course-1',
+      requestedCount: 3,
+      uniqueCount: 2,
+      processedCount: 1,
+      skippedCount: 1,
+      duplicateCount: 1,
+      processedUserIds: ['user-1'],
+      skippedUserIds: ['user-2'],
+    });
+    expect(auditLog.log).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'admin-1',
+        tenantId: 'tenant-1',
+        action: AuditAction.ENROLLMENT_BULK_UNENROLL,
+        status: AuditStatus.SUCCESS,
+        ipAddress: '10.0.0.1',
+        userAgent: 'jest-ua',
+        metadata: expect.objectContaining({
+          courseId: 'course-1',
+          requestedCount: 3,
+          processedCount: 1,
+          skippedCount: 1,
+          duplicateCount: 1,
+          processedUserIds: ['user-1'],
+          skippedUserIds: ['user-2'],
+        }),
+      }),
+    );
   });
 });

@@ -94,6 +94,32 @@ export function useUnenrollStudent() {
   });
 }
 
+export function useBulkEnrollStudents() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ courseId, userIds }: { courseId: string; userIds: string[] }) =>
+      courseApi.bulkEnrollStudents(courseId, userIds),
+    onSuccess: (_data, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['course', vars.courseId] });
+      queryClient.invalidateQueries({ queryKey: ['course-report', vars.courseId] });
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
+    },
+  });
+}
+
+export function useBulkUnenrollStudents() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ courseId, userIds }: { courseId: string; userIds: string[] }) =>
+      courseApi.bulkUnenrollStudents(courseId, userIds),
+    onSuccess: (_data, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['course', vars.courseId] });
+      queryClient.invalidateQueries({ queryKey: ['course-report', vars.courseId] });
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
+    },
+  });
+}
+
 export function useCreateLesson() {
   const queryClient = useQueryClient();
   return useMutation({

@@ -9,6 +9,8 @@ import { AuthGuard } from '@/components/layout/auth-guard';
 import {
   useCourse,
   useCourseReport,
+  useBulkEnrollStudents,
+  useBulkUnenrollStudents,
   useUpdateCourse,
   useCreateLesson,
   useUpdateLesson,
@@ -57,6 +59,8 @@ export default function CourseEditorPage() {
   const deleteLesson = useDeleteLesson();
   const enrollStudent = useEnrollStudent();
   const unenrollStudent = useUnenrollStudent();
+  const bulkEnrollStudents = useBulkEnrollStudents();
+  const bulkUnenrollStudents = useBulkUnenrollStudents();
   const createCourseUnit = useCreateCourseUnit();
   const updateCourseUnit = useUpdateCourseUnit();
   const deleteCourseUnit = useDeleteCourseUnit();
@@ -80,8 +84,12 @@ export default function CourseEditorPage() {
     setLocalAiPrompt(aiSettings.prompt);
   }, [course]);
 
-  const showMsg = (type: 'success' | 'error', key: string) => {
-    setMessage({ type, text: t(key) });
+  const showMsg = (
+    type: 'success' | 'error',
+    key: string,
+    values?: Record<string, string | number>,
+  ) => {
+    setMessage({ type, text: t(key, values) });
     setTimeout(() => setMessage(null), 4000);
   };
 
@@ -264,6 +272,34 @@ export default function CourseEditorPage() {
       return true;
     } catch {
       showMsg('error', 'studentUnenrollError');
+      return false;
+    }
+  };
+
+  const handleBulkEnrollStudents = async (userIds: string[]): Promise<boolean> => {
+    try {
+      const result = await bulkEnrollStudents.mutateAsync({ courseId, userIds });
+      showMsg('success', 'studentsEnrolled', {
+        processed: result.processedCount,
+        duplicate: result.duplicateCount,
+      });
+      return true;
+    } catch {
+      showMsg('error', 'studentsEnrollError');
+      return false;
+    }
+  };
+
+  const handleBulkUnenrollStudents = async (userIds: string[]): Promise<boolean> => {
+    try {
+      const result = await bulkUnenrollStudents.mutateAsync({ courseId, userIds });
+      showMsg('success', 'studentsUnenrolled', {
+        processed: result.processedCount,
+        skipped: result.skippedCount,
+      });
+      return true;
+    } catch {
+      showMsg('error', 'studentsUnenrollError');
       return false;
     }
   };
@@ -566,8 +602,12 @@ export default function CourseEditorPage() {
                     enrollments={enrollments}
                     enrolling={enrollStudent.isPending}
                     unenrolling={unenrollStudent.isPending}
+                    bulkEnrolling={bulkEnrollStudents.isPending}
+                    bulkUnenrolling={bulkUnenrollStudents.isPending}
                     onEnroll={handleEnrollStudent}
                     onUnenroll={handleUnenrollStudent}
+                    onBulkEnroll={handleBulkEnrollStudents}
+                    onBulkUnenroll={handleBulkUnenrollStudents}
                   />
                 </div>
               </div>

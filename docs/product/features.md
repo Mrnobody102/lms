@@ -1,25 +1,30 @@
 # Feature Map LMS Platform
 
-Cập nhật lần cuối: 2026-04-27
+Cập nhật lần cuối: 2026-05-19
 
 ## Mục tiêu
 
-Tài liệu này mô tả feature map cấp sản phẩm. Trạng thái chi tiết theo sprint/engineering nằm trong [ENGINEERING-BACKLOG.md](ENGINEERING-BACKLOG.md), còn thứ tự phase nằm trong [PLAN.md](PLAN.md).
+Tài liệu này mô tả feature map cấp sản phẩm. Trạng thái chi tiết theo sprint/engineering nằm trong [ENGINEERING-BACKLOG.md](ENGINEERING-BACKLOG.md), thứ tự phase nằm trong [PLAN.md](PLAN.md), và tầm nhìn AI/Hybrid learning nằm trong [interactive-learning-plan.md](interactive-learning-plan.md).
 
 ## Trạng thái tổng quan
 
-| Module             | Trạng thái     | Ghi chú                                                                                              |
-| ------------------ | -------------- | ---------------------------------------------------------------------------------------------------- |
-| Multi-tenant auth  | Ổn định        | Cookie-first, tenant-aware, full interceptor support.                                                |
-| Course builder     | Đang làm       | CRUD course/unit/lesson, admin edit UI đã có                                                         |
-| Enrollment/access  | Đang làm       | DB/API/UI đã có, còn reporting/bulk/class                                                            |
-| Student learning   | MVP            | Course list, lesson view, mark completed                                                             |
-| Student dashboard  | MVP shell      | Continue learning, completion %, streak/session summary đã có                                        |
-| Practice           | Student UI MVP | Question bank, exercise set, attempt/scoring API, admin UI và student attempt UI đã có               |
-| Exam/Test          | Student UI MVP | Exam template, section/question, attempt lifecycle, scoring/review API, admin UI và student UI đã có |
-| Reports            | Chưa làm       | Cần aggregate progress/activity                                                                      |
-| Activation/license | Chưa làm       | Cần code redemption/entitlement                                                                      |
-| AI Convo           | Chưa làm       | Làm sau usage/reporting                                                                              |
+| Module                      | Trạng thái     | Ghi chú                                                                                                                         |
+| --------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Multi-tenant auth           | Ổn định        | Cookie-first, tenant-aware, full interceptor support.                                                                           |
+| Course builder              | Đang làm       | CRUD course/unit/lesson, admin edit UI đã có. Còn drag/drop reorder.                                                            |
+| Program/Level hierarchy     | Đã có V1       | Schema, API, admin UI và hierarchical reporting.                                                                                |
+| Enrollment/access           | Đang làm       | DB/API/UI + bulk enroll/unenroll đã có. Còn thiếu audit log cho bulk + class/cohort.                                            |
+| Student learning            | MVP            | Course list, lesson view, mark completed, sidebar theo unit.                                                                    |
+| Student dashboard           | MVP shell      | Continue learning, completion %, streak/session summary, activity calendar đã có. Còn "next best item" recommendation.          |
+| Practice                    | Student UI MVP | Question bank, exercise set, attempt/scoring, admin UI và student UI đã có. Question types: MC, fill-blank, matching, ordering. |
+| Exam/Test                   | Student UI MVP | Exam template, section/question, attempt lifecycle, scoring/review, timer, resume. Cùng bộ question types như practice.         |
+| Reports                     | MVP            | Student/admin report, drill-down Program → Level → Course → Unit/Skills, CSV export. Còn time-series và cohort.                 |
+| Activation/license          | MVP            | Activation code redemption, license grant, expiration/usage limit.                                                              |
+| Skill mastery / SRS         | Chưa làm       | Cốt lõi học thuật — model `SkillMastery`, `ReviewCard`, daily review queue.                                                     |
+| AI in-context tutor (P8a)   | Chưa làm       | Giải thích lỗi practice/exam, từ vựng trong lesson. Ưu tiên cao nhất trong AI track.                                            |
+| AI-generated practice (P8b) | Chưa làm       | Sinh question từ skill yếu, admin duyệt.                                                                                        |
+| AI Conversation (P8c)       | Chưa làm       | Roleplay scenario, audio scoring (cần media pipeline).                                                                          |
+| Media storage / jobs        | Chưa làm       | Cần cho listening question và AI audio scoring.                                                                                 |
 
 ## Actor: Student
 
@@ -57,7 +62,8 @@ Cần làm tiếp:
 
 Cần làm tiếp:
 
-- Question types mở rộng: matching, ordering, listening prompt.
+- Skill filter trên student practice UI (luyện theo kỹ năng yếu).
+- Listening question type (cần media upload pipeline P10).
 
 ### Kiểm tra
 
@@ -82,27 +88,61 @@ Cần làm tiếp:
 
 ### Báo cáo cá nhân
 
-Chưa có.
+Đã có nền từ P6 (Reporting). Cần mở rộng theo P9 (SRS + SkillMastery).
 
-Feature cần có:
+Đã có:
 
 - Daily streak.
 - Activity calendar.
 - Completion by course/unit.
-- Accuracy by skill.
+- Accuracy by skill (snapshot).
 - Recent attempts.
 
-### AI Convo
+Cần làm tiếp:
 
-Chưa có.
+- Skill mastery chart (time-series, dựa trên `SkillMastery`).
+- Daily review card (SRS queue due count).
+- "Next best item" recommendation.
 
-Feature cần có:
+### AI Features
 
-- Conversation scenario.
-- Chat session/messages.
+Chia làm 3 track theo giá trị giáo dục (xem [PLAN.md](PLAN.md) P8a/b/c):
+
+#### P8a. AI In-Context Tutor
+
+Giải thích lỗi sai trong practice/exam review ngay tại chỗ — không phải chat free-form.
+
+Đã có foundation:
+
+- Practice/exam answer snapshot + explanation field.
+
+Cần thêm:
+
+- "Giải thích" button gắn vào từng câu sai.
+- AI call với context (lesson content, skill, correct answer).
+- Per-tenant AI settings (`Course.aiSettings`).
 - Usage quota.
-- Safety prompt.
-- Feedback/scoring nếu cần.
+
+#### P8b. AI-Generated Practice
+
+Sinh thêm câu hỏi cho skill/unit yếu — admin duyệt trước khi dùng.
+
+Cần thêm:
+
+- AI generation pipeline từ skill content.
+- Admin review queue.
+- Integration với question bank.
+
+#### P8c. AI Conversation Roleplay
+
+Roleplay tình huống bằng AI chat/voice.
+
+Cần thêm:
+
+- Conversation scenario theo course.
+- AI session/messages.
+- Audio scoring (cần media pipeline P10).
+- Safety prompt theo tenant.
 
 ## Actor: Admin / Center Owner
 
@@ -128,28 +168,34 @@ Cần làm tiếp:
 
 - Admin API xem users.
 - Enroll/unenroll student vào course qua API/UI.
+- Bulk enroll/unenroll với DTO validation và transaction.
 - Student chỉ thấy course được enroll.
 - Server-side student search in enrollment UI.
 - Shared backend policy and tenant-scoped DB constraints protect enrollment access.
 
 Cần làm tiếp:
 
-- Student management page hoàn chỉnh.
-- Search/filter nâng cao.
-- Bulk enroll.
-- Class/cohort.
-- Enrollment report.
+- Audit log cho bulk enroll/unenroll và hành động enrollment nhạy cảm.
+- Surface bulk result (skippedCount, duplicateCount) lên admin UI thay vì chỉ success/error toast.
+- Class/cohort model.
+- Enrollment trend report.
 
 ### Reports
 
-Chưa có.
+Đã có MVP:
 
-Feature cần có:
-
-- Completion by course.
+- Course completion.
 - Student activity.
 - Progress by enrollment.
 - Practice/exam performance.
+- Drill-down Program → Level → Course → Unit/Skills.
+- CSV export.
+
+Cần làm tiếp:
+
+- Time-series trends (week/month).
+- Cohort/class drill-down (sau khi có cohort model).
+- Skill mastery trend dựa trên `SkillMastery` table (sau khi P9 có).
 
 ## Actor: Super Admin
 
@@ -170,8 +216,10 @@ Hiện tại:
 
 - `Tenant`
 - `User`
-- `Course`
-- `CourseUnit`
+- `Program` (đã có V1)
+- `Level` (đã có V1, thuộc Program)
+- `Course` (thuộc Level)
+- `CourseUnit` (thuộc Course)
 - `Lesson`
 - `CourseEnrollment`
 - `UserLessonProgress`
@@ -185,16 +233,24 @@ Hiện tại:
 - `ExamQuestion`
 - `ExamAttempt`
 - `ExamAnswer`
+- `ActivationCode`
+- `Entitlement`
 
 Cần bổ sung theo thứ tự ưu tiên:
 
-1. `ActivationCode`, `Entitlement` hoặc `LicenseGrant`.
-2. `Program`/`Level` nếu cần phân cấp cao hơn course.
-3. `AiConversation`, `AiMessage`, `UsageQuota`.
+1. `Skill` (tag entity: vocabulary, grammar, reading, listening, writing) — tham chiếu bởi `PracticeQuestion`/`ExamQuestion`.
+2. `SkillMastery(userId, skillId, mastery, confidence, lastUpdatedAt)` — cập nhật từ practice/exam answer snapshot.
+3. `ReviewCard(userId, sourceType, sourceId, dueAt, interval, easeFactor, reps, lapses, lastReviewedAt)` — SM-2 scheduling.
+4. `AiConversation`, `AiMessage` (cho P8c roleplay).
+5. `AiUsageQuota(tenantId, used, limit, resetAt)` — cho P8a/b/c quota management.
+6. `MediaAsset(id, tenantId, type, url, uploadedBy, createdAt)` — cho P10 listening/audio.
 
 ## Feature Ưu Tiên Gần Nhất
 
-1. Practice/reporting nâng cao theo unit/skill.
-2. Activation/license.
-3. Reporting nâng cao theo unit/practice/exam.
-4. Mở rộng question types: matching, ordering, listening.
+1. Audit log + bulk feedback cho enrollment (P1 close-out).
+2. Skill mastery model + skill filter trên student practice UI (P9 prerequisite).
+3. SRS review queue MVP — daily review card trên dashboard (P9 core).
+4. AI in-context tutor — giải thích lỗi practice/exam (P8a).
+5. Media upload pipeline — mở khóa listening question (P10).
+6. Listening question type cho practice và exam (P4/P5 close-out).
+7. Time-series reporting + cohort drill-down (P6 close-out).

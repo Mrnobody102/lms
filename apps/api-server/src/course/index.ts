@@ -4,3 +4,4 @@ export * from './dto/create-course-unit.dto';
 export * from './dto/update-course-unit.dto';
 export * from './dto/course-query.dto';
 export * from './dto/enroll-student.dto';
+export * from './dto/bulk-enrollment.dto';

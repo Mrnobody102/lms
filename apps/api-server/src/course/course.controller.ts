@@ -16,9 +16,12 @@ import { Role } from '@repo/database';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { IpAddress } from '../auth/decorators/ip-address.decorator';
+import { UserAgent } from '../auth/decorators/user-agent.decorator';
 import { getScopedTenantId } from '../common/utils/tenant-request.util';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
 import { CourseService } from './course.service';
+import { BulkEnrollmentDto } from './dto/bulk-enrollment.dto';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { CourseQueryDto } from './dto/course-query.dto';
@@ -120,8 +123,52 @@ export class CourseController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() enrollStudentDto: EnrollStudentDto,
     @Request() req: AuthenticatedRequest,
+    @IpAddress() ipAddress: string,
+    @UserAgent() userAgent: string,
   ) {
-    return this.courseService.enrollStudent(id, getScopedTenantId(req), enrollStudentDto.userId);
+    return this.courseService.enrollStudent(id, getScopedTenantId(req), enrollStudentDto.userId, {
+      actorId: req.user.id,
+      ipAddress,
+      userAgent,
+    });
+  }
+
+  @Post(':id/enrollments/bulk')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Bulk enroll students into a course' })
+  bulkEnrollStudents(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() bulkEnrollmentDto: BulkEnrollmentDto,
+    @Request() req: AuthenticatedRequest,
+    @IpAddress() ipAddress: string,
+    @UserAgent() userAgent: string,
+  ) {
+    return this.courseService.bulkEnrollStudents(
+      id,
+      getScopedTenantId(req),
+      bulkEnrollmentDto.userIds,
+      { actorId: req.user.id, ipAddress, userAgent },
+    );
+  }
+
+  @Post(':id/enrollments/bulk/unenroll')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Bulk unenroll students from a course' })
+  bulkUnenrollStudents(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() bulkEnrollmentDto: BulkEnrollmentDto,
+    @Request() req: AuthenticatedRequest,
+    @IpAddress() ipAddress: string,
+    @UserAgent() userAgent: string,
+  ) {
+    return this.courseService.bulkUnenrollStudents(
+      id,
+      getScopedTenantId(req),
+      bulkEnrollmentDto.userIds,
+      { actorId: req.user.id, ipAddress, userAgent },
+    );
   }
 
   @Delete(':id/enrollments/:userId')
@@ -132,8 +179,14 @@ export class CourseController {
     @Param('id', ParseUUIDPipe) id: string,
     @Param('userId', ParseUUIDPipe) userId: string,
     @Request() req: AuthenticatedRequest,
+    @IpAddress() ipAddress: string,
+    @UserAgent() userAgent: string,
   ) {
-    return this.courseService.unenrollStudent(id, getScopedTenantId(req), userId);
+    return this.courseService.unenrollStudent(id, getScopedTenantId(req), userId, {
+      actorId: req.user.id,
+      ipAddress,
+      userAgent,
+    });
   }
 
   @Patch(':id')
