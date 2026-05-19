@@ -305,26 +305,26 @@ Trạng thái: Đã hoàn thành (Batch P9.1, 2026-05-19 và Batch P9.2, 2026-05
 
 ### Epic M. Media Storage Và Background Jobs (P10)
 
-Trạng thái: chưa làm. Mở khóa listening question và AI audio scoring.
+Trạng thái: Đã hoàn thành hạ tầng cốt lõi (Batch P10, 2026-05-19).
 
-- [ ] Object storage abstraction (S3-compatible)
-- [ ] Signed URL upload cho admin (lesson media, listening question audio)
-- [ ] Signed URL upload cho student (audio bài nói cho AI scoring)
-- [ ] Background job queue (BullMQ hoặc tương tự) cho AI evaluation, transcoding, notification
-- [ ] Audit trail cho media upload nhạy cảm
-- [ ] Listening question type cho practice và exam
-- [ ] Audio playback UI trong question renderer
+- [x] Object storage abstraction (S3-compatible via `StorageService`)
+- [x] Signed URL upload cho admin (lesson media, listening question audio)
+- [x] Signed URL upload cho student (audio bài nói cho AI scoring)
+- [x] Background job queue (BullMQ với `@nestjs/bullmq` và Redis) cho AI evaluation, transcoding, notification
+- [x] Audit trail cho media upload nhạy cảm (thông qua bảng `MediaAsset` trạng thái `UPLOADING`/`READY`/`FAILED`)
+- [ ] Listening question type cho practice và exam (sẽ làm ở Epic tiếp theo)
+- [ ] Audio playback UI trong question renderer (sẽ làm ở Epic tiếp theo)
 
 ## Bước tiếp theo đề xuất
 
 Thứ tự ưu tiên dựa trên giá trị giáo dục, dependencies và hiện trạng:
 
 1. ✅ Audit log + bulk feedback hoàn chỉnh (Epic D close-out — DONE).
-2. ✅ Skill mastery foundation (Epic L phần đầu — DONE Batch P9.1, 2026-05-19).
-3. ✅ SRS review queue MVP (Epic L SRS Core): `ReviewCard` model, daily review trên dashboard, "next best item" recommendation (DONE Batch P9.2).
-4. **NEXT**: AI In-Context Tutor (Epic K P8a): nhúng "Giải thích vì sao sai" vào practice/exam review, dùng usage quota.
-5. Media upload pipeline (Epic M): mở khóa listening question và audio AI scoring.
-6. Listening question type (Epic M): sau khi media pipeline sẵn sàng.
+2. ✅ Skill mastery foundation (Epic L phần đầu — DONE Batch P9.1).
+3. ✅ SRS review queue MVP (Epic L SRS Core): DONE Batch P9.2.
+4. ✅ AI In-Context Tutor (Epic K P8a): DONE (Batch P8a).
+5. ✅ Media upload pipeline (Epic M P10): DONE (Hạ tầng lưu trữ và job queue đã hoàn thành).
+6. **NEXT**: Listening question type (Epic M): phát triển loại câu hỏi Listening và UI phát audio sau khi media pipeline sẵn sàng.
 7. Time-series reporting + cohort drill-down (Epic I close-out): khi có dữ liệu skill mastery theo thời gian.
 8. AI-Generated Practice (Epic K P8b) → AI Conversation Roleplay (Epic K P8c).
 9. Drag/drop reorder unit & lesson (Epic F optional): backend `order: Int` đã sẵn, chỉ cần UI.

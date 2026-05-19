@@ -213,20 +213,13 @@ export default function ExamAttemptReviewPage() {
                           attemptId={attempt.id}
                           questionId={answer.question.id}
                           type="exam"
-                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           initialFeedback={
-                            typeof (answer as any).aiFeedback === 'string'
-                              ? (answer as any).aiFeedback
-                              : undefined
+                            typeof answer.aiFeedback === 'string' ? answer.aiFeedback : undefined
                           }
                         />
                       )}
                       {isAiQuestionType(answer.question.type) && (
-                        <AIFeedbackPanel
-                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                          aiFeedback={(answer as any).aiFeedback}
-                          className="mt-4"
-                        />
+                        <AIFeedbackPanel aiFeedback={answer.aiFeedback} className="mt-4" />
                       )}
                     </div>
                   </section>

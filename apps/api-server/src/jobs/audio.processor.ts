@@ -1,0 +1,33 @@
+import { Processor, WorkerHost } from '@nestjs/bullmq';
+import { Logger } from '@nestjs/common';
+import { Job } from 'bullmq';
+
+interface TranscodeAudioPayload {
+  assetId: string;
+  targetFormat: string;
+}
+
+@Processor('media-processing')
+export class AudioProcessor extends WorkerHost {
+  private readonly logger = new Logger(AudioProcessor.name);
+
+  async process(job: Job<TranscodeAudioPayload, unknown, string>): Promise<unknown> {
+    this.logger.log(`Processing job ${job.id} of type ${job.name}...`);
+
+    switch (job.name) {
+      case 'transcode-audio': {
+        const { assetId, targetFormat } = job.data;
+        this.logger.log(`Transcoding audio for asset ${assetId} to format ${targetFormat}`);
+        // Mock processing time
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+        this.logger.log(`Audio transcoding for asset ${assetId} completed!`);
+        return { success: true, assetId, formatted: targetFormat };
+      }
+
+      default: {
+        this.logger.warn(`Unknown job name: ${job.name}`);
+        return { success: false, error: 'Unknown job name' };
+      }
+    }
+  }
+}

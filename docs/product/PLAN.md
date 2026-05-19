@@ -374,8 +374,8 @@ Thứ tự ưu tiên dựa trên giá trị giáo dục, dependencies và hiện
 2. **Skill mastery model + skill tags filter** (P9 phần đầu, prerequisite cho mọi adaptive feature) ✅ DONE — Batch P9.1: `Skill`, `SkillMastery`, EWMA hook, admin/student UI, practice filter.
 3. **SRS Review Queue MVP** (P9 phần lõi) ✅ DONE: Thẻ từ practice answer, daily review trên dashboard, session ôn tập, "next best item" recommendation.
 4. **AI In-Context Tutor** (P8a) ✅ DONE: Nhúng "Giải thích vì sao sai" vào practice/exam review, dùng usage quota và Gemini API.
-5. **Media upload pipeline** (P10): mở khóa listening question và audio AI scoring. ← **NEXT**
-6. **Listening question type** (P4/P5 close-out): sau khi P10 sẵn sàng.
+5. **Media upload pipeline** (P10) ✅ DONE: Hạ tầng lưu trữ S3 Storage client và background job queue (BullMQ + Redis) hoàn thành.
+6. **Listening question type** (P4/P5 close-out): phát triển loại câu hỏi Listening và UI phát audio sau khi P10 sẵn sàng. ← **NEXT**
 7. **Time-series reporting + cohort drill-down** (P6 close-out): khi có dữ liệu skill mastery theo thời gian.
 8. **AI-Generated Practice** (P8b) → **AI Conversation Roleplay** (P8c).
 9. **Drag/drop reorder unit và lesson** (P3 polish, có thể chen ngang khi có thời gian).

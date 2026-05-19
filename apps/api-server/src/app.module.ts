@@ -32,6 +32,10 @@ import { SrsModule } from './srs/srs.module';
 import { MetricsModule } from './common/metrics/metrics.module';
 import { MailModule } from './mail/mail.module';
 import { AiModule } from './ai/ai.module';
+import { BullModule } from '@nestjs/bullmq';
+import { StorageModule } from './storage/storage.module';
+import { MediaModule } from './media/media.module';
+import { JobsModule } from './jobs/jobs.module';
 
 @Module({
   imports: [
@@ -87,6 +91,23 @@ import { AiModule } from './ai/ai.module';
     HealthModule,
     MailModule,
     AiModule,
+    BullModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        const redisUrl = configService.get<string>('REDIS_URL');
+        if (!redisUrl) {
+          throw new Error('REDIS_URL is required for BullModule');
+        }
+        return {
+          connection: {
+            url: redisUrl,
+          },
+        };
+      },
+    }),
+    StorageModule,
+    MediaModule,
+    JobsModule,
   ],
   controllers: [],
   providers: [

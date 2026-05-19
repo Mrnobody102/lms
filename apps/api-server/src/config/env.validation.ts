@@ -115,6 +115,14 @@ export const envSchema = z
     MAIL_USER: z.string().optional(),
     MAIL_PASS: z.string().optional(),
     MAIL_FROM: z.string().optional(),
+
+    // S3 Storage
+    S3_ENDPOINT: z.string().url().optional(),
+    S3_REGION: z.string().optional(),
+    S3_BUCKET: z.string().optional(),
+    S3_ACCESS_KEY: z.string().optional(),
+    S3_SECRET_KEY: z.string().optional(),
+    S3_PUBLIC_URL: z.string().url().optional(),
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV === 'production' && !env.REDIS_URL) {

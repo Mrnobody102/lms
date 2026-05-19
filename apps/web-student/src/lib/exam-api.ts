@@ -97,6 +97,7 @@ export interface ExamAttemptDetail extends ExamAttemptSummary {
     pointsAwarded: number;
     createdAt: string;
     question: ExamQuestion & { correctAnswer: unknown };
+    aiFeedback?: unknown;
   }>;
 }
 
