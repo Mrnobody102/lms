@@ -31,6 +31,7 @@ import { SkillModule } from './skill/skill.module';
 import { SrsModule } from './srs/srs.module';
 import { MetricsModule } from './common/metrics/metrics.module';
 import { MailModule } from './mail/mail.module';
+import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -85,6 +86,7 @@ import { MailModule } from './mail/mail.module';
     MetricsModule,
     HealthModule,
     MailModule,
+    AiModule,
   ],
   controllers: [],
   providers: [

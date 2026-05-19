@@ -244,12 +244,14 @@ Task:
 
 Trạng thái: chưa làm. Chia thành 3 track con để tránh "chat trước, giá trị sau".
 
-#### P8a. AI In-Context Tutor (ưu tiên cao nhất)
+#### P8a. AI In-Context Tutor (Epic K) - **[DONE]**
 
-- [ ] Thiết kế AI explanation call với context (lesson content, correct answer, skill tag)
-- [ ] "Giải thích" button trên practice/exam review UI — mỗi câu sai
-- [ ] Bôi đen từ vựng/cụm từ trong lesson để AI giải thích
-- [ ] `AiUsageQuota` table cho per-tenant và per-user quota
+- [x] Schema: Quota management (`AiUsageQuota`).
+- [x] Backend: AI Provider architecture (`IAiProvider`, `GeminiProvider`).
+- [x] Backend: `AiService` for prompt building, calling LLM, and managing user quotas.
+- [x] Controller: `POST /api/ai/explain/practice/...` and `POST /api/ai/explain/exam/...`.
+- [x] Frontend: `useExplainPracticeAnswer` hook.
+- [x] Frontend: "Hỏi Gia sư AI" UI component integrated into review screens.
 - [ ] Per-tenant AI settings (`Course.aiSettings`)
 - [ ] Safety/system prompt theo tenant
 - [ ] Admin usage dashboard

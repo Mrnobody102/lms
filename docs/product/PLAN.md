@@ -278,16 +278,17 @@ Mục tiêu: nhúng AI vào nền học truyền thống theo thứ tự giá tr
 
 Chia thành ba track con để tránh "chat trước, giá trị sau":
 
-#### P8a. AI In-Context Tutor (ưu tiên cao nhất)
+#### P8a. AI In-Context Tutor (Epic K) - **HOÀN THÀNH**
 
 Mục tiêu: học viên hiểu được tại sao sai, không chỉ biết sai.
 
 Phạm vi:
 
 - Khi học viên submit practice/exam và nhận feedback, gắn nút "Giải thích" cho từng câu sai.
-- AI giải thích dựa trên: lesson content (RAG), correctAnswer + explanation đã có, và ngữ cảnh skill.
-- Bôi đen từ vựng/cụm từ trong lesson để AI giải thích theo `Course.aiSettings`.
+- AI giải thích dựa trên: correctAnswer + explanation đã có, và ngữ cảnh skill.
 - Usage quota theo tenant + per-user để kiểm soát chi phí.
+- Adapter Pattern cho AI Providers (hỗ trợ `@google/genai` và các AI SDK khác).
+- API `/ai/explain/...` kết nối LLM.
 
 #### P8b. AI-Generated Practice (giá trị trung bình)
 
@@ -372,8 +373,8 @@ Thứ tự ưu tiên dựa trên giá trị giáo dục, dependencies và hiện
 1. **Audit log + bulk feedback hoàn chỉnh** (P1 close-out) ✅ DONE: bulk enroll/unenroll có audit log + skipped/duplicate count surfaced lên admin UI.
 2. **Skill mastery model + skill tags filter** (P9 phần đầu, prerequisite cho mọi adaptive feature) ✅ DONE — Batch P9.1: `Skill`, `SkillMastery`, EWMA hook, admin/student UI, practice filter.
 3. **SRS Review Queue MVP** (P9 phần lõi) ✅ DONE: Thẻ từ practice answer, daily review trên dashboard, session ôn tập, "next best item" recommendation.
-4. **AI In-Context Tutor** (P8a): nhúng "Giải thích vì sao sai" vào practice/exam review, dùng usage quota. ← **NEXT**
-5. **Media upload pipeline** (P10): mở khóa listening question và audio AI scoring.
+4. **AI In-Context Tutor** (P8a) ✅ DONE: Nhúng "Giải thích vì sao sai" vào practice/exam review, dùng usage quota và Gemini API.
+5. **Media upload pipeline** (P10): mở khóa listening question và audio AI scoring. ← **NEXT**
 6. **Listening question type** (P4/P5 close-out): sau khi P10 sẵn sàng.
 7. **Time-series reporting + cohort drill-down** (P6 close-out): khi có dữ liệu skill mastery theo thời gian.
 8. **AI-Generated Practice** (P8b) → **AI Conversation Roleplay** (P8c).

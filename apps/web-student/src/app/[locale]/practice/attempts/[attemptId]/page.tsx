@@ -8,6 +8,7 @@ import { AIFeedbackPanel } from '@/components/lessons/ai-feedback-panel';
 import { usePracticeAttempt } from '@/hooks/use-practice';
 import { getPracticeAttemptStats, PracticeQuestion } from '@/lib/practice-api';
 import { Link } from '@/navigation';
+import { AiTutorButton } from '@/components/lessons/ai-tutor-button';
 
 export default function PracticeAttemptReviewPage() {
   const t = useTranslations('Student');
@@ -180,6 +181,16 @@ export default function PracticeAttemptReviewPage() {
                     )}
                     {answer.question.explanation && (
                       <p className="mt-2 text-muted-foreground">{answer.question.explanation}</p>
+                    )}
+                    {!answer.isCorrect && !isAiQuestionType(answer.question.type) && (
+                      <AiTutorButton
+                        attemptId={attempt.id}
+                        questionId={answer.question.id}
+                        type="practice"
+                        initialFeedback={
+                          typeof answer.aiFeedback === 'string' ? answer.aiFeedback : undefined
+                        }
+                      />
                     )}
                     {isAiQuestionType(answer.question.type) && (
                       <AIFeedbackPanel aiFeedback={answer.aiFeedback} className="mt-4" />

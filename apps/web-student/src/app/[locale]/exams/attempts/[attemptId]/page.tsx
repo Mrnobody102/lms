@@ -8,6 +8,7 @@ import { useExamAttempt } from '@/hooks/use-exams';
 import { ExamQuestion } from '@/lib/exam-api';
 import { Link } from '@/navigation';
 import { AIFeedbackPanel } from '@/components/lessons/ai-feedback-panel';
+import { AiTutorButton } from '@/components/lessons/ai-tutor-button';
 
 export default function ExamAttemptReviewPage() {
   const t = useTranslations('Student');
@@ -206,6 +207,19 @@ export default function ExamAttemptReviewPage() {
                       )}
                       {answer.question.explanation && (
                         <p className="mt-2 text-muted-foreground">{answer.question.explanation}</p>
+                      )}
+                      {!answer.isCorrect && !isAiQuestionType(answer.question.type) && (
+                        <AiTutorButton
+                          attemptId={attempt.id}
+                          questionId={answer.question.id}
+                          type="exam"
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                          initialFeedback={
+                            typeof (answer as any).aiFeedback === 'string'
+                              ? (answer as any).aiFeedback
+                              : undefined
+                          }
+                        />
                       )}
                       {isAiQuestionType(answer.question.type) && (
                         <AIFeedbackPanel

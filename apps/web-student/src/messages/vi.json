@@ -529,6 +529,14 @@
       "notPassed": "Chưa đạt",
       "tryAgain": "Làm lại",
       "submit": "Nộp bài"
+    },
+    "aiTutor": {
+      "askAiButton": "Hỏi Gia sư AI",
+      "analyzing": "AI đang phân tích...",
+      "quotaExceeded": "Bạn đã hết lượt sử dụng AI hôm nay.",
+      "errorTitle": "Lỗi AI",
+      "close": "Đóng",
+      "aiFeedbackTitle": "Phân tích từ AI"
     }
   }
 }

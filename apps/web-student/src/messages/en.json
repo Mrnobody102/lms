@@ -526,9 +526,17 @@
       "correctCountValue": "{count, plural, =0 {0 correct} one {# correct} other {# correct}}",
       "incorrectCountValue": "{count, plural, =0 {0 incorrect} one {# incorrect} other {# incorrect}}",
       "passed": "Passed",
-      "notPassed": "Not passed",
-      "tryAgain": "Try again",
-      "submit": "Submit exam"
+      "notPassed": "Not Passed",
+      "tryAgain": "Try Again",
+      "submit": "Submit"
+    },
+    "aiTutor": {
+      "askAiButton": "Ask AI Tutor",
+      "analyzing": "AI is analyzing...",
+      "quotaExceeded": "You have exceeded your AI usage quota for today.",
+      "errorTitle": "AI Error",
+      "close": "Close",
+      "aiFeedbackTitle": "AI Feedback"
     }
   }
 }
