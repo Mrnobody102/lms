@@ -4,8 +4,13 @@ import { useLocale } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { Languages } from 'lucide-react';
 import { isLocale, locales, localeNames, type Locale } from '@repo/shared';
+import { cn } from './lib/utils';
 
-export function LanguageToggle() {
+interface LanguageToggleProps {
+  menuPlacement?: 'bottom' | 'top';
+}
+
+export function LanguageToggle({ menuPlacement = 'bottom' }: LanguageToggleProps) {
   const locale = useLocale();
   const pathname = usePathname();
 
@@ -40,7 +45,12 @@ export function LanguageToggle() {
         <span className="uppercase">{locale}</span>
       </button>
 
-      <div className="absolute right-0 mt-2 w-40 bg-card border rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 p-1">
+      <div
+        className={cn(
+          'absolute right-0 w-40 bg-card border rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 p-1',
+          menuPlacement === 'top' ? 'bottom-full mb-2' : 'mt-2',
+        )}
+      >
         {locales.map((loc) => (
           <button
             key={loc}
