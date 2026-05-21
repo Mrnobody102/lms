@@ -20,11 +20,10 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { useTheme } from 'next-themes';
 import { useAuthStore } from '@/features/auth/auth.store';
 import { cn } from '@/lib/utils';
 import { Link, usePathname, useRouter } from '@/navigation';
-import { LanguageToggle } from '@repo/ui';
+import { LanguageToggle, useTheme } from '@repo/ui';
 
 export function AdminSidebar() {
   const t = useTranslations('Admin');

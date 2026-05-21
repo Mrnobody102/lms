@@ -35,13 +35,17 @@ function detectLocale(
   return supportedLocales.includes(locale) ? locale : defaultLocale;
 }
 
-function getDefaultBaseUrl(): string {
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    return `${process.env.NEXT_PUBLIC_API_URL}/api`;
-  }
+function appendApiPath(baseUrl: string): string {
+  return `${baseUrl.replace(/\/+$/, '')}/api`;
+}
 
+function getDefaultBaseUrl(): string {
   if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
     return '/api';
+  }
+
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return appendApiPath(process.env.NEXT_PUBLIC_API_URL);
   }
 
   if (process.env.NODE_ENV === 'production') {
