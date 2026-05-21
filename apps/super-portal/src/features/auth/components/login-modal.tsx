@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useAuthStore } from '../auth.store';
 import toast from 'react-hot-toast';
 import { Loader2, KeyRound, Eye, EyeOff } from 'lucide-react';
+import { LanguageToggle } from '@repo/ui';
 
 import { useTranslations } from 'next-intl';
 
@@ -27,6 +28,10 @@ export function LoginModal() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md">
       <div className="w-full max-w-sm overflow-hidden rounded-3xl border bg-card p-6 shadow-2xl sm:p-8">
+        <div className="mb-4 flex justify-end">
+          <LanguageToggle />
+        </div>
+
         <div className="mb-6 text-center text-foreground sm:mb-8">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30">
             <KeyRound className="h-6 w-6" />

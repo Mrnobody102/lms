@@ -81,13 +81,16 @@ export function ProfileForm() {
         <div className="space-y-2">
           <Label>{t('settings.profile.fullName')}</Label>
           <div className="relative">
-            <User className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-muted-foreground">
+              <User className="h-4 w-4" />
+            </div>
             <Input
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               required
               placeholder="Nguyen Van A"
-              className="pl-10"
+              className="h-12 py-0"
+              style={{ paddingLeft: '2.75rem' }}
             />
           </div>
         </div>
@@ -96,11 +99,14 @@ export function ProfileForm() {
         <div className="space-y-2 opacity-70">
           <Label>{t('settings.profile.email')}</Label>
           <div className="relative">
-            <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-muted-foreground">
+              <Mail className="h-4 w-4" />
+            </div>
             <Input
               value={user?.email || ''}
               disabled
-              className="pl-10 bg-muted/50 cursor-not-allowed"
+              className="h-12 cursor-not-allowed bg-muted/50 py-0"
+              style={{ paddingLeft: '2.75rem' }}
             />
           </div>
         </div>
@@ -109,12 +115,15 @@ export function ProfileForm() {
         <div className="space-y-2">
           <Label>{t('settings.profile.phoneNumber')}</Label>
           <div className="relative">
-            <Phone className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-muted-foreground">
+              <Phone className="h-4 w-4" />
+            </div>
             <Input
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
               placeholder="+84..."
-              className="pl-10"
+              className="h-12 py-0"
+              style={{ paddingLeft: '2.75rem' }}
             />
           </div>
         </div>
@@ -123,12 +132,15 @@ export function ProfileForm() {
         <div className="space-y-2">
           <Label>{t('settings.profile.avatar')}</Label>
           <div className="relative">
-            <ImageIcon className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-muted-foreground">
+              <ImageIcon className="h-4 w-4" />
+            </div>
             <Input
               value={avatarUrl}
               onChange={(e) => setAvatarUrl(e.target.value)}
               placeholder="https://..."
-              className="pl-10"
+              className="h-12 py-0"
+              style={{ paddingLeft: '2.75rem' }}
             />
           </div>
         </div>

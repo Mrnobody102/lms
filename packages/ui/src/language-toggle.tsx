@@ -1,13 +1,12 @@
 'use client';
 
 import { useLocale } from 'next-intl';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { Languages } from 'lucide-react';
 import { isLocale, locales, localeNames, type Locale } from '@repo/shared';
 
 export function LanguageToggle() {
   const locale = useLocale();
-  const router = useRouter();
   const pathname = usePathname();
 
   const handleLanguageChange = (newLocale: Locale) => {
@@ -26,13 +25,17 @@ export function LanguageToggle() {
     }
 
     const newPath = pathParts.join('/') || '/';
-    router.replace(newPath);
-    router.refresh(); // Important: clear client cache for translation changes
+    const suffix =
+      typeof window === 'undefined' ? '' : `${window.location.search}${window.location.hash}`;
+    window.location.assign(`${newPath}${suffix}`);
   };
 
   return (
     <div className="relative group">
-      <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all active:scale-95 border bg-card/50">
+      <button
+        type="button"
+        className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all active:scale-95 border bg-card/50"
+      >
         <Languages className="w-4 h-4" />
         <span className="uppercase">{locale}</span>
       </button>
