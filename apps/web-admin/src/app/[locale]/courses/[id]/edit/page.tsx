@@ -21,7 +21,7 @@ import {
   useUpdateCourseUnit,
   useDeleteCourseUnit,
 } from '@/hooks/use-courses';
-import { CourseForm } from '@/features/courses/course-form';
+import { usePrograms } from '@/hooks/use-programs';
 import { LessonList } from '@/features/courses/lesson-list';
 import { AddLessonDialog } from '@/features/courses/add-lesson-form';
 import { EditLessonDialog } from '@/features/courses/edit-lesson-form';
@@ -40,8 +40,18 @@ import {
   buildCourseAiSettings,
   normalizeCourseAiSettings,
 } from '@/lib/course-api';
-import { Button, Alert, AlertDescription } from '@/components/ui';
-import { ArrowLeft, ExternalLink, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { Button, Alert, AlertDescription, Badge, Label } from '@/components/ui';
+import {
+  ArrowLeft,
+  ExternalLink,
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+  Save,
+  Settings,
+  Users,
+  BookOpen,
+} from 'lucide-react';
 import { Link } from '@/navigation';
 
 const EMPTY_ARRAY: never[] = [];
@@ -53,6 +63,7 @@ export default function CourseEditorPage() {
 
   const { data: course, isLoading } = useCourse(courseId);
   const { data: report, isLoading: reportLoading } = useCourseReport(courseId);
+  const { data: programs } = usePrograms();
   const updateCourse = useUpdateCourse();
   const createLesson = useCreateLesson();
   const updateLesson = useUpdateLesson();
@@ -65,6 +76,7 @@ export default function CourseEditorPage() {
   const updateCourseUnit = useUpdateCourseUnit();
   const deleteCourseUnit = useDeleteCourseUnit();
 
+  const [activeTab, setActiveTab] = useState<'curriculum' | 'settings' | 'students'>('curriculum');
   const [showAddLesson, setShowAddLesson] = useState(false);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
@@ -184,15 +196,11 @@ export default function CourseEditorPage() {
 
     if (oldIndex < 0 || newIndex < 0) return;
 
-    // To prevent rapid successive updates causing a race condition in optimistic UI,
-    // we'll send a bulk update or sequentially update the affected items.
-    // For simplicity, we can update the order of all items between oldIndex and newIndex.
     const newOrder = [...siblings];
     const [movedItem] = newOrder.splice(oldIndex, 1);
     newOrder.splice(newIndex, 0, movedItem);
 
     try {
-      // Reassign orders based on new index
       await Promise.all(
         newOrder.map((item, index) => {
           if (item.order !== index) {
@@ -473,7 +481,7 @@ export default function CourseEditorPage() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Alert variant="destructive" className="max-w-sm">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>Course not found.</AlertDescription>
+          <AlertDescription>{t('courseNotFound')}</AlertDescription>
         </Alert>
       </div>
     );
@@ -483,42 +491,111 @@ export default function CourseEditorPage() {
     <AuthGuard>
       <div className="min-h-screen flex bg-background">
         <AdminSidebar />
-        <main className="flex-1 md:ml-64 p-6 lg:p-8">
-          <div className="max-w-5xl mx-auto">
-            {/* Back */}
-            <Link
-              href="/courses"
-              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 group"
-            >
-              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-              {t('backToList')}
-            </Link>
+        <main className="flex-1 md:ml-64 relative">
+          {/* Sticky Header with Title Edit and Tabs */}
+          <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-xl border-b pt-4 px-6 lg:px-8">
+            <div className="max-w-6xl mx-auto flex flex-col gap-4">
+              {/* Top Row: Back, Title, Actions */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <Link
+                    href="/courses"
+                    className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                    title={t('backToList')}
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </Link>
+                  <div className="w-px h-6 bg-border mx-1 shrink-0" />
+                  <div className="flex flex-wrap items-center gap-3 min-w-0 flex-1">
+                    <input
+                      value={localTitle}
+                      onChange={(e) => setLocalTitle(e.target.value)}
+                      onBlur={handleUpdateCourse}
+                      className="text-2xl font-bold bg-transparent border-none outline-none focus:ring-2 focus:ring-primary/20 rounded px-2 -ml-2 transition-all w-full sm:w-auto sm:min-w-[300px] sm:max-w-md truncate"
+                      placeholder={t('courseName')}
+                    />
+                    <Badge
+                      variant={lessonReadiness.isReady ? 'success' : 'outline'}
+                      className="cursor-default pointer-events-none mt-1 sm:mt-0"
+                    >
+                      {lessonReadiness.isReady ? t('readyToSave') : t('needsAttention')}
+                    </Badge>
+                  </div>
+                </div>
 
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight">{course.title}</h1>
-                <p className="text-sm text-muted-foreground mt-0.5">ID: {course.id}</p>
-              </div>
-              {firstLessonPreviewUrl && (
-                <a
-                  href={firstLessonPreviewUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="shrink-0"
-                >
-                  <Button variant="outline" size="sm" className="gap-1.5">
-                    <ExternalLink className="w-4 h-4" />
-                    {t('previewFirstLesson')}
+                <div className="flex items-center gap-2 shrink-0">
+                  {firstLessonPreviewUrl && (
+                    <a href={firstLessonPreviewUrl} target="_blank" rel="noreferrer">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5 rounded-full bg-background/50 hover:bg-background shadow-sm"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        {t('previewFirstLesson')}
+                      </Button>
+                    </a>
+                  )}
+                  <Button
+                    onClick={handleUpdateCourse}
+                    disabled={updateCourse.isPending}
+                    size="sm"
+                    className="gap-1.5 rounded-full shadow-sm"
+                  >
+                    {updateCourse.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
+                    {t('save')}
                   </Button>
-                </a>
-              )}
-            </div>
+                </div>
+              </div>
 
+              {/* Tabs */}
+              <div className="flex items-center gap-8 overflow-x-auto no-scrollbar">
+                <button
+                  onClick={() => setActiveTab('curriculum')}
+                  className={`flex items-center gap-2 pb-3 text-sm font-medium transition-all border-b-2 whitespace-nowrap ${
+                    activeTab === 'curriculum'
+                      ? 'border-primary text-foreground'
+                      : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30'
+                  }`}
+                >
+                  <BookOpen className="w-4 h-4" />
+                  {t('curriculumTab')}
+                </button>
+                <button
+                  onClick={() => setActiveTab('settings')}
+                  className={`flex items-center gap-2 pb-3 text-sm font-medium transition-all border-b-2 whitespace-nowrap ${
+                    activeTab === 'settings'
+                      ? 'border-primary text-foreground'
+                      : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30'
+                  }`}
+                >
+                  <Settings className="w-4 h-4" />
+                  {t('settingsTab')}
+                </button>
+                <button
+                  onClick={() => setActiveTab('students')}
+                  className={`flex items-center gap-2 pb-3 text-sm font-medium transition-all border-b-2 whitespace-nowrap ${
+                    activeTab === 'students'
+                      ? 'border-primary text-foreground'
+                      : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30'
+                  }`}
+                >
+                  <Users className="w-4 h-4" />
+                  {t('studentsStatsTab')}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6 lg:p-8 max-w-6xl mx-auto pb-24">
             {/* Toast */}
             {message && (
               <div
-                className={`mb-4 flex items-center gap-2 p-3 rounded-lg border text-sm ${
+                className={`mb-6 flex items-center gap-2 p-3 rounded-lg border text-sm animate-in fade-in slide-in-from-top-2 ${
                   message.type === 'success'
                     ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950 dark:border-emerald-800 dark:text-emerald-400'
                     : 'bg-destructive/5 border-destructive/20 text-destructive'
@@ -533,82 +610,148 @@ export default function CourseEditorPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Left: Course Info + Lessons */}
-              <div className="lg:col-span-2 space-y-6">
-                <div className="bg-card border rounded-xl p-5">
-                  <h2 className="text-base font-semibold mb-4">{t('basicInfo')}</h2>
-                  <CourseForm
-                    title={localTitle}
-                    onTitleChange={setLocalTitle}
-                    levelId={localLevelId}
-                    onLevelIdChange={setLocalLevelId}
-                    aiEnabled={localAiEnabled}
-                    onAiEnabledChange={setLocalAiEnabled}
-                    aiPrompt={localAiPrompt}
-                    onAiPromptChange={setLocalAiPrompt}
-                    onSave={handleUpdateCourse}
-                    saving={updateCourse.isPending}
-                  />
+            {/* Curriculum Tab */}
+            <div
+              className={`transition-all duration-300 animate-in fade-in ${activeTab === 'curriculum' ? 'block' : 'hidden'}`}
+            >
+              <div className="bg-card border rounded-2xl shadow-sm p-2 sm:p-6">
+                <LessonList
+                  lessons={lessons}
+                  units={units}
+                  onEdit={(lesson) => setEditingLesson(lesson)}
+                  onDelete={handleDeleteLesson}
+                  onAddClick={handleAddLessonClick}
+                  onAddUnit={handleAddUnit}
+                  onUpdateUnit={handleUpdateUnit}
+                  onDeleteUnit={handleDeleteUnit}
+                  onDuplicateUnit={handleDuplicateUnit}
+                  onReorderUnit={handleReorderUnit}
+                  onReorder={handleReorderLesson}
+                  onDuplicate={handleDuplicateLesson}
+                  onBulkDelete={handleBulkDeleteLessons}
+                  getPreviewUrl={getLessonPreviewUrl}
+                />
+              </div>
+            </div>
+
+            {/* Settings Tab */}
+            <div
+              className={`transition-all duration-300 animate-in fade-in ${activeTab === 'settings' ? 'block' : 'hidden'}`}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Advanced Settings */}
+                <div className="space-y-6">
+                  <div className="bg-card border rounded-2xl shadow-sm p-6 space-y-6">
+                    <h2 className="text-lg font-semibold">{t('basicInfo')}</h2>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium">{t('levelOptional')}</Label>
+                      <select
+                        value={localLevelId || ''}
+                        onChange={(e) => setLocalLevelId(e.target.value)}
+                        onBlur={handleUpdateCourse}
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
+                      >
+                        <option value="">{t('none')}</option>
+                        {programs?.map((p) => {
+                          if (!p.levels || p.levels.length === 0) return null;
+                          return (
+                            <optgroup key={p.id} label={p.title}>
+                              {p.levels.map((l) => (
+                                <option key={l.id} value={l.id}>
+                                  {l.title}
+                                </option>
+                              ))}
+                            </optgroup>
+                          );
+                        })}
+                      </select>
+                      <p className="text-xs text-muted-foreground">{t('levelOptionalDesc')}</p>
+                    </div>
+
+                    <div className="rounded-xl border bg-muted/20 p-5 space-y-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="space-y-1">
+                          <Label className="text-sm font-medium">{t('aiSettings')}</Label>
+                          <p className="text-xs text-muted-foreground">{t('aiSettingsDesc')}</p>
+                        </div>
+                        <label className="flex items-center gap-2 text-sm font-medium text-foreground cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={localAiEnabled}
+                            onChange={(event) => {
+                              setLocalAiEnabled(event.target.checked);
+                              // We don't auto-save immediately on checkbox to prevent jitter, rely on Save button
+                            }}
+                            className="h-4 w-4 rounded border-input text-primary focus:ring-primary/20 cursor-pointer"
+                          />
+                          {t('aiEnabled')}
+                        </label>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">{t('aiPrompt')}</Label>
+                        <textarea
+                          value={localAiPrompt}
+                          onChange={(event) => setLocalAiPrompt(event.target.value)}
+                          onBlur={handleUpdateCourse}
+                          placeholder={t('aiPromptPlaceholder')}
+                          className="min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary/40 focus:ring-2 focus:ring-primary/10 resize-y"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="bg-card border rounded-xl p-5">
-                  <LessonList
-                    lessons={lessons}
-                    units={units}
-                    onEdit={(lesson) => setEditingLesson(lesson)}
-                    onDelete={handleDeleteLesson}
-                    onAddClick={handleAddLessonClick}
-                    onAddUnit={handleAddUnit}
-                    onUpdateUnit={handleUpdateUnit}
-                    onDeleteUnit={handleDeleteUnit}
-                    onDuplicateUnit={handleDuplicateUnit}
-                    onReorderUnit={handleReorderUnit}
-                    onReorder={handleReorderLesson}
-                    onDuplicate={handleDuplicateLesson}
-                    onBulkDelete={handleBulkDeleteLessons}
-                    getPreviewUrl={getLessonPreviewUrl}
+                {/* Draft Preview Checklist */}
+                <div>
+                  <DraftPreviewCard
+                    title={t('courseReadiness')}
+                    ready={lessonReadiness.isReady}
+                    rows={[
+                      { label: t('courseName'), value: course.title },
+                      { label: t('unit'), value: lessonReadiness.totalUnits },
+                      { label: t('totalLectures'), value: lessonReadiness.totalLessons },
+                      { label: t('readyLessons'), value: lessonReadiness.readyLessons },
+                      { label: t('draftLessons'), value: lessonReadiness.draftLessons },
+                    ]}
+                    checklist={[
+                      { label: t('courseName'), ok: Boolean(course.title.trim()) },
+                      { label: t('readyLessons'), ok: lessonReadiness.totalLessons > 0 },
+                      { label: t('allLessonsReady'), ok: lessonReadiness.draftLessons === 0 },
+                    ]}
                   />
                 </div>
               </div>
+            </div>
 
-              {/* Right: Stats */}
-              <div className="space-y-4">
-                <DraftPreviewCard
-                  title={t('courseReadiness')}
-                  ready={lessonReadiness.isReady}
-                  rows={[
-                    { label: t('courseName'), value: course.title },
-                    { label: t('unit'), value: lessonReadiness.totalUnits },
-                    { label: t('totalLectures'), value: lessonReadiness.totalLessons },
-                    { label: t('readyLessons'), value: lessonReadiness.readyLessons },
-                    { label: t('draftLessons'), value: lessonReadiness.draftLessons },
-                  ]}
-                  checklist={[
-                    { label: t('courseName'), ok: Boolean(course.title.trim()) },
-                    { label: t('readyLessons'), ok: lessonReadiness.totalLessons > 0 },
-                    { label: t('allLessonsReady'), ok: lessonReadiness.draftLessons === 0 },
-                  ]}
-                />
-                <div className="bg-card border rounded-xl p-5">
-                  <CourseStats lessons={lessons} />
+            {/* Students & Stats Tab */}
+            <div
+              className={`transition-all duration-300 animate-in fade-in ${activeTab === 'students' ? 'block' : 'hidden'}`}
+            >
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="space-y-6">
+                  <div className="bg-card border rounded-2xl shadow-sm p-6">
+                    <CourseStats lessons={lessons} />
+                  </div>
+                  <div className="bg-card border rounded-2xl shadow-sm p-6">
+                    <CourseReportPanel report={report} loading={reportLoading} />
+                  </div>
                 </div>
-                <div className="bg-card border rounded-xl p-5">
-                  <CourseReportPanel report={report} loading={reportLoading} />
-                </div>
-                <div className="bg-card border rounded-xl p-5">
-                  <EnrollmentPanel
-                    courseId={courseId}
-                    enrollments={enrollments}
-                    enrolling={enrollStudent.isPending}
-                    unenrolling={unenrollStudent.isPending}
-                    bulkEnrolling={bulkEnrollStudents.isPending}
-                    bulkUnenrolling={bulkUnenrollStudents.isPending}
-                    onEnroll={handleEnrollStudent}
-                    onUnenroll={handleUnenrollStudent}
-                    onBulkEnroll={handleBulkEnrollStudents}
-                    onBulkUnenroll={handleBulkUnenrollStudents}
-                  />
+                <div>
+                  <div className="bg-card border rounded-2xl shadow-sm p-6 h-full">
+                    <EnrollmentPanel
+                      courseId={courseId}
+                      enrollments={enrollments}
+                      enrolling={enrollStudent.isPending}
+                      unenrolling={unenrollStudent.isPending}
+                      bulkEnrolling={bulkEnrollStudents.isPending}
+                      bulkUnenrolling={bulkUnenrollStudents.isPending}
+                      onEnroll={handleEnrollStudent}
+                      onUnenroll={handleUnenrollStudent}
+                      onBulkEnroll={handleBulkEnrollStudents}
+                      onBulkUnenroll={handleBulkUnenrollStudents}
+                    />
+                  </div>
                 </div>
               </div>
             </div>

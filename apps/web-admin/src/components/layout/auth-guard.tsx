@@ -10,16 +10,22 @@ interface AuthGuardProps {
 }
 
 export function AuthGuard({ children, loaderMessage = 'Loading...' }: AuthGuardProps) {
-  const { isAuthenticated, isInitialized } = useAuthStore();
+  const { isAuthenticated, isInitialized, user } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
-    if (isInitialized && !isAuthenticated) {
-      router.push('/login');
+    if (isInitialized) {
+      if (!isAuthenticated) {
+        router.push('/login');
+      } else if (user && user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
+        router.push('/login?error=unauthorized');
+      }
     }
-  }, [isInitialized, isAuthenticated, router]);
+  }, [isInitialized, isAuthenticated, user, router]);
 
-  if (!isInitialized || !isAuthenticated) {
+  const isAuthorized = user && (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN');
+
+  if (!isInitialized || !isAuthenticated || !isAuthorized) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">

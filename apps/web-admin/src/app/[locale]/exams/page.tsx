@@ -17,6 +17,7 @@ import {
   X,
 } from 'lucide-react';
 import { DraftPreviewCard } from '@/components/authoring/draft-preview-card';
+import { QuestionOptionsEditor } from '@/components/authoring/question-options-editor';
 import { AdminHeader } from '@/components/layout/admin-header';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
@@ -105,6 +106,7 @@ export default function AdminExamsPage() {
   const [examBulkAction, setExamBulkAction] = useState<'publish' | 'unpublish' | 'delete' | null>(
     null,
   );
+  const [activeTab, setActiveTab] = useState<'list' | 'editor'>('list');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const { data: selectedCourse } = useCourse(courseId);
@@ -184,6 +186,7 @@ export default function AdminExamsPage() {
       duplicateTitle: (value) => t('duplicatedExamTitle', { title: value }),
     });
     setEditingExamId(templateAction === 'edit' ? templateExam.id : null);
+    setActiveTab('editor');
     setMessage({
       type: 'success',
       text:
@@ -266,6 +269,7 @@ export default function AdminExamsPage() {
     mutation
       .then(() => {
         resetExamDraft();
+        setActiveTab('list');
         setMessage({
           type: 'success',
           text: editingExamId ? t('examUpdated') : t('examCreated'),
@@ -487,414 +491,450 @@ export default function AdminExamsPage() {
                 <AlertDescription>{t('examSelectCourseFirst')}</AlertDescription>
               </Alert>
             ) : (
-              <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_400px]">
-                <section className="rounded-xl border bg-card p-5">
-                  <div className="mb-4 flex items-center justify-between">
-                    <div>
-                      <h2 className="text-base font-semibold">{t('examTemplates')}</h2>
-                      <p className="text-sm text-muted-foreground">{t('examTemplatesDesc')}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary">{filteredExams.length}</Badge>
-                      {exams.length > 0 && (
-                        <>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={selectAllExams}
-                            disabled={filteredExams.length === 0}
-                          >
-                            {t('selectAllItems')}
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={clearSelectedExams}
-                            disabled={selectedExamIds.length === 0}
-                          >
-                            {t('clearSelection')}
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="mb-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_auto]">
-                    <Input
-                      value={examSearch}
-                      onChange={(event) => setExamSearch(event.target.value)}
-                      placeholder={t('searchExams')}
-                    />
-                    <select
-                      value={examStatusFilter}
-                      onChange={(event) =>
-                        setExamStatusFilter(event.target.value as 'all' | 'published' | 'draft')
-                      }
-                      className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              <div>
+                <div className="mb-6 border-b border-border">
+                  <div className="flex gap-6">
+                    <button
+                      onClick={() => setActiveTab('list')}
+                      className={`pb-3 text-sm font-medium transition-colors border-b-2 ${
+                        activeTab === 'list'
+                          ? 'border-primary text-primary'
+                          : 'border-transparent text-muted-foreground hover:text-foreground'
+                      }`}
                     >
-                      <option value="all">{t('allStatuses')}</option>
-                      <option value="published">{t('publishedOnly')}</option>
-                      <option value="draft">{t('draftOnly')}</option>
-                    </select>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={clearExamFilters}
-                      disabled={!examSearch && examStatusFilter === 'all'}
+                      {t('examTemplates')}
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('editor')}
+                      className={`pb-3 text-sm font-medium transition-colors border-b-2 ${
+                        activeTab === 'editor'
+                          ? 'border-primary text-primary'
+                          : 'border-transparent text-muted-foreground hover:text-foreground'
+                      }`}
                     >
-                      {t('clearFilters')}
-                    </Button>
+                      {editingExamId ? t('editExam') : t('createExam')}
+                    </button>
                   </div>
+                </div>
 
-                  {examsLoading ? (
-                    <LoadingRow label={t('loading')} />
-                  ) : exams.length === 0 ? (
-                    <EmptyState title={t('noExams')} />
-                  ) : filteredExams.length === 0 ? (
-                    <EmptyState title={t('noFilteredExams')} />
-                  ) : (
-                    <div className="grid gap-3">
-                      {selectedExamIds.length > 0 && (
-                        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/40 p-3">
-                          <span className="text-sm font-medium">
-                            {t('selectedItemsValue', { count: selectedExamIds.length })}
-                          </span>
-                          <div className="flex flex-wrap gap-2">
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              className="gap-2"
-                              disabled={examBulkPending}
-                              onClick={() => handleBulkExamPublish(true)}
-                            >
-                              {examBulkAction === 'publish' ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              ) : (
-                                <CheckCircle2 className="h-3.5 w-3.5" />
-                              )}
-                              {t('publishSelected')}
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              className="gap-2"
-                              disabled={examBulkPending}
-                              onClick={() => handleBulkExamPublish(false)}
-                            >
-                              {examBulkAction === 'unpublish' ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              ) : (
-                                <X className="h-3.5 w-3.5" />
-                              )}
-                              {t('unpublishSelected')}
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="ghost"
-                              className="gap-2 text-destructive hover:text-destructive"
-                              disabled={examBulkPending}
-                              onClick={() => setExamBulkDeleteOpen(true)}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                              {t('deleteSelected')}
-                            </Button>
-                          </div>
+                <div className="space-y-6">
+                  {activeTab === 'list' && (
+                    <section className="rounded-xl border bg-card p-5">
+                      <div className="mb-4 flex items-center justify-between">
+                        <div>
+                          <h2 className="text-base font-semibold">{t('examTemplates')}</h2>
+                          <p className="text-sm text-muted-foreground">{t('examTemplatesDesc')}</p>
                         </div>
-                      )}
-                      {filteredExams.map((exam) => (
-                        <article key={exam.id} className="rounded-lg border p-4">
-                          <div className="flex items-start gap-3">
-                            <input
-                              type="checkbox"
-                              className="mt-1"
-                              aria-label={t('selectItem')}
-                              checked={selectedExamIds.includes(exam.id)}
-                              onChange={(event) =>
-                                toggleExamSelection(exam.id, event.target.checked)
-                              }
-                            />
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-start justify-between gap-3">
-                                <div>
-                                  <h3 className="text-sm font-semibold">{exam.title}</h3>
-                                  <p className="mt-1 text-xs text-muted-foreground">
-                                    {exam.unit?.title || t('allUnits')}
-                                  </p>
-                                </div>
-                                <Badge variant={exam.isPublished ? 'success' : 'outline'}>
-                                  {exam.isPublished ? t('published') : t('draft')}
-                                </Badge>
-                              </div>
-                              {exam.description && (
-                                <p className="mt-2 text-sm text-muted-foreground">
-                                  {exam.description}
-                                </p>
-                              )}
-                              <div className="mt-3 flex flex-wrap gap-3 text-xs text-muted-foreground">
-                                <span>{t('durationValue', { minutes: exam.durationMinutes })}</span>
-                                <span>
-                                  {t('passingScoreValue', { value: exam.passingScore ?? 0 })}
-                                </span>
-                                <span>
-                                  {t('sectionCount', { count: exam._count?.sections ?? 0 })}
-                                </span>
-                                <span>
-                                  {t('attemptCount', { count: exam._count?.attempts ?? 0 })}
-                                </span>
-                              </div>
-                              <div className="mt-4 flex flex-wrap gap-2">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary">{filteredExams.length}</Badge>
+                          {exams.length > 0 && (
+                            <>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={selectAllExams}
+                                disabled={filteredExams.length === 0}
+                              >
+                                {t('selectAllItems')}
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={clearSelectedExams}
+                                disabled={selectedExamIds.length === 0}
+                              >
+                                {t('clearSelection')}
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="mb-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_auto]">
+                        <Input
+                          value={examSearch}
+                          onChange={(event) => setExamSearch(event.target.value)}
+                          placeholder={t('searchExams')}
+                        />
+                        <select
+                          value={examStatusFilter}
+                          onChange={(event) =>
+                            setExamStatusFilter(event.target.value as 'all' | 'published' | 'draft')
+                          }
+                          className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        >
+                          <option value="all">{t('allStatuses')}</option>
+                          <option value="published">{t('publishedOnly')}</option>
+                          <option value="draft">{t('draftOnly')}</option>
+                        </select>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={clearExamFilters}
+                          disabled={!examSearch && examStatusFilter === 'all'}
+                        >
+                          {t('clearFilters')}
+                        </Button>
+                      </div>
+
+                      {examsLoading ? (
+                        <LoadingRow label={t('loading')} />
+                      ) : exams.length === 0 ? (
+                        <EmptyState title={t('noExams')} />
+                      ) : filteredExams.length === 0 ? (
+                        <EmptyState title={t('noFilteredExams')} />
+                      ) : (
+                        <div className="grid gap-3">
+                          {selectedExamIds.length > 0 && (
+                            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/40 p-3">
+                              <span className="text-sm font-medium">
+                                {t('selectedItemsValue', { count: selectedExamIds.length })}
+                              </span>
+                              <div className="flex flex-wrap gap-2">
                                 <Button
                                   type="button"
                                   size="sm"
                                   variant="outline"
                                   className="gap-2"
-                                  disabled={updateExam.isPending}
-                                  onClick={() => handleToggleExamPublished(exam)}
+                                  disabled={examBulkPending}
+                                  onClick={() => handleBulkExamPublish(true)}
                                 >
-                                  {exam.isPublished ? (
-                                    <X className="h-3.5 w-3.5" />
+                                  {examBulkAction === 'publish' ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
                                   ) : (
                                     <CheckCircle2 className="h-3.5 w-3.5" />
                                   )}
-                                  {exam.isPublished ? t('unpublish') : t('publish')}
+                                  {t('publishSelected')}
                                 </Button>
                                 <Button
                                   type="button"
                                   size="sm"
                                   variant="outline"
                                   className="gap-2"
-                                  disabled={templateLoading && templateExamId === exam.id}
-                                  onClick={() => handleEditExam(exam.id)}
+                                  disabled={examBulkPending}
+                                  onClick={() => handleBulkExamPublish(false)}
                                 >
-                                  {templateLoading &&
-                                  templateExamId === exam.id &&
-                                  templateAction === 'edit' ? (
+                                  {examBulkAction === 'unpublish' ? (
                                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
                                   ) : (
-                                    <PencilLine className="h-3.5 w-3.5" />
+                                    <X className="h-3.5 w-3.5" />
                                   )}
-                                  {t('editExam')}
-                                </Button>
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="outline"
-                                  className="gap-2"
-                                  disabled={templateLoading && templateExamId === exam.id}
-                                  onClick={() => loadExamTemplate(exam.id, 'load')}
-                                >
-                                  {templateLoading &&
-                                  templateExamId === exam.id &&
-                                  templateAction === 'load' ? (
-                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                  ) : (
-                                    <Eye className="h-3.5 w-3.5" />
-                                  )}
-                                  {t('loadExamToDraft')}
-                                </Button>
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="ghost"
-                                  className="gap-2"
-                                  disabled={templateLoading && templateExamId === exam.id}
-                                  onClick={() => loadExamTemplate(exam.id, 'duplicate')}
-                                >
-                                  <Copy className="h-3.5 w-3.5" />
-                                  {t('duplicateExam')}
+                                  {t('unpublishSelected')}
                                 </Button>
                                 <Button
                                   type="button"
                                   size="sm"
                                   variant="ghost"
                                   className="gap-2 text-destructive hover:text-destructive"
-                                  onClick={() => handleDeleteExam(exam)}
+                                  disabled={examBulkPending}
+                                  onClick={() => setExamBulkDeleteOpen(true)}
                                 >
                                   <Trash2 className="h-3.5 w-3.5" />
-                                  {t('deleteExam')}
+                                  {t('deleteSelected')}
                                 </Button>
                               </div>
                             </div>
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  )}
-                </section>
-
-                <aside className="space-y-6">
-                  <DraftPreviewCard
-                    title={t('examPreview')}
-                    ready={draft.isReady}
-                    rows={[
-                      { label: t('courseName'), value: selectedCourse?.title ?? t('selectCourse') },
-                      { label: t('unit'), value: selectedUnit?.title ?? t('allUnits') },
-                      { label: t('status'), value: isPublished ? t('published') : t('draft') },
-                      {
-                        label: t('examTitle'),
-                        value: title.trim() || t('examTitlePlaceholder'),
-                      },
-                      {
-                        label: t('sectionTitle'),
-                        value: sectionTitle.trim() || t('sectionTitlePlaceholder'),
-                      },
-                      {
-                        label: t('examQuestions'),
-                        value: draft.questionCount,
-                      },
-                      {
-                        label: t('sections'),
-                        value: draft.sectionCount,
-                      },
-                      {
-                        label: t('durationMinutes'),
-                        value: draft.durationMinutes ?? 0,
-                      },
-                      {
-                        label: t('passingScore'),
-                        value: draft.passingScore ?? 0,
-                      },
-                      {
-                        label: t('readyQuestions'),
-                        value: `${draft.validQuestionCount}/${draft.questionCount}`,
-                      },
-                    ]}
-                    checklist={[
-                      { label: t('courseName'), ok: draft.checks.course },
-                      { label: t('examTitle'), ok: draft.checks.title },
-                      { label: t('sectionTitle'), ok: draft.checks.section },
-                      { label: t('examQuestions'), ok: draft.checks.questions },
-                      { label: t('durationMinutes'), ok: draft.checks.duration },
-                      { label: t('passingScore'), ok: draft.checks.passingScore },
-                    ]}
-                  />
-
-                  <form onSubmit={handleSubmitExam} className="rounded-xl border bg-card p-5">
-                    <div className="mb-4 flex items-center justify-between gap-3">
-                      <h2 className="text-base font-semibold">
-                        {editingExamId ? t('editExam') : t('createExam')}
-                      </h2>
-                      {editingExamId && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="gap-1.5"
-                          onClick={resetExamDraft}
-                        >
-                          <X className="h-3.5 w-3.5" />
-                          {t('cancelEdit')}
-                        </Button>
-                      )}
-                    </div>
-                    <div className="space-y-4">
-                      <div className="space-y-1.5">
-                        <Label>{t('examTitle')}</Label>
-                        <Input
-                          value={title}
-                          onChange={(event) => setTitle(event.target.value)}
-                          placeholder={t('examTitlePlaceholder')}
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label>{t('description')}</Label>
-                        <textarea
-                          value={description}
-                          onChange={(event) => setDescription(event.target.value)}
-                          className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1.5">
-                          <Label>{t('durationMinutes')}</Label>
-                          <Input
-                            value={durationMinutes}
-                            onChange={(event) => setDurationMinutes(event.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label>{t('passingScore')}</Label>
-                          <Input
-                            value={passingScore}
-                            onChange={(event) => setPassingScore(event.target.value)}
-                          />
-                        </div>
-                      </div>
-                      <label className="flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={isPublished}
-                          onChange={(event) => setIsPublished(event.target.checked)}
-                        />
-                        {t('publishNow')}
-                      </label>
-
-                      <div className="border-t pt-4 space-y-4">
-                        <div className="space-y-1.5">
-                          <Label>{t('sectionTitle')}</Label>
-                          <Input
-                            value={sectionTitle}
-                            onChange={(event) => setSectionTitle(event.target.value)}
-                            placeholder={t('sectionTitlePlaceholder')}
-                          />
-                        </div>
-
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <Label>{t('examQuestions')}</Label>
-                            <p className="text-xs text-muted-foreground">
-                              {t('examQuestionsDesc')}
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={addQuestionDraft}
-                            className="inline-flex h-9 items-center justify-center gap-2 rounded-md border px-3 text-sm font-semibold hover:bg-muted"
-                          >
-                            <Plus className="h-4 w-4" />
-                            {t('addQuestion')}
-                          </button>
-                        </div>
-
-                        <div className="space-y-4">
-                          {questionDrafts.map((draftItem, index) => (
-                            <QuestionDraftCard
-                              key={draftItem.id}
-                              draft={draftItem}
-                              index={index}
-                              canMoveUp={index > 0}
-                              canMoveDown={index < questionDrafts.length - 1}
-                              canRemove={questionDrafts.length > 1}
-                              disabled={examSaving}
-                              onChange={(patch) => updateQuestionDraft(draftItem.id, patch)}
-                              onDuplicate={() => duplicateQuestionDraft(draftItem.id)}
-                              onRemove={() => removeQuestionDraft(draftItem.id)}
-                              onMoveUp={() => moveQuestionDraft(draftItem.id, -1)}
-                              onMoveDown={() => moveQuestionDraft(draftItem.id, 1)}
-                              t={t}
-                            />
+                          )}
+                          {filteredExams.map((exam) => (
+                            <article key={exam.id} className="rounded-lg border p-4">
+                              <div className="flex items-start gap-3">
+                                <input
+                                  type="checkbox"
+                                  className="mt-1"
+                                  aria-label={t('selectItem')}
+                                  checked={selectedExamIds.includes(exam.id)}
+                                  onChange={(event) =>
+                                    toggleExamSelection(exam.id, event.target.checked)
+                                  }
+                                />
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                      <h3 className="text-sm font-semibold">{exam.title}</h3>
+                                      <p className="mt-1 text-xs text-muted-foreground">
+                                        {exam.unit?.title || t('allUnits')}
+                                      </p>
+                                    </div>
+                                    <Badge variant={exam.isPublished ? 'success' : 'outline'}>
+                                      {exam.isPublished ? t('published') : t('draft')}
+                                    </Badge>
+                                  </div>
+                                  {exam.description && (
+                                    <p className="mt-2 text-sm text-muted-foreground">
+                                      {exam.description}
+                                    </p>
+                                  )}
+                                  <div className="mt-3 flex flex-wrap gap-3 text-xs text-muted-foreground">
+                                    <span>
+                                      {t('durationValue', { minutes: exam.durationMinutes })}
+                                    </span>
+                                    <span>
+                                      {t('passingScoreValue', { value: exam.passingScore ?? 0 })}
+                                    </span>
+                                    <span>
+                                      {t('sectionCount', { count: exam._count?.sections ?? 0 })}
+                                    </span>
+                                    <span>
+                                      {t('attemptCount', { count: exam._count?.attempts ?? 0 })}
+                                    </span>
+                                  </div>
+                                  <div className="mt-4 flex flex-wrap gap-2">
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="outline"
+                                      className="gap-2"
+                                      disabled={updateExam.isPending}
+                                      onClick={() => handleToggleExamPublished(exam)}
+                                    >
+                                      {exam.isPublished ? (
+                                        <X className="h-3.5 w-3.5" />
+                                      ) : (
+                                        <CheckCircle2 className="h-3.5 w-3.5" />
+                                      )}
+                                      {exam.isPublished ? t('unpublish') : t('publish')}
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="outline"
+                                      className="gap-2"
+                                      disabled={templateLoading && templateExamId === exam.id}
+                                      onClick={() => handleEditExam(exam.id)}
+                                    >
+                                      {templateLoading &&
+                                      templateExamId === exam.id &&
+                                      templateAction === 'edit' ? (
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                      ) : (
+                                        <PencilLine className="h-3.5 w-3.5" />
+                                      )}
+                                      {t('editExam')}
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="outline"
+                                      className="gap-2"
+                                      disabled={templateLoading && templateExamId === exam.id}
+                                      onClick={() => loadExamTemplate(exam.id, 'load')}
+                                    >
+                                      {templateLoading &&
+                                      templateExamId === exam.id &&
+                                      templateAction === 'load' ? (
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                      ) : (
+                                        <Eye className="h-3.5 w-3.5" />
+                                      )}
+                                      {t('loadExamToDraft')}
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="ghost"
+                                      className="gap-2"
+                                      disabled={templateLoading && templateExamId === exam.id}
+                                      onClick={() => loadExamTemplate(exam.id, 'duplicate')}
+                                    >
+                                      <Copy className="h-3.5 w-3.5" />
+                                      {t('duplicateExam')}
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="ghost"
+                                      className="gap-2 text-destructive hover:text-destructive"
+                                      onClick={() => handleDeleteExam(exam)}
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                      {t('deleteExam')}
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            </article>
                           ))}
                         </div>
-                      </div>
+                      )}
+                    </section>
+                  )}
 
-                      <Button type="submit" className="w-full gap-2" disabled={examSaving}>
-                        {examSaving ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : editingExamId ? (
-                          <PencilLine className="h-4 w-4" />
-                        ) : (
-                          <Plus className="h-4 w-4" />
-                        )}
-                        {editingExamId ? t('updateExam') : t('createExam')}
-                      </Button>
-                    </div>
-                  </form>
-                </aside>
+                  {activeTab === 'editor' && (
+                    <aside className="space-y-6">
+                      <DraftPreviewCard
+                        title={t('examPreview')}
+                        ready={draft.isReady}
+                        rows={[
+                          {
+                            label: t('courseName'),
+                            value: selectedCourse?.title ?? t('selectCourse'),
+                          },
+                          { label: t('unit'), value: selectedUnit?.title ?? t('allUnits') },
+                          { label: t('status'), value: isPublished ? t('published') : t('draft') },
+                          {
+                            label: t('examTitle'),
+                            value: title.trim() || t('examTitlePlaceholder'),
+                          },
+                          {
+                            label: t('sectionTitle'),
+                            value: sectionTitle.trim() || t('sectionTitlePlaceholder'),
+                          },
+                          {
+                            label: t('examQuestions'),
+                            value: draft.questionCount,
+                          },
+                          {
+                            label: t('sections'),
+                            value: draft.sectionCount,
+                          },
+                          {
+                            label: t('durationMinutes'),
+                            value: draft.durationMinutes ?? 0,
+                          },
+                          {
+                            label: t('passingScore'),
+                            value: draft.passingScore ?? 0,
+                          },
+                          {
+                            label: t('readyQuestions'),
+                            value: `${draft.validQuestionCount}/${draft.questionCount}`,
+                          },
+                        ]}
+                        checklist={[
+                          { label: t('courseName'), ok: draft.checks.course },
+                          { label: t('examTitle'), ok: draft.checks.title },
+                          { label: t('sectionTitle'), ok: draft.checks.section },
+                          { label: t('examQuestions'), ok: draft.checks.questions },
+                          { label: t('durationMinutes'), ok: draft.checks.duration },
+                          { label: t('passingScore'), ok: draft.checks.passingScore },
+                        ]}
+                      />
+
+                      <form onSubmit={handleSubmitExam} className="rounded-xl border bg-card p-5">
+                        <div className="mb-4 flex items-center justify-between gap-3">
+                          <h2 className="text-base font-semibold">
+                            {editingExamId ? t('editExam') : t('createExam')}
+                          </h2>
+                          {editingExamId && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="gap-1.5"
+                              onClick={resetExamDraft}
+                            >
+                              <X className="h-3.5 w-3.5" />
+                              {t('cancelEdit')}
+                            </Button>
+                          )}
+                        </div>
+                        <div className="space-y-4">
+                          <div className="space-y-1.5">
+                            <Label>{t('examTitle')}</Label>
+                            <Input
+                              value={title}
+                              onChange={(event) => setTitle(event.target.value)}
+                              placeholder={t('examTitlePlaceholder')}
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label>{t('description')}</Label>
+                            <textarea
+                              value={description}
+                              onChange={(event) => setDescription(event.target.value)}
+                              className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                              <Label>{t('durationMinutes')}</Label>
+                              <Input
+                                value={durationMinutes}
+                                onChange={(event) => setDurationMinutes(event.target.value)}
+                              />
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label>{t('passingScore')}</Label>
+                              <Input
+                                value={passingScore}
+                                onChange={(event) => setPassingScore(event.target.value)}
+                              />
+                            </div>
+                          </div>
+                          <label className="flex items-center gap-2 text-sm">
+                            <input
+                              type="checkbox"
+                              checked={isPublished}
+                              onChange={(event) => setIsPublished(event.target.checked)}
+                            />
+                            {t('publishNow')}
+                          </label>
+
+                          <div className="border-t pt-4 space-y-4">
+                            <div className="space-y-1.5">
+                              <Label>{t('sectionTitle')}</Label>
+                              <Input
+                                value={sectionTitle}
+                                onChange={(event) => setSectionTitle(event.target.value)}
+                                placeholder={t('sectionTitlePlaceholder')}
+                              />
+                            </div>
+
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <Label>{t('examQuestions')}</Label>
+                                <p className="text-xs text-muted-foreground">
+                                  {t('examQuestionsDesc')}
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={addQuestionDraft}
+                                className="inline-flex h-9 items-center justify-center gap-2 rounded-md border px-3 text-sm font-semibold hover:bg-muted"
+                              >
+                                <Plus className="h-4 w-4" />
+                                {t('addQuestion')}
+                              </button>
+                            </div>
+
+                            <div className="space-y-4">
+                              {questionDrafts.map((draftItem, index) => (
+                                <QuestionDraftCard
+                                  key={draftItem.id}
+                                  draft={draftItem}
+                                  index={index}
+                                  canMoveUp={index > 0}
+                                  canMoveDown={index < questionDrafts.length - 1}
+                                  canRemove={questionDrafts.length > 1}
+                                  disabled={examSaving}
+                                  onChange={(patch) => updateQuestionDraft(draftItem.id, patch)}
+                                  onDuplicate={() => duplicateQuestionDraft(draftItem.id)}
+                                  onRemove={() => removeQuestionDraft(draftItem.id)}
+                                  onMoveUp={() => moveQuestionDraft(draftItem.id, -1)}
+                                  onMoveDown={() => moveQuestionDraft(draftItem.id, 1)}
+                                  t={t}
+                                />
+                              ))}
+                            </div>
+                          </div>
+
+                          <Button type="submit" className="w-full gap-2" disabled={examSaving}>
+                            {examSaving ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : editingExamId ? (
+                              <PencilLine className="h-4 w-4" />
+                            ) : (
+                              <Plus className="h-4 w-4" />
+                            )}
+                            {editingExamId ? t('updateExam') : t('createExam')}
+                          </Button>
+                        </div>
+                      </form>
+                    </aside>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -1131,59 +1171,32 @@ function QuestionDraftCard({
           />
         ) : null}
 
-        {draft.type === 'MULTIPLE_CHOICE' && (
-          <div className="space-y-1.5">
-            <Label>{t('answerOptions')}</Label>
-            <textarea
-              value={draft.optionsText}
-              onChange={(event) => onChange({ optionsText: event.target.value })}
-              className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              placeholder={t('answerOptionsPlaceholder')}
-            />
-          </div>
-        )}
-
-        {draft.type === 'MATCHING' && (
-          <div className="space-y-1.5">
-            <Label>{t('matchingOptions')}</Label>
-            <textarea
-              value={draft.optionsText}
-              onChange={(event) => onChange({ optionsText: event.target.value })}
-              className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              placeholder={t('matchingOptionsPlaceholder')}
-            />
-          </div>
-        )}
-
-        {draft.type === 'ORDERING' && (
-          <div className="space-y-1.5">
-            <Label>{t('orderingOptions')}</Label>
-            <textarea
-              value={draft.optionsText}
-              onChange={(event) => onChange({ optionsText: event.target.value })}
-              className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              placeholder={t('orderingOptionsPlaceholder')}
-            />
-          </div>
-        )}
+        <QuestionOptionsEditor
+          type={draft.type}
+          optionsText={draft.optionsText}
+          correctAnswer={draft.correctAnswer}
+          onChange={(updates) => {
+            const next = { ...updates } as Partial<ExamQuestionDraft>;
+            onChange(next);
+          }}
+          t={t}
+        />
 
         <div className="grid grid-cols-[1fr_90px] gap-3">
-          <div className="space-y-1.5">
-            <Label>{t('correctAnswer')}</Label>
-            <Input
-              value={draft.correctAnswer}
-              onChange={(event) => onChange({ correctAnswer: event.target.value })}
-              placeholder={
-                draft.type === 'MULTIPLE_CHOICE'
-                  ? t('correctAnswerIndexPlaceholder')
-                  : draft.type === 'MATCHING'
-                    ? t('matchingAnswerPlaceholder')
-                    : draft.type === 'ORDERING'
-                      ? t('orderingAnswerPlaceholder')
-                      : t('correctAnswerTextPlaceholder')
-              }
-            />
-          </div>
+          {draft.type !== 'MULTIPLE_CHOICE' &&
+          draft.type !== 'MATCHING' &&
+          draft.type !== 'ORDERING' ? (
+            <div className="space-y-1.5">
+              <Label>{t('correctAnswer')}</Label>
+              <Input
+                value={draft.correctAnswer}
+                onChange={(event) => onChange({ correctAnswer: event.target.value })}
+                placeholder={t('correctAnswerTextPlaceholder')}
+              />
+            </div>
+          ) : (
+            <div />
+          )}
           <div className="space-y-1.5">
             <Label>{t('points')}</Label>
             <Input

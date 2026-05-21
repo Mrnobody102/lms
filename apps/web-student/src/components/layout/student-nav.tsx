@@ -56,7 +56,7 @@ export function StudentNav({ showLinks = false }: StudentNavProps) {
             className="inline-flex items-center gap-1.5 hover:text-primary transition-colors"
           >
             <KeyRound className="h-3.5 w-3.5" />
-            {t('nav.activation', { fallback: 'Mã kích hoạt' })}
+            {t('nav.activation')}
           </Link>
           <Link href="#" className="hover:text-primary transition-colors">
             {t('nav.hsk')}

@@ -32,7 +32,7 @@ export function CourseCard({ course, onDelete, deleting }: CourseCardProps) {
 
   return (
     <>
-      <div className="bg-card border rounded-xl p-5 flex flex-col gap-4 group hover:shadow-md hover:border-primary/20 transition-all">
+      <div className="bg-card border rounded-xl p-5 flex flex-col gap-4 group hover:-translate-y-1 hover:shadow-lg hover:border-primary/30 transition-all duration-300">
         {/* Header */}
         <div className="flex items-start justify-between gap-3">
           <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">

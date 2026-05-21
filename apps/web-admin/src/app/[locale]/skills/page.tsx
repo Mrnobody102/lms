@@ -158,7 +158,7 @@ export default function SkillsPage() {
                 <AlertDescription>{errorMessage}</AlertDescription>
               </Alert>
             ) : sorted.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-24 text-center">
+              <div className="flex flex-col items-center justify-center py-24 text-center rounded-xl border border-dashed bg-muted/20">
                 <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
                   <Sparkles className="w-8 h-8 text-muted-foreground" />
                 </div>
@@ -296,10 +296,11 @@ export default function SkillsPage() {
                     <input
                       id="skill-active"
                       type="checkbox"
+                      className="h-4 w-4 rounded border-input bg-background text-primary focus:ring-2 focus:ring-primary/20 transition-colors cursor-pointer"
                       checked={form.isActive}
                       onChange={(e) => setForm((s) => ({ ...s, isActive: e.target.checked }))}
                     />
-                    <Label htmlFor="skill-active" className="!mt-0">
+                    <Label htmlFor="skill-active" className="!mt-0 cursor-pointer">
                       {t('skills.active')}
                     </Label>
                   </div>

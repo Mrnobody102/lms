@@ -77,13 +77,13 @@ export function ActivityTrendPanel({ filters = {} }: ActivityTrendPanelProps) {
               />
               <Legend wrapperStyle={{ paddingTop: '20px', fontSize: 14 }} />
               <Bar
-                name={t('reports.activityOpened') || 'Opened'}
+                name={t('reports.activityOpened')}
                 dataKey="opened"
                 fill="hsl(var(--primary))"
                 radius={[4, 4, 0, 0]}
               />
               <Bar
-                name={t('reports.activityCompleted') || 'Completed'}
+                name={t('reports.activityCompleted')}
                 dataKey="completed"
                 fill="hsl(var(--success, 142.1 76.2% 36.3%))"
                 radius={[4, 4, 0, 0]}

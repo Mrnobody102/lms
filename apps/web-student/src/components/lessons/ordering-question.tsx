@@ -69,11 +69,7 @@ export function OrderingQuestion({ options, value, disabled, onChange }: Orderin
 
   return (
     <div className="mt-4">
-      <p className="mb-4 text-sm text-muted-foreground">
-        {t('practice.orderingInstruction', {
-          fallback: 'Drag and drop items to put them in the correct order.',
-        })}
-      </p>
+      <p className="mb-4 text-sm text-muted-foreground">{t('practice.orderingInstruction')}</p>
 
       <div className="space-y-2">
         <DndContext

@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { DraftPreviewCard } from '@/components/authoring/draft-preview-card';
+import { QuestionOptionsEditor } from '@/components/authoring/question-options-editor';
 import { AdminHeader } from '@/components/layout/admin-header';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
@@ -92,6 +93,9 @@ export default function AdminPracticePage() {
     'publish' | 'unpublish' | 'delete' | null
   >(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [activeTab, setActiveTab] = useState<
+    'questions' | 'question-editor' | 'sets' | 'set-editor'
+  >('questions');
 
   const { data: selectedCourse } = useCourse(courseId);
   const units = selectedCourse?.units ?? [];
@@ -199,6 +203,7 @@ export default function AdminPracticePage() {
   }, [message]);
 
   const resetQuestionDraft = () => {
+    setActiveTab('questions');
     setEditingQuestionId(null);
     setQuestionType('MULTIPLE_CHOICE');
     setPrompt('');
@@ -212,6 +217,7 @@ export default function AdminPracticePage() {
   };
 
   const resetExerciseSetDraft = () => {
+    setActiveTab('sets');
     setEditingExerciseSetId(null);
     setSetTitle('');
     setSetDescription('');
@@ -310,6 +316,7 @@ export default function AdminPracticePage() {
   };
 
   const handleEditQuestion = (question: PracticeQuestion) => {
+    setActiveTab('question-editor');
     setEditingQuestionId(question.id);
     setQuestionType(question.type);
     setPrompt(question.prompt);
@@ -430,6 +437,7 @@ export default function AdminPracticePage() {
   };
 
   const handleEditExerciseSet = (set: PracticeExerciseSet) => {
+    setActiveTab('set-editor');
     setEditingExerciseSetId(set.id);
   };
 
@@ -589,465 +597,97 @@ export default function AdminPracticePage() {
                 <AlertDescription>{t('practiceSelectCourseFirst')}</AlertDescription>
               </Alert>
             ) : (
-              <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
-                <div className="space-y-6">
-                  <section className="rounded-xl border bg-card p-5">
-                    <div className="mb-4 flex items-center justify-between">
-                      <div>
-                        <h2 className="text-base font-semibold">{t('questionBank')}</h2>
-                        <p className="text-sm text-muted-foreground">{t('questionBankDesc')}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary">{filteredQuestions.length}</Badge>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={selectAllQuestions}
-                          disabled={filteredQuestions.length === 0}
-                        >
-                          {t('selectAllQuestions')}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={clearSelectedQuestions}
-                          disabled={selectedQuestionIds.length === 0}
-                        >
-                          {t('clearSelection')}
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="mb-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_auto]">
-                      <Input
-                        value={questionSearch}
-                        onChange={(event) => setQuestionSearch(event.target.value)}
-                        placeholder={t('searchQuestions')}
-                      />
-                      <select
-                        value={questionTypeFilter}
-                        onChange={(event) =>
-                          setQuestionTypeFilter(event.target.value as 'all' | PracticeQuestionType)
-                        }
-                        className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                      >
-                        <option value="all">{t('allQuestionTypes')}</option>
-                        <option value="MULTIPLE_CHOICE">{t('multipleChoice')}</option>
-                        <option value="FILL_BLANK">{t('fillBlank')}</option>
-                        <option value="MATCHING">{t('matching')}</option>
-                        <option value="ORDERING">{t('ordering')}</option>
-                        <option value="AI_EVALUATED_AUDIO">{t('aiEvaluatedAudio')}</option>
-                        <option value="AI_EVALUATED_TEXT">{t('aiEvaluatedText')}</option>
-                      </select>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={clearQuestionFilters}
-                        disabled={!questionSearch && questionTypeFilter === 'all'}
-                      >
-                        {t('clearFilters')}
-                      </Button>
-                    </div>
-
-                    {questionsLoading ? (
-                      <LoadingRow label={t('loading')} />
-                    ) : questions.length === 0 ? (
-                      <EmptyState title={t('noPracticeQuestions')} />
-                    ) : filteredQuestions.length === 0 ? (
-                      <EmptyState title={t('noFilteredPracticeQuestions')} />
-                    ) : (
-                      <>
-                        {selectedQuestionIds.length > 0 && (
-                          <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/40 p-3">
-                            <span className="text-sm font-medium">
-                              {t('selectedItemsValue', { count: selectedQuestionIds.length })}
-                            </span>
-                            <div className="flex flex-wrap gap-2">
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="ghost"
-                                className="gap-2 text-destructive hover:text-destructive"
-                                disabled={questionBulkPending}
-                                onClick={() => setQuestionBulkDeleteOpen(true)}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                                {t('deleteSelected')}
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                        <div className="divide-y rounded-lg border">
-                          {filteredQuestions.map((question) => (
-                            <label
-                              key={question.id}
-                              className="flex cursor-pointer items-start gap-3 px-4 py-3"
-                            >
-                              <input
-                                type="checkbox"
-                                className="mt-1"
-                                checked={selectedQuestionIds.includes(question.id)}
-                                onChange={(event) => {
-                                  setSelectedQuestionIds((current) =>
-                                    event.target.checked
-                                      ? [...current, question.id]
-                                      : current.filter((id) => id !== question.id),
-                                  );
-                                }}
-                              />
-                              <div className="min-w-0 flex-1">
-                                <div className="flex flex-wrap items-start justify-between gap-2">
-                                  <div className="flex flex-wrap items-center gap-2">
-                                    <Badge variant="outline">
-                                      {question.type === 'MULTIPLE_CHOICE'
-                                        ? t('multipleChoice')
-                                        : question.type === 'FILL_BLANK'
-                                          ? t('fillBlank')
-                                          : question.type === 'AI_EVALUATED_AUDIO'
-                                            ? t('aiEvaluatedAudio')
-                                            : t('aiEvaluatedText')}
-                                    </Badge>
-                                    {question.skillTags.map((tag) => (
-                                      <Badge key={tag} variant="secondary">
-                                        {tag}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                  <div className="flex shrink-0 items-center gap-1">
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-7 w-7"
-                                      onClick={(event) => {
-                                        event.preventDefault();
-                                        event.stopPropagation();
-                                        handleEditQuestion(question);
-                                      }}
-                                      title={t('editQuestion')}
-                                      aria-label={t('editQuestion')}
-                                    >
-                                      <PencilLine className="h-3.5 w-3.5" />
-                                    </Button>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-7 w-7"
-                                      onClick={(event) => {
-                                        event.preventDefault();
-                                        event.stopPropagation();
-                                        handleUseQuestionAsDraft(question);
-                                      }}
-                                      title={t('useQuestionAsDraft')}
-                                      aria-label={t('useQuestionAsDraft')}
-                                    >
-                                      <Plus className="h-3.5 w-3.5" />
-                                    </Button>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-7 w-7"
-                                      onClick={(event) => {
-                                        event.preventDefault();
-                                        event.stopPropagation();
-                                        handleDuplicateQuestion(question);
-                                      }}
-                                      title={t('duplicateQuestion')}
-                                      aria-label={t('duplicateQuestion')}
-                                    >
-                                      <Copy className="h-3.5 w-3.5" />
-                                    </Button>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-7 w-7 text-destructive hover:text-destructive"
-                                      onClick={(event) => {
-                                        event.preventDefault();
-                                        event.stopPropagation();
-                                        handleDeleteQuestion(question);
-                                      }}
-                                      title={t('deleteQuestion')}
-                                      aria-label={t('deleteQuestion')}
-                                    >
-                                      <Trash2 className="h-3.5 w-3.5" />
-                                    </Button>
-                                  </div>
-                                </div>
-                                <p className="mt-2 text-sm font-medium">{question.prompt}</p>
-                              </div>
-                            </label>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </section>
-
-                  <section className="rounded-xl border bg-card p-5">
-                    <div className="mb-4 flex items-center justify-between">
-                      <div>
-                        <h2 className="text-base font-semibold">{t('exerciseSets')}</h2>
-                        <p className="text-sm text-muted-foreground">{t('exerciseSetsDesc')}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary">{filteredExerciseSets.length}</Badge>
-                        {exerciseSets.length > 0 && (
-                          <>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={selectAllExerciseSets}
-                              disabled={filteredExerciseSets.length === 0}
-                            >
-                              {t('selectAllItems')}
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={clearSelectedExerciseSets}
-                              disabled={selectedExerciseSetIds.length === 0}
-                            >
-                              {t('clearSelection')}
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="mb-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_auto]">
-                      <Input
-                        value={exerciseSetSearch}
-                        onChange={(event) => setExerciseSetSearch(event.target.value)}
-                        placeholder={t('searchExerciseSets')}
-                      />
-                      <select
-                        value={exerciseSetStatusFilter}
-                        onChange={(event) =>
-                          setExerciseSetStatusFilter(
-                            event.target.value as 'all' | 'published' | 'draft',
-                          )
-                        }
-                        className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                      >
-                        <option value="all">{t('allStatuses')}</option>
-                        <option value="published">{t('publishedOnly')}</option>
-                        <option value="draft">{t('draftOnly')}</option>
-                      </select>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={clearExerciseSetFilters}
-                        disabled={!exerciseSetSearch && exerciseSetStatusFilter === 'all'}
-                      >
-                        {t('clearFilters')}
-                      </Button>
-                    </div>
-
-                    {setsLoading ? (
-                      <LoadingRow label={t('loading')} />
-                    ) : exerciseSets.length === 0 ? (
-                      <EmptyState title={t('noExerciseSets')} />
-                    ) : filteredExerciseSets.length === 0 ? (
-                      <EmptyState title={t('noFilteredExerciseSets')} />
-                    ) : (
-                      <div className="grid gap-3">
-                        {selectedExerciseSetIds.length > 0 && (
-                          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/40 p-3">
-                            <span className="text-sm font-medium">
-                              {t('selectedItemsValue', { count: selectedExerciseSetIds.length })}
-                            </span>
-                            <div className="flex flex-wrap gap-2">
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                className="gap-2"
-                                disabled={exerciseSetBulkPending}
-                                onClick={() => handleBulkExerciseSetPublish(true)}
-                              >
-                                {exerciseSetBulkAction === 'publish' ? (
-                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                ) : (
-                                  <CheckCircle2 className="h-3.5 w-3.5" />
-                                )}
-                                {t('publishSelected')}
-                              </Button>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                className="gap-2"
-                                disabled={exerciseSetBulkPending}
-                                onClick={() => handleBulkExerciseSetPublish(false)}
-                              >
-                                {exerciseSetBulkAction === 'unpublish' ? (
-                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                ) : (
-                                  <X className="h-3.5 w-3.5" />
-                                )}
-                                {t('unpublishSelected')}
-                              </Button>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="ghost"
-                                className="gap-2 text-destructive hover:text-destructive"
-                                disabled={exerciseSetBulkPending}
-                                onClick={() => setExerciseSetBulkDeleteOpen(true)}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                                {t('deleteSelected')}
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                        {filteredExerciseSets.map((set) => (
-                          <div key={set.id} className="rounded-lg border p-4">
-                            <div className="flex items-start gap-3">
-                              <input
-                                type="checkbox"
-                                className="mt-1"
-                                aria-label={t('selectItem')}
-                                checked={selectedExerciseSetIds.includes(set.id)}
-                                onChange={(event) =>
-                                  toggleExerciseSetSelection(set.id, event.target.checked)
-                                }
-                              />
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-start justify-between gap-3">
-                                  <div>
-                                    <h3 className="text-sm font-semibold">{set.title}</h3>
-                                    <p className="mt-1 text-xs text-muted-foreground">
-                                      {set.unit?.title || t('allUnits')}
-                                    </p>
-                                  </div>
-                                  <div className="flex shrink-0 items-center gap-1">
-                                    <Badge variant={set.isPublished ? 'success' : 'outline'}>
-                                      {set.isPublished ? t('published') : t('draft')}
-                                    </Badge>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-7 w-7"
-                                      disabled={updateExerciseSet.isPending}
-                                      onClick={() => handleToggleExerciseSetPublished(set)}
-                                      title={set.isPublished ? t('unpublish') : t('publish')}
-                                      aria-label={set.isPublished ? t('unpublish') : t('publish')}
-                                    >
-                                      {set.isPublished ? (
-                                        <X className="h-3.5 w-3.5" />
-                                      ) : (
-                                        <CheckCircle2 className="h-3.5 w-3.5" />
-                                      )}
-                                    </Button>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-7 w-7"
-                                      onClick={() => handleEditExerciseSet(set)}
-                                      title={t('editExerciseSet')}
-                                      aria-label={t('editExerciseSet')}
-                                    >
-                                      <PencilLine className="h-3.5 w-3.5" />
-                                    </Button>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-7 w-7 text-destructive hover:text-destructive"
-                                      onClick={() => handleDeleteExerciseSet(set)}
-                                      title={t('deleteExerciseSet')}
-                                      aria-label={t('deleteExerciseSet')}
-                                    >
-                                      <Trash2 className="h-3.5 w-3.5" />
-                                    </Button>
-                                  </div>
-                                </div>
-                                <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
-                                  <span>
-                                    {t('questionCount', { count: set._count?.questions ?? 0 })}
-                                  </span>
-                                  <span>
-                                    {t('attemptCount', { count: set._count?.attempts ?? 0 })}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </section>
+              <div>
+                <div className="mb-6 border-b border-border">
+                  <div className="flex gap-6">
+                    <button
+                      onClick={() => setActiveTab('questions')}
+                      className={`pb-3 text-sm font-medium transition-colors border-b-2 ${
+                        activeTab === 'questions'
+                          ? 'border-primary text-primary'
+                          : 'border-transparent text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {t('practiceQuestionsTab')}
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('question-editor')}
+                      className={`pb-3 text-sm font-medium transition-colors border-b-2 ${
+                        activeTab === 'question-editor'
+                          ? 'border-primary text-primary'
+                          : 'border-transparent text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {editingQuestionId ? t('editPracticeQuestion') : t('createPracticeQuestion')}
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('sets')}
+                      className={`pb-3 text-sm font-medium transition-colors border-b-2 ${
+                        activeTab === 'sets'
+                          ? 'border-primary text-primary'
+                          : 'border-transparent text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {t('exerciseSetsTab')}
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('set-editor')}
+                      className={`pb-3 text-sm font-medium transition-colors border-b-2 ${
+                        activeTab === 'set-editor'
+                          ? 'border-primary text-primary'
+                          : 'border-transparent text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {editingExerciseSetId ? t('editExerciseSet') : t('createExerciseSet')}
+                    </button>
+                  </div>
                 </div>
 
-                <aside className="space-y-6">
-                  <DraftPreviewCard
-                    title={t('practiceQuestionPreview')}
-                    ready={questionDraft.isReady}
-                    rows={[
-                      { label: t('courseName'), value: selectedCourse?.title ?? t('selectCourse') },
-                      { label: t('unit'), value: selectedUnit?.title ?? t('allUnits') },
-                      {
-                        label: t('questionType'),
-                        value: getPracticeQuestionTypeLabel(questionType, t),
-                      },
-                      {
-                        label: t('questionPrompt'),
-                        value: prompt.trim() || t('questionPromptPlaceholder'),
-                      },
-                      {
-                        label: t('answerOptions'),
-                        value: Array.isArray(questionDraft.options)
-                          ? questionDraft.options.length
-                          : 0,
-                      },
-                      {
-                        label: t('skillTags'),
-                        value: questionDraft.skillTags.length,
-                      },
-                    ]}
-                    checklist={[
-                      { label: t('courseName'), ok: questionDraft.checks.course },
-                      { label: t('questionPrompt'), ok: questionDraft.checks.prompt },
-                      { label: t('answerOptions'), ok: questionDraft.checks.options },
-                      { label: t('correctAnswer'), ok: questionDraft.checks.correctAnswer },
-                    ]}
-                  />
+                <div className="space-y-6">
+                  {activeTab === 'questions' && (
+                    <section className="rounded-xl border bg-card p-5">
+                      <div className="mb-4 flex items-center justify-between">
+                        <div>
+                          <h2 className="text-base font-semibold">{t('questionBank')}</h2>
+                          <p className="text-sm text-muted-foreground">{t('questionBankDesc')}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary">{filteredQuestions.length}</Badge>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={selectAllQuestions}
+                            disabled={filteredQuestions.length === 0}
+                          >
+                            {t('selectAllQuestions')}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={clearSelectedQuestions}
+                            disabled={selectedQuestionIds.length === 0}
+                          >
+                            {t('clearSelection')}
+                          </Button>
+                        </div>
+                      </div>
 
-                  <form onSubmit={handleSubmitQuestion} className="rounded-xl border bg-card p-5">
-                    <div className="mb-4 flex items-center justify-between gap-3">
-                      <h2 className="text-base font-semibold">
-                        {editingQuestionId ? t('editQuestion') : t('createQuestion')}
-                      </h2>
-                      {editingQuestionId && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="gap-1.5"
-                          onClick={resetQuestionDraft}
-                        >
-                          <X className="h-3.5 w-3.5" />
-                          {t('cancelEdit')}
-                        </Button>
-                      )}
-                    </div>
-                    <div className="space-y-4">
-                      <div className="space-y-1.5">
-                        <Label>{t('questionType')}</Label>
+                      <div className="mb-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_auto]">
+                        <Input
+                          value={questionSearch}
+                          onChange={(event) => setQuestionSearch(event.target.value)}
+                          placeholder={t('searchQuestions')}
+                        />
                         <select
-                          value={questionType}
+                          value={questionTypeFilter}
                           onChange={(event) =>
-                            setQuestionType(event.target.value as PracticeQuestionType)
+                            setQuestionTypeFilter(
+                              event.target.value as 'all' | PracticeQuestionType,
+                            )
                           }
                           className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                         >
+                          <option value="all">{t('allQuestionTypes')}</option>
                           <option value="MULTIPLE_CHOICE">{t('multipleChoice')}</option>
                           <option value="FILL_BLANK">{t('fillBlank')}</option>
                           <option value="MATCHING">{t('matching')}</option>
@@ -1055,207 +695,619 @@ export default function AdminPracticePage() {
                           <option value="AI_EVALUATED_AUDIO">{t('aiEvaluatedAudio')}</option>
                           <option value="AI_EVALUATED_TEXT">{t('aiEvaluatedText')}</option>
                         </select>
-                        {(questionType === 'AI_EVALUATED_AUDIO' ||
-                          questionType === 'AI_EVALUATED_TEXT') && (
-                          <p className="text-xs text-muted-foreground">{t('aiQuestionHint')}</p>
-                        )}
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <Label>{t('questionPrompt')}</Label>
-                        <textarea
-                          value={prompt}
-                          onChange={(event) => setPrompt(event.target.value)}
-                          className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                          placeholder={t('questionPromptPlaceholder')}
-                        />
-                      </div>
-
-                      {questionType === 'MULTIPLE_CHOICE' && (
-                        <div className="space-y-1.5">
-                          <Label>{t('answerOptions')}</Label>
-                          <textarea
-                            value={optionsText}
-                            onChange={(event) => setOptionsText(event.target.value)}
-                            className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                            placeholder={t('answerOptionsPlaceholder')}
-                          />
-                        </div>
-                      )}
-
-                      {questionType === 'MATCHING' && (
-                        <div className="space-y-1.5">
-                          <Label>{t('matchingOptions')}</Label>
-                          <textarea
-                            value={optionsText}
-                            onChange={(event) => setOptionsText(event.target.value)}
-                            className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                            placeholder={t('matchingOptionsPlaceholder')}
-                          />
-                        </div>
-                      )}
-
-                      {questionType === 'ORDERING' && (
-                        <div className="space-y-1.5">
-                          <Label>{t('orderingOptions')}</Label>
-                          <textarea
-                            value={optionsText}
-                            onChange={(event) => setOptionsText(event.target.value)}
-                            className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                            placeholder={t('orderingOptionsPlaceholder')}
-                          />
-                        </div>
-                      )}
-
-                      <div className="space-y-1.5">
-                        <Label>{t('correctAnswer')}</Label>
-                        <Input
-                          value={correctAnswer}
-                          onChange={(event) => setCorrectAnswer(event.target.value)}
-                          placeholder={
-                            questionType === 'MULTIPLE_CHOICE'
-                              ? t('correctAnswerIndexPlaceholder')
-                              : questionType === 'MATCHING'
-                                ? t('matchingAnswerPlaceholder')
-                                : questionType === 'ORDERING'
-                                  ? t('orderingAnswerPlaceholder')
-                                  : t('correctAnswerTextPlaceholder')
-                          }
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <Label>{t('skillTags')}</Label>
-                        <Input
-                          value={skillTags}
-                          onChange={(event) => setSkillTags(event.target.value)}
-                          placeholder={t('skillTagsPlaceholder')}
-                        />
-                      </div>
-
-                      {isAudioPromptQuestionType(questionType) ? (
-                        <AudioUploadField
-                          assetId={audioMediaAssetId}
-                          audioUrl={audioUrl}
-                          replayLimit={audioReplayLimit}
-                          onChange={({ assetId, audioUrl: nextAudioUrl, replayLimit }) => {
-                            setAudioMediaAssetId(assetId);
-                            setAudioUrl(nextAudioUrl);
-                            setAudioReplayLimit(replayLimit);
-                          }}
-                          disabled={questionSaving}
-                        />
-                      ) : null}
-
-                      <div className="space-y-1.5">
-                        <Label>{t('explanation')}</Label>
-                        <textarea
-                          value={explanation}
-                          onChange={(event) => setExplanation(event.target.value)}
-                          className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                        />
-                      </div>
-
-                      <Button type="submit" className="w-full gap-2" disabled={questionSaving}>
-                        {questionSaving ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : editingQuestionId ? (
-                          <PencilLine className="h-4 w-4" />
-                        ) : (
-                          <Plus className="h-4 w-4" />
-                        )}
-                        {editingQuestionId ? t('updateQuestion') : t('createQuestion')}
-                      </Button>
-                    </div>
-                  </form>
-
-                  <DraftPreviewCard
-                    title={t('exerciseSetPreview')}
-                    ready={exerciseSetDraft.isReady}
-                    rows={[
-                      { label: t('courseName'), value: selectedCourse?.title ?? t('selectCourse') },
-                      { label: t('unit'), value: selectedUnit?.title ?? t('allUnits') },
-                      { label: t('status'), value: isPublished ? t('published') : t('draft') },
-                      {
-                        label: t('exerciseSetTitle'),
-                        value: setTitle.trim() || t('exerciseSetTitlePlaceholder'),
-                      },
-                      {
-                        label: t('questionCount', { count: selectedQuestionIds.length }),
-                        value: selectedQuestionIds.length,
-                      },
-                    ]}
-                    checklist={[
-                      { label: t('courseName'), ok: exerciseSetDraft.checks.course },
-                      { label: t('exerciseSetTitle'), ok: exerciseSetDraft.checks.title },
-                      {
-                        label: t('selectedQuestionsValue', { count: 1 }),
-                        ok: exerciseSetDraft.checks.questions,
-                      },
-                    ]}
-                  />
-
-                  <form
-                    onSubmit={handleSubmitExerciseSet}
-                    className="rounded-xl border bg-card p-5"
-                  >
-                    <div className="mb-4 flex items-center justify-between gap-3">
-                      <h2 className="text-base font-semibold">
-                        {editingExerciseSetId ? t('editExerciseSet') : t('createExerciseSet')}
-                      </h2>
-                      {editingExerciseSetId && (
                         <Button
                           type="button"
                           variant="ghost"
-                          size="sm"
-                          className="gap-1.5"
-                          onClick={resetExerciseSetDraft}
+                          onClick={clearQuestionFilters}
+                          disabled={!questionSearch && questionTypeFilter === 'all'}
                         >
-                          <X className="h-3.5 w-3.5" />
-                          {t('cancelEdit')}
+                          {t('clearFilters')}
                         </Button>
+                      </div>
+
+                      {questionsLoading ? (
+                        <LoadingRow label={t('loading')} />
+                      ) : questions.length === 0 ? (
+                        <EmptyState title={t('noPracticeQuestions')} />
+                      ) : filteredQuestions.length === 0 ? (
+                        <EmptyState title={t('noFilteredPracticeQuestions')} />
+                      ) : (
+                        <>
+                          {selectedQuestionIds.length > 0 && (
+                            <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/40 p-3">
+                              <span className="text-sm font-medium">
+                                {t('selectedItemsValue', { count: selectedQuestionIds.length })}
+                              </span>
+                              <div className="flex flex-wrap gap-2">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  className="gap-2 text-destructive hover:text-destructive"
+                                  disabled={questionBulkPending}
+                                  onClick={() => setQuestionBulkDeleteOpen(true)}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                  {t('deleteSelected')}
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                          <div className="divide-y rounded-lg border">
+                            {filteredQuestions.map((question) => (
+                              <label
+                                key={question.id}
+                                className="flex cursor-pointer items-start gap-3 px-4 py-3"
+                              >
+                                <input
+                                  type="checkbox"
+                                  className="mt-1"
+                                  checked={selectedQuestionIds.includes(question.id)}
+                                  onChange={(event) => {
+                                    setSelectedQuestionIds((current) =>
+                                      event.target.checked
+                                        ? [...current, question.id]
+                                        : current.filter((id) => id !== question.id),
+                                    );
+                                  }}
+                                />
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex flex-wrap items-start justify-between gap-2">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <Badge variant="outline">
+                                        {question.type === 'MULTIPLE_CHOICE'
+                                          ? t('multipleChoice')
+                                          : question.type === 'FILL_BLANK'
+                                            ? t('fillBlank')
+                                            : question.type === 'AI_EVALUATED_AUDIO'
+                                              ? t('aiEvaluatedAudio')
+                                              : t('aiEvaluatedText')}
+                                      </Badge>
+                                      {question.skillTags.map((tag) => (
+                                        <Badge key={tag} variant="secondary">
+                                          {tag}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                    <div className="flex shrink-0 items-center gap-1">
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7"
+                                        onClick={(event) => {
+                                          event.preventDefault();
+                                          event.stopPropagation();
+                                          handleEditQuestion(question);
+                                        }}
+                                        title={t('editQuestion')}
+                                        aria-label={t('editQuestion')}
+                                      >
+                                        <PencilLine className="h-3.5 w-3.5" />
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7"
+                                        onClick={(event) => {
+                                          event.preventDefault();
+                                          event.stopPropagation();
+                                          handleUseQuestionAsDraft(question);
+                                        }}
+                                        title={t('useQuestionAsDraft')}
+                                        aria-label={t('useQuestionAsDraft')}
+                                      >
+                                        <Plus className="h-3.5 w-3.5" />
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7"
+                                        onClick={(event) => {
+                                          event.preventDefault();
+                                          event.stopPropagation();
+                                          handleDuplicateQuestion(question);
+                                        }}
+                                        title={t('duplicateQuestion')}
+                                        aria-label={t('duplicateQuestion')}
+                                      >
+                                        <Copy className="h-3.5 w-3.5" />
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 text-destructive hover:text-destructive"
+                                        onClick={(event) => {
+                                          event.preventDefault();
+                                          event.stopPropagation();
+                                          handleDeleteQuestion(question);
+                                        }}
+                                        title={t('deleteQuestion')}
+                                        aria-label={t('deleteQuestion')}
+                                      >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                  <p className="mt-2 text-sm font-medium">{question.prompt}</p>
+                                </div>
+                              </label>
+                            ))}
+                          </div>
+                        </>
                       )}
-                    </div>
-                    <div className="space-y-4">
-                      <div className="space-y-1.5">
-                        <Label>{t('exerciseSetTitle')}</Label>
+                    </section>
+                  )}
+
+                  {activeTab === 'sets' && (
+                    <section className="rounded-xl border bg-card p-5">
+                      <div className="mb-4 flex items-center justify-between">
+                        <div>
+                          <h2 className="text-base font-semibold">{t('exerciseSets')}</h2>
+                          <p className="text-sm text-muted-foreground">{t('exerciseSetsDesc')}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary">{filteredExerciseSets.length}</Badge>
+                          {exerciseSets.length > 0 && (
+                            <>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={selectAllExerciseSets}
+                                disabled={filteredExerciseSets.length === 0}
+                              >
+                                {t('selectAllItems')}
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={clearSelectedExerciseSets}
+                                disabled={selectedExerciseSetIds.length === 0}
+                              >
+                                {t('clearSelection')}
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="mb-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_auto]">
                         <Input
-                          value={setTitle}
-                          onChange={(event) => setSetTitle(event.target.value)}
-                          placeholder={t('exerciseSetTitlePlaceholder')}
+                          value={exerciseSetSearch}
+                          onChange={(event) => setExerciseSetSearch(event.target.value)}
+                          placeholder={t('searchExerciseSets')}
                         />
+                        <select
+                          value={exerciseSetStatusFilter}
+                          onChange={(event) =>
+                            setExerciseSetStatusFilter(
+                              event.target.value as 'all' | 'published' | 'draft',
+                            )
+                          }
+                          className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        >
+                          <option value="all">{t('allStatuses')}</option>
+                          <option value="published">{t('publishedOnly')}</option>
+                          <option value="draft">{t('draftOnly')}</option>
+                        </select>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={clearExerciseSetFilters}
+                          disabled={!exerciseSetSearch && exerciseSetStatusFilter === 'all'}
+                        >
+                          {t('clearFilters')}
+                        </Button>
                       </div>
-                      <div className="space-y-1.5">
-                        <Label>{t('description')}</Label>
-                        <textarea
-                          value={setDescription}
-                          onChange={(event) => setSetDescription(event.target.value)}
-                          className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                        />
-                      </div>
-                      <div className="rounded-lg border bg-muted/20 p-3 text-sm text-muted-foreground">
-                        {t('selectedQuestionsValue', { count: selectedQuestionIds.length })}
-                      </div>
-                      <label className="flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={isPublished}
-                          onChange={(event) => setIsPublished(event.target.checked)}
-                        />
-                        {t('publishNow')}
-                      </label>
-                      <Button type="submit" className="w-full gap-2" disabled={exerciseSetSaving}>
-                        {exerciseSetSaving ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : editingExerciseSetId ? (
-                          <PencilLine className="h-4 w-4" />
-                        ) : (
-                          <Dumbbell className="h-4 w-4" />
-                        )}
-                        {editingExerciseSetId ? t('updateExerciseSet') : t('createExerciseSet')}
-                      </Button>
-                    </div>
-                  </form>
+
+                      {setsLoading ? (
+                        <LoadingRow label={t('loading')} />
+                      ) : exerciseSets.length === 0 ? (
+                        <EmptyState title={t('noExerciseSets')} />
+                      ) : filteredExerciseSets.length === 0 ? (
+                        <EmptyState title={t('noFilteredExerciseSets')} />
+                      ) : (
+                        <div className="grid gap-3">
+                          {selectedExerciseSetIds.length > 0 && (
+                            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/40 p-3">
+                              <span className="text-sm font-medium">
+                                {t('selectedItemsValue', { count: selectedExerciseSetIds.length })}
+                              </span>
+                              <div className="flex flex-wrap gap-2">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  className="gap-2"
+                                  disabled={exerciseSetBulkPending}
+                                  onClick={() => handleBulkExerciseSetPublish(true)}
+                                >
+                                  {exerciseSetBulkAction === 'publish' ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  ) : (
+                                    <CheckCircle2 className="h-3.5 w-3.5" />
+                                  )}
+                                  {t('publishSelected')}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  className="gap-2"
+                                  disabled={exerciseSetBulkPending}
+                                  onClick={() => handleBulkExerciseSetPublish(false)}
+                                >
+                                  {exerciseSetBulkAction === 'unpublish' ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  ) : (
+                                    <X className="h-3.5 w-3.5" />
+                                  )}
+                                  {t('unpublishSelected')}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  className="gap-2 text-destructive hover:text-destructive"
+                                  disabled={exerciseSetBulkPending}
+                                  onClick={() => setExerciseSetBulkDeleteOpen(true)}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                  {t('deleteSelected')}
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                          {filteredExerciseSets.map((set) => (
+                            <div key={set.id} className="rounded-lg border p-4">
+                              <div className="flex items-start gap-3">
+                                <input
+                                  type="checkbox"
+                                  className="mt-1"
+                                  aria-label={t('selectItem')}
+                                  checked={selectedExerciseSetIds.includes(set.id)}
+                                  onChange={(event) =>
+                                    toggleExerciseSetSelection(set.id, event.target.checked)
+                                  }
+                                />
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                      <h3 className="text-sm font-semibold">{set.title}</h3>
+                                      <p className="mt-1 text-xs text-muted-foreground">
+                                        {set.unit?.title || t('allUnits')}
+                                      </p>
+                                    </div>
+                                    <div className="flex shrink-0 items-center gap-1">
+                                      <Badge variant={set.isPublished ? 'success' : 'outline'}>
+                                        {set.isPublished ? t('published') : t('draft')}
+                                      </Badge>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7"
+                                        disabled={updateExerciseSet.isPending}
+                                        onClick={() => handleToggleExerciseSetPublished(set)}
+                                        title={set.isPublished ? t('unpublish') : t('publish')}
+                                        aria-label={set.isPublished ? t('unpublish') : t('publish')}
+                                      >
+                                        {set.isPublished ? (
+                                          <X className="h-3.5 w-3.5" />
+                                        ) : (
+                                          <CheckCircle2 className="h-3.5 w-3.5" />
+                                        )}
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7"
+                                        onClick={() => handleEditExerciseSet(set)}
+                                        title={t('editExerciseSet')}
+                                        aria-label={t('editExerciseSet')}
+                                      >
+                                        <PencilLine className="h-3.5 w-3.5" />
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 text-destructive hover:text-destructive"
+                                        onClick={() => handleDeleteExerciseSet(set)}
+                                        title={t('deleteExerciseSet')}
+                                        aria-label={t('deleteExerciseSet')}
+                                      >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                  <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
+                                    <span>
+                                      {t('questionCount', { count: set._count?.questions ?? 0 })}
+                                    </span>
+                                    <span>
+                                      {t('attemptCount', { count: set._count?.attempts ?? 0 })}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </section>
+                  )}
+                </div>
+
+                <aside className="space-y-6">
+                  {activeTab === 'question-editor' && (
+                    <>
+                      <DraftPreviewCard
+                        title={t('practiceQuestionPreview')}
+                        ready={questionDraft.isReady}
+                        rows={[
+                          {
+                            label: t('courseName'),
+                            value: selectedCourse?.title ?? t('selectCourse'),
+                          },
+                          { label: t('unit'), value: selectedUnit?.title ?? t('allUnits') },
+                          {
+                            label: t('questionType'),
+                            value: getPracticeQuestionTypeLabel(questionType, t),
+                          },
+                          {
+                            label: t('questionPrompt'),
+                            value: prompt.trim() || t('questionPromptPlaceholder'),
+                          },
+                          {
+                            label: t('answerOptions'),
+                            value: Array.isArray(questionDraft.options)
+                              ? questionDraft.options.length
+                              : 0,
+                          },
+                          {
+                            label: t('skillTags'),
+                            value: questionDraft.skillTags.length,
+                          },
+                        ]}
+                        checklist={[
+                          { label: t('courseName'), ok: questionDraft.checks.course },
+                          { label: t('questionPrompt'), ok: questionDraft.checks.prompt },
+                          { label: t('answerOptions'), ok: questionDraft.checks.options },
+                          { label: t('correctAnswer'), ok: questionDraft.checks.correctAnswer },
+                        ]}
+                      />
+
+                      <form
+                        onSubmit={handleSubmitQuestion}
+                        className="rounded-xl border bg-card p-5"
+                      >
+                        <div className="mb-4 flex items-center justify-between gap-3">
+                          <h2 className="text-base font-semibold">
+                            {editingQuestionId ? t('editQuestion') : t('createQuestion')}
+                          </h2>
+                          {editingQuestionId && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="gap-1.5"
+                              onClick={resetQuestionDraft}
+                            >
+                              <X className="h-3.5 w-3.5" />
+                              {t('cancelEdit')}
+                            </Button>
+                          )}
+                        </div>
+                        <div className="space-y-4">
+                          <div className="space-y-1.5">
+                            <Label>{t('questionType')}</Label>
+                            <select
+                              value={questionType}
+                              onChange={(event) =>
+                                setQuestionType(event.target.value as PracticeQuestionType)
+                              }
+                              className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                            >
+                              <option value="MULTIPLE_CHOICE">{t('multipleChoice')}</option>
+                              <option value="FILL_BLANK">{t('fillBlank')}</option>
+                              <option value="MATCHING">{t('matching')}</option>
+                              <option value="ORDERING">{t('ordering')}</option>
+                              <option value="AI_EVALUATED_AUDIO">{t('aiEvaluatedAudio')}</option>
+                              <option value="AI_EVALUATED_TEXT">{t('aiEvaluatedText')}</option>
+                            </select>
+                            {(questionType === 'AI_EVALUATED_AUDIO' ||
+                              questionType === 'AI_EVALUATED_TEXT') && (
+                              <p className="text-xs text-muted-foreground">{t('aiQuestionHint')}</p>
+                            )}
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <Label>{t('questionPrompt')}</Label>
+                            <textarea
+                              value={prompt}
+                              onChange={(event) => setPrompt(event.target.value)}
+                              className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                              placeholder={t('questionPromptPlaceholder')}
+                            />
+                          </div>
+
+                          <QuestionOptionsEditor
+                            type={questionType}
+                            optionsText={optionsText}
+                            correctAnswer={correctAnswer}
+                            onChange={(updates) => {
+                              if (updates.optionsText !== undefined)
+                                setOptionsText(updates.optionsText);
+                              if (updates.correctAnswer !== undefined)
+                                setCorrectAnswer(updates.correctAnswer);
+                            }}
+                            t={t}
+                          />
+                          {questionType !== 'MULTIPLE_CHOICE' &&
+                            questionType !== 'MATCHING' &&
+                            questionType !== 'ORDERING' && (
+                              <div className="space-y-1.5">
+                                <Label>{t('correctAnswer')}</Label>
+                                <Input
+                                  value={correctAnswer}
+                                  onChange={(event) => setCorrectAnswer(event.target.value)}
+                                  placeholder={t('correctAnswerTextPlaceholder')}
+                                />
+                              </div>
+                            )}
+
+                          <div className="space-y-1.5">
+                            <Label>{t('skillTags')}</Label>
+                            <Input
+                              value={skillTags}
+                              onChange={(event) => setSkillTags(event.target.value)}
+                              placeholder={t('skillTagsPlaceholder')}
+                            />
+                          </div>
+
+                          {isAudioPromptQuestionType(questionType) ? (
+                            <AudioUploadField
+                              assetId={audioMediaAssetId}
+                              audioUrl={audioUrl}
+                              replayLimit={audioReplayLimit}
+                              onChange={({ assetId, audioUrl: nextAudioUrl, replayLimit }) => {
+                                setAudioMediaAssetId(assetId);
+                                setAudioUrl(nextAudioUrl);
+                                setAudioReplayLimit(replayLimit);
+                              }}
+                              disabled={questionSaving}
+                            />
+                          ) : null}
+
+                          <div className="space-y-1.5">
+                            <Label>{t('explanation')}</Label>
+                            <textarea
+                              value={explanation}
+                              onChange={(event) => setExplanation(event.target.value)}
+                              className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                            />
+                          </div>
+
+                          <Button type="submit" className="w-full gap-2" disabled={questionSaving}>
+                            {questionSaving ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : editingQuestionId ? (
+                              <PencilLine className="h-4 w-4" />
+                            ) : (
+                              <Plus className="h-4 w-4" />
+                            )}
+                            {editingQuestionId ? t('updateQuestion') : t('createQuestion')}
+                          </Button>
+                        </div>
+                      </form>
+                    </>
+                  )}
+
+                  {activeTab === 'set-editor' && (
+                    <>
+                      <DraftPreviewCard
+                        title={t('exerciseSetPreview')}
+                        ready={exerciseSetDraft.isReady}
+                        rows={[
+                          {
+                            label: t('courseName'),
+                            value: selectedCourse?.title ?? t('selectCourse'),
+                          },
+                          { label: t('unit'), value: selectedUnit?.title ?? t('allUnits') },
+                          { label: t('status'), value: isPublished ? t('published') : t('draft') },
+                          {
+                            label: t('exerciseSetTitle'),
+                            value: setTitle.trim() || t('exerciseSetTitlePlaceholder'),
+                          },
+                          {
+                            label: t('questionCount', { count: selectedQuestionIds.length }),
+                            value: selectedQuestionIds.length,
+                          },
+                        ]}
+                        checklist={[
+                          { label: t('courseName'), ok: exerciseSetDraft.checks.course },
+                          { label: t('exerciseSetTitle'), ok: exerciseSetDraft.checks.title },
+                          {
+                            label: t('selectedQuestionsValue', { count: 1 }),
+                            ok: exerciseSetDraft.checks.questions,
+                          },
+                        ]}
+                      />
+
+                      <form
+                        onSubmit={handleSubmitExerciseSet}
+                        className="rounded-xl border bg-card p-5"
+                      >
+                        <div className="mb-4 flex items-center justify-between gap-3">
+                          <h2 className="text-base font-semibold">
+                            {editingExerciseSetId ? t('editExerciseSet') : t('createExerciseSet')}
+                          </h2>
+                          {editingExerciseSetId && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="gap-1.5"
+                              onClick={resetExerciseSetDraft}
+                            >
+                              <X className="h-3.5 w-3.5" />
+                              {t('cancelEdit')}
+                            </Button>
+                          )}
+                        </div>
+                        <div className="space-y-4">
+                          <div className="space-y-1.5">
+                            <Label>{t('exerciseSetTitle')}</Label>
+                            <Input
+                              value={setTitle}
+                              onChange={(event) => setSetTitle(event.target.value)}
+                              placeholder={t('exerciseSetTitlePlaceholder')}
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label>{t('description')}</Label>
+                            <textarea
+                              value={setDescription}
+                              onChange={(event) => setSetDescription(event.target.value)}
+                              className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                            />
+                          </div>
+                          <div className="rounded-lg border bg-muted/20 p-3 text-sm text-muted-foreground">
+                            {t('selectedQuestionsValue', { count: selectedQuestionIds.length })}
+                          </div>
+                          <label className="flex items-center gap-2 text-sm">
+                            <input
+                              type="checkbox"
+                              checked={isPublished}
+                              onChange={(event) => setIsPublished(event.target.checked)}
+                            />
+                            {t('publishNow')}
+                          </label>
+                          <Button
+                            type="submit"
+                            className="w-full gap-2"
+                            disabled={exerciseSetSaving}
+                          >
+                            {exerciseSetSaving ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : editingExerciseSetId ? (
+                              <PencilLine className="h-4 w-4" />
+                            ) : (
+                              <Dumbbell className="h-4 w-4" />
+                            )}
+                            {editingExerciseSetId ? t('updateExerciseSet') : t('createExerciseSet')}
+                          </Button>
+                        </div>
+                      </form>
+                    </>
+                  )}
                 </aside>
               </div>
             )}

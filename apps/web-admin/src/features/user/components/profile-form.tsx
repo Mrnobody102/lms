@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Loader2, User, Mail, Phone, Image as ImageIcon, Save } from 'lucide-react';
 import { Button, Input, Label } from '@repo/ui';
@@ -11,13 +11,27 @@ export function ProfileForm() {
   const t = useTranslations('Admin');
   const { user, setUser } = useAuthStore();
 
-  const [fullName, setFullName] = useState(user?.fullName || '');
-  const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber || '');
-  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '');
+  const [fullName, setFullName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setFullName(user.fullName || '');
+      setPhoneNumber(user.phoneNumber || '');
+      setAvatarUrl(user.avatarUrl || '');
+    }
+    setIsHydrated(true);
+  }, [user]);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  if (!isHydrated) {
+    return null; // Or a loading skeleton
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

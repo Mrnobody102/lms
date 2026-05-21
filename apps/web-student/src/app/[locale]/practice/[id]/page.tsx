@@ -16,6 +16,7 @@ import { AIEvaluationInput } from '@/components/lessons/ai-evaluation-input';
 import { MatchingQuestion } from '@/components/lessons/matching-question';
 import { OrderingQuestion } from '@/components/lessons/ordering-question';
 import { AudioPromptPlayer } from '@/components/practice/audio-prompt-player';
+import { isQuestionAnswered, parseSubmittedAnswer } from '@/lib/question-answer.util';
 
 export default function PracticeAttemptPage() {
   const t = useTranslations('Student');
@@ -39,10 +40,7 @@ export default function PracticeAttemptPage() {
 
   const allAnswered =
     questions.length > 0 &&
-    questions.every((question) => {
-      const answer = answers[question.id];
-      return answer !== undefined && answer.trim() !== '';
-    });
+    questions.every((question) => isQuestionAnswered(question, answers[question.id]));
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -54,26 +52,10 @@ export default function PracticeAttemptPage() {
     }
 
     submitAttempt.mutate(
-      questions.map((question) => {
-        const rawAnswer = answers[question.id];
-        let answerValue: unknown = rawAnswer;
-        if (question.type === 'MULTIPLE_CHOICE') {
-          answerValue = Number(rawAnswer);
-        } else if (question.type === 'MATCHING' || question.type === 'ORDERING') {
-          try {
-            answerValue = JSON.parse(rawAnswer) as unknown;
-          } catch {
-            // fallback
-          }
-        } else {
-          answerValue = rawAnswer.trim();
-        }
-
-        return {
-          questionId: question.id,
-          answer: answerValue,
-        };
-      }),
+      questions.map((question) => ({
+        questionId: question.id,
+        answer: parseSubmittedAnswer(question, answers[question.id]),
+      })),
       {
         onSuccess: (data) => {
           setResult(data);

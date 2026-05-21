@@ -111,7 +111,7 @@ export function SessionManager() {
         </div>
         <div className="space-y-4">
           {[1, 2].map((i) => (
-            <div key={i} className="h-24 animate-pulse rounded-2xl border bg-card/50" />
+            <div key={i} className="h-24 animate-pulse rounded-xl border bg-card/50" />
           ))}
         </div>
       </div>
@@ -125,7 +125,7 @@ export function SessionManager() {
         <h2 className="text-xl font-semibold">{t('title')}</h2>
       </div>
 
-      <div className="rounded-2xl border bg-card p-6 shadow-sm">
+      <div className="rounded-xl border bg-card p-6 shadow-sm hover:shadow-md transition-shadow">
         <p className="mb-6 text-sm text-muted-foreground">{t('description')}</p>
 
         {message && (

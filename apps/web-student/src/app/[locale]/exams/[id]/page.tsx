@@ -18,6 +18,7 @@ import { MatchingQuestion } from '@/components/lessons/matching-question';
 import { OrderingQuestion } from '@/components/lessons/ordering-question';
 import { AIEvaluationInput } from '@/components/lessons/ai-evaluation-input';
 import { AudioPromptPlayer } from '@/components/practice/audio-prompt-player';
+import { isQuestionAnswered, parseSubmittedAnswer } from '@/lib/question-answer.util';
 
 export default function ExamAttemptPage() {
   const t = useTranslations('Student');
@@ -45,10 +46,7 @@ export default function ExamAttemptPage() {
   );
   const allAnswered =
     questions.length > 0 &&
-    questions.every((question) => {
-      const answer = answers[question.id];
-      return answer !== undefined && answer.trim() !== '';
-    });
+    questions.every((question) => isQuestionAnswered(question, answers[question.id]));
   const timeExpired = attempt ? remainingMs !== null && remainingMs <= 0 : false;
 
   useEffect(() => {
@@ -499,22 +497,6 @@ function ResultSummary({
 
 function getOptions(value: unknown) {
   return Array.isArray(value) ? value.map((item) => String(item)) : [];
-}
-
-function parseSubmittedAnswer(question: ExamQuestion, value: string): unknown {
-  if (question.type === 'MULTIPLE_CHOICE') {
-    return Number(value);
-  }
-
-  if (question.type === 'MATCHING' || question.type === 'ORDERING') {
-    try {
-      return JSON.parse(value) as unknown;
-    } catch {
-      return value;
-    }
-  }
-
-  return value.trim();
 }
 
 function formatAnswer(question: ExamQuestion | undefined, value: unknown) {

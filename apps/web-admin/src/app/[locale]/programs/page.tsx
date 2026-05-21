@@ -35,7 +35,7 @@ export default function ProgramsPage() {
             <AdminHeader title={t('programs')} description={t('programsDesc')} />
 
             <div className="flex flex-col sm:flex-row gap-3 mb-6 items-center justify-between">
-              <div className="flex h-10 flex-1 max-w-sm items-center rounded-lg border border-input bg-background text-foreground transition-colors focus-within:ring-2 focus-within:ring-primary/20">
+              <div className="flex h-11 flex-1 max-w-sm items-center rounded-xl border border-input bg-background text-foreground shadow-sm transition-all focus-within:ring-4 focus-within:ring-primary/10 focus-within:border-primary/50">
                 <Search className="ml-3.5 h-4 w-4 shrink-0 text-muted-foreground pointer-events-none" />
                 <Input
                   placeholder={t('searchPrograms')}
@@ -70,14 +70,14 @@ export default function ProgramsPage() {
                 <AlertDescription>{errorMessage}</AlertDescription>
               </Alert>
             ) : filteredPrograms.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-24 text-center">
-                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                  <FolderTree className="w-8 h-8 text-muted-foreground" />
+              <div className="flex flex-col items-center justify-center py-24 text-center rounded-xl border border-dashed bg-muted/20">
+                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-5">
+                  <FolderTree className="w-10 h-10 text-primary" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">{t('noPrograms')}</h3>
-                <p className="text-sm text-muted-foreground max-w-sm mb-6">{t('noProgramsDesc')}</p>
+                <h3 className="text-xl font-semibold tracking-tight mb-2">{t('noPrograms')}</h3>
+                <p className="text-sm text-muted-foreground max-w-sm mb-8">{t('noProgramsDesc')}</p>
                 <Link href="/programs/new">
-                  <Button>{t('createProgram')}</Button>
+                  <Button className="rounded-xl px-6">{t('createProgram')}</Button>
                 </Link>
               </div>
             ) : (
@@ -85,7 +85,7 @@ export default function ProgramsPage() {
                 {filteredPrograms.map((program) => (
                   <div
                     key={program.id}
-                    className="bg-card border rounded-xl p-5 flex flex-col gap-4 group hover:shadow-md hover:border-primary/20 transition-all"
+                    className="bg-card border rounded-xl p-5 flex flex-col gap-4 group hover:-translate-y-1 hover:shadow-lg hover:border-primary/30 transition-all duration-300"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">

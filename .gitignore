@@ -51,6 +51,7 @@ temp
 packages/database/.prisma/client/*.tmp
 
 # Agent / AI
+.codex/
 .gemini
 .agent
 .agents

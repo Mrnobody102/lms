@@ -202,14 +202,12 @@ describe('ExamService', () => {
           answers: {
             create: [
               expect.objectContaining({
-                tenantId: 'tenant-1',
                 questionId: 'question-1',
                 answer: 1,
                 isCorrect: true,
                 pointsAwarded: 2,
               }),
               expect.objectContaining({
-                tenantId: 'tenant-1',
                 questionId: 'question-2',
                 answer: 'Ni Hao',
                 isCorrect: true,

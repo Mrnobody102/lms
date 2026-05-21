@@ -90,6 +90,8 @@ interface LessonListProps {
 
 type LessonStatusFilter = 'all' | 'ready' | 'draft';
 
+const LESSON_ROW_GRID_TEMPLATE = '2rem 2rem 2rem 7rem minmax(0, 1fr) 5rem 9.5rem';
+
 function includesNormalized(haystack: string, needle: string) {
   return haystack.toLowerCase().includes(needle.toLowerCase());
 }
@@ -719,7 +721,10 @@ function LessonRows({
 
   return (
     <div>
-      <div className="grid grid-cols-[2rem_2rem_2rem_7rem_1fr_5rem_9.5rem] gap-2 px-4 py-2.5 bg-muted/20 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+      <div
+        className="grid gap-2 px-4 py-2.5 bg-muted/20 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
+        style={{ gridTemplateColumns: LESSON_ROW_GRID_TEMPLATE }}
+      >
         <span className="w-4" /> {/* spacer for drag handle */}
         <span className="text-center">{t('selectItem')}</span>
         <span className="text-center">#</span>
@@ -791,6 +796,7 @@ function SortableLesson({
     transition,
     zIndex: isDragging ? 1 : 0,
     position: 'relative' as const,
+    gridTemplateColumns: LESSON_ROW_GRID_TEMPLATE,
   };
 
   const typeConfig = getTypeConfig(t);
@@ -802,7 +808,7 @@ function SortableLesson({
     <div
       ref={setNodeRef}
       style={style}
-      className={`grid grid-cols-[2rem_2rem_2rem_7rem_1fr_5rem_9.5rem] gap-2 px-4 py-3 items-center border-t hover:bg-muted/30 transition-colors group ${
+      className={`grid gap-2 px-4 py-3 items-center border-t hover:bg-muted/30 transition-colors group ${
         isDragging ? 'shadow-lg ring-1 ring-primary/20 bg-background opacity-90' : ''
       }`}
     >

@@ -53,16 +53,16 @@ export function ForgotPasswordForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} data-hydrated={isHydrated} className="space-y-7">
+    <form onSubmit={handleSubmit} data-hydrated={isHydrated} className="space-y-6">
       {error && (
-        <div className="flex items-center gap-2.5 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">
+        <div className="flex items-center gap-2.5 p-3 bg-destructive/10 border border-destructive/20 rounded-xl text-destructive font-medium text-sm">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
-      <div className="space-y-3">
-        <Label>{t('auth.email')}</Label>
+      <div className="space-y-2">
+        <Label className="block">{t('auth.email')}</Label>
         <div className="relative">
           <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
           <Input

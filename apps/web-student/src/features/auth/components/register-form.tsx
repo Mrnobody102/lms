@@ -13,6 +13,7 @@ interface RegisterFormProps {
 export function RegisterForm({ onSuccess }: RegisterFormProps) {
   const t = useTranslations('Student');
   const { register, loading, error, clearError } = useAuthStore();
+  const displayError = error ? t('auth.registerError') : null;
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -33,17 +34,17 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} data-hydrated={isHydrated} className="space-y-7">
-      {error && (
-        <div className="flex items-center gap-2.5 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">
+    <form onSubmit={handleSubmit} data-hydrated={isHydrated} className="space-y-6">
+      {displayError && (
+        <div className="flex items-center gap-2.5 p-3 bg-destructive/10 border border-destructive/20 rounded-xl text-destructive font-medium text-sm">
           <AlertCircle className="w-4 h-4 shrink-0" />
-          <span>{error}</span>
+          <span>{displayError}</span>
         </div>
       )}
 
       {/* Full Name */}
-      <div className="space-y-3">
-        <Label>{t('auth.name')}</Label>
+      <div className="space-y-2">
+        <Label className="block">{t('auth.name')}</Label>
         <div className="relative">
           <User className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
           <Input
@@ -61,8 +62,8 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
       </div>
 
       {/* Email */}
-      <div className="space-y-3">
-        <Label>{t('auth.email')}</Label>
+      <div className="space-y-2">
+        <Label className="block">{t('auth.email')}</Label>
         <div className="relative">
           <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
           <Input
@@ -80,8 +81,8 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
       </div>
 
       {/* Password */}
-      <div className="space-y-3">
-        <Label>{t('auth.password')}</Label>
+      <div className="space-y-2">
+        <Label className="block">{t('auth.password')}</Label>
         <div className="relative">
           <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
           <Input

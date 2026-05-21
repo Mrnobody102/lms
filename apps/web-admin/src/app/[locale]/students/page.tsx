@@ -148,7 +148,7 @@ export default function AdminStudentsPage() {
             </div>
 
             <div className="mb-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto]">
-              <div className="flex h-10 items-center rounded-lg border border-input bg-background text-foreground transition-colors focus-within:ring-2 focus-within:ring-primary/20">
+              <div className="flex h-11 items-center rounded-xl border border-input bg-background text-foreground shadow-sm transition-all focus-within:ring-4 focus-within:ring-primary/10 focus-within:border-primary/50">
                 <Search className="ml-3.5 h-4 w-4 shrink-0 text-muted-foreground pointer-events-none" />
                 <Input
                   value={search}
@@ -271,18 +271,26 @@ export default function AdminStudentsPage() {
                 <AlertDescription>{t('studentsLoadError')}</AlertDescription>
               </Alert>
             ) : students.length === 0 ? (
-              <div className="rounded-xl border bg-card p-8 text-center">
-                <p className="text-base font-semibold">{t('noStudents')}</p>
-                <p className="mt-2 text-sm text-muted-foreground">{t('noStudentsDesc')}</p>
+              <div className="flex flex-col items-center justify-center py-24 text-center rounded-xl border border-dashed bg-muted/20">
+                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-5">
+                  <Users className="w-10 h-10 text-primary" />
+                </div>
+                <h3 className="text-xl font-semibold tracking-tight mb-2">{t('noStudents')}</h3>
+                <p className="text-sm text-muted-foreground max-w-sm">{t('noStudentsDesc')}</p>
               </div>
             ) : visibleStudents.length === 0 ? (
-              <div className="rounded-xl border bg-card p-8 text-center">
-                <p className="text-base font-semibold">{t('noFilteredStudents')}</p>
-                <p className="mt-2 text-sm text-muted-foreground">{t('noStudentsDesc')}</p>
+              <div className="flex flex-col items-center justify-center py-24 text-center rounded-xl border border-dashed bg-muted/20">
+                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-5">
+                  <Search className="w-10 h-10 text-primary" />
+                </div>
+                <h3 className="text-xl font-semibold tracking-tight mb-2">
+                  {t('noFilteredStudents')}
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-sm">{t('noStudentsDesc')}</p>
               </div>
             ) : (
-              <div className="overflow-hidden rounded-xl border bg-card">
-                <div className="grid grid-cols-[2rem_minmax(0,1.1fr)_140px_140px_180px] gap-4 border-b px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+                <div className="grid grid-cols-[2rem_minmax(0,1.1fr)_140px_140px_180px] gap-4 border-b bg-muted/30 px-5 py-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <span>{t('selectItem')}</span>
                   <span>{t('students')}</span>
                   <span>{t('status')}</span>
@@ -294,7 +302,7 @@ export default function AdminStudentsPage() {
                   {visibleStudents.map((student) => (
                     <div
                       key={student.id}
-                      className="grid grid-cols-[2rem_minmax(0,1.1fr)_140px_140px_180px] gap-4 px-5 py-4"
+                      className="grid grid-cols-[2rem_minmax(0,1.1fr)_140px_140px_180px] gap-4 px-5 py-4 hover:bg-muted/50 transition-colors"
                     >
                       <input
                         type="checkbox"

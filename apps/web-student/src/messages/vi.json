@@ -108,6 +108,7 @@
       "noPerformanceDataDesc": "Hãy bắt đầu luyện tập hoặc làm bài kiểm tra để xem phân tích hiệu suất của bạn tại đây.",
       "accuracyByUnit": "Độ chính xác theo Unit",
       "accuracyByUnitDesc": "Mức độ hoàn thành chính xác của bạn trong từng chương học.",
+      "accuracyBySkill": "Độ chính xác theo kỹ năng",
       "skillMastery": "Làm chủ kỹ năng",
       "skillMasteryDesc": "Mức độ thành thạo dựa trên kết quả tất cả các bài làm của bạn.",
       "activityCalendar": "Lịch hoạt động",
@@ -268,6 +269,8 @@
       "forgotPassword": "Quên mật khẩu?",
       "loginButton": "Đăng nhập ngay",
       "registerButton": "Tạo tài khoản học tập",
+      "loginError": "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.",
+      "registerError": "Đăng ký thất bại. Vui lòng kiểm tra lại thông tin.",
       "loggingIn": "Đang đăng nhập...",
       "registering": "Đang tạo tài khoản...",
       "footerLogin": "Chưa có tài khoản?",
@@ -293,6 +296,12 @@
       "forgotEmailSentDesc": "Nếu email của bạn tồn tại trong hệ thống, bạn sẽ sớm nhận được liên kết đặt lại mật khẩu.",
       "resetting": "Đang đặt lại mật khẩu...",
       "sendingLink": "Đang gửi liên kết..."
+    },
+    "errorBoundary": {
+      "title": "Đã xảy ra lỗi",
+      "unexpected": "Đã xảy ra lỗi không mong muốn",
+      "tryAgain": "Thử lại",
+      "goHome": "Về trang chủ"
     },
     "settings": {
       "title": "Cài đặt tài khoản",
@@ -441,6 +450,10 @@
       "submitError": "Không thể nộp bài luyện tập này.",
       "multipleChoice": "Trắc nghiệm",
       "fillBlank": "Điền đáp án",
+      "matching": "Nối cặp",
+      "ordering": "Sắp xếp",
+      "matchingInstruction": "Bấm mục bên trái, rồi bấm mục bên phải để ghép cặp.",
+      "orderingInstruction": "Kéo thả các mục để sắp xếp theo đúng thứ tự.",
       "aiAudio": "Phát âm (AI chấm)",
       "aiText": "Viết đoạn văn (AI chấm)",
       "aiFeedbackTitle": "Phản hồi luyện tập từ AI",
@@ -525,6 +538,11 @@
       "submitError": "Không thể nộp bài kiểm tra này.",
       "multipleChoice": "Trắc nghiệm",
       "fillBlank": "Điền đáp án",
+      "matching": "Nối cặp",
+      "ordering": "Sắp xếp",
+      "aiAudio": "Phát âm (AI chấm)",
+      "aiText": "Viết đoạn văn (AI chấm)",
+      "matchingInstruction": "Bấm mục bên trái, rồi bấm mục bên phải để ghép cặp.",
       "fillBlankPlaceholder": "Nhập đáp án",
       "pointsValue": "{points, plural, one {# điểm} other {# điểm}}",
       "correct": "Đúng",
@@ -546,6 +564,7 @@
       "analyzing": "AI đang phân tích...",
       "quotaExceeded": "Bạn đã hết lượt sử dụng AI hôm nay.",
       "errorTitle": "Lỗi AI",
+      "connectionError": "Không thể kết nối AI.",
       "close": "Đóng",
       "aiFeedbackTitle": "Phân tích từ AI"
     }

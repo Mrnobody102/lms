@@ -27,17 +27,17 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-7">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {displayError && (
-        <div className="flex items-center gap-2.5 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">
+        <div className="flex items-center gap-2.5 p-3 bg-destructive/10 border border-destructive/20 rounded-xl text-destructive text-sm font-medium">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{displayError}</span>
         </div>
       )}
 
       {/* Email */}
-      <div className="space-y-3">
-        <label className="text-sm font-medium text-foreground">{t('auth.email')}</label>
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-foreground">{t('auth.email')}</label>
         <input
           type="email"
           required
@@ -52,8 +52,8 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
       </div>
 
       {/* Password */}
-      <div className="space-y-3">
-        <label className="text-sm font-medium text-foreground">{t('auth.password')}</label>
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-foreground">{t('auth.password')}</label>
         <div className="flex h-12 items-center rounded-xl border border-zinc-200 bg-zinc-50 text-foreground transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 dark:border-zinc-700 dark:bg-zinc-800 dark:focus-within:border-primary dark:focus-within:ring-primary/20">
           <input
             type={showPassword ? 'text' : 'password'}
@@ -75,7 +75,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
-        <div className="flex justify-end">
+        <div className="flex justify-end pt-1">
           <Link
             href="/forgot-password"
             className="text-[11px] font-medium text-primary hover:text-primary/80 transition-colors"

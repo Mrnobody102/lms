@@ -14,9 +14,11 @@ export function AdminHeader({ title, description, showCreateCourse = false }: Ad
   const t = useTranslations('Admin');
 
   return (
-    <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+    <header className="sticky top-0 z-10 flex flex-col md:flex-row justify-between items-start md:items-center py-4 mb-8 gap-4 bg-background/80 backdrop-blur-xl border-b border-border/50">
       <div className="space-y-1">
-        <h1 className="text-3xl md:text-4xl font-black tracking-tight leading-tight">{title}</h1>
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight leading-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+          {title}
+        </h1>
         {description && <p className="text-muted-foreground font-medium text-sm">{description}</p>}
       </div>
       <div className="w-full md:w-auto self-end md:self-auto">

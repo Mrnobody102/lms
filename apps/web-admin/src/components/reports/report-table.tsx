@@ -26,21 +26,23 @@ export function ReportTable<T>({
   const t = useTranslations('Admin');
   if (rows.length === 0) {
     return (
-      <div className="rounded-md border bg-card p-6 text-sm text-muted-foreground text-center">
-        {emptyMessage ?? t('reports.noData')}
+      <div className="rounded-xl border border-dashed bg-muted/20 p-12 flex flex-col items-center justify-center text-center">
+        <p className="text-sm font-medium text-muted-foreground">
+          {emptyMessage ?? t('reports.noData')}
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto rounded-md border bg-card">
+    <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
       <table className="w-full text-sm">
-        <thead className="bg-muted/50">
+        <thead className="bg-muted/30 border-b">
           <tr>
             {columns.map((col, idx) => (
               <th
                 key={idx}
-                className={`px-4 py-3 text-${col.align ?? 'left'} font-semibold text-xs uppercase tracking-wide text-muted-foreground`}
+                className={`px-5 py-4 text-${col.align ?? 'left'} font-semibold text-[11px] uppercase tracking-wider text-muted-foreground`}
               >
                 {col.header}
               </th>
@@ -53,15 +55,15 @@ export function ReportTable<T>({
               key={rowKey(row)}
               className={
                 onRowClick
-                  ? 'hover:bg-muted/40 cursor-pointer transition-colors'
-                  : 'hover:bg-muted/40'
+                  ? 'hover:bg-muted/50 cursor-pointer transition-colors group'
+                  : 'hover:bg-muted/50 transition-colors'
               }
               onClick={onRowClick ? () => onRowClick(row) : undefined}
             >
               {columns.map((col, idx) => (
                 <td
                   key={idx}
-                  className={`px-4 py-3 text-${col.align ?? 'left'} ${col.className ?? ''}`}
+                  className={`px-5 py-4 text-${col.align ?? 'left'} ${col.className ?? ''}`}
                 >
                   {col.render(row)}
                 </td>

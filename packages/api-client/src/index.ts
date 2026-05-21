@@ -40,6 +40,10 @@ function getDefaultBaseUrl(): string {
     return `${process.env.NEXT_PUBLIC_API_URL}/api`;
   }
 
+  if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
+    return '/api';
+  }
+
   if (process.env.NODE_ENV === 'production') {
     throw new Error('NEXT_PUBLIC_API_URL is required in production');
   }
@@ -62,6 +66,12 @@ function isLocalBrowserHost(): boolean {
   if (typeof window === 'undefined') return false;
   const host = window.location.hostname;
   return host === 'localhost' || host === '127.0.0.1' || host === '::1';
+}
+
+function shouldSendTenantHeader(sendTenantHeaderInProduction: boolean): boolean {
+  return (
+    process.env.NODE_ENV !== 'production' || sendTenantHeaderInProduction || isLocalBrowserHost()
+  );
 }
 
 function resolveTenantHint(tenantId: ApiClientConfig['tenantId']): string | undefined {
@@ -126,7 +136,7 @@ export function createApiClient(config: ApiClientConfig = {}): AxiosInstance {
 
   api.interceptors.request.use((requestConfig: InternalAxiosRequestConfig) => {
     const tenantHint = resolveTenantHint(tenantId);
-    if (tenantHint && (sendTenantHeaderInProduction || isLocalBrowserHost())) {
+    if (tenantHint && shouldSendTenantHeader(sendTenantHeaderInProduction)) {
       requestConfig.headers['x-tenant-id'] = tenantHint;
     }
 

@@ -1,21 +1,16 @@
-'use client';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { Link } from '../../../navigation';
+import { RegisterPageClient } from './register-page-client';
 
-import { RegisterForm } from '../../../features/auth/components/register-form';
-import { Link, useRouter } from '../../../navigation';
-import { useTranslations } from 'next-intl';
-
-export default function RegisterPage() {
-  const t = useTranslations('Student');
-  const router = useRouter();
-
-  const handleRegisterSuccess = () => {
-    router.replace('/courses');
-  };
+export default async function RegisterPage(props: { params: Promise<{ locale: string }> }) {
+  const { locale } = await props.params;
+  setRequestLocale(locale);
+  const t = await getTranslations({ locale, namespace: 'Student' });
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center p-6">
       <div className="w-full max-w-sm">
-        {/* Logo / Brand */}
+        {/* Logo / Brand — server-rendered */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary text-primary-foreground mb-6 shadow-lg shadow-primary/25">
             <svg
@@ -36,9 +31,9 @@ export default function RegisterPage() {
           <p className="text-sm text-muted-foreground mt-1">{t('auth.registerDesc')}</p>
         </div>
 
-        {/* Register Card */}
+        {/* Register Card — only the form is client */}
         <div className="bg-card border border-border rounded-2xl p-8 shadow-2xl dark:shadow-black/50">
-          <RegisterForm onSuccess={handleRegisterSuccess} />
+          <RegisterPageClient />
         </div>
 
         {/* Login Link */}

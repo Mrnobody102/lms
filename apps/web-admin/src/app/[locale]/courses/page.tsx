@@ -52,7 +52,7 @@ export default function CoursesPage() {
 
             {/* Search & Filter Bar */}
             <div className="flex flex-col sm:flex-row gap-3 mb-6">
-              <div className="flex h-10 flex-1 items-center rounded-lg border border-input bg-background text-foreground transition-colors focus-within:ring-2 focus-within:ring-primary/20">
+              <div className="flex h-11 flex-1 items-center rounded-xl border border-input bg-background text-foreground shadow-sm transition-all focus-within:ring-4 focus-within:ring-primary/10 focus-within:border-primary/50">
                 <Search className="ml-3.5 h-4 w-4 shrink-0 text-muted-foreground pointer-events-none" />
                 <Input
                   placeholder={t('searchCourses')}
@@ -102,14 +102,14 @@ export default function CoursesPage() {
                 <AlertDescription>{errorMessage}</AlertDescription>
               </Alert>
             ) : courses.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-24 text-center">
-                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                  <BookOpen className="w-8 h-8 text-muted-foreground" />
+              <div className="flex flex-col items-center justify-center py-24 text-center rounded-xl border border-dashed bg-muted/20">
+                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-5">
+                  <BookOpen className="w-10 h-10 text-primary" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">{t('noCourses')}</h3>
-                <p className="text-sm text-muted-foreground max-w-sm mb-6">{t('noCoursesDesc')}</p>
+                <h3 className="text-xl font-semibold tracking-tight mb-2">{t('noCourses')}</h3>
+                <p className="text-sm text-muted-foreground max-w-sm mb-8">{t('noCoursesDesc')}</p>
                 <Link href="/courses/new">
-                  <Button>{t('createCourseNow')}</Button>
+                  <Button className="rounded-xl px-6">{t('createCourseNow')}</Button>
                 </Link>
               </div>
             ) : (

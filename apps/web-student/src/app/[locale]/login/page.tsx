@@ -1,21 +1,16 @@
-'use client';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { Link } from '../../../navigation';
+import { LoginPageClient } from './login-page-client';
 
-import { LoginForm } from '../../../features/auth/components/login-form';
-import { Link, useRouter } from '../../../navigation';
-import { useTranslations } from 'next-intl';
-
-export default function LoginPage() {
-  const t = useTranslations('Student');
-  const router = useRouter();
-
-  const handleLoginSuccess = () => {
-    router.replace('/courses');
-  };
+export default async function LoginPage(props: { params: Promise<{ locale: string }> }) {
+  const { locale } = await props.params;
+  setRequestLocale(locale);
+  const t = await getTranslations({ locale, namespace: 'Student' });
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 p-4 dark:bg-zinc-950 sm:p-6">
       <div className="w-full max-w-sm sm:max-w-md">
-        {/* Logo / Brand */}
+        {/* Logo / Brand — rendered on the server, instant HTML */}
         <div className="mb-8 text-center sm:mb-10">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary text-white mb-6 shadow-lg shadow-primary/25">
             <svg
@@ -36,9 +31,9 @@ export default function LoginPage() {
           <p className="text-sm text-muted-foreground mt-1">{t('auth.loginDesc')}</p>
         </div>
 
-        {/* Login Card */}
+        {/* Login Card — only the form is a client component */}
         <div className="rounded-2xl border border-border bg-card p-6 shadow-2xl dark:shadow-black/50 sm:p-8">
-          <LoginForm onSuccess={handleLoginSuccess} />
+          <LoginPageClient />
         </div>
 
         {/* Register Link */}

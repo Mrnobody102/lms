@@ -26,5 +26,7 @@ describe('buildContentSecurityPolicy', () => {
 
     expect(policy).toContain('ws://localhost:3000');
     expect(policy).toContain('http://127.0.0.1:4000');
+    expect(policy).toContain('http://localhost:3100');
+    expect(policy).toContain('http://127.0.0.1:3102');
   });
 });

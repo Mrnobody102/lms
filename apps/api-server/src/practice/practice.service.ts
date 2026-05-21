@@ -558,7 +558,6 @@ export class PracticeService {
           create: results
             .filter((result) => result.answer !== null)
             .map((result) => ({
-              tenantId,
               questionId: result.questionId,
               answer: result.answer as Prisma.InputJsonValue,
               isCorrect: result.isCorrect,

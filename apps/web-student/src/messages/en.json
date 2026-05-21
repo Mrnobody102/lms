@@ -108,6 +108,7 @@
       "noPerformanceDataDesc": "Start practicing or take an exam to see your performance metrics here.",
       "accuracyByUnit": "Accuracy by unit",
       "accuracyByUnitDesc": "How well you're doing in each chapter of the course.",
+      "accuracyBySkill": "Accuracy by skill",
       "skillMastery": "Skill mastery",
       "skillMasteryDesc": "Mastery level based on your answers across all sessions.",
       "activityCalendar": "Activity calendar",
@@ -268,6 +269,8 @@
       "forgotPassword": "Forgot password?",
       "loginButton": "Login Now",
       "registerButton": "Create Learning Account",
+      "loginError": "Login failed. Please check your credentials.",
+      "registerError": "Registration failed. Please check your information.",
       "loggingIn": "Logging in...",
       "registering": "Creating account...",
       "footerLogin": "Don't have an account?",
@@ -293,6 +296,12 @@
       "forgotEmailSentDesc": "If your email exists in our system, you will receive a reset link shortly.",
       "resetting": "Resetting password...",
       "sendingLink": "Sending link..."
+    },
+    "errorBoundary": {
+      "title": "Something went wrong",
+      "unexpected": "An unexpected error occurred",
+      "tryAgain": "Try again",
+      "goHome": "Go home"
     },
     "settings": {
       "title": "Account Settings",
@@ -441,6 +450,10 @@
       "submitError": "Cannot submit this practice attempt.",
       "multipleChoice": "Multiple choice",
       "fillBlank": "Fill blank",
+      "matching": "Matching",
+      "ordering": "Ordering",
+      "matchingInstruction": "Click a left item, then click a right item to match them.",
+      "orderingInstruction": "Drag and drop items to put them in the correct order.",
       "aiAudio": "Speaking (AI Graded)",
       "aiText": "Writing (AI Graded)",
       "aiFeedbackTitle": "AI coaching feedback",
@@ -525,6 +538,11 @@
       "submitError": "Cannot submit this exam attempt.",
       "multipleChoice": "Multiple choice",
       "fillBlank": "Fill blank",
+      "matching": "Matching",
+      "ordering": "Ordering",
+      "aiAudio": "Speaking (AI graded)",
+      "aiText": "Writing (AI graded)",
+      "matchingInstruction": "Click a left item, then click a right item to match them.",
       "fillBlankPlaceholder": "Type your answer",
       "pointsValue": "{points, plural, one {# point} other {# points}}",
       "correct": "Correct",
@@ -546,6 +564,7 @@
       "analyzing": "AI is analyzing...",
       "quotaExceeded": "You have exceeded your AI usage quota for today.",
       "errorTitle": "AI Error",
+      "connectionError": "Cannot connect to AI.",
       "close": "Close",
       "aiFeedbackTitle": "AI Feedback"
     }

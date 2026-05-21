@@ -89,17 +89,20 @@ export default function AdminHome() {
               <>
                 <div className="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-4">
                   {stats.map((stat) => (
-                    <div key={stat.label} className="bg-card border rounded-xl p-5">
+                    <div
+                      key={stat.label}
+                      className="bg-card border rounded-xl p-5 hover:-translate-y-1 hover:shadow-lg transition-all duration-300"
+                    >
                       <div className="flex items-center justify-between mb-4">
-                        <div className={`p-2 rounded-lg ${stat.bg} ${stat.color}`}>
+                        <div className={`p-2 rounded-lg ${stat.bg} ${stat.color} bg-opacity-50`}>
                           <stat.icon className="w-5 h-5" />
                         </div>
                         <Badge variant="secondary" className="text-xs">
                           {stat.trend}
                         </Badge>
                       </div>
-                      <div className="text-2xl font-bold tracking-tight">{stat.value}</div>
-                      <div className="text-sm text-muted-foreground mt-0.5">{stat.label}</div>
+                      <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
+                      <h3 className="text-3xl font-bold mt-1 tracking-tight">{stat.value}</h3>
                     </div>
                   ))}
                 </div>

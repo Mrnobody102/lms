@@ -1,11 +1,11 @@
-version: "3.8"
+version: '3.8'
 
 services:
   postgres:
     image: postgres:15-alpine
     container_name: lms_postgres
     ports:
-      - "5433:5432"
+      - '5436:5432'
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
@@ -19,7 +19,7 @@ services:
     image: redis:alpine
     container_name: lms_redis
     ports:
-      - "6379:6379"
+      - '6380:6379'
     volumes:
       - redis_data:/data
     networks:

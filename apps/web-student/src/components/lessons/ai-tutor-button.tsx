@@ -39,7 +39,8 @@ export function AiTutorButton({
       const res = await mutation({ attemptId, questionId });
       setFeedback(res.explanation);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Lỗi kết nối AI');
+      const message = err instanceof Error ? err.message : '';
+      setError(/quota|limit|429/i.test(message) ? t('quotaExceeded') : t('connectionError'));
     }
   };
 
@@ -78,7 +79,7 @@ export function AiTutorButton({
       ) : error ? (
         <div className="text-sm text-destructive">
           <p className="font-semibold">{t('errorTitle')}</p>
-          <p>{error.includes('lượt sử dụng') ? t('quotaExceeded') : error}</p>
+          <p>{error}</p>
         </div>
       ) : feedback ? (
         <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground prose-p:leading-relaxed prose-pre:bg-background/50">

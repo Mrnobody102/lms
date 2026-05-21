@@ -1,11 +1,23 @@
 'use client';
 
 import { defaultLocale, locales } from '@repo/shared';
+import { useTranslations } from 'next-intl';
 import React, { Component, ReactNode } from 'react';
 
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
+}
+
+interface ErrorBoundaryLabels {
+  title: string;
+  unexpected: string;
+  tryAgain: string;
+  goHome: string;
+}
+
+interface InnerProps extends Props {
+  labels: ErrorBoundaryLabels;
 }
 
 interface State {
@@ -22,8 +34,8 @@ function getLocalizedHomePath() {
   return (locales as readonly string[]).includes(locale) ? `/${locale}` : `/${defaultLocale}`;
 }
 
-export class ErrorBoundary extends Component<Props, State> {
-  constructor(props: Props) {
+class ErrorBoundaryInner extends Component<InnerProps, State> {
+  constructor(props: InnerProps) {
     super(props);
     this.state = { hasError: false };
   }
@@ -48,9 +60,9 @@ export class ErrorBoundary extends Component<Props, State> {
           <div className="max-w-md w-full text-center space-y-6">
             <div className="space-y-2">
               <h1 className="text-6xl font-black text-destructive">!</h1>
-              <h2 className="text-2xl font-bold text-foreground">Something went wrong</h2>
+              <h2 className="text-2xl font-bold text-foreground">{this.props.labels.title}</h2>
               <p className="text-sm text-muted-foreground">
-                {this.state.error?.message || 'An unexpected error occurred'}
+                {this.state.error?.message || this.props.labels.unexpected}
               </p>
             </div>
             <div className="flex gap-3 justify-center">
@@ -58,13 +70,13 @@ export class ErrorBoundary extends Component<Props, State> {
                 onClick={this.handleReset}
                 className="px-6 py-3 bg-primary text-primary-foreground font-bold rounded-2xl hover:opacity-90 transition-opacity"
               >
-                Try Again
+                {this.props.labels.tryAgain}
               </button>
               <button
                 onClick={() => window.location.assign(getLocalizedHomePath())}
                 className="px-6 py-3 border border-border text-foreground font-bold rounded-2xl hover:bg-muted transition-colors"
               >
-                Go Home
+                {this.props.labels.goHome}
               </button>
             </div>
           </div>
@@ -73,4 +85,20 @@ export class ErrorBoundary extends Component<Props, State> {
     }
     return this.props.children;
   }
+}
+
+export function ErrorBoundary(props: Props) {
+  const t = useTranslations('Student');
+
+  return (
+    <ErrorBoundaryInner
+      {...props}
+      labels={{
+        title: t('errorBoundary.title'),
+        unexpected: t('errorBoundary.unexpected'),
+        tryAgain: t('errorBoundary.tryAgain'),
+        goHome: t('errorBoundary.goHome'),
+      }}
+    />
+  );
 }

@@ -59,11 +59,7 @@ export function MatchingQuestion({ options, value, disabled, onChange }: Matchin
 
   return (
     <div className="mt-4">
-      <p className="mb-4 text-sm text-muted-foreground">
-        {t('practice.matchingInstruction', {
-          fallback: 'Click a left item, then click a right item to match them.',
-        })}
-      </p>
+      <p className="mb-4 text-sm text-muted-foreground">{t('practice.matchingInstruction')}</p>
       <div className="grid grid-cols-2 gap-8">
         <div className="space-y-3">
           {left.map((leftItem) => {
