@@ -83,7 +83,7 @@ export class AiController {
       data: { aiFeedback: explanation },
     });
 
-    return { success: true, explanation };
+    return { explanation };
   }
 
   @Post('explain/exam/:attemptId/:questionId')
@@ -142,6 +142,6 @@ export class AiController {
       data: { aiFeedback: explanation },
     });
 
-    return { success: true, explanation };
+    return { explanation };
   }
 }

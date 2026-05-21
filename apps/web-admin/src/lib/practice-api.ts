@@ -18,6 +18,9 @@ export interface PracticeQuestion {
   correctAnswer: unknown;
   explanation?: string | null;
   skillTags: string[];
+  audioMediaAssetId?: string | null;
+  audioMediaAsset?: { id: string; url: string | null; status: string } | null;
+  audioReplayLimit?: number | null;
   createdAt: string;
 }
 
@@ -55,6 +58,8 @@ export const practiceApi = {
     correctAnswer: unknown;
     explanation?: string;
     skillTags?: string[];
+    audioMediaAssetId?: string;
+    audioReplayLimit?: number;
   }) {
     return api.post('/practice/questions', data).then((r) => r.data as PracticeQuestion);
   },
@@ -69,6 +74,8 @@ export const practiceApi = {
       correctAnswer?: unknown;
       explanation?: string | null;
       skillTags?: string[];
+      audioMediaAssetId?: string | null;
+      audioReplayLimit?: number | null;
     },
   ) {
     return api.patch(`/practice/questions/${id}`, data).then((r) => r.data as PracticeQuestion);

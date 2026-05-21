@@ -1,6 +1,6 @@
 # Backlog Kỹ Thuật Và Theo Dõi Tiến Độ
 
-Cập nhật lần cuối: 2026-05-19 (Batch P9.1 — Skill Mastery Foundation)
+Cập nhật lần cuối: 2026-05-21 (Batch P10.1 — Listening audio prompt)
 
 ## Mục tiêu
 
@@ -14,27 +14,27 @@ Nguyên tắc:
 
 ## Trạng thái tổng quan
 
-| Hạng mục                               | Trạng thái           | Ghi chú                                                                                                                                                        |
-| -------------------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Cookie-first auth cho browser flow     | Đã làm               | Không còn coi `localStorage` là authority chính                                                                                                                |
-| Tenant-aware auth + business API tests | Đã làm               | Có HTTP integration tests cho auth/course/lesson/progress                                                                                                      |
-| Student E2E flow thực tế               | Đã làm               | Đã thay test giả bằng register/login/lesson/progress                                                                                                           |
-| Local release verification             | Đã làm               | Có `build:stable`, `smoke:api`, `test:e2e`, cleanup port                                                                                                       |
-| Health/readiness có DB + Redis check   | Đã làm               | Có `live`, `ready` và smoke runtime thật                                                                                                                       |
-| CI release-grade checks                | Đã làm               | Đã tách fast/build/e2e/api smoke trong workflow                                                                                                                |
-| Migration hygiene production-safe      | Đã làm               | Có runbook baseline, `db:status`, `db:resolve`, guard `db:push` production                                                                                     |
-| Enrollment / access model              | Đang làm             | Đã có DB/API/UI access control, shared policy, DB constraints; bulk enroll/unenroll; đã có reporting theo course, tenant overview và accuracy/dashboard cơ bản |
-| Student dashboard / continue learning  | Đang làm             | Đã có dashboard shell, streak UI, session count, activity calendar và performance report; còn "next best item" và daily review card (P9)                       |
-| Content hierarchy (Program/Level)      | Đã làm               | Program, Level, CourseUnit, lesson; hierarchical reporting; còn drag/drop reorder                                                                              |
-| Practice engine                        | Đã có Student UI MVP | Question bank, exercise set, submit attempt/scoring, enrollment authorization, admin/student practice UI; question types: MC, fill-blank, matching, ordering   |
-| Quiz / Exam attempt                    | Đã có Student UI MVP | Exam template, section/question, start/submit attempt, scoring, review, enrollment authorization, admin/student UI; cùng bộ question types                     |
-| Activation / license code              | Đã làm               | Activation code, license grant, redemption history, expiration/usage limits.                                                                                   |
-| Skill mastery + SRS                    | Đã làm (MVP)         | `Skill` catalog + `SkillMastery` EWMA (Batch P9.1). Đã hoàn thành SRS Core (`ReviewCard`, daily review queue, dashboard card) (Batch P9.2).                    |
-| AI in-context tutor (P8a)              | Chưa làm             | Giải thích lỗi practice/exam review, contextual vocab help. Priority cao nhất trong AI track.                                                                  |
-| AI-generated practice (P8b)            | Chưa làm             | Sinh câu hỏi từ skill yếu, admin duyệt.                                                                                                                        |
-| AI conversation roleplay (P8c)         | Chưa làm             | Scenario-based chat/voice roleplay.                                                                                                                            |
-| Media storage / background jobs        | Chưa làm             | Cần cho listening question và AI audio scoring.                                                                                                                |
-| Listening question type                | Chưa làm             | Blocked by media storage (P10).                                                                                                                                |
+| Hạng mục                               | Trạng thái           | Ghi chú                                                                                                                                                                              |
+| -------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Cookie-first auth cho browser flow     | Đã làm               | Không còn coi `localStorage` là authority chính                                                                                                                                      |
+| Tenant-aware auth + business API tests | Đã làm               | Có HTTP integration tests cho auth/course/lesson/progress                                                                                                                            |
+| Student E2E flow thực tế               | Đã làm               | Đã thay test giả bằng register/login/lesson/progress                                                                                                                                 |
+| Local release verification             | Đã làm               | Có `build:stable`, `smoke:api`, `test:e2e`, cleanup port                                                                                                                             |
+| Health/readiness có DB + Redis check   | Đã làm               | Có `live`, `ready` và smoke runtime thật                                                                                                                                             |
+| CI release-grade checks                | Đã làm               | Đã tách fast/build/e2e/api smoke trong workflow                                                                                                                                      |
+| Migration hygiene production-safe      | Đã làm               | Có runbook baseline, `db:status`, `db:resolve`, guard `db:push` production                                                                                                           |
+| Enrollment / access model              | Đang làm             | Đã có DB/API/UI access control, shared policy, DB constraints; bulk enroll/unenroll; đã có reporting theo course, tenant overview và accuracy/dashboard cơ bản                       |
+| Student dashboard / continue learning  | Đang làm             | Đã có dashboard shell, streak UI, session count, activity calendar, performance report, daily review card và "next best item"; còn chart nâng cao                                    |
+| Content hierarchy (Program/Level)      | Đã làm               | Program, Level, CourseUnit, lesson; hierarchical reporting; còn drag/drop reorder                                                                                                    |
+| Practice engine                        | Đã có Student UI MVP | Question bank, exercise set, submit attempt/scoring, enrollment authorization, admin/student practice UI; question types: MC, fill-blank, matching, ordering, listening audio prompt |
+| Quiz / Exam attempt                    | Đã có Student UI MVP | Exam template, section/question, start/submit attempt, scoring, review, enrollment authorization, admin/student UI; cùng bộ question types và listening audio prompt                 |
+| Activation / license code              | Đã làm               | Activation code, license grant, redemption history, expiration/usage limits.                                                                                                         |
+| Skill mastery + SRS                    | Đã làm (MVP)         | `Skill` catalog + `SkillMastery` EWMA (Batch P9.1). Đã hoàn thành SRS Core (`ReviewCard`, daily review queue, dashboard card) (Batch P9.2).                                          |
+| AI in-context tutor (P8a)              | Đã làm               | Giải thích lỗi practice/exam review, contextual vocab help. Đã hoàn thành MVP.                                                                                                       |
+| AI-generated practice (P8b)            | Chưa làm             | Sinh câu hỏi từ skill yếu, admin duyệt.                                                                                                                                              |
+| AI conversation roleplay (P8c)         | Chưa làm             | Scenario-based chat/voice roleplay.                                                                                                                                                  |
+| Media storage / background jobs        | Đã có core           | S3-compatible storage, presigned upload, MediaAsset, BullMQ jobs; đã dùng cho listening audio prompt.                                                                                |
+| Listening question type                | Đã có MVP            | Audio prompt overlay cho practice/exam question, admin upload, student player với replay limit và SRS playback.                                                                      |
 
 ## Những gì đã hoàn thành
 
@@ -312,8 +312,8 @@ Trạng thái: Đã hoàn thành hạ tầng cốt lõi (Batch P10, 2026-05-19).
 - [x] Signed URL upload cho student (audio bài nói cho AI scoring)
 - [x] Background job queue (BullMQ với `@nestjs/bullmq` và Redis) cho AI evaluation, transcoding, notification
 - [x] Audit trail cho media upload nhạy cảm (thông qua bảng `MediaAsset` trạng thái `UPLOADING`/`READY`/`FAILED`)
-- [ ] Listening question type cho practice và exam (sẽ làm ở Epic tiếp theo)
-- [ ] Audio playback UI trong question renderer (sẽ làm ở Epic tiếp theo)
+- [x] Listening audio prompt cho practice và exam (Batch P10.1)
+- [x] Audio playback UI trong practice/exam/SRS question renderer (Batch P10.1)
 
 ## Bước tiếp theo đề xuất
 
@@ -324,8 +324,8 @@ Thứ tự ưu tiên dựa trên giá trị giáo dục, dependencies và hiện
 3. ✅ SRS review queue MVP (Epic L SRS Core): DONE Batch P9.2.
 4. ✅ AI In-Context Tutor (Epic K P8a): DONE (Batch P8a).
 5. ✅ Media upload pipeline (Epic M P10): DONE (Hạ tầng lưu trữ và job queue đã hoàn thành).
-6. **NEXT**: Listening question type (Epic M): phát triển loại câu hỏi Listening và UI phát audio sau khi media pipeline sẵn sàng.
-7. Time-series reporting + cohort drill-down (Epic I close-out): khi có dữ liệu skill mastery theo thời gian.
+6. ✅ Listening audio prompt (Epic M / P4/P5 close-out): DONE Batch P10.1.
+7. **NEXT**: Time-series reporting + cohort drill-down (Epic I close-out): khi có dữ liệu skill mastery theo thời gian.
 8. AI-Generated Practice (Epic K P8b) → AI Conversation Roleplay (Epic K P8c).
 9. Drag/drop reorder unit & lesson (Epic F optional): backend `order: Int` đã sẵn, chỉ cần UI.
 

@@ -16,6 +16,8 @@ export interface ExamQuestion {
   explanation?: string | null;
   points: number;
   skillTags: string[];
+  audioMediaAsset?: { id: string; url: string | null; status?: string } | null;
+  audioReplayLimit?: number | null;
 }
 
 export interface ExamSection {
@@ -63,8 +65,7 @@ export interface ExamAnswerFeedback {
   pointsAwarded: number;
   correctAnswer: unknown;
   explanation?: string | null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  aiFeedback?: any;
+  aiFeedback?: unknown;
 }
 
 export interface ExamAttemptResult {

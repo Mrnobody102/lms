@@ -15,6 +15,8 @@ export interface PracticeQuestion {
   options?: unknown;
   explanation?: string | null;
   skillTags: string[];
+  audioMediaAsset?: { id: string; url: string | null; status?: string } | null;
+  audioReplayLimit?: number | null;
 }
 
 export interface PracticeExerciseSetSummary {

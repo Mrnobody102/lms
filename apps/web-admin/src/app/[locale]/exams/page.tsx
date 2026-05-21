@@ -36,6 +36,7 @@ import {
   Input,
   Label,
 } from '@/components/ui';
+import { AudioUploadField } from '@/components/media/audio-upload-field';
 import { formatDraftValue, parseCsv, parseList } from '@/features/authoring/draft-utils';
 import { useCourse, useCourses } from '@/hooks/use-courses';
 import { useCreateExam, useDeleteExam, useExam, useExams, useUpdateExam } from '@/hooks/use-exams';
@@ -50,6 +51,9 @@ type ExamQuestionDraft = {
   points: string;
   skillTags: string;
   explanation: string;
+  audioMediaAssetId: string | null;
+  audioUrl: string | null;
+  audioReplayLimit: number | null;
 };
 
 function createExamQuestionDraft(type: ExamQuestionType = 'MULTIPLE_CHOICE'): ExamQuestionDraft {
@@ -65,6 +69,9 @@ function createExamQuestionDraft(type: ExamQuestionType = 'MULTIPLE_CHOICE'): Ex
     points: '1',
     skillTags: '',
     explanation: '',
+    audioMediaAssetId: null,
+    audioUrl: null,
+    audioReplayLimit: null,
   };
 }
 
@@ -863,6 +870,7 @@ export default function AdminExamsPage() {
                               canMoveUp={index > 0}
                               canMoveDown={index < questionDrafts.length - 1}
                               canRemove={questionDrafts.length > 1}
+                              disabled={examSaving}
                               onChange={(patch) => updateQuestionDraft(draftItem.id, patch)}
                               onDuplicate={() => duplicateQuestionDraft(draftItem.id)}
                               onRemove={() => removeQuestionDraft(draftItem.id)}
@@ -987,6 +995,7 @@ function QuestionDraftCard({
   canMoveUp,
   canMoveDown,
   canRemove,
+  disabled,
   onChange,
   onDuplicate,
   onRemove,
@@ -999,6 +1008,7 @@ function QuestionDraftCard({
   canMoveUp: boolean;
   canMoveDown: boolean;
   canRemove: boolean;
+  disabled: boolean;
   onChange: (patch: Partial<ExamQuestionDraft>) => void;
   onDuplicate: () => void;
   onRemove: () => void;
@@ -1104,6 +1114,22 @@ function QuestionDraftCard({
             <p className="text-xs text-muted-foreground">{t('aiQuestionHint')}</p>
           )}
         </div>
+
+        {isAudioPromptQuestionType(draft.type) ? (
+          <AudioUploadField
+            assetId={draft.audioMediaAssetId}
+            audioUrl={draft.audioUrl}
+            replayLimit={draft.audioReplayLimit}
+            disabled={disabled}
+            onChange={({ assetId, audioUrl, replayLimit }) =>
+              onChange({
+                audioMediaAssetId: assetId,
+                audioUrl,
+                audioReplayLimit: replayLimit,
+              })
+            }
+          />
+        ) : null}
 
         {draft.type === 'MULTIPLE_CHOICE' && (
           <div className="space-y-1.5">
@@ -1301,8 +1327,16 @@ function buildExamQuestionPayload(draft: ExamQuestionDraft) {
       explanation: draft.explanation.trim() || undefined,
       points: points ?? 1,
       skillTags,
+      audioMediaAssetId: isAudioPromptQuestionType(draft.type)
+        ? draft.audioMediaAssetId
+        : undefined,
+      audioReplayLimit: isAudioPromptQuestionType(draft.type) ? draft.audioReplayLimit : undefined,
     },
   };
+}
+
+function isAudioPromptQuestionType(type: ExamQuestionType) {
+  return type !== 'AI_EVALUATED_AUDIO' && type !== 'AI_EVALUATED_TEXT';
 }
 
 function hydrateDraftFromExam(
@@ -1357,6 +1391,9 @@ function mapExamQuestionToDraft(question: Exam['sections'][number]['questions'][
     points: String(question.points ?? 1),
     skillTags: question.skillTags.join(', '),
     explanation: question.explanation ?? '',
+    audioMediaAssetId: question.audioMediaAssetId ?? null,
+    audioUrl: question.audioMediaAsset?.url ?? null,
+    audioReplayLimit: question.audioReplayLimit ?? null,
   };
 }
 

@@ -17,6 +17,7 @@ import { Link } from '@/navigation';
 import { MatchingQuestion } from '@/components/lessons/matching-question';
 import { OrderingQuestion } from '@/components/lessons/ordering-question';
 import { AIEvaluationInput } from '@/components/lessons/ai-evaluation-input';
+import { AudioPromptPlayer } from '@/components/practice/audio-prompt-player';
 
 export default function ExamAttemptPage() {
   const t = useTranslations('Student');
@@ -111,10 +112,7 @@ export default function ExamAttemptPage() {
     submitAttempt.mutate(
       questions.map((question) => ({
         questionId: question.id,
-        answer:
-          question.type === 'MULTIPLE_CHOICE'
-            ? Number(answers[question.id])
-            : answers[question.id].trim(),
+        answer: parseSubmittedAnswer(question, answers[question.id]),
       })),
       {
         onSuccess: (data) => {
@@ -308,6 +306,7 @@ function QuestionCard({
 }) {
   const t = useTranslations('Student');
   const options = getOptions(question.options);
+  const audioUrl = question.audioMediaAsset?.url ?? null;
 
   return (
     <section className="rounded-md border bg-card p-5">
@@ -345,6 +344,16 @@ function QuestionCard({
           <h3 className="text-base font-semibold leading-relaxed">{question.prompt}</h3>
         </div>
       </div>
+
+      {audioUrl ? (
+        <div className="mb-4">
+          <AudioPromptPlayer
+            url={audioUrl}
+            replayLimit={question.audioReplayLimit ?? null}
+            unrestricted={disabled}
+          />
+        </div>
+      ) : null}
 
       {question.type === 'MULTIPLE_CHOICE' ? (
         <div className="grid gap-3">
@@ -490,6 +499,22 @@ function ResultSummary({
 
 function getOptions(value: unknown) {
   return Array.isArray(value) ? value.map((item) => String(item)) : [];
+}
+
+function parseSubmittedAnswer(question: ExamQuestion, value: string): unknown {
+  if (question.type === 'MULTIPLE_CHOICE') {
+    return Number(value);
+  }
+
+  if (question.type === 'MATCHING' || question.type === 'ORDERING') {
+    try {
+      return JSON.parse(value) as unknown;
+    } catch {
+      return value;
+    }
+  }
+
+  return value.trim();
 }
 
 function formatAnswer(question: ExamQuestion | undefined, value: unknown) {

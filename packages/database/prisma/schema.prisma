@@ -370,6 +370,9 @@ model PracticeQuestion {
   correctAnswer Json
   explanation   String?
   skillTags     String[]
+  audioMediaAssetId String?
+  audioMediaAsset   MediaAsset?               @relation("PracticeQuestionAudio", fields: [audioMediaAssetId], references: [id], onDelete: SetNull)
+  audioReplayLimit  Int?
   deletedAt     DateTime?
   createdAt     DateTime                      @default(now())
   updatedAt     DateTime                      @updatedAt
@@ -509,6 +512,9 @@ model ExamQuestion {
   explanation   String?
   points        Int              @default(1)
   skillTags     String[]
+  audioMediaAssetId String?
+  audioMediaAsset   MediaAsset?  @relation("ExamQuestionAudio", fields: [audioMediaAssetId], references: [id], onDelete: SetNull)
+  audioReplayLimit  Int?
   order         Int              @default(0)
   createdAt     DateTime         @default(now())
   answers       ExamAnswer[]
@@ -700,6 +706,8 @@ model MediaAsset {
   storageKey   String            @unique
   url          String?
   status       MediaAssetStatus  @default(UPLOADING)
+  practiceQuestions PracticeQuestion[] @relation("PracticeQuestionAudio")
+  examQuestions     ExamQuestion[]     @relation("ExamQuestionAudio")
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
 

@@ -23,6 +23,8 @@ export function useCreatePracticeQuestion() {
       correctAnswer: unknown;
       explanation?: string;
       skillTags?: string[];
+      audioMediaAssetId?: string;
+      audioReplayLimit?: number;
     }) => practiceApi.createQuestion(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['practice-questions'] });
@@ -44,6 +46,8 @@ export function useUpdatePracticeQuestion() {
         correctAnswer?: unknown;
         explanation?: string | null;
         skillTags?: string[];
+        audioMediaAssetId?: string | null;
+        audioReplayLimit?: number | null;
       };
     }) => practiceApi.updateQuestion(data.id, data.payload),
     onSuccess: () => {

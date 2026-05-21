@@ -117,6 +117,13 @@
       "activityCompleted": "Hoàn thành",
       "activitySpent": "Thời gian"
     },
+    "audio": {
+      "label": "Nội dung nghe",
+      "play": "Phát audio",
+      "pause": "Tạm dừng",
+      "unlimited": "Nghe không giới hạn",
+      "replayCountdown": "{count, plural, =0 {Đã hết lượt nghe} other {Còn # lượt nghe}}"
+    },
     "srs": {
       "loading": "Đang tải thẻ ôn tập...",
       "dailyReviewTitle": "Ôn tập hàng ngày",
@@ -128,7 +135,11 @@
       "reviewSessionTitle": "Phiên ôn tập",
       "reviewSessionDone": "Đã hoàn thành mục tiêu hôm nay",
       "reviewSessionDoneDesc": "Bạn đã ôn hết các thẻ đến hạn. Quay lại bảng học tập nhé.",
+      "backToDashboard": "Về bảng học tập",
       "reviewQuestionPrompt": "Câu hỏi",
+      "correctAnswer": "Đáp án đúng",
+      "explanation": "Giải thích",
+      "questionUnavailable": "Không thể tải nội dung câu hỏi. Câu hỏi có thể đã bị xóa.",
       "showAnswer": "Xem đáp án",
       "grade": {
         "again": "Quên",

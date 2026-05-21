@@ -20,6 +20,8 @@ export interface QueueQuestionPayload {
   options: unknown;
   correctAnswer: unknown;
   explanation: string | null;
+  audioMediaAsset: { id: string; url: string | null } | null;
+  audioReplayLimit: number | null;
 }
 
 export interface QueueItem {
@@ -183,9 +185,21 @@ export class SrsService {
       .filter((c) => c.sourceType === ReviewCardSource.EXAM_QUESTION)
       .map((c) => c.sourceId);
 
+    type PracticeQueueRow = {
+      id: string;
+      prompt: string;
+      type: unknown;
+      options: unknown;
+      correctAnswer: unknown;
+      explanation: string | null;
+      audioReplayLimit: number | null;
+      audioMediaAsset: { id: string; url: string | null } | null;
+    };
+    type ExamQueueRow = PracticeQueueRow;
+
     const [practiceQuestions, examQuestions] = await Promise.all([
       practiceIds.length
-        ? this.prisma.practiceQuestion.findMany({
+        ? (this.prisma.practiceQuestion.findMany({
             where: { tenantId, id: { in: practiceIds }, deletedAt: null },
             select: {
               id: true,
@@ -194,11 +208,13 @@ export class SrsService {
               options: true,
               correctAnswer: true,
               explanation: true,
+              audioReplayLimit: true,
+              audioMediaAsset: { select: { id: true, url: true } },
             },
-          })
-        : Promise.resolve([] as Awaited<ReturnType<typeof this.prisma.practiceQuestion.findMany>>),
+          }) as Promise<PracticeQueueRow[]>)
+        : Promise.resolve([] as PracticeQueueRow[]),
       examIds.length
-        ? this.prisma.examQuestion.findMany({
+        ? (this.prisma.examQuestion.findMany({
             where: { tenantId, id: { in: examIds } },
             select: {
               id: true,
@@ -207,9 +223,11 @@ export class SrsService {
               options: true,
               correctAnswer: true,
               explanation: true,
+              audioReplayLimit: true,
+              audioMediaAsset: { select: { id: true, url: true } },
             },
-          })
-        : Promise.resolve([] as Awaited<ReturnType<typeof this.prisma.examQuestion.findMany>>),
+          }) as Promise<ExamQueueRow[]>)
+        : Promise.resolve([] as ExamQueueRow[]),
     ]);
 
     const practiceById = new Map(practiceQuestions.map((q) => [q.id, q]));
@@ -228,6 +246,10 @@ export class SrsService {
             options: source.options,
             correctAnswer: source.correctAnswer,
             explanation: source.explanation,
+            audioMediaAsset: source.audioMediaAsset
+              ? { id: source.audioMediaAsset.id, url: source.audioMediaAsset.url }
+              : null,
+            audioReplayLimit: source.audioReplayLimit ?? null,
           }
         : null;
       return {

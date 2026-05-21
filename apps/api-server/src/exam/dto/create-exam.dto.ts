@@ -56,6 +56,22 @@ export class CreateExamQuestionDto {
   @IsString({ each: true })
   @IsOptional()
   skillTags?: string[];
+
+  @ApiPropertyOptional({ description: 'MediaAsset ID for audio prompt (listening question)' })
+  @IsUUID()
+  @IsOptional()
+  audioMediaAssetId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Maximum replay count; null = unlimited',
+    minimum: 1,
+    maximum: 20,
+  })
+  @IsInt()
+  @Min(1)
+  @Max(20)
+  @IsOptional()
+  audioReplayLimit?: number;
 }
 
 export class CreateExamSectionDto {

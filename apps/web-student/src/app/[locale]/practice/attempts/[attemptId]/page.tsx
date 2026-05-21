@@ -9,6 +9,7 @@ import { usePracticeAttempt } from '@/hooks/use-practice';
 import { getPracticeAttemptStats, PracticeQuestion } from '@/lib/practice-api';
 import { Link } from '@/navigation';
 import { AiTutorButton } from '@/components/lessons/ai-tutor-button';
+import { AudioPromptPlayer } from '@/components/practice/audio-prompt-player';
 
 export default function PracticeAttemptReviewPage() {
   const t = useTranslations('Student');
@@ -148,6 +149,16 @@ export default function PracticeAttemptReviewPage() {
                       </h2>
                     </div>
                   </div>
+
+                  {answer.question.audioMediaAsset?.url ? (
+                    <div className="mb-4">
+                      <AudioPromptPlayer
+                        url={answer.question.audioMediaAsset.url}
+                        replayLimit={answer.question.audioReplayLimit ?? null}
+                        unrestricted
+                      />
+                    </div>
+                  ) : null}
 
                   <div
                     className={`rounded-md border p-4 text-sm ${

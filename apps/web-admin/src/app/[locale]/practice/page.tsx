@@ -6,6 +6,7 @@ import { DraftPreviewCard } from '@/components/authoring/draft-preview-card';
 import { AdminHeader } from '@/components/layout/admin-header';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
+import { AudioUploadField } from '@/components/media/audio-upload-field';
 import {
   Alert,
   AlertDescription,
@@ -66,6 +67,9 @@ export default function AdminPracticePage() {
   const [correctAnswer, setCorrectAnswer] = useState('');
   const [explanation, setExplanation] = useState('');
   const [skillTags, setSkillTags] = useState('');
+  const [audioMediaAssetId, setAudioMediaAssetId] = useState<string | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [audioReplayLimit, setAudioReplayLimit] = useState<number | null>(null);
   const [setTitle, setSetTitle] = useState('');
   const [setDescription, setSetDescription] = useState('');
   const [selectedQuestionIds, setSelectedQuestionIds] = useState<string[]>([]);
@@ -202,6 +206,9 @@ export default function AdminPracticePage() {
     setCorrectAnswer('');
     setExplanation('');
     setSkillTags('');
+    setAudioMediaAssetId(null);
+    setAudioUrl(null);
+    setAudioReplayLimit(null);
   };
 
   const resetExerciseSetDraft = () => {
@@ -242,6 +249,8 @@ export default function AdminPracticePage() {
       correctAnswer: questionDraft.correctAnswerValue,
       explanation: explanation.trim() || null,
       skillTags: questionDraft.skillTags,
+      audioMediaAssetId: isAudioPromptQuestionType(questionType) ? audioMediaAssetId : null,
+      audioReplayLimit: isAudioPromptQuestionType(questionType) ? audioReplayLimit : null,
     };
 
     const mutation = editingQuestionId
@@ -255,6 +264,12 @@ export default function AdminPracticePage() {
           correctAnswer: questionDraft.correctAnswerValue,
           explanation: explanation.trim() || undefined,
           skillTags: questionDraft.skillTags,
+          audioMediaAssetId: isAudioPromptQuestionType(questionType)
+            ? (audioMediaAssetId ?? undefined)
+            : undefined,
+          audioReplayLimit: isAudioPromptQuestionType(questionType)
+            ? (audioReplayLimit ?? undefined)
+            : undefined,
         });
 
     mutation
@@ -307,6 +322,9 @@ export default function AdminPracticePage() {
     setExplanation(question.explanation ?? '');
     setSkillTags(question.skillTags.join(', '));
     setUnitId(question.unitId ?? '');
+    setAudioMediaAssetId(question.audioMediaAssetId ?? null);
+    setAudioUrl(question.audioMediaAsset?.url ?? null);
+    setAudioReplayLimit(question.audioReplayLimit ?? null);
     setMessage({ type: 'success', text: t('practiceQuestionLoadedDraft') });
   };
 
@@ -322,6 +340,9 @@ export default function AdminPracticePage() {
     setCorrectAnswer(formatDraftValue(question.correctAnswer));
     setExplanation(question.explanation ?? '');
     setSkillTags(question.skillTags.join(', '));
+    setAudioMediaAssetId(question.audioMediaAssetId ?? null);
+    setAudioUrl(question.audioMediaAsset?.url ?? null);
+    setAudioReplayLimit(question.audioReplayLimit ?? null);
     setMessage({ type: 'success', text: t('practiceQuestionLoadedDraft') });
   };
 
@@ -1112,6 +1133,20 @@ export default function AdminPracticePage() {
                         />
                       </div>
 
+                      {isAudioPromptQuestionType(questionType) ? (
+                        <AudioUploadField
+                          assetId={audioMediaAssetId}
+                          audioUrl={audioUrl}
+                          replayLimit={audioReplayLimit}
+                          onChange={({ assetId, audioUrl: nextAudioUrl, replayLimit }) => {
+                            setAudioMediaAssetId(assetId);
+                            setAudioUrl(nextAudioUrl);
+                            setAudioReplayLimit(replayLimit);
+                          }}
+                          disabled={questionSaving}
+                        />
+                      ) : null}
+
                       <div className="space-y-1.5">
                         <Label>{t('explanation')}</Label>
                         <textarea
@@ -1455,6 +1490,10 @@ function buildPracticeSetDraft(params: {
     checks,
     isReady: Object.values(checks).every(Boolean),
   };
+}
+
+function isAudioPromptQuestionType(type: PracticeQuestionType) {
+  return type !== 'AI_EVALUATED_AUDIO' && type !== 'AI_EVALUATED_TEXT';
 }
 
 function getPracticeQuestionTypeLabel(

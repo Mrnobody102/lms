@@ -6,6 +6,7 @@ import { BrainCircuit, CheckCircle2, ArrowRight } from 'lucide-react';
 import { useReviewQueue, useSubmitReview } from '@/hooks/use-srs';
 import { Link } from '@/navigation';
 import { StudentNav } from '@/components/layout/student-nav';
+import { AudioPromptPlayer } from '@/components/practice/audio-prompt-player';
 
 export default function ReviewPage() {
   const t = useTranslations('Student.srs');
@@ -41,7 +42,7 @@ export default function ReviewPage() {
             className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-primary px-8 font-bold text-primary-foreground hover:opacity-90 transition-all shadow-lg shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0"
           >
             <ArrowRight className="h-5 w-5" />
-            Về Dashboard
+            {t('backToDashboard')}
           </Link>
         </main>
       </div>
@@ -91,6 +92,15 @@ export default function ReviewPage() {
                   className="text-xl font-medium leading-relaxed"
                   dangerouslySetInnerHTML={{ __html: question.prompt }}
                 />
+                {question.audioMediaAsset?.url ? (
+                  <div className="mt-6">
+                    <AudioPromptPlayer
+                      url={question.audioMediaAsset.url}
+                      replayLimit={question.audioReplayLimit}
+                      unrestricted
+                    />
+                  </div>
+                ) : null}
 
                 {Array.isArray(question.options) ? (
                   <div className="mt-6 space-y-3">
@@ -106,7 +116,7 @@ export default function ReviewPage() {
               {showAnswer ? (
                 <div className="p-8 bg-primary/5">
                   <div className="mb-6">
-                    <p className="text-sm font-semibold text-primary mb-2">Đáp án đúng</p>
+                    <p className="text-sm font-semibold text-primary mb-2">{t('correctAnswer')}</p>
                     <div className="p-4 rounded-lg bg-primary/10 border border-primary/20 font-medium">
                       {typeof question.correctAnswer === 'string'
                         ? question.correctAnswer
@@ -115,7 +125,9 @@ export default function ReviewPage() {
                   </div>
                   {question.explanation && (
                     <div>
-                      <p className="text-sm font-semibold text-muted-foreground mb-2">Giải thích</p>
+                      <p className="text-sm font-semibold text-muted-foreground mb-2">
+                        {t('explanation')}
+                      </p>
                       <div
                         className="text-sm text-foreground/80 leading-relaxed"
                         dangerouslySetInnerHTML={{ __html: question.explanation }}
@@ -136,7 +148,7 @@ export default function ReviewPage() {
             </div>
           ) : (
             <div className="rounded-xl border border-dashed bg-card p-8 text-center text-muted-foreground mb-8">
-              Không thể tải nội dung câu hỏi (có thể đã bị xóa).
+              {t('questionUnavailable')}
             </div>
           )}
 

@@ -41,6 +41,8 @@ export function useCreateExam() {
           explanation?: string;
           points?: number;
           skillTags?: string[];
+          audioMediaAssetId?: string | null;
+          audioReplayLimit?: number | null;
         }>;
       }>;
     }) => examApi.createExam(data),
@@ -74,6 +76,8 @@ export function useUpdateExam() {
             explanation?: string;
             points?: number;
             skillTags?: string[];
+            audioMediaAssetId?: string | null;
+            audioReplayLimit?: number | null;
           }>;
         }>;
       };

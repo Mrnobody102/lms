@@ -18,6 +18,14 @@ function createSrsStub() {
   };
 }
 
+function createMediaStub() {
+  return {
+    validateAudioAsset: vi.fn().mockResolvedValue({ id: 'asset-1', status: 'READY' }),
+    createPresignedUrl: vi.fn(),
+    markUploadComplete: vi.fn(),
+  };
+}
+
 describe('ExamService', () => {
   it('should create an exam with ordered sections and questions after validating course ownership', async () => {
     const prisma = {
@@ -40,6 +48,7 @@ describe('ExamService', () => {
       learningAccess as never,
       createSkillMasteryStub() as never,
       createSrsStub() as never,
+      createMediaStub() as never,
     );
 
     await expect(
@@ -158,6 +167,7 @@ describe('ExamService', () => {
       learningAccess as never,
       createSkillMasteryStub() as never,
       createSrsStub() as never,
+      createMediaStub() as never,
     );
 
     const result = await service.submitAttempt(
@@ -257,6 +267,7 @@ describe('ExamService', () => {
       learningAccess as never,
       createSkillMasteryStub() as never,
       createSrsStub() as never,
+      createMediaStub() as never,
     );
 
     await expect(
@@ -314,6 +325,7 @@ describe('ExamService', () => {
       learningAccess as never,
       createSkillMasteryStub() as never,
       createSrsStub() as never,
+      createMediaStub() as never,
     );
 
     const result = await service.startAttempt('exam-1', 'tenant-1', {
@@ -372,6 +384,7 @@ describe('ExamService', () => {
       learningAccess as never,
       createSkillMasteryStub() as never,
       createSrsStub() as never,
+      createMediaStub() as never,
     );
 
     await expect(
@@ -413,6 +426,7 @@ describe('ExamService', () => {
       learningAccess as never,
       createSkillMasteryStub() as never,
       createSrsStub() as never,
+      createMediaStub() as never,
     );
 
     const result = await service.getExam('exam-1', 'tenant-1', {
@@ -453,6 +467,7 @@ describe('ExamService', () => {
       learningAccess as never,
       createSkillMasteryStub() as never,
       createSrsStub() as never,
+      createMediaStub() as never,
     );
 
     await service.updateExam('exam-1', 'tenant-1', {
@@ -518,6 +533,7 @@ describe('ExamService', () => {
       learningAccess as never,
       createSkillMasteryStub() as never,
       createSrsStub() as never,
+      createMediaStub() as never,
     );
 
     await service.removeExam('exam-1', 'tenant-1');
@@ -563,6 +579,7 @@ describe('ExamService', () => {
       learningAccess as never,
       createSkillMasteryStub() as never,
       createSrsStub() as never,
+      createMediaStub() as never,
     );
 
     const result = await service.listAttempts('tenant-1', { id: 'user-1', role: Role.STUDENT }, {});
@@ -618,6 +635,7 @@ describe('ExamService', () => {
       learningAccess as never,
       createSkillMasteryStub() as never,
       createSrsStub() as never,
+      createMediaStub() as never,
     );
 
     const result = await service.getAttempt('attempt-1', 'tenant-1', {
@@ -678,6 +696,7 @@ describe('ExamService', () => {
       learningAccess as never,
       createSkillMasteryStub() as never,
       createSrsStub() as never,
+      createMediaStub() as never,
     );
 
     const result = await service.getAttempt('attempt-1', 'tenant-1', {

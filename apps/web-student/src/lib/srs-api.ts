@@ -10,6 +10,8 @@ export interface QueueQuestionPayload {
   options: unknown;
   correctAnswer: unknown;
   explanation: string | null;
+  audioMediaAsset: { id: string; url: string | null } | null;
+  audioReplayLimit: number | null;
 }
 
 export interface ReviewQueueItem {

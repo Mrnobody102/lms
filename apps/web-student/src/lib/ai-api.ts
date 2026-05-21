@@ -1,7 +1,6 @@
 import api from './api';
 
 export interface AiExplainResponse {
-  success: boolean;
   explanation: string;
 }
 

@@ -7,6 +7,7 @@ import {
   normalizeQuestionPayload,
   normalizeSubmittedAnswer,
 } from '../common/utils/answer-validation.util';
+import { MediaService } from '../media/media.service';
 import { SkillMasteryService } from '../skill/skill-mastery.service';
 import { SrsService } from '../srs/srs.service';
 import { AiEvaluationService, type PracticeAiFeedback } from './ai-evaluation.service';
@@ -35,6 +36,7 @@ export class PracticeService {
     private readonly learningAccess: LearningAccessService,
     private readonly skillMastery: SkillMasteryService,
     private readonly srs: SrsService,
+    private readonly media: MediaService,
     private readonly aiEvaluation: AiEvaluationService = new AiEvaluationService(),
   ) {}
 
@@ -49,10 +51,15 @@ export class PracticeService {
       correctAnswer: unknown;
       explanation?: string;
       skillTags?: string[];
+      audioMediaAssetId?: string;
+      audioReplayLimit?: number;
     },
   ) {
     await this.ensureCourse(tenantId, data.courseId);
     await this.ensureUnit(tenantId, data.courseId, data.unitId);
+    if (data.audioMediaAssetId) {
+      await this.media.validateAudioAsset(tenantId, data.audioMediaAssetId);
+    }
     const questionPayload = normalizeQuestionPayload({
       type: data.type,
       options: data.options,
@@ -73,6 +80,8 @@ export class PracticeService {
         correctAnswer: questionPayload.correctAnswer as Prisma.InputJsonValue,
         explanation: data.explanation,
         skillTags: data.skillTags ?? [],
+        audioMediaAssetId: data.audioMediaAssetId ?? null,
+        audioReplayLimit: data.audioReplayLimit ?? null,
       },
     });
   }
@@ -88,6 +97,8 @@ export class PracticeService {
       correctAnswer?: unknown;
       explanation?: string | null;
       skillTags?: string[];
+      audioMediaAssetId?: string | null;
+      audioReplayLimit?: number | null;
     },
   ) {
     const question = await this.prisma.practiceQuestion.findFirst({
@@ -96,6 +107,10 @@ export class PracticeService {
 
     if (!question) {
       throw new NotFoundException(`Practice question with ID ${id} not found`);
+    }
+
+    if (data.audioMediaAssetId) {
+      await this.media.validateAudioAsset(tenantId, data.audioMediaAssetId);
     }
 
     const nextUnitId =
@@ -121,6 +136,12 @@ export class PracticeService {
         correctAnswer: normalized.correctAnswer as Prisma.InputJsonValue,
         explanation: data.explanation === undefined ? question.explanation : data.explanation,
         skillTags: data.skillTags ?? question.skillTags,
+        audioMediaAssetId:
+          data.audioMediaAssetId === undefined
+            ? question.audioMediaAssetId
+            : data.audioMediaAssetId,
+        audioReplayLimit:
+          data.audioReplayLimit === undefined ? question.audioReplayLimit : data.audioReplayLimit,
       },
     });
   }
@@ -418,6 +439,11 @@ export class PracticeService {
                 correctAnswer: true,
                 explanation: true,
                 skillTags: true,
+                audioMediaAssetId: true,
+                audioReplayLimit: true,
+                audioMediaAsset: {
+                  select: { id: true, url: true, status: true },
+                },
               },
             },
           },
@@ -678,6 +704,11 @@ export class PracticeService {
               prompt: true,
               options: true,
               skillTags: true,
+              audioMediaAssetId: true,
+              audioReplayLimit: true,
+              audioMediaAsset: {
+                select: { id: true, url: true, status: true },
+              },
               ...(includeCorrectAnswers ? { correctAnswer: true, explanation: true } : {}),
             },
           },

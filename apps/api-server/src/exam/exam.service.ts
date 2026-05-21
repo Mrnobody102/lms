@@ -13,6 +13,7 @@ import {
   normalizeQuestionPayload,
   normalizeSubmittedAnswer,
 } from '../common/utils/answer-validation.util';
+import { MediaService } from '../media/media.service';
 import { SkillMasteryService } from '../skill/skill-mastery.service';
 import { SrsService } from '../srs/srs.service';
 import { CreateExamDto } from './dto/create-exam.dto';
@@ -54,11 +55,28 @@ export class ExamService {
     private readonly learningAccess: LearningAccessService,
     private readonly skillMastery: SkillMasteryService,
     private readonly srs: SrsService,
+    private readonly media: MediaService,
   ) {}
+
+  private async validateAudioAssets(
+    tenantId: string,
+    sections: { questions: { audioMediaAssetId?: string | null }[] }[],
+  ): Promise<void> {
+    const assetIds = new Set<string>();
+    for (const section of sections) {
+      for (const question of section.questions) {
+        if (question.audioMediaAssetId) assetIds.add(question.audioMediaAssetId);
+      }
+    }
+    for (const assetId of assetIds) {
+      await this.media.validateAudioAsset(tenantId, assetId);
+    }
+  }
 
   async createExam(tenantId: string, data: CreateExamDto) {
     await this.ensureCourse(tenantId, data.courseId);
     await this.ensureUnit(tenantId, data.courseId, data.unitId);
+    await this.validateAudioAssets(tenantId, data.sections);
     const sections = data.sections.map((section) => ({
       ...section,
       questions: section.questions.map((question) => ({
@@ -99,6 +117,8 @@ export class ExamService {
                 explanation: question.explanation,
                 points: question.points ?? 1,
                 skillTags: question.skillTags ?? [],
+                audioMediaAssetId: question.audioMediaAssetId ?? null,
+                audioReplayLimit: question.audioReplayLimit ?? null,
                 order: questionIndex,
               })),
             },
@@ -153,6 +173,8 @@ export class ExamService {
       });
     }
 
+    await this.validateAudioAssets(tenantId, data.sections);
+
     const sections = data.sections.map((section) => ({
       ...section,
       questions: section.questions.map((question) => ({
@@ -195,6 +217,8 @@ export class ExamService {
                 explanation: question.explanation,
                 points: question.points ?? 1,
                 skillTags: question.skillTags ?? [],
+                audioMediaAssetId: question.audioMediaAssetId ?? null,
+                audioReplayLimit: question.audioReplayLimit ?? null,
                 order: questionIndex,
               })),
             },
@@ -632,6 +656,11 @@ export class ExamService {
               options: true,
               points: true,
               skillTags: true,
+              audioMediaAssetId: true,
+              audioReplayLimit: true,
+              audioMediaAsset: {
+                select: { id: true, url: true, status: true },
+              },
               ...(includeCorrectAnswers ? { correctAnswer: true, explanation: true } : {}),
             },
           },

@@ -4,11 +4,14 @@ import {
   IsArray,
   IsDefined,
   IsEnum,
+  IsInt,
   IsOptional,
   IsString,
   IsUUID,
   ArrayMaxSize,
+  Max,
   MaxLength,
+  Min,
 } from 'class-validator';
 import { ANSWER_LIMITS } from '../../common/utils/answer-validation.util';
 
@@ -54,4 +57,20 @@ export class CreatePracticeQuestionDto {
   @IsString({ each: true })
   @IsOptional()
   skillTags?: string[];
+
+  @ApiPropertyOptional({ description: 'MediaAsset ID for audio prompt (listening question)' })
+  @IsUUID()
+  @IsOptional()
+  audioMediaAssetId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Maximum number of times the audio can be replayed; null = unlimited',
+    minimum: 1,
+    maximum: 20,
+  })
+  @IsInt()
+  @Min(1)
+  @Max(20)
+  @IsOptional()
+  audioReplayLimit?: number;
 }

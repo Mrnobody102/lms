@@ -76,6 +76,18 @@
       "studentsTab": "Students",
       "skillsTab": "Skills"
     },
+    "questionAudio": {
+      "label": "Listening audio",
+      "attach": "Attach audio",
+      "change": "Change",
+      "remove": "Remove",
+      "uploading": "Uploading...",
+      "uploadError": "Could not upload audio file.",
+      "hint": "Optional. Upload an audio prompt for this question.",
+      "replayLimitLabel": "Replay limit",
+      "replayLimitPlaceholder": "Empty = unlimited",
+      "replayLimitHint": "Maximum 20 plays per attempt."
+    },
     "skills": {
       "navLabel": "Skills",
       "title": "Skills",

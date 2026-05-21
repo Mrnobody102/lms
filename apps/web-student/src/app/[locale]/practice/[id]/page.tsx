@@ -15,6 +15,7 @@ import { Link } from '@/navigation';
 import { AIEvaluationInput } from '@/components/lessons/ai-evaluation-input';
 import { MatchingQuestion } from '@/components/lessons/matching-question';
 import { OrderingQuestion } from '@/components/lessons/ordering-question';
+import { AudioPromptPlayer } from '@/components/practice/audio-prompt-player';
 
 export default function PracticeAttemptPage() {
   const t = useTranslations('Student');
@@ -54,18 +55,18 @@ export default function PracticeAttemptPage() {
 
     submitAttempt.mutate(
       questions.map((question) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let answerValue: any = answers[question.id];
+        const rawAnswer = answers[question.id];
+        let answerValue: unknown = rawAnswer;
         if (question.type === 'MULTIPLE_CHOICE') {
-          answerValue = Number(answerValue);
+          answerValue = Number(rawAnswer);
         } else if (question.type === 'MATCHING' || question.type === 'ORDERING') {
           try {
-            answerValue = JSON.parse(answerValue);
+            answerValue = JSON.parse(rawAnswer) as unknown;
           } catch {
             // fallback
           }
         } else {
-          answerValue = answerValue.trim();
+          answerValue = rawAnswer.trim();
         }
 
         return {
@@ -220,6 +221,7 @@ function QuestionCard({
   const t = useTranslations('Student');
   const options = getOptions(question.options);
   const isAiQuestion = isAiQuestionType(question.type);
+  const audioUrl = question.audioMediaAsset?.url ?? null;
 
   return (
     <section className="rounded-md border bg-card p-5">
@@ -254,6 +256,16 @@ function QuestionCard({
           <h2 className="text-base font-semibold leading-relaxed">{question.prompt}</h2>
         </div>
       </div>
+
+      {audioUrl ? (
+        <div className="mb-4">
+          <AudioPromptPlayer
+            url={audioUrl}
+            replayLimit={question.audioReplayLimit ?? null}
+            unrestricted={disabled}
+          />
+        </div>
+      ) : null}
 
       {question.type === 'MULTIPLE_CHOICE' ? (
         <div className="grid gap-3">

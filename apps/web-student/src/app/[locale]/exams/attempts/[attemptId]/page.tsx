@@ -9,6 +9,7 @@ import { ExamQuestion } from '@/lib/exam-api';
 import { Link } from '@/navigation';
 import { AIFeedbackPanel } from '@/components/lessons/ai-feedback-panel';
 import { AiTutorButton } from '@/components/lessons/ai-tutor-button';
+import { AudioPromptPlayer } from '@/components/practice/audio-prompt-player';
 
 export default function ExamAttemptReviewPage() {
   const t = useTranslations('Student');
@@ -177,6 +178,16 @@ export default function ExamAttemptReviewPage() {
                         </p>
                       </div>
                     </div>
+
+                    {answer.question.audioMediaAsset?.url ? (
+                      <div className="mb-4">
+                        <AudioPromptPlayer
+                          url={answer.question.audioMediaAsset.url}
+                          replayLimit={answer.question.audioReplayLimit ?? null}
+                          unrestricted
+                        />
+                      </div>
+                    ) : null}
 
                     <div
                       className={`rounded-md border p-4 text-sm ${

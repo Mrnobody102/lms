@@ -1,6 +1,6 @@
 # Kế Hoạch Triển Khai LMS Platform
 
-Cập nhật lần cuối: 2026-05-19 (Batch P9.1 — Skill Mastery Foundation)
+Cập nhật lần cuối: 2026-05-21 (Batch P10.1 — Listening audio prompt)
 
 ## Định hướng sản phẩm
 
@@ -47,16 +47,16 @@ Nguyên tắc learning-science:
 
 Chưa có hoặc mới ở mức sơ khai:
 
-- Dashboard học tập đã có continue learning, streak, activity calendar và performance report; còn chart nâng cao và "next best item" recommendation.
-- Practice backend, admin UI và student attempt UI MVP đã có. Question types đã có multiple choice, fill blank, matching, ordering. Còn thiếu listening (cần media pipeline).
-- Exam/test backend MVP, admin template UI và student exam UI đã có với cùng bộ question types.
+- Dashboard học tập đã có continue learning, streak, activity calendar, performance report, daily review và "next best item"; còn chart nâng cao.
+- Practice backend, admin UI và student attempt UI MVP đã có. Question types đã có multiple choice, fill blank, matching, ordering; listening audio prompt đã có bằng audio overlay trên question hiện có.
+- Exam/test backend MVP, admin template UI và student exam UI đã có với cùng bộ question types và listening audio prompt.
 - Reporting theo enrollment/progress, activity calendar, practice/exam accuracy, drill-down Program → Level → Course → Unit/Skills đã có. Còn thiếu time-series trends và cohort drill-down.
 - Activation/license code đã hoàn thành MVP.
 - Program/Level hierarchy đã có (Batch A): schema, API, admin UI, hierarchical reporting.
-- Skill mastery model: chưa có (mới chỉ có rolling accuracy snapshot).
-- Spaced repetition system: chưa có.
-- AI in-context tutor / conversation: chưa có.
-- Media storage/background jobs cho audio/video: chưa có.
+- Skill mastery model: đã có MVP (`Skill`, `SkillMastery`, EWMA).
+- Spaced repetition system: đã có MVP (`ReviewCard`, daily review, SM-2 scheduling).
+- AI in-context tutor đã có MVP; AI conversation roleplay chưa có.
+- Media storage/background jobs cho audio/video: đã có hạ tầng core và đã dùng cho listening audio prompt.
 - Audit log cho hành động enrollment nhạy cảm (bulk): chưa đủ — cần kiểm tra và bổ sung.
 
 ## Nguyên tắc roadmap
@@ -137,8 +137,8 @@ Phạm vi:
 - Daily activity/streak.
 - Progress chart đơn giản.
 - Empty states khi chưa được enroll hoặc chưa có nội dung.
-- "Next best item" recommendation (kết hợp continue lesson + due SRS card + skill yếu) — cần sau khi có SRS và SkillMastery.
-- Daily review card (số card SRS đến hạn) — sau khi có P9.
+- "Next best item" recommendation (kết hợp continue lesson + due SRS card + skill yếu).
+- Daily review card (số card SRS đến hạn).
 
 Data cần bổ sung:
 
@@ -193,11 +193,11 @@ Trạng thái: backend MVP, admin management UI và student attempt UI đã có.
 - Student UI `/practice` làm bài và xem feedback ngay sau khi nộp.
 - Student-facing practice reads không lộ đáp án hoặc giải thích trước khi submit.
 - Student có attempt history/review UI cho practice qua recent attempts và route review riêng.
-- Skill tags theo practice question (vocabulary, grammar, reading, listening — enum đã có, chưa có media).
+- Skill tags theo practice question (vocabulary, grammar, reading, listening) và audio media prompt cho câu hỏi nghe.
+- Listening audio prompt: admin gắn audio từ media pipeline, student nghe bằng player có replay limit trong attempt/review/SRS.
 
 Còn cần:
 
-- Question type `listening`: cần media upload pipeline trước (xem P10 Media).
 - Skill tags filter trên student practice UI (chọn luyện theo kỹ năng yếu).
 
 Không nên nhét lâu dài vào `Lesson.quiz`; cần tách domain practice.
@@ -223,10 +223,11 @@ Trạng thái: backend MVP, admin template UI và student exam UI đã có.
 - Student-facing exam reads không lộ đáp án hoặc giải thích trước khi submit.
 - Timer enforcement ở mức attempt đã có; backend reject submit quá hạn và UI hiển thị countdown/resume attempt còn hạn.
 - Student có attempt history/review UI cho exam qua recent attempts, resume in-progress attempt và route review riêng.
+- Listening audio prompt: admin gắn audio từ media pipeline, student nghe bằng player có replay limit trong attempt/review.
 
 Còn cần:
 
-- Question type `listening`: cần media upload pipeline trước (xem P10 Media).
+- Không còn blocker listening MVP; listening passage 1 audio/nhiều câu hỏi vẫn để sau MVP.
 
 ### P6. Reporting
 
@@ -355,14 +356,15 @@ Còn cần (SRS Core):
 
 Mục tiêu: nền tảng cho listening question, AI audio scoring, video lesson tracking.
 
-Trạng thái: chưa có.
+Trạng thái: đã có hạ tầng core và đã dùng cho listening audio prompt.
 
 Phạm vi:
 
 - Object storage abstraction (S3-compatible).
-- Upload signed URL cho admin và (sau này) cho student bài nói.
+- Upload signed URL cho admin và student.
 - Background job queue cho AI evaluation, audio transcoding, email/notification.
-- Audit trail cho media upload nhạy cảm.
+- Audit trail cho media upload nhạy cảm qua `MediaAsset`.
+- Listening audio prompt cho practice/exam question.
 
 Phụ thuộc cho: P4/P5 listening question, P8c audio scoring.
 
@@ -375,8 +377,8 @@ Thứ tự ưu tiên dựa trên giá trị giáo dục, dependencies và hiện
 3. **SRS Review Queue MVP** (P9 phần lõi) ✅ DONE: Thẻ từ practice answer, daily review trên dashboard, session ôn tập, "next best item" recommendation.
 4. **AI In-Context Tutor** (P8a) ✅ DONE: Nhúng "Giải thích vì sao sai" vào practice/exam review, dùng usage quota và Gemini API.
 5. **Media upload pipeline** (P10) ✅ DONE: Hạ tầng lưu trữ S3 Storage client và background job queue (BullMQ + Redis) hoàn thành.
-6. **Listening question type** (P4/P5 close-out): phát triển loại câu hỏi Listening và UI phát audio sau khi P10 sẵn sàng. ← **NEXT**
-7. **Time-series reporting + cohort drill-down** (P6 close-out): khi có dữ liệu skill mastery theo thời gian.
+6. **Listening audio prompt** (P4/P5 close-out) ✅ DONE: Practice/exam questions có audio attachment, admin upload, student player và SRS playback.
+7. **Time-series reporting + cohort drill-down** (P6 close-out): khi có dữ liệu skill mastery theo thời gian. ← **NEXT**
 8. **AI-Generated Practice** (P8b) → **AI Conversation Roleplay** (P8c).
 9. **Drag/drop reorder unit và lesson** (P3 polish, có thể chen ngang khi có thời gian).
 

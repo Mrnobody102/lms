@@ -76,6 +76,18 @@
       "studentsTab": "Học viên",
       "skillsTab": "Kỹ năng"
     },
+    "questionAudio": {
+      "label": "Audio (Listening)",
+      "attach": "Đính kèm audio",
+      "change": "Đổi audio",
+      "remove": "Xóa",
+      "uploading": "Đang tải lên...",
+      "uploadError": "Không upload được file audio.",
+      "hint": "Tùy chọn. Đính kèm audio cho câu hỏi nghe.",
+      "replayLimitLabel": "Số lần nghe lại",
+      "replayLimitPlaceholder": "Bỏ trống = không giới hạn",
+      "replayLimitHint": "Tối đa 20 lần mỗi lần làm bài."
+    },
     "skills": {
       "navLabel": "Kỹ năng",
       "title": "Kỹ năng",

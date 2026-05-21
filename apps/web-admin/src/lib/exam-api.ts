@@ -17,6 +17,9 @@ export interface ExamQuestion {
   explanation?: string | null;
   points: number;
   skillTags: string[];
+  audioMediaAssetId?: string | null;
+  audioMediaAsset?: { id: string; url: string | null; status?: string } | null;
+  audioReplayLimit?: number | null;
 }
 
 export interface ExamSection {
@@ -72,6 +75,8 @@ export const examApi = {
         explanation?: string;
         points?: number;
         skillTags?: string[];
+        audioMediaAssetId?: string | null;
+        audioReplayLimit?: number | null;
       }>;
     }>;
   }) {
@@ -98,6 +103,8 @@ export const examApi = {
           explanation?: string;
           points?: number;
           skillTags?: string[];
+          audioMediaAssetId?: string | null;
+          audioReplayLimit?: number | null;
         }>;
       }>;
     },
