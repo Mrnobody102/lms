@@ -84,6 +84,8 @@ export const envSchema = z
     ALLOW_TENANT_HEADER_IN_PRODUCTION: booleanEnvSchema,
     AUTH_COOKIE_SAME_SITE: z.enum(['lax', 'strict', 'none']).default('lax'),
     AUTH_COOKIE_DOMAIN: z.string().optional(),
+    GOOGLE_CLIENT_ID: z.string().optional(),
+    GOOGLE_CLIENT_IDS: z.string().optional(),
 
     // Redis
     REDIS_URL: redisUrlSchema.optional(),

@@ -11,10 +11,11 @@ export default createApiClient({
     const locale = window.location.pathname.split('/')[1];
     const safeLocale = (locales as readonly string[]).includes(locale) ? locale : defaultLocale;
     const loginPath = `/${safeLocale}/login`;
-    window.location.assign(
-      window.location.pathname === loginPath
-        ? loginPath
-        : `${loginPath}?returnUrl=${encodeURIComponent(returnUrl)}`,
-    );
+
+    if (window.location.pathname === loginPath) {
+      return;
+    }
+
+    window.location.assign(`${loginPath}?returnUrl=${encodeURIComponent(returnUrl)}`);
   },
 });

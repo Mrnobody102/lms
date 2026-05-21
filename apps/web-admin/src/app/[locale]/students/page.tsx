@@ -7,6 +7,7 @@ import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
 import { Alert, AlertDescription, Badge, Button, Input } from '@/components/ui';
 import { useStudents, useUpdateStudentStatus } from '@/hooks/use-admin-users';
+import { PaginationControls } from '@repo/ui';
 import {
   AlertCircle,
   CheckCircle2,
@@ -25,6 +26,7 @@ export default function AdminStudentsPage() {
   const locale = useLocale();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
+  const [page, setPage] = useState(1);
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [bulkAction, setBulkAction] = useState<'activate' | 'deactivate' | null>(null);
   const [bulkConfirm, setBulkConfirm] = useState(false);
@@ -42,7 +44,14 @@ export default function AdminStudentsPage() {
     }
   }, []);
 
+  useEffect(() => {
+    setPage(1);
+    setSelectedStudentIds([]);
+  }, [debouncedSearch, statusFilter]);
+
   const { data, isLoading, isError } = useStudents({
+    page,
+    limit: 20,
     search: debouncedSearch.trim() || undefined,
     isActive,
   });
@@ -59,6 +68,7 @@ export default function AdminStudentsPage() {
 
   const students = useMemo(() => data?.data ?? [], [data]);
   const total = data?.meta.total ?? 0;
+  const totalPages = data?.meta.totalPages ?? 1;
   const visibleStudents = students;
   const selectedStudents = useMemo(
     () => visibleStudents.filter((student) => selectedStudentIds.includes(student.id)),
@@ -78,6 +88,7 @@ export default function AdminStudentsPage() {
   const clearFilters = () => {
     setSearch('');
     setStatusFilter('all');
+    setPage(1);
     setSelectedStudentIds([]);
   };
 
@@ -167,6 +178,7 @@ export default function AdminStudentsPage() {
                     type="button"
                     onClick={() => {
                       setStatusFilter(filter.key);
+                      setPage(1);
                       setSelectedStudentIds([]);
                     }}
                     className={`inline-flex h-10 items-center justify-center rounded-lg border px-4 text-sm font-medium transition-colors ${
@@ -381,6 +393,22 @@ export default function AdminStudentsPage() {
                       </div>
                     </div>
                   ))}
+                </div>
+                <div className="border-t bg-muted/10 px-5 py-4">
+                  <PaginationControls
+                    page={page}
+                    totalPages={totalPages}
+                    disabled={isLoading}
+                    labels={{
+                      previous: t('previousPage'),
+                      next: t('nextPage'),
+                      pageValue: t('pageValue', { page, total: Math.max(totalPages, 1) }),
+                    }}
+                    onPageChange={(nextPage) => {
+                      setPage(nextPage);
+                      setSelectedStudentIds([]);
+                    }}
+                  />
                 </div>
               </div>
             )}

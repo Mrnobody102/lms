@@ -73,7 +73,7 @@ export const adminUserApi = {
       .get('/admin/users', {
         params: {
           page: params?.page ?? 1,
-          limit: params?.limit ?? 100,
+          limit: params?.limit ?? 20,
           role: 'STUDENT',
           search: params?.search,
           isActive: hasExplicitActiveFilter ? params?.isActive : true,

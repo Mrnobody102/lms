@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   Monitor,
@@ -16,7 +16,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { defaultApiClient } from '@repo/api-client';
-import { Button, Badge } from '@repo/ui';
+import { Button, Badge, PaginationControls } from '@repo/ui';
 
 interface Session {
   id: string;
@@ -40,35 +40,54 @@ interface Session {
   isCurrent: boolean;
 }
 
+interface SessionPage {
+  data: Session[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 export function SessionManager() {
   const t = useTranslations('Student.settings.sessions');
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [revokingId, setRevokingId] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const fetchSessions = async () => {
+  const fetchSessions = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await defaultApiClient.get<Session[]>('/user-sessions/me');
-      setSessions(response.data);
+      const response = await defaultApiClient.get<SessionPage>('/user-sessions/me', {
+        params: { page, limit: 5 },
+      });
+      if (response.data.data.length === 0 && response.data.meta.total > 0 && page > 1) {
+        setPage(page - 1);
+        return;
+      }
+      setSessions(response.data.data);
+      setTotalPages(Math.max(response.data.meta.totalPages, 1));
     } catch (_error) {
       console.error('Failed to fetch sessions:', _error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [page]);
 
   useEffect(() => {
     fetchSessions();
-  }, []);
+  }, [fetchSessions]);
 
   const handleRevoke = async (id: string) => {
     try {
       setRevokingId(id);
       setMessage(null);
       await defaultApiClient.delete(`/user-sessions/${id}`);
-      setSessions((prev) => prev.filter((s) => s.id !== id));
+      await fetchSessions();
       setMessage({ type: 'success', text: t('revokeSuccess') });
     } catch (_error) {
       setMessage({ type: 'error', text: t('revokeError') });
@@ -158,7 +177,10 @@ export function SessionManager() {
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-foreground">
-                      {formatBrowser(session)} on {formatOS(session)}
+                      {t('deviceTitle', {
+                        browser: formatBrowser(session),
+                        os: formatOS(session),
+                      })}
                     </span>
                     {session.isCurrent && (
                       <Badge
@@ -208,6 +230,21 @@ export function SessionManager() {
             </div>
           )}
         </div>
+
+        {totalPages > 1 && (
+          <PaginationControls
+            page={page}
+            totalPages={totalPages}
+            disabled={loading}
+            className="mt-6"
+            labels={{
+              previous: t('previousPage'),
+              next: t('nextPage'),
+              pageValue: t('pageValue', { page, total: totalPages }),
+            }}
+            onPageChange={setPage}
+          />
+        )}
       </div>
     </section>
   );

@@ -102,6 +102,9 @@
     "loginError": "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.",
     "desc": "Vui lòng đăng nhập để quản trị hệ thống",
     "showPassword": "Hiện mật khẩu",
-    "hidePassword": "Ẩn mật khẩu"
+    "hidePassword": "Ẩn mật khẩu",
+    "orContinueWith": "hoặc tiếp tục với",
+    "googleLogin": "Tiếp tục với Google",
+    "googleNotConfigured": "Chưa cấu hình đăng nhập Google"
   }
 }

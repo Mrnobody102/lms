@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '../auth.store';
 import { Loader2, AlertCircle, Eye, EyeOff, Mail, Lock } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '../../../navigation';
-import { Button, Input, Label } from '@repo/ui';
+import { Button, GoogleSignInButton, Input, Label } from '@repo/ui';
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -13,7 +13,8 @@ interface LoginFormProps {
 
 export function LoginForm({ onSuccess }: LoginFormProps) {
   const t = useTranslations('Student');
-  const { login, loading, error, clearError } = useAuthStore();
+  const locale = useLocale();
+  const { login, loginWithGoogle, loading, error, clearError } = useAuthStore();
   const displayError = error ? t('auth.loginError') : null;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,6 +28,13 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const success = await login(email, password);
+    if (success && onSuccess) {
+      onSuccess();
+    }
+  };
+
+  const handleGoogleCredential = async (credential: string) => {
+    const success = await loginWithGoogle(credential, 'student');
     if (success && onSuccess) {
       onSuccess();
     }
@@ -106,6 +114,23 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
           <span>{t('auth.loginButton')}</span>
         )}
       </Button>
+
+      <div className="space-y-3">
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <span className="h-px flex-1 bg-border" />
+          {t('auth.orContinueWith')}
+          <span className="h-px flex-1 bg-border" />
+        </div>
+        <GoogleSignInButton
+          clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}
+          locale={locale}
+          label={t('auth.googleLogin')}
+          loadingLabel={t('auth.loggingIn')}
+          disabledLabel={t('auth.googleNotConfigured')}
+          disabled={loading}
+          onCredential={handleGoogleCredential}
+        />
+      </div>
     </form>
   );
 }

@@ -96,63 +96,10 @@ export function AdminSidebar() {
         })}
       </nav>
 
-      {/* User Profile Section */}
-      <div className="relative border-t border-border p-3 pb-12">
-        {/* Profile Dropdown */}
-        {dropdownOpen && (
-          <div className="absolute bottom-full left-3 right-3 mb-2 bg-card border border-border rounded-xl shadow-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            {/* Profile Header */}
-            <div className="px-4 py-3 bg-muted/30 border-b border-border">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-base">
-                  {user?.fullName?.charAt(0).toUpperCase() ||
-                    user?.email?.charAt(0).toUpperCase() ||
-                    '?'}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold truncate">
-                    {user?.fullName || t('profileNameFallback')}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {user?.email || t('profileEmailFallback')}
-                  </p>
-                </div>
-              </div>
-              {user?.role && (
-                <div className="mt-2.5">
-                  <span className="inline-flex max-w-full items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 truncate">
-                    {user.role}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Dropdown Items */}
-            <div className="py-1">
-              <Link
-                href="/settings"
-                className="flex items-center gap-3 px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                onClick={() => setDropdownOpen(false)}
-              >
-                <User className="w-4 h-4 shrink-0" />
-                <span className="truncate">{t('settingsLabel')}</span>
-              </Link>
-              <button
-                onClick={() => {
-                  setDropdownOpen(false);
-                  void handleLogout();
-                }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-500/5 transition-colors"
-              >
-                <LogOut className="w-4 h-4 shrink-0" />
-                <span className="truncate">{t('logout')}</span>
-              </button>
-            </div>
-          </div>
-        )}
-
+      {/* Footer Section */}
+      <div className="flex flex-col gap-2 border-t border-border p-3 pb-4">
         {/* Theme & Language Row */}
-        <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between px-1">
           <button
             onClick={toggleTheme}
             className="flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
@@ -163,29 +110,87 @@ export function AdminSidebar() {
           <LanguageToggle menuPlacement="top" />
         </div>
 
-        {/* Profile Trigger */}
-        <button
-          onClick={() => setDropdownOpen(!dropdownOpen)}
-          className="flex w-full min-w-0 items-center gap-2 rounded-lg px-2.5 py-2 text-left hover:bg-muted transition-colors group"
-        >
-          <div className="w-8 h-8 shrink-0 rounded-md bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
-            {user?.fullName?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || '?'}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-foreground">
-              {user?.fullName || t('profileNameFallback')}
-            </p>
-            <p className="truncate text-xs text-muted-foreground">
-              {user?.email || t('profileEmailFallback')}
-            </p>
-          </div>
-          <ChevronDown
-            className={cn(
-              'w-3.5 h-3.5 text-muted-foreground transition-transform shrink-0',
-              dropdownOpen && 'rotate-180',
-            )}
-          />
-        </button>
+        {/* User Profile Section */}
+        <div className="relative">
+          {/* Profile Dropdown */}
+          {dropdownOpen && (
+            <div className="absolute bottom-full left-0 right-0 mb-2 bg-card border border-border rounded-xl shadow-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+              {/* Profile Header */}
+              <div className="px-4 py-3 bg-muted/30 border-b border-border">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-base">
+                    {user?.fullName?.charAt(0).toUpperCase() ||
+                      user?.email?.charAt(0).toUpperCase() ||
+                      '?'}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold truncate">
+                      {user?.fullName || t('profileNameFallback')}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {user?.email || t('profileEmailFallback')}
+                    </p>
+                  </div>
+                </div>
+                {user?.role && (
+                  <div className="mt-2.5">
+                    <span className="inline-flex max-w-full items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 truncate">
+                      {user.role}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Dropdown Items */}
+              <div className="py-1">
+                <Link
+                  href="/settings"
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  onClick={() => setDropdownOpen(false)}
+                >
+                  <User className="w-4 h-4 shrink-0" />
+                  <span className="truncate">{t('settingsLabel')}</span>
+                </Link>
+                <button
+                  onClick={() => {
+                    setDropdownOpen(false);
+                    void handleLogout();
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-500/5 transition-colors"
+                >
+                  <LogOut className="w-4 h-4 shrink-0" />
+                  <span className="truncate">{t('logout')}</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Profile Trigger */}
+          <button
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            className="flex w-full min-w-0 items-center gap-2 rounded-lg px-2.5 py-2 text-left hover:bg-muted transition-colors group"
+          >
+            <div className="w-8 h-8 shrink-0 rounded-md bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
+              {user?.fullName?.charAt(0).toUpperCase() ||
+                user?.email?.charAt(0).toUpperCase() ||
+                '?'}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-foreground">
+                {user?.fullName || t('profileNameFallback')}
+              </p>
+              <p className="truncate text-xs text-muted-foreground">
+                {user?.email || t('profileEmailFallback')}
+              </p>
+            </div>
+            <ChevronDown
+              className={cn(
+                'w-3.5 h-3.5 text-muted-foreground transition-transform shrink-0',
+                dropdownOpen && 'rotate-180',
+              )}
+            />
+          </button>
+        </div>
       </div>
     </aside>
   );

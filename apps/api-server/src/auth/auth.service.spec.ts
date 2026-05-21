@@ -391,6 +391,111 @@ describe('AuthService', () => {
     });
   });
 
+  describe('loginWithGoogle', () => {
+    beforeEach(() => {
+      configService.get.mockImplementation((key: string) => {
+        if (key === 'JWT_EXPIRES_IN') return '7d';
+        if (key === 'GOOGLE_CLIENT_ID') return 'google-client-id';
+        return undefined;
+      });
+
+      Object.defineProperty(service, 'googleClient', {
+        value: {
+          verifyIdToken: vi.fn().mockResolvedValue({
+            getPayload: () => ({
+              sub: 'google-subject-1',
+              email: 'Student@Example.com',
+              email_verified: true,
+              name: 'Student Google',
+              picture: 'https://example.com/avatar.png',
+            }),
+          }),
+        },
+      });
+    });
+
+    it('should auto-provision student accounts from verified Google credentials', async () => {
+      prisma.tenant.findFirst.mockResolvedValue({ id: 'tenant-1', isActive: true });
+      prisma.user.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(null);
+      vi.mocked(bcrypt.hash).mockResolvedValue('random-password-hash' as never);
+      prisma.user.create.mockResolvedValue({
+        id: 'user-1',
+        email: 'student@example.com',
+        password: 'random-password-hash',
+        googleSubject: 'google-subject-1',
+        googleEmailVerified: true,
+        fullName: 'Student Google',
+        phoneNumber: null,
+        avatarUrl: 'https://example.com/avatar.png',
+        role: 'STUDENT',
+        isActive: true,
+        tenantId: 'tenant-1',
+        tokenVersion: 0,
+        failedLoginAttempts: 0,
+        lockoutUntil: null,
+        createdAt: new Date('2026-04-21T00:00:00.000Z'),
+        updatedAt: new Date('2026-04-21T00:00:00.000Z'),
+      });
+
+      const result = await service.loginWithGoogle(
+        { credential: 'valid-google-id-token', portal: 'student' },
+        'tenant-1',
+        response,
+      );
+
+      expect(prisma.user.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            email: 'student@example.com',
+            googleSubject: 'google-subject-1',
+            googleEmailVerified: true,
+            role: 'STUDENT',
+            tenantId: 'tenant-1',
+          }),
+        }),
+      );
+      expect(result.user).toEqual(
+        expect.objectContaining({
+          id: 'user-1',
+          email: 'student@example.com',
+          tenantId: 'tenant-1',
+        }),
+      );
+      expect(result.user).not.toHaveProperty('password');
+      expect(result.user).not.toHaveProperty('googleSubject');
+    });
+
+    it('should reject Google login into the admin portal for student accounts', async () => {
+      prisma.tenant.findFirst.mockResolvedValue({ id: 'tenant-1', isActive: true });
+      prisma.user.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce({
+        id: 'user-1',
+        email: 'student@example.com',
+        password: 'hashed-password',
+        googleSubject: null,
+        googleEmailVerified: false,
+        fullName: 'Student User',
+        phoneNumber: null,
+        avatarUrl: null,
+        role: 'STUDENT',
+        isActive: true,
+        tenantId: 'tenant-1',
+        tokenVersion: 0,
+        failedLoginAttempts: 0,
+        lockoutUntil: null,
+        createdAt: new Date('2026-04-21T00:00:00.000Z'),
+        updatedAt: new Date('2026-04-21T00:00:00.000Z'),
+      });
+
+      await expect(
+        service.loginWithGoogle(
+          { credential: 'valid-google-id-token', portal: 'admin' },
+          'tenant-1',
+          response,
+        ),
+      ).rejects.toThrow('Invalid credentials');
+    });
+  });
+
   describe('logout', () => {
     it('should clear the auth cookie', async () => {
       const result = await service.logout({}, response, 'user-1', 'tenant-1');

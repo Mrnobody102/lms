@@ -19,6 +19,7 @@ export interface AuthState {
   loading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<boolean>;
+  loginWithGoogle: (credential: string, portal?: 'student' | 'admin' | 'super') => Promise<boolean>;
   register?: (fullName: string, email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
@@ -190,6 +191,36 @@ export function createAuthStore(options: CreateAuthStoreOptions) {
             {
               email,
               password,
+            },
+            {
+              skipUnauthorizedRedirect: true,
+            },
+          );
+          const { user } = response.data;
+
+          persistAuthUser(user);
+
+          set({
+            user,
+            isAuthenticated: true,
+            isInitialized: true,
+            loading: false,
+          });
+          return true;
+        } catch (err) {
+          set({ error: extractErrorMsg(err, loginError), loading: false });
+          return false;
+        }
+      },
+
+      loginWithGoogle: async (credential, portal = 'student') => {
+        set({ loading: true, error: null });
+        try {
+          const response = await api.post<{ user: AuthUser }>(
+            '/auth/google',
+            {
+              credential,
+              portal,
             },
             {
               skipUnauthorizedRedirect: true,

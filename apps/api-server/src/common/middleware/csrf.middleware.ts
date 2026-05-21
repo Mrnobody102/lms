@@ -6,11 +6,13 @@ const CSRF_HEADER_NAME = 'x-csrf-token';
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 const CSRF_EXEMPT_PATHS = new Set([
   '/auth/login',
+  '/auth/google',
   '/auth/register',
   '/auth/refresh',
   '/auth/forgot-password',
   '/auth/reset-password',
   '/api/auth/login',
+  '/api/auth/google',
   '/api/auth/register',
   '/api/auth/refresh',
   '/api/auth/forgot-password',

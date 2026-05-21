@@ -7,22 +7,53 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { Role } from '@repo/database';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 import type { CookieOptions, Response } from 'express';
+import { OAuth2Client, type TokenPayload } from 'google-auth-library';
 import { PrismaService } from '../common/services/prisma.service';
 import { AuditLogService, AuditAction, AuditStatus } from '../common/services/audit-log.service';
 import { CSRF_COOKIE_NAME } from '../common/middleware/csrf.middleware';
 import { parseDurationToMs } from '../config/duration';
 import { LoginDto } from './dto/login.dto';
+import { GoogleLoginDto, type GoogleLoginPortal } from './dto/google-login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { MailService } from '../mail/mail.service';
 
+interface GoogleVerifiedPayload {
+  sub: string;
+  email: string;
+  emailVerified: boolean;
+  name?: string;
+  picture?: string;
+}
+
+interface LoginUserRecord {
+  id: string;
+  email: string;
+  password: string;
+  googleSubject: string | null;
+  googleEmailVerified: boolean;
+  fullName: string;
+  phoneNumber: string | null;
+  avatarUrl: string | null;
+  role: Role;
+  isActive: boolean;
+  tenantId: string;
+  tokenVersion: number;
+  failedLoginAttempts: number;
+  lockoutUntil: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
+  private readonly googleClient = new OAuth2Client();
 
   constructor(
     private readonly prisma: PrismaService,
@@ -287,6 +318,159 @@ export class AuthService {
 
     return {
       user: userWithoutPassword,
+    };
+  }
+
+  async loginWithGoogle(
+    googleLoginDto: GoogleLoginDto,
+    tenantId: string | undefined,
+    res: Response,
+    ipAddress?: string,
+    userAgent?: string,
+  ) {
+    if (!tenantId) {
+      throw new BadRequestException('Tenant context is required');
+    }
+
+    const tenant = await this.prisma.tenant.findFirst({
+      where: { id: tenantId, isActive: true },
+      select: { id: true },
+    });
+
+    if (!tenant) {
+      await this.auditLog.log({
+        action: AuditAction.LOGIN_FAILURE,
+        status: AuditStatus.FAILURE,
+        tenantId,
+        ipAddress,
+        userAgent,
+        metadata: { provider: 'google', reason: 'Inactive or invalid tenant' },
+      });
+      throw this.invalidCredentials();
+    }
+
+    const clientIds = this.getGoogleClientIds();
+    if (clientIds.length === 0) {
+      throw new BadRequestException('Google login is not configured');
+    }
+
+    const payload = await this.verifyGoogleCredential(googleLoginDto.credential, clientIds);
+    const email = this.normalizeEmail(payload.email);
+    const portal = googleLoginDto.portal ?? 'student';
+
+    const userBySubject = await this.prisma.user.findFirst({
+      where: {
+        tenantId,
+        googleSubject: payload.sub,
+        deletedAt: null,
+      },
+      select: this.userWithAuthFieldsSelect(),
+    });
+
+    const userByEmail = await this.prisma.user.findFirst({
+      where: {
+        tenantId,
+        email: { equals: email, mode: 'insensitive' },
+        deletedAt: null,
+      },
+      select: this.userWithAuthFieldsSelect(),
+    });
+
+    const resolvedUser = userBySubject ?? userByEmail;
+    const canAutoProvision = portal === 'student';
+
+    if (!resolvedUser && !canAutoProvision) {
+      await this.auditLog.log({
+        action: AuditAction.LOGIN_FAILURE,
+        status: AuditStatus.FAILURE,
+        tenantId,
+        ipAddress,
+        userAgent,
+        metadata: { provider: 'google', portal, reason: 'No matching privileged account', email },
+      });
+      throw this.invalidCredentials();
+    }
+
+    if (resolvedUser && !this.isPortalRoleAllowed(resolvedUser.role, portal)) {
+      await this.auditLog.log({
+        userId: resolvedUser.id,
+        action: AuditAction.LOGIN_FAILURE,
+        status: AuditStatus.FAILURE,
+        tenantId,
+        ipAddress,
+        userAgent,
+        metadata: { provider: 'google', portal, reason: 'Role not allowed' },
+      });
+      throw this.invalidCredentials();
+    }
+
+    if (resolvedUser && !resolvedUser.isActive) {
+      await this.auditLog.log({
+        userId: resolvedUser.id,
+        action: AuditAction.LOGIN_FAILURE,
+        status: AuditStatus.FAILURE,
+        tenantId,
+        ipAddress,
+        userAgent,
+        metadata: { provider: 'google', reason: 'Inactive account' },
+      });
+      throw this.invalidCredentials();
+    }
+
+    const user =
+      resolvedUser ??
+      (await this.createGoogleStudentUser({
+        tenantId,
+        email,
+        fullName: payload.name || email,
+        avatarUrl: payload.picture,
+        googleSubject: payload.sub,
+        googleEmailVerified: payload.emailVerified,
+      }));
+
+    if (user.googleSubject && user.googleSubject !== payload.sub) {
+      await this.auditLog.log({
+        userId: user.id,
+        action: AuditAction.LOGIN_FAILURE,
+        status: AuditStatus.FAILURE,
+        tenantId,
+        ipAddress,
+        userAgent,
+        metadata: { provider: 'google', reason: 'Google account conflict' },
+      });
+      throw this.invalidCredentials();
+    }
+
+    const loginUser =
+      user.googleSubject === payload.sub
+        ? user
+        : await this.linkGoogleAccount(user.id, tenantId, payload.sub, payload.emailVerified);
+
+    await this.prisma.user.update({
+      where: { id_tenantId: { id: loginUser.id, tenantId } },
+      data: {
+        failedLoginAttempts: 0,
+        lockoutUntil: null,
+      },
+    });
+
+    const token = this.generateToken(loginUser);
+    this.setAuthCookie(res, token);
+    this.setCsrfCookie(res);
+    await this.setRefreshCookie(res, loginUser.id, tenantId, ipAddress, userAgent);
+
+    await this.auditLog.log({
+      userId: loginUser.id,
+      tenantId,
+      action: AuditAction.LOGIN_SUCCESS,
+      status: AuditStatus.SUCCESS,
+      ipAddress,
+      userAgent,
+      metadata: { provider: 'google', portal },
+    });
+
+    return {
+      user: this.toSafeUser(loginUser),
     };
   }
 
@@ -587,6 +771,142 @@ export class AuthService {
     });
 
     return { success: true, message: 'Password reset successfully' };
+  }
+
+  private async verifyGoogleCredential(
+    credential: string,
+    clientIds: string[],
+  ): Promise<GoogleVerifiedPayload> {
+    let payload: TokenPayload | undefined;
+    try {
+      const ticket = await this.googleClient.verifyIdToken({
+        idToken: credential,
+        audience: clientIds,
+      });
+      payload = ticket.getPayload();
+    } catch (error) {
+      this.logger.warn(
+        `Google login failed - token verification failed: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
+      );
+      throw this.invalidCredentials();
+    }
+
+    if (!payload?.sub || !payload.email || payload.email_verified !== true) {
+      throw this.invalidCredentials();
+    }
+
+    return {
+      sub: payload.sub,
+      email: payload.email,
+      emailVerified: payload.email_verified,
+      name: payload.name,
+      picture: payload.picture,
+    };
+  }
+
+  private getGoogleClientIds(): string[] {
+    const single = this.configService.get<string>('GOOGLE_CLIENT_ID');
+    const multiple = this.configService.get<string>('GOOGLE_CLIENT_IDS');
+
+    return [
+      ...(single ? [single] : []),
+      ...(multiple
+        ? multiple
+            .split(',')
+            .map((value) => value.trim())
+            .filter(Boolean)
+        : []),
+    ];
+  }
+
+  private userWithAuthFieldsSelect() {
+    return {
+      id: true,
+      email: true,
+      password: true,
+      googleSubject: true,
+      googleEmailVerified: true,
+      fullName: true,
+      phoneNumber: true,
+      avatarUrl: true,
+      role: true,
+      isActive: true,
+      tenantId: true,
+      tokenVersion: true,
+      failedLoginAttempts: true,
+      lockoutUntil: true,
+      createdAt: true,
+      updatedAt: true,
+    } as const;
+  }
+
+  private isPortalRoleAllowed(role: Role, portal: GoogleLoginPortal): boolean {
+    if (portal === 'super') {
+      return role === Role.SUPER_ADMIN;
+    }
+
+    if (portal === 'admin') {
+      return role === Role.ADMIN || role === Role.SUPER_ADMIN;
+    }
+
+    return role === Role.STUDENT;
+  }
+
+  private async createGoogleStudentUser(options: {
+    tenantId: string;
+    email: string;
+    fullName: string;
+    avatarUrl?: string;
+    googleSubject: string;
+    googleEmailVerified: boolean;
+  }): Promise<LoginUserRecord> {
+    const randomPasswordHash = await bcrypt.hash(randomBytes(48).toString('hex'), 12);
+
+    return this.prisma.user.create({
+      data: {
+        email: options.email,
+        password: randomPasswordHash,
+        googleSubject: options.googleSubject,
+        googleEmailVerified: options.googleEmailVerified,
+        fullName: options.fullName,
+        avatarUrl: options.avatarUrl,
+        tenantId: options.tenantId,
+        role: Role.STUDENT,
+      },
+      select: this.userWithAuthFieldsSelect(),
+    });
+  }
+
+  private async linkGoogleAccount(
+    userId: string,
+    tenantId: string,
+    googleSubject: string,
+    googleEmailVerified: boolean,
+  ): Promise<LoginUserRecord> {
+    return this.prisma.user.update({
+      where: { id_tenantId: { id: userId, tenantId } },
+      data: {
+        googleSubject,
+        googleEmailVerified,
+      },
+      select: this.userWithAuthFieldsSelect(),
+    });
+  }
+
+  private toSafeUser(user: LoginUserRecord) {
+    const {
+      password: _password,
+      tokenVersion: _tokenVersion,
+      failedLoginAttempts: _failedLoginAttempts,
+      lockoutUntil: _lockoutUntil,
+      googleSubject: _googleSubject,
+      googleEmailVerified: _googleEmailVerified,
+      ...safeUser
+    } = user;
+
+    return safeUser;
   }
 
   private generateToken(user: {

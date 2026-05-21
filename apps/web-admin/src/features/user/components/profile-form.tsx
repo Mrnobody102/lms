@@ -56,7 +56,7 @@ export function ProfileForm() {
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string | string[] } } };
       const msg = axiosErr.response?.data?.message;
-      setError(Array.isArray(msg) ? msg[0] : (msg ?? 'Something went wrong. Please try again.'));
+      setError(Array.isArray(msg) ? msg[0] : (msg ?? t('settings.genericError')));
     } finally {
       setLoading(false);
     }
@@ -88,9 +88,8 @@ export function ProfileForm() {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               required
-              placeholder="Nguyen Van A"
-              className="h-12 py-0"
-              style={{ paddingLeft: '2.75rem' }}
+              placeholder={t('settings.profile.fullNamePlaceholder')}
+              className="h-12 pl-11"
             />
           </div>
         </div>
@@ -105,8 +104,7 @@ export function ProfileForm() {
             <Input
               value={user?.email || ''}
               disabled
-              className="h-12 cursor-not-allowed bg-muted/50 py-0"
-              style={{ paddingLeft: '2.75rem' }}
+              className="h-12 cursor-not-allowed bg-muted/50 pl-11"
             />
           </div>
         </div>
@@ -121,9 +119,8 @@ export function ProfileForm() {
             <Input
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
-              placeholder="+84..."
-              className="h-12 py-0"
-              style={{ paddingLeft: '2.75rem' }}
+              placeholder={t('settings.profile.phonePlaceholder')}
+              className="h-12 pl-11"
             />
           </div>
         </div>
@@ -138,9 +135,8 @@ export function ProfileForm() {
             <Input
               value={avatarUrl}
               onChange={(e) => setAvatarUrl(e.target.value)}
-              placeholder="https://..."
-              className="h-12 py-0"
-              style={{ paddingLeft: '2.75rem' }}
+              placeholder={t('settings.profile.avatarPlaceholder')}
+              className="h-12 pl-11"
             />
           </div>
         </div>

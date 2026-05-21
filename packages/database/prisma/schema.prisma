@@ -108,6 +108,8 @@ model User {
   id               String               @id @default(uuid())
   email            String
   password         String
+  googleSubject   String?
+  googleEmailVerified Boolean              @default(false)
   fullName         String
   phoneNumber      String?
   avatarUrl        String?
@@ -137,6 +139,7 @@ model User {
   updatedAt        DateTime             @updatedAt
 
   @@unique([tenantId, email])
+  @@unique([tenantId, googleSubject])
   @@unique([id, tenantId])
   @@index([tenantId, role])
   @@index([tenantId, isActive])

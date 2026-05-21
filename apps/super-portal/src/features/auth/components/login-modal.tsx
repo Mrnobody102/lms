@@ -4,13 +4,14 @@ import { useState } from 'react';
 import { useAuthStore } from '../auth.store';
 import toast from 'react-hot-toast';
 import { Loader2, KeyRound, Eye, EyeOff } from 'lucide-react';
-import { LanguageToggle } from '@repo/ui';
+import { GoogleSignInButton, LanguageToggle } from '@repo/ui';
 
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 export function LoginModal() {
   const t = useTranslations('Auth');
-  const { login, loading } = useAuthStore();
+  const locale = useLocale();
+  const { login, loginWithGoogle, loading } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -18,6 +19,15 @@ export function LoginModal() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const success = await login(email, password);
+    if (success) {
+      toast.success(t('welcome'));
+    } else {
+      toast.error(t('loginError'));
+    }
+  };
+
+  const handleGoogleCredential = async (credential: string) => {
+    const success = await loginWithGoogle(credential, 'super');
     if (success) {
       toast.success(t('welcome'));
     } else {
@@ -82,6 +92,23 @@ export function LoginModal() {
           >
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : t('login')}
           </button>
+
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <span className="h-px flex-1 bg-border" />
+              {t('orContinueWith')}
+              <span className="h-px flex-1 bg-border" />
+            </div>
+            <GoogleSignInButton
+              clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}
+              locale={locale}
+              label={t('googleLogin')}
+              loadingLabel={t('submitting')}
+              disabledLabel={t('googleNotConfigured')}
+              disabled={loading}
+              onCredential={handleGoogleCredential}
+            />
+          </div>
         </form>
       </div>
     </div>

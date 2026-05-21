@@ -25,6 +25,9 @@
     "noLevelsDesc": "No levels yet. Click 'Add Level' to create one.",
     "confirmDeleteLevel": "Are you sure you want to delete this level?",
     "students": "Students",
+    "pageValue": "Page {page} / {total}",
+    "previousPage": "Previous",
+    "nextPage": "Next",
     "allStudents": "All students",
     "activeStudents": "Active",
     "inactiveStudents": "Inactive",
@@ -149,7 +152,10 @@
       "forgotEmailSent": "Link sent!",
       "forgotEmailSentDesc": "Check your inbox for the password reset link.",
       "resetting": "Resetting...",
-      "sendingLink": "Sending link..."
+      "sendingLink": "Sending link...",
+      "orContinueWith": "or continue with",
+      "googleLogin": "Continue with Google",
+      "googleNotConfigured": "Google login is not configured"
     },
     "errorBoundary": {
       "title": "Something went wrong",
@@ -587,6 +593,7 @@
     "settings": {
       "title": "Account Settings",
       "subtitle": "Manage your personal information and security settings.",
+      "genericError": "Something went wrong. Please try again.",
       "profile": {
         "title": "Personal Information",
         "description": "Update your display information.",
@@ -594,6 +601,9 @@
         "email": "Email Address",
         "phoneNumber": "Phone Number",
         "avatar": "Avatar URL",
+        "fullNamePlaceholder": "e.g. Nguyen Van A",
+        "phonePlaceholder": "+84...",
+        "avatarPlaceholder": "https://...",
         "saveChanges": "Save Changes",
         "updating": "Updating...",
         "updateSuccess": "Profile updated successfully."
@@ -607,7 +617,8 @@
         "changePassword": "Change Password",
         "changing": "Changing...",
         "changeSuccess": "Password changed successfully. Please log in again.",
-        "passwordHelp": "Password must be at least 8 characters, including uppercase, lowercase, numbers, and special characters."
+        "passwordHelp": "Password must be at least 8 characters, including uppercase, lowercase, numbers, and special characters.",
+        "passwordMismatch": "Passwords do not match."
       },
       "sessions": {
         "title": "Active Sessions",
@@ -615,6 +626,7 @@
         "active": "Active now",
         "lastActive": "Last active",
         "device": "Device",
+        "deviceTitle": "{browser} on {os}",
         "location": "Location (IP)",
         "revoke": "Log out",
         "revokeAll": "Log out all other devices",
@@ -624,7 +636,10 @@
         "unknownDevice": "Unknown Device",
         "unknownOS": "Unknown OS",
         "unknownBrowser": "Unknown Browser",
-        "noSessions": "No active sessions found."
+        "noSessions": "No active sessions found.",
+        "pageValue": "Page {page} / {total}",
+        "previousPage": "Previous",
+        "nextPage": "Next"
       }
     },
     "readyToSave": "Ready to save",

@@ -102,6 +102,9 @@
     "loginError": "Login failed. Please check your credentials.",
     "desc": "Please login to manage the platform",
     "showPassword": "Show password",
-    "hidePassword": "Hide password"
+    "hidePassword": "Hide password",
+    "orContinueWith": "or continue with",
+    "googleLogin": "Continue with Google",
+    "googleNotConfigured": "Google login is not configured"
   }
 }

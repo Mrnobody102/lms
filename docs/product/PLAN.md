@@ -1,6 +1,6 @@
 # Kế Hoạch Triển Khai LMS Platform
 
-Cập nhật lần cuối: 2026-05-21 (Batch P10.1 — Listening audio prompt)
+Cập nhật lần cuối: 2026-05-21 (Batch Auth/List Handling — Google login + pagination)
 
 ## Định hướng sản phẩm
 
@@ -16,6 +16,7 @@ Trục sản phẩm:
 - Theo dõi tiến độ, streak, skill mastery, báo cáo học tập theo time-series.
 - Admin quản lý course, lesson, học viên, enrollment, cohort và reporting drill-down.
 - AI tầng trên: in-context tutor (giải thích lỗi practice/exam), conversation roleplay, AI-generated practice — theo thứ tự giá trị giáo dục giảm dần.
+- Danh sách dài: dùng server-side pagination cho list quản trị, cursor pagination cho log/time-series lớn, và virtualization khi render nhiều dòng.
 
 Nguyên tắc learning-science:
 
@@ -32,6 +33,7 @@ Nguyên tắc learning-science:
 - Monorepo `apps/` + `packages/`.
 - Backend NestJS module hóa: `auth`, `user`, `admin`, `course`, `lesson`, `progress`, health, metrics.
 - Cookie-first auth cho browser flow.
+- Google Identity Services login: backend verify ID token rồi phát cookie session nội bộ; auto-provision chỉ mở cho student portal, admin/super portal yêu cầu tài khoản có quyền sẵn.
 - Tenant-aware auth và access checks.
 - Course/lesson CRUD cơ bản.
 - Course unit/chapter V1: schema/API/admin UI/student sidebar theo `CourseUnit`.
@@ -57,7 +59,7 @@ Chưa có hoặc mới ở mức sơ khai:
 - Spaced repetition system: đã có MVP (`ReviewCard`, daily review, SM-2 scheduling).
 - AI in-context tutor đã có MVP; AI conversation roleplay chưa có.
 - Media storage/background jobs cho audio/video: đã có hạ tầng core và đã dùng cho listening audio prompt.
-- Audit log cho hành động enrollment nhạy cảm (bulk): chưa đủ — cần kiểm tra và bổ sung.
+- Audit log cho hành động enrollment nhạy cảm (bulk) đã có; còn thiếu cohort/class và trend report nâng cao.
 
 ## Nguyên tắc roadmap
 
@@ -79,6 +81,7 @@ Trạng thái: phần lớn đã hoàn thành.
 Đã làm:
 
 - Cookie-first auth.
+- Google login bằng Google Identity Services ID token, cần cấu hình `GOOGLE_CLIENT_ID` và `NEXT_PUBLIC_GOOGLE_CLIENT_ID` theo môi trường.
 - Tenant validation trong login/register/JWT strategy.
 - Cross-tenant guard cho resource APIs.
 - CSRF cho state-changing cookie requests.
@@ -109,8 +112,6 @@ Trạng thái: đang làm, backend/API/UI core đã có.
 
 Còn cần:
 
-- Audit log cho bulk enroll/unenroll và các hành động enrollment nhạy cảm (chưa có).
-- Bulk result feedback (skippedCount, duplicateCount) hiển thị về admin UI thay vì chỉ success/error toast.
 - Reporting theo enrollment ở mức course detail đã có; dashboard tổng hợp theo tenant đã có bước đầu, còn thiếu phần theo class/cohort và filtering nâng cao.
 - Admin UX quản lý học viên đã có search + active/inactive filter + status toggle + bulk enroll theo course; còn class/cohort và bulk action nâng cao.
 - Xem trạng thái học viên trong từng course.

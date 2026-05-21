@@ -295,7 +295,10 @@
       "forgotEmailSent": "Liên kết đã được gửi!",
       "forgotEmailSentDesc": "Nếu email của bạn tồn tại trong hệ thống, bạn sẽ sớm nhận được liên kết đặt lại mật khẩu.",
       "resetting": "Đang đặt lại mật khẩu...",
-      "sendingLink": "Đang gửi liên kết..."
+      "sendingLink": "Đang gửi liên kết...",
+      "orContinueWith": "hoặc tiếp tục với",
+      "googleLogin": "Tiếp tục với Google",
+      "googleNotConfigured": "Chưa cấu hình đăng nhập Google"
     },
     "errorBoundary": {
       "title": "Đã xảy ra lỗi",
@@ -306,6 +309,7 @@
     "settings": {
       "title": "Cài đặt tài khoản",
       "subtitle": "Quản lý thông tin cá nhân và cài đặt bảo mật của bạn.",
+      "genericError": "Đã có lỗi xảy ra. Vui lòng thử lại.",
       "profile": {
         "title": "Thông tin cá nhân",
         "description": "Cập nhật thông tin hiển thị của bạn.",
@@ -313,6 +317,9 @@
         "email": "Địa chỉ Email",
         "phoneNumber": "Số điện thoại",
         "avatar": "Ảnh đại diện",
+        "fullNamePlaceholder": "Ví dụ: Nguyễn Văn A",
+        "phonePlaceholder": "+84...",
+        "avatarPlaceholder": "https://...",
         "saveChanges": "Lưu thay đổi",
         "updating": "Đang cập nhật...",
         "updateSuccess": "Cập nhật thông tin thành công."
@@ -326,7 +333,8 @@
         "changePassword": "Đổi mật khẩu",
         "changing": "Đang thay đổi...",
         "changeSuccess": "Đổi mật khẩu thành công. Vui lòng đăng nhập lại.",
-        "passwordHelp": "Mật khẩu phải từ 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt."
+        "passwordHelp": "Mật khẩu phải từ 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt.",
+        "passwordMismatch": "Mật khẩu xác nhận không khớp."
       },
       "sessions": {
         "title": "Quản lý phiên đăng nhập",
@@ -334,6 +342,7 @@
         "active": "Đang hoạt động",
         "lastActive": "Hoạt động lần cuối",
         "device": "Thiết bị",
+        "deviceTitle": "{browser} trên {os}",
         "location": "Vị trí (IP)",
         "revoke": "Đăng xuất",
         "revokeAll": "Đăng xuất tất cả thiết bị khác",
@@ -343,7 +352,10 @@
         "unknownDevice": "Thiết bị không xác định",
         "unknownOS": "Hệ điều hành không xác định",
         "unknownBrowser": "Trình duyệt không xác định",
-        "noSessions": "Không tìm thấy phiên đăng nhập nào."
+        "noSessions": "Không tìm thấy phiên đăng nhập nào.",
+        "pageValue": "Trang {page} / {total}",
+        "previousPage": "Trước",
+        "nextPage": "Sau"
       }
     },
     "courses": {

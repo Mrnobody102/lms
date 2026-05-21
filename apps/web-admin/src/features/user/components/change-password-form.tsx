@@ -26,7 +26,7 @@ export function ChangePasswordForm() {
     e.preventDefault();
 
     if (newPassword !== confirmPassword) {
-      setError('Passwords do not match.');
+      setError(t('settings.security.passwordMismatch'));
       return;
     }
 
@@ -50,7 +50,7 @@ export function ChangePasswordForm() {
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string | string[] } } };
       const msg = axiosErr.response?.data?.message;
-      setError(Array.isArray(msg) ? msg[0] : (msg ?? 'Something went wrong. Please try again.'));
+      setError(Array.isArray(msg) ? msg[0] : (msg ?? t('settings.genericError')));
     } finally {
       setLoading(false);
     }
@@ -84,8 +84,7 @@ export function ChangePasswordForm() {
               onChange={(e) => setCurrentPassword(e.target.value)}
               required
               autoComplete="current-password"
-              className="h-12 py-0"
-              style={{ paddingLeft: '2.75rem', paddingRight: '3rem' }}
+              className="h-12 pl-11 pr-12"
             />
           </div>
         </div>
@@ -105,8 +104,7 @@ export function ChangePasswordForm() {
               onChange={(e) => setNewPassword(e.target.value)}
               required
               autoComplete="new-password"
-              className="h-12 py-0"
-              style={{ paddingLeft: '2.75rem', paddingRight: '3rem' }}
+              className="h-12 pl-11 pr-12"
             />
             <button
               type="button"
@@ -132,8 +130,7 @@ export function ChangePasswordForm() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               autoComplete="new-password"
-              className="h-12 py-0"
-              style={{ paddingLeft: '2.75rem' }}
+              className="h-12 pl-11"
             />
           </div>
         </div>

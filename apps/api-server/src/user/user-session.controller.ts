@@ -3,6 +3,7 @@ import {
   Get,
   Delete,
   Param,
+  Query,
   UseGuards,
   UnauthorizedException,
   Req,
@@ -33,30 +34,46 @@ export class UserSessionController {
   @Get('me')
   @ApiOperation({ summary: 'Get active sessions for current user' })
   @ApiResponse({ status: 200, description: 'Sessions retrieved successfully' })
-  async getSessions(@CurrentUser() user: AuthenticatedUser, @Req() req: Request) {
-    const sessions = await this.prisma.refreshToken.findMany({
-      where: {
-        userId: user.id,
-        tenantId: user.tenantId,
-        expiresAt: { gt: new Date() },
-        revokedAt: null,
-      },
-      select: {
-        id: true,
-        tokenHash: true,
-        ipAddress: true,
-        userAgent: true,
-        createdAt: true,
-        expiresAt: true,
-        updatedAt: true,
-      },
-      orderBy: { updatedAt: 'desc' },
-    });
+  async getSessions(
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() req: Request,
+    @Query('page') pageValue?: string,
+    @Query('limit') limitValue?: string,
+  ) {
+    const page = this.parsePositiveInt(pageValue, 1, 1, 1000);
+    const limit = this.parsePositiveInt(limitValue, 10, 1, 50);
+    const where = {
+      userId: user.id,
+      tenantId: user.tenantId,
+      expiresAt: { gt: new Date() },
+      revokedAt: null,
+    };
+
+    const [sessions, total] = await this.prisma.$transaction([
+      this.prisma.refreshToken.findMany({
+        where,
+        select: {
+          id: true,
+          tokenHash: true,
+          ipAddress: true,
+          userAgent: true,
+          createdAt: true,
+          expiresAt: true,
+          updatedAt: true,
+        },
+        orderBy: { updatedAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.refreshToken.count({
+        where,
+      }),
+    ]);
 
     const currentToken = req.cookies['refresh_token'];
     const currentHash = currentToken ? await this.authService.hashToken(currentToken) : null;
 
-    return sessions.map((session) => {
+    const data = sessions.map((session) => {
       const parser = new UAParser(session.userAgent || '');
       const device = parser.getDevice();
       const os = parser.getOS();
@@ -84,40 +101,16 @@ export class UserSessionController {
         isCurrent: session.tokenHash === currentHash,
       };
     });
-  }
 
-  @Delete(':id')
-  @ApiOperation({ summary: 'Revoke a specific session' })
-  @ApiResponse({ status: 200, description: 'Session revoked successfully' })
-  async revokeSession(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('id') sessionId: string,
-    @IpAddress() ipAddress: string,
-    @UserAgent() userAgent: string,
-  ) {
-    const session = await this.prisma.refreshToken.findUnique({
-      where: { id: sessionId },
-    });
-
-    if (!session || session.userId !== user.id || session.tenantId !== user.tenantId) {
-      throw new UnauthorizedException('Session not found or unauthorized');
-    }
-
-    await this.prisma.refreshToken.delete({
-      where: { id: sessionId },
-    });
-
-    await this.auditLog.log({
-      userId: user.id,
-      tenantId: user.tenantId,
-      action: AuditAction.SESSION_REVOKE,
-      status: AuditStatus.SUCCESS,
-      ipAddress,
-      userAgent,
-      metadata: { sessionId },
-    });
-
-    return {};
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   @Delete('revoke-others')
@@ -155,5 +148,53 @@ export class UserSessionController {
     });
 
     return { count: result.count };
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Revoke a specific session' })
+  @ApiResponse({ status: 200, description: 'Session revoked successfully' })
+  async revokeSession(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') sessionId: string,
+    @IpAddress() ipAddress: string,
+    @UserAgent() userAgent: string,
+  ) {
+    const session = await this.prisma.refreshToken.findUnique({
+      where: { id: sessionId },
+    });
+
+    if (!session || session.userId !== user.id || session.tenantId !== user.tenantId) {
+      throw new UnauthorizedException('Session not found or unauthorized');
+    }
+
+    await this.prisma.refreshToken.delete({
+      where: { id: sessionId },
+    });
+
+    await this.auditLog.log({
+      userId: user.id,
+      tenantId: user.tenantId,
+      action: AuditAction.SESSION_REVOKE,
+      status: AuditStatus.SUCCESS,
+      ipAddress,
+      userAgent,
+      metadata: { sessionId },
+    });
+
+    return {};
+  }
+
+  private parsePositiveInt(
+    value: string | undefined,
+    fallback: number,
+    min: number,
+    max: number,
+  ): number {
+    const parsed = value ? Number.parseInt(value, 10) : fallback;
+    if (!Number.isFinite(parsed)) {
+      return fallback;
+    }
+
+    return Math.min(Math.max(parsed, min), max);
   }
 }

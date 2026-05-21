@@ -3,6 +3,7 @@ import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { GoogleLoginDto } from './dto/google-login.dto';
 import { IpAddress } from './decorators/ip-address.decorator';
 import { UserAgent } from './decorators/user-agent.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -47,6 +48,28 @@ export class AuthController {
     @UserAgent() userAgent: string,
   ) {
     return this.authService.login(loginDto, req.tenantId, res, ipAddress, userAgent);
+  }
+
+  @Post('google')
+  @HttpCode(200)
+  @Throttle({ auth: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: 'Login with Google Identity Services ID token' })
+  @ApiResponse({ status: 200, description: 'Google login successful' })
+  @ApiResponse({ status: 401, description: 'Invalid Google credential or unauthorized portal' })
+  async loginWithGoogle(
+    @Body() googleLoginDto: GoogleLoginDto,
+    @Req() req: TenantAwareRequest,
+    @Res({ passthrough: true }) res: Response,
+    @IpAddress() ipAddress: string,
+    @UserAgent() userAgent: string,
+  ) {
+    return this.authService.loginWithGoogle(
+      googleLoginDto,
+      req.tenantId,
+      res,
+      ipAddress,
+      userAgent,
+    );
   }
 
   @Post('logout')

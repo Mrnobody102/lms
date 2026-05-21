@@ -9,13 +9,19 @@ export function useAdminOverview() {
   });
 }
 
-export function useStudents(params?: { search?: string; isActive?: boolean }) {
+export function useStudents(params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  isActive?: boolean;
+}) {
   return useQuery({
     queryKey: ['admin-students', params],
     queryFn: () =>
       adminUserApi.getStudents({
+        page: params?.page ?? 1,
         search: params?.search,
-        limit: 100,
+        limit: params?.limit ?? 20,
         isActive: params?.isActive,
       }),
     staleTime: 60 * 1000,

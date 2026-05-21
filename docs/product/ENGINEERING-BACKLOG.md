@@ -1,6 +1,6 @@
 # Backlog Kỹ Thuật Và Theo Dõi Tiến Độ
 
-Cập nhật lần cuối: 2026-05-21 (Batch P10.1 — Listening audio prompt)
+Cập nhật lần cuối: 2026-05-21 (Batch Auth/List Handling — Google login + pagination)
 
 ## Mục tiêu
 
@@ -17,6 +17,7 @@ Nguyên tắc:
 | Hạng mục                               | Trạng thái           | Ghi chú                                                                                                                                                                              |
 | -------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Cookie-first auth cho browser flow     | Đã làm               | Không còn coi `localStorage` là authority chính                                                                                                                                      |
+| Google login                           | Đã làm               | Google Identity Services ID token được verify ở backend; vẫn dùng cookie-first session nội bộ. Cần cấu hình Google OAuth client ID theo môi trường.                                  |
 | Tenant-aware auth + business API tests | Đã làm               | Có HTTP integration tests cho auth/course/lesson/progress                                                                                                                            |
 | Student E2E flow thực tế               | Đã làm               | Đã thay test giả bằng register/login/lesson/progress                                                                                                                                 |
 | Local release verification             | Đã làm               | Có `build:stable`, `smoke:api`, `test:e2e`, cleanup port                                                                                                                             |
@@ -35,6 +36,7 @@ Nguyên tắc:
 | AI conversation roleplay (P8c)         | Chưa làm             | Scenario-based chat/voice roleplay.                                                                                                                                                  |
 | Media storage / background jobs        | Đã có core           | S3-compatible storage, presigned upload, MediaAsset, BullMQ jobs; đã dùng cho listening audio prompt.                                                                                |
 | Listening question type                | Đã có MVP            | Audio prompt overlay cho practice/exam question, admin upload, student player với replay limit và SRS playback.                                                                      |
+| Long list handling                     | Đang chuẩn hóa       | Student list và active sessions đã có server pagination. Log/time-series lớn nên dùng cursor pagination + virtualization khi mở UI chi tiết.                                         |
 
 ## Những gì đã hoàn thành
 
@@ -45,6 +47,8 @@ Nguyên tắc:
 - [x] Guard chặn tenant mismatch cho non-super-admin.
 - [x] Auth browser flow dùng cookie `HttpOnly`.
 - [x] Logout xóa session cookie đúng cách.
+- [x] Google login verify ID token ở backend, không tin plain Google user id từ client.
+- [x] Admin/super Google login không auto-provision nhầm student account.
 
 ### 2. Test và verify có giá trị thực tế
 
@@ -128,8 +132,8 @@ Task:
 - [x] Add tenant-scoped DB constraints for learning relations
 - [x] Move admin enrollment student search to server-side filtering
 - [x] Reporting theo enrollment
-- [ ] Audit log cho bulk enroll/unenroll (actorId, targetUserIds, courseId, count, ip, userAgent)
-- [ ] Surface `BulkEnrollmentResult.skippedCount`/`duplicateCount` lên admin UI toast
+- [x] Audit log cho bulk enroll/unenroll (actorId, targetUserIds, courseId, count, ip, userAgent)
+- [x] Surface `BulkEnrollmentResult.skippedCount`/`duplicateCount` lên admin UI toast
 - [ ] Drag/drop reorder unit và lesson trong admin UI
 
 ### Epic L. Codebase Maintainability Hardening

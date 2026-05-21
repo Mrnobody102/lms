@@ -16,4 +16,6 @@ export * from './sheet';
 export * from './theme-provider';
 export * from './theme-toggle';
 export * from './language-toggle';
+export * from './google-sign-in-button';
+export * from './pagination-controls';
 export * from './lib/utils';
