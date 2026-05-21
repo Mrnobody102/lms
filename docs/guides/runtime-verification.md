@@ -9,6 +9,7 @@ Tài liệu này mô tả luồng verify tối giản nhưng đủ chặt cho lo
 ### 1. Fast checks
 
 ```bash
+pnpm run check:contracts
 pnpm test
 pnpm lint
 ```

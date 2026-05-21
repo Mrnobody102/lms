@@ -8,6 +8,54 @@ const adminUser = {
   tenantId: 'tenant-1',
 };
 
+const editableCourse = {
+  id: 'course-1',
+  title: 'HSK 1 Basics',
+  description: 'Intro course',
+  levelId: null,
+  aiSettings: {
+    enabled: true,
+    prompt: 'Give concise feedback.',
+  },
+  units: [
+    {
+      id: 'unit-1',
+      title: 'Pronunciation',
+      description: null,
+      order: 1,
+      courseId: 'course-1',
+    },
+  ],
+  lessons: [
+    {
+      id: 'lesson-1',
+      title: 'Lesson 1: Pinyin intro',
+      type: 'video',
+      content: '',
+      videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      aiPrompt: null,
+      duration: 12,
+      order: 1,
+      courseId: 'course-1',
+      unitId: 'unit-1',
+    },
+    {
+      id: 'lesson-2',
+      title: 'Lesson 2: Greetings',
+      type: 'text',
+      content: 'Practice greetings.',
+      videoUrl: null,
+      aiPrompt: null,
+      duration: 8,
+      order: 2,
+      courseId: 'course-1',
+      unitId: 'unit-1',
+    },
+  ],
+  enrollments: [],
+  _count: { lessons: 2 },
+};
+
 async function installAdminApiMocks(page: Page) {
   let currentUser: typeof adminUser | null = null;
   const corsHeaders = {
@@ -91,6 +139,69 @@ async function installAdminApiMocks(page: Page) {
       });
     }
 
+    if (path.endsWith('/api/courses') && method === 'GET') {
+      return json(200, {
+        data: [editableCourse],
+        meta: { page: 1, limit: 20, total: 1, totalPages: 1 },
+      });
+    }
+
+    if (path.endsWith('/api/courses/course-1') && method === 'GET') {
+      return json(200, editableCourse);
+    }
+
+    if (path.endsWith('/api/courses/course-1') && method === 'PATCH') {
+      return json(200, { ...editableCourse, ...request.postDataJSON() });
+    }
+
+    if (path.endsWith('/api/courses/course-1/report') && method === 'GET') {
+      return json(200, {
+        course: { id: editableCourse.id, title: editableCourse.title },
+        totals: {
+          enrolledStudents: 0,
+          completedStudents: 0,
+          inProgressStudents: 0,
+          notStartedStudents: 0,
+          totalLessons: editableCourse.lessons.length,
+          completedLessons: 0,
+          activitySessions: 0,
+          totalTimeSpentSeconds: 0,
+          averageCompletionPercentage: 0,
+          completionRate: 0,
+        },
+        students: [],
+      });
+    }
+
+    if (path.endsWith('/api/programs') && method === 'GET') {
+      return json(200, [
+        {
+          id: 'program-1',
+          title: 'HSK',
+          slug: 'hsk',
+          description: 'HSK program',
+          isActive: true,
+          levels: [
+            {
+              id: 'level-1',
+              title: 'HSK 1',
+              description: null,
+              order: 1,
+              isActive: true,
+              programId: 'program-1',
+            },
+          ],
+        },
+      ]);
+    }
+
+    if (path.endsWith('/api/admin/users') && method === 'GET') {
+      return json(200, {
+        data: [],
+        meta: { page: 1, limit: 100, total: 0, totalPages: 0 },
+      });
+    }
+
     return route.continue();
   });
 }
@@ -108,4 +219,35 @@ test('admin can login and view dashboard overview', async ({ page }) => {
   await expect(page.getByText('Learner One')).toBeVisible();
   await expect(page.getByText('HSK 1 Basics')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Learning reports' })).toBeVisible();
+});
+
+test('admin can open course editor without i18n or lesson-table layout regressions', async ({
+  page,
+}) => {
+  await installAdminApiMocks(page);
+
+  await page.goto('/en/login');
+  await page.locator('input[type="email"]').fill('admin@example.com');
+  await page.locator('input[type="password"]').fill('Admin@123');
+  await page.getByRole('button', { name: 'Login' }).click();
+  await expect(page).toHaveURL(/\/en$/, { timeout: 60000 });
+
+  await page.goto('/en/courses/course-1/edit');
+
+  await expect(page.locator('input[value="HSK 1 Basics"]')).toBeVisible({ timeout: 60000 });
+  await expect(page.getByRole('button', { name: 'Curriculum' })).toBeVisible();
+  await expect(page.getByText('Pronunciation')).toBeVisible();
+  await expect(page.getByText('Lesson 1: Pinyin intro')).toBeVisible();
+  await expect(page.getByText('Lesson 2: Greetings')).toBeVisible();
+  await expect(page.getByText(/MISSING_MESSAGE|FORMATTING_ERROR|Could not resolve/)).toHaveCount(0);
+
+  const titleBox = await page.getByText('Lesson 1: Pinyin intro').boundingBox();
+  const durationBox = await page.getByText('12m').boundingBox();
+  const editorBox = await page.locator('main').boundingBox();
+
+  expect(titleBox).not.toBeNull();
+  expect(durationBox).not.toBeNull();
+  expect(editorBox).not.toBeNull();
+  expect(durationBox!.x).toBeGreaterThan(titleBox!.x + 120);
+  expect(durationBox!.x + durationBox!.width).toBeLessThan(editorBox!.x + editorBox!.width);
 });

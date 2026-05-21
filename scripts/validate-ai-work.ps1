@@ -5,8 +5,17 @@ $Success = $true
 
 Write-Host "--- Starting AI Work Validation ---" -ForegroundColor Cyan
 
-# 1. Linting Check
-Write-Host "[1/4] Running Linting..." -ForegroundColor Yellow
+# 1. Contract checks
+Write-Host "[1/5] Running i18n/API contract checks..." -ForegroundColor Yellow
+try {
+    pnpm run check:contracts
+} catch {
+    Write-Host "X Contract checks failed!" -ForegroundColor Red
+    $Success = $false
+}
+
+# 2. Linting Check
+Write-Host "[2/5] Running Linting..." -ForegroundColor Yellow
 try {
     pnpm lint
 } catch {
@@ -14,8 +23,8 @@ try {
     $Success = $false
 }
 
-# 2. Type Checking
-Write-Host "[2/4] Running Type Check..." -ForegroundColor Yellow
+# 3. Type Checking
+Write-Host "[3/5] Running Type Check..." -ForegroundColor Yellow
 try {
     pnpm run typecheck
 } catch {
@@ -23,8 +32,8 @@ try {
     $Success = $false
 }
 
-# 3. Response Shape Grep (Heuristic)
-Write-Host "[3/4] Checking for direct response objects (potential bypass of TransformInterceptor)..." -ForegroundColor Yellow
+# 4. Response Shape Grep (Heuristic)
+Write-Host "[4/5] Checking for direct response objects (potential bypass of TransformInterceptor)..." -ForegroundColor Yellow
 # Tìm các controller không trả về DTO hoặc trả về object literal mà không có wrapper (tỷ lệ cao là sai)
 $Controllers = Get-ChildItem -Path "apps/api-server/src" -Filter "*.controller.ts" -Recurse
 foreach ($file in $Controllers) {
@@ -39,8 +48,8 @@ foreach ($file in $Controllers) {
     }
 }
 
-# 4. Unused Code / Any Check
-Write-Host "[4/4] Checking for forbidden 'any' types..." -ForegroundColor Yellow
+# 5. Unused Code / Any Check
+Write-Host "[5/5] Checking for forbidden 'any' types..." -ForegroundColor Yellow
 $AnyMatches = Select-String -Path "apps/api-server/src/**/*.ts", "apps/web-*/**/*.ts" -Pattern ": any" -Exclude "*.spec.ts", "node_modules"
 if ($AnyMatches) {
     Write-Host "X Forbidden 'any' usage found:" -ForegroundColor Red

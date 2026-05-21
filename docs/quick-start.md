@@ -55,9 +55,9 @@ pnpm --filter super-portal dev
 
 | App          | URL                              |
 | ------------ | -------------------------------- |
-| Web Student  | `http://localhost:3000`          |
-| Web Admin    | `http://localhost:3001`          |
-| Super Portal | `http://localhost:3002`          |
+| Web Student  | `http://localhost:3100`          |
+| Web Admin    | `http://localhost:3101`          |
+| Super Portal | `http://localhost:3102`          |
 | API          | `http://localhost:4000/api`      |
 | Swagger      | `http://localhost:4000/api/docs` |
 
@@ -141,20 +141,22 @@ curl -X POST http://localhost:4000/api/auth/logout \
 
 ## Scripts thường dùng
 
-| Lệnh              | Mục đích                            |
-| ----------------- | ----------------------------------- |
-| `pnpm dev`        | Chạy toàn bộ app ở dev mode         |
-| `pnpm build`      | Build workspace                     |
-| `pnpm test`       | Chạy test                           |
-| `pnpm test:e2e`   | Chạy E2E test                       |
-| `pnpm db:up`      | Bật database                        |
-| `pnpm db:down`    | Tắt database                        |
-| `pnpm db:migrate` | Chạy migration                      |
-| `pnpm db:deploy`  | Apply migration đã commit           |
-| `pnpm db:status`  | Kiểm tra trạng thái migration       |
-| `pnpm db:resolve` | Resolve baseline/recovery migration |
-| `pnpm db:seed`    | Seed dữ liệu mẫu                    |
-| `pnpm db:studio`  | Mở Prisma Studio                    |
+| Lệnh                       | Mục đích                                    |
+| -------------------------- | ------------------------------------------- |
+| `pnpm dev`                 | Chạy toàn bộ app ở dev mode                 |
+| `pnpm build`               | Build workspace                             |
+| `pnpm run check:contracts` | Kiểm i18n keys/ICU và API response contract |
+| `pnpm test`                | Chạy test                                   |
+| `pnpm test:e2e`            | Chạy E2E test                               |
+| `pnpm db:up`               | Bật database                                |
+| `pnpm db:down`             | Tắt database                                |
+| `pnpm db:migrate`          | Chạy migration                              |
+| `pnpm db:deploy`           | Apply migration đã commit                   |
+| `pnpm db:reset:demo`       | Reset DB local và seed lại dữ liệu demo     |
+| `pnpm db:status`           | Kiểm tra trạng thái migration               |
+| `pnpm db:resolve`          | Resolve baseline/recovery migration         |
+| `pnpm db:seed`             | Seed dữ liệu mẫu                            |
+| `pnpm db:studio`           | Mở Prisma Studio                            |
 
 `pnpm test:e2e` build các shared workspace dependency trước khi mở Playwright để Next app không đọc nhầm artifact `dist` cũ.
 Đây là browser UI smoke với API mock; để kiểm API + DB + Redis thật, dùng `pnpm smoke:api`.

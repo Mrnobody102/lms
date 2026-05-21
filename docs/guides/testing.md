@@ -14,6 +14,7 @@ Tài liệu này mô tả các lớp test trong LMS Platform và cách chạy ch
 ### Chạy test
 
 ```bash
+pnpm run check:contracts
 pnpm test
 pnpm test --filter @repo/shared
 pnpm test --filter @repo/ui

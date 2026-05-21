@@ -9,8 +9,12 @@ export interface Response<T> {
 }
 
 @Injectable()
-export class TransformInterceptor<T> implements NestInterceptor<T, Response<T>> {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<Response<T>> {
+export class TransformInterceptor<T> implements NestInterceptor<T, Response<T> | T> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<Response<T> | T> {
+    if (shouldBypassResponseWrapping(context)) {
+      return next.handle() as Observable<T>;
+    }
+
     return next.handle().pipe(
       map((data) => ({
         success: true,
@@ -19,4 +23,17 @@ export class TransformInterceptor<T> implements NestInterceptor<T, Response<T>> 
       })),
     );
   }
+}
+
+function shouldBypassResponseWrapping(context: ExecutionContext): boolean {
+  if (context.getType() !== 'http') return false;
+
+  const request = context.switchToHttp().getRequest<{
+    originalUrl?: string;
+    path?: string;
+    url?: string;
+  }>();
+  const requestPath = request.originalUrl ?? request.path ?? request.url ?? '';
+
+  return requestPath.startsWith('/api/health') || requestPath.startsWith('/health');
 }
