@@ -27,11 +27,21 @@ import { UpdatePracticeQuestionDto } from './dto/update-practice-question.dto';
 import { UpdatePracticeSetDto } from './dto/update-practice-set.dto';
 import { PracticeService } from './practice.service';
 
+import { GeneratePracticeDto } from './dto/generate-practice.dto';
+
 @ApiBearerAuth()
 @ApiTags('practice')
 @Controller('practice')
 export class PracticeController {
   constructor(private readonly practiceService: PracticeService) {}
+
+  @Post('generate-ai')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
+  @ApiOperation({ summary: 'Generate practice questions using AI' })
+  generateAiQuestions(@Body() dto: GeneratePracticeDto, @Request() req: AuthenticatedRequest) {
+    return this.practiceService.generateAiQuestions(getScopedTenantId(req), req.user.id, dto);
+  }
 
   @Post('questions')
   @UseGuards(JwtAuthGuard, RolesGuard)

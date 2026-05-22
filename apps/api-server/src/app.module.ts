@@ -38,6 +38,7 @@ import { MediaModule } from './media/media.module';
 import { JobsModule } from './jobs/jobs.module';
 
 import { CohortModule } from './cohort/cohort.module';
+import { RoleplayModule } from './roleplay/roleplay.module';
 
 @Module({
   imports: [
@@ -90,6 +91,7 @@ import { CohortModule } from './cohort/cohort.module';
     SkillModule,
     SrsModule,
     CohortModule,
+    RoleplayModule,
     MetricsModule,
     HealthModule,
     MailModule,

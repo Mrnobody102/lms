@@ -11,16 +11,7 @@ export class AiService {
     @Inject(AI_PROVIDER_TOKEN) private aiProvider: IAiProvider,
   ) {}
 
-  async explainAnswer(
-    tenantId: string,
-    userId: string,
-    questionPrompt: string,
-    correctAnswer: unknown,
-    userAnswer: unknown,
-    skillTags?: string[],
-    context?: string,
-  ): Promise<string> {
-    // 1. Check Quota
+  private async consumeQuota(tenantId: string, userId: string): Promise<void> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -61,21 +52,57 @@ export class AiService {
       );
     }
 
-    // 2. Generate explanation
-    const explanation = await this.aiProvider.generateExplanation({
+    await this.prisma.aiUsageQuota.update({
+      where: { id: quota.id },
+      data: { requestsUsed: { increment: 1 } },
+    });
+  }
+
+  async explainAnswer(
+    tenantId: string,
+    userId: string,
+    questionPrompt: string,
+    correctAnswer: unknown,
+    userAnswer: unknown,
+    skillTags?: string[],
+    context?: string,
+  ): Promise<string> {
+    await this.consumeQuota(tenantId, userId);
+    return this.aiProvider.generateExplanation({
       questionPrompt,
       correctAnswer,
       userAnswer,
       skillTags,
       context,
     });
+  }
 
-    // 3. Update quota
-    await this.prisma.aiUsageQuota.update({
-      where: { id: quota.id },
-      data: { requestsUsed: { increment: 1 } },
-    });
+  async generatePracticeQuestions(
+    tenantId: string,
+    userId: string,
+    options: import('./interfaces/ai-provider.interface').GeneratePracticeOptions,
+  ): Promise<import('./interfaces/ai-provider.interface').GeneratedPracticeQuestion[]> {
+    await this.consumeQuota(tenantId, userId);
+    return this.aiProvider.generatePracticeQuestions(options);
+  }
 
-    return explanation;
+  async chatRoleplay(
+    tenantId: string,
+    userId: string,
+    messages: { role: 'user' | 'assistant' | 'system'; content: string }[],
+    systemPrompt: string,
+  ): Promise<string> {
+    await this.consumeQuota(tenantId, userId);
+    return this.aiProvider.chatRoleplay(messages, systemPrompt);
+  }
+
+  async evaluateRoleplaySession(
+    tenantId: string,
+    userId: string,
+    messages: { role: 'user' | 'assistant' | 'system'; content: string }[],
+    scenario: string,
+  ): Promise<{ score: number; feedback: unknown }> {
+    await this.consumeQuota(tenantId, userId);
+    return this.aiProvider.evaluateRoleplaySession(messages, scenario);
   }
 }

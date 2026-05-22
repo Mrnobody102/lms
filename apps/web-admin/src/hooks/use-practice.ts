@@ -138,3 +138,15 @@ export function useDeletePracticeExerciseSet() {
     },
   });
 }
+
+export function useGeneratePracticeQuestions() {
+  return useMutation({
+    mutationFn: (data: {
+      topic: string;
+      context?: string;
+      count: number;
+      questionType: PracticeQuestionType;
+      skillTags?: string[];
+    }) => practiceApi.generateAiQuestions(data),
+  });
+}

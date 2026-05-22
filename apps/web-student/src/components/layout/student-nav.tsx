@@ -9,6 +9,7 @@ import {
   User as UserIcon,
   UserPlus,
   Settings,
+  MessageSquare,
 } from 'lucide-react';
 import { LanguageToggle, ThemeToggle } from '@repo/ui';
 import { useTranslations } from 'next-intl';
@@ -43,6 +44,13 @@ export function StudentNav({ showLinks = false }: StudentNavProps) {
           >
             <Dumbbell className="h-3.5 w-3.5" />
             {t('nav.practice')}
+          </Link>
+          <Link
+            href="/roleplay"
+            className="inline-flex items-center gap-1.5 hover:text-primary transition-colors"
+          >
+            <MessageSquare className="h-3.5 w-3.5" />
+            Roleplay
           </Link>
           <Link
             href="/exams"

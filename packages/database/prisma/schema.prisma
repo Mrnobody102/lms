@@ -65,6 +65,17 @@ enum ExamAttemptStatus {
   SUBMITTED
 }
 
+enum RoleplaySessionStatus {
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum MessageRole {
+  USER
+  AI
+  SYSTEM
+}
+
 enum MediaAssetStatus {
   UPLOADING
   READY
@@ -99,6 +110,7 @@ model Tenant {
   aiUsageQuotas         AiUsageQuota[]
   mediaAssets           MediaAsset[]
   cohorts               Cohort[]
+  roleplaySessions      RoleplaySession[]
   isActive              Boolean                @default(true)
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @default(now()) @updatedAt
@@ -139,6 +151,7 @@ model User {
   aiUsageQuotas          AiUsageQuota[]
   mediaAssets            MediaAsset[]
   cohortMemberships      CohortMembership[]
+  roleplaySessions       RoleplaySession[]
   createdAt              DateTime               @default(now())
   updatedAt              DateTime               @updatedAt
 
@@ -717,6 +730,7 @@ model MediaAsset {
   status            MediaAssetStatus   @default(UPLOADING)
   practiceQuestions PracticeQuestion[] @relation("PracticeQuestionAudio")
   examQuestions     ExamQuestion[]     @relation("ExamQuestionAudio")
+  roleplayMessages  RoleplayMessage[]  @relation("RoleplayMessageAudio")
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 
@@ -767,4 +781,39 @@ model SkillMasterySnapshot {
 
   @@unique([tenantId, userId, skillCode, date])
   @@index([tenantId, skillCode, date])
+}
+
+model RoleplaySession {
+  id          String                @id @default(uuid())
+  tenantId    String
+  tenant      Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User                  @relation(fields: [userId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  scenario    String
+  status      RoleplaySessionStatus @default(IN_PROGRESS)
+  score       Int?
+  feedback    Json?
+  startedAt   DateTime              @default(now())
+  completedAt DateTime?
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  messages    RoleplayMessage[]
+
+  @@unique([id, tenantId])
+  @@index([tenantId, userId, startedAt])
+}
+
+model RoleplayMessage {
+  id                String          @id @default(uuid())
+  tenantId          String
+  sessionId         String
+  session           RoleplaySession @relation(fields: [sessionId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  role              MessageRole
+  content           String
+  audioMediaAssetId String?
+  audioMediaAsset   MediaAsset?     @relation("RoleplayMessageAudio", fields: [audioMediaAssetId], references: [id], onDelete: SetNull)
+  createdAt         DateTime        @default(now())
+
+  @@unique([id, tenantId])
+  @@index([sessionId, createdAt])
 }

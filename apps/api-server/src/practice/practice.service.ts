@@ -10,6 +10,8 @@ import {
 import { MediaService } from '../media/media.service';
 import { SkillMasteryService } from '../skill/skill-mastery.service';
 import { SrsService } from '../srs/srs.service';
+import { AiService } from '../ai/ai.service';
+import { GeneratePracticeDto } from './dto/generate-practice.dto';
 import { AiEvaluationService, type PracticeAiFeedback } from './ai-evaluation.service';
 
 interface PracticeUser {
@@ -37,6 +39,7 @@ export class PracticeService {
     private readonly skillMastery: SkillMasteryService,
     private readonly srs: SrsService,
     private readonly media: MediaService,
+    private readonly aiService: AiService,
     private readonly aiEvaluation: AiEvaluationService = new AiEvaluationService(),
   ) {}
 
@@ -83,6 +86,16 @@ export class PracticeService {
         audioMediaAssetId: data.audioMediaAssetId ?? null,
         audioReplayLimit: data.audioReplayLimit ?? null,
       },
+    });
+  }
+
+  async generateAiQuestions(tenantId: string, userId: string, dto: GeneratePracticeDto) {
+    return this.aiService.generatePracticeQuestions(tenantId, userId, {
+      topic: dto.topic,
+      context: dto.context,
+      count: dto.count,
+      questionType: dto.questionType,
+      skillTags: dto.skillTags,
     });
   }
 

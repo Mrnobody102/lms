@@ -7,6 +7,7 @@ import { QuestionOptionsEditor } from '@/components/authoring/question-options-e
 import { AdminHeader } from '@/components/layout/admin-header';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
+import { AiGenerationModal } from '@/components/practice/ai-generation-modal';
 import { AudioUploadField } from '@/components/media/audio-upload-field';
 import {
   Alert,
@@ -50,6 +51,7 @@ import {
   PencilLine,
   Trash2,
   X,
+  Sparkles,
 } from 'lucide-react';
 
 function includesNormalized(haystack: string, needle: string) {
@@ -93,6 +95,7 @@ export default function AdminPracticePage() {
     'publish' | 'unpublish' | 'delete' | null
   >(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [aiGenerationModalOpen, setAiGenerationModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<
     'questions' | 'question-editor' | 'sets' | 'set-editor'
   >('questions');
@@ -653,6 +656,15 @@ export default function AdminPracticePage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge variant="secondary">{filteredQuestions.length}</Badge>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2"
+                            onClick={() => setAiGenerationModalOpen(true)}
+                          >
+                            <Sparkles className="w-4 h-4" />
+                            {t('generateWithAi', { fallback: 'Generate with AI' })}
+                          </Button>
                           <Button
                             variant="outline"
                             size="sm"
@@ -1380,6 +1392,29 @@ export default function AdminPracticePage() {
           onConfirm={handleBulkDeleteExerciseSets}
         />
       </div>
+
+      <AiGenerationModal
+        open={aiGenerationModalOpen}
+        onOpenChange={setAiGenerationModalOpen}
+        courseId={courseId}
+        onError={(msg) => setMessage({ type: 'error', text: msg })}
+        onSuccess={(msg) => setMessage({ type: 'success', text: msg })}
+        onGenerated={(generatedQuestions) => {
+          generatedQuestions.forEach((q) => {
+            if (!q.type || !q.prompt || q.correctAnswer === undefined) return;
+            createQuestion.mutate({
+              courseId,
+              unitId: unitId || undefined,
+              type: q.type,
+              prompt: q.prompt,
+              options: q.options,
+              correctAnswer: q.correctAnswer,
+              explanation: q.explanation ?? undefined,
+              skillTags: q.skillTags ?? [],
+            });
+          });
+        }}
+      />
     </AuthGuard>
   );
 }

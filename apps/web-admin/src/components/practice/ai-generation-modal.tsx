@@ -1,0 +1,182 @@
+'use client';
+
+import { FormEvent, useState } from 'react';
+import { useTranslations } from 'next-intl';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button,
+  Input,
+  Label,
+} from '@/components/ui';
+import { useGeneratePracticeQuestions } from '@/hooks/use-practice';
+import { PracticeQuestionType, PracticeQuestion } from '@/lib/practice-api';
+import { Loader2, Sparkles } from 'lucide-react';
+
+interface AiGenerationModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onGenerated: (questions: Partial<PracticeQuestion>[]) => void;
+  onError: (msg: string) => void;
+  onSuccess: (msg: string) => void;
+  _courseId?: string;
+}
+
+export function AiGenerationModal({
+  open,
+  onOpenChange,
+  onGenerated,
+  onError,
+  onSuccess,
+  _courseId,
+}: AiGenerationModalProps) {
+  const t = useTranslations('Admin');
+  const [topic, setTopic] = useState('');
+  const [context, setContext] = useState('');
+  const [count, setCount] = useState(3);
+  const [questionType, setQuestionType] = useState<PracticeQuestionType>('MULTIPLE_CHOICE');
+  const [skillTags, setSkillTags] = useState('');
+
+  const generateMutation = useGeneratePracticeQuestions();
+
+  const handleGenerate = (e: FormEvent) => {
+    e.preventDefault();
+    if (!topic.trim()) {
+      onError('Topic is required');
+      return;
+    }
+
+    generateMutation.mutate(
+      {
+        topic,
+        context,
+        count,
+        questionType,
+        skillTags: skillTags
+          .split(',')
+          .map((s: string) => s.trim())
+          .filter(Boolean),
+      },
+      {
+        onSuccess: (data) => {
+          onSuccess('Questions generated successfully');
+          onGenerated(data);
+          onOpenChange(false);
+          setTopic('');
+          setContext('');
+        },
+        onError: (error) => {
+          onError('Failed to generate questions');
+          console.error(error);
+        },
+      },
+    );
+  };
+
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent className="sm:max-w-[500px]">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-indigo-500" />
+            {t('aiGenerateQuestions', { fallback: 'Generate with AI' })}
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            {t('aiGenerateDescription', {
+              fallback: 'Let AI automatically generate practice questions for your course.',
+            })}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+
+        <form onSubmit={handleGenerate} className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="topic">{t('aiTopic', { fallback: 'Topic or Prompt' })}</Label>
+            <Input
+              id="topic"
+              placeholder={t('aiTopicPlaceholder', { fallback: 'e.g. Present Perfect Tense' })}
+              value={topic}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTopic(e.target.value)}
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="context">
+              {t('aiContext', { fallback: 'Reference Material (Optional)' })}
+            </Label>
+            <textarea
+              id="context"
+              className="min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              placeholder={t('aiContextPlaceholder', {
+                fallback: 'Paste text or lesson content here...',
+              })}
+              value={context}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setContext(e.target.value)}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label>{t('aiQuestionType', { fallback: 'Question Type' })}</Label>
+              <select
+                className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={questionType}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                  setQuestionType(e.target.value as PracticeQuestionType)
+                }
+              >
+                <option value="MULTIPLE_CHOICE">Multiple Choice</option>
+                <option value="FILL_BLANK">Fill in the Blank</option>
+              </select>
+            </div>
+            <div className="grid gap-2">
+              <Label>{t('aiQuestionCount', { fallback: 'Number of Questions' })}</Label>
+              <Input
+                type="number"
+                min={1}
+                max={10}
+                value={count}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setCount(parseInt(e.target.value) || 1)
+                }
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="skillTags">
+              {t('aiSkillTags', { fallback: 'Skill Tags (comma separated)' })}
+            </Label>
+            <Input
+              id="skillTags"
+              placeholder="grammar, vocab"
+              value={skillTags}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSkillTags(e.target.value)}
+            />
+          </div>
+
+          <AlertDialogFooter className="mt-4">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              {t('cancel', { fallback: 'Cancel' })}
+            </Button>
+            <Button
+              type="submit"
+              disabled={generateMutation.isPending || !topic.trim()}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            >
+              {generateMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="mr-2 h-4 w-4" />
+              )}
+              {t('generate', { fallback: 'Generate' })}
+            </Button>
+          </AlertDialogFooter>
+        </form>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}

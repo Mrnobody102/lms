@@ -126,4 +126,16 @@ export const practiceApi = {
   deleteExerciseSet(id: string) {
     return api.delete(`/practice/exercise-sets/${id}`).then((r) => r.data as PracticeExerciseSet);
   },
+
+  generateAiQuestions(data: {
+    topic: string;
+    context?: string;
+    count: number;
+    questionType: PracticeQuestionType;
+    skillTags?: string[];
+  }) {
+    return api
+      .post('/practice/generate-ai', data)
+      .then((r) => r.data as Partial<PracticeQuestion>[]);
+  },
 };
