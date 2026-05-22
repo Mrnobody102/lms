@@ -34,6 +34,8 @@ export interface Course {
   id: string;
   title: string;
   description?: string | null;
+  coverImageUrl?: string | null;
+  isActive: boolean;
   levelId?: string | null;
   aiSettings?: CourseAiSettings | null;
   lessons: Lesson[];
@@ -46,9 +48,11 @@ export interface CourseCreateInput {
   title: string;
   slug?: string;
   description?: string;
+  coverImageUrl?: string;
   totalDuration?: number;
   aiSettings?: CourseAiSettings;
   levelId?: string;
+  isActive?: boolean;
 }
 
 export type CourseUpdateInput = Partial<CourseCreateInput>;
@@ -197,6 +201,10 @@ export const courseApi = {
 
   deleteUnit(courseId: string, unitId: string) {
     return api.delete(`/courses/${courseId}/units/${unitId}`).then((r) => r.data as CourseUnit);
+  },
+
+  setCourseStatus(id: string, isActive: boolean) {
+    return api.patch(`/courses/${id}/status`, { isActive }).then((r) => r.data as Course);
   },
 
   createLesson(courseId: string, data: Partial<Lesson>) {

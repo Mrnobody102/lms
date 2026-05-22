@@ -1,5 +1,15 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsInt, Matches, MaxLength, IsObject, IsUUID } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsInt,
+  IsBoolean,
+  IsUrl,
+  Matches,
+  MaxLength,
+  IsObject,
+  IsUUID,
+} from 'class-validator';
 
 export class CreateCourseDto {
   @ApiProperty({ example: 'Lập trình Next.js cơ bản', description: 'Course title' })
@@ -31,6 +41,14 @@ export class CreateCourseDto {
   totalDuration?: number;
 
   @ApiPropertyOptional({
+    example: 'https://cdn.example.com/course-cover.jpg',
+    description: 'URL of the course cover/thumbnail image',
+  })
+  @IsUrl({}, { message: 'coverImageUrl must be a valid URL' })
+  @IsOptional()
+  coverImageUrl?: string;
+
+  @ApiPropertyOptional({
     description: 'Temporary AI settings stored per course until provider integration is ready',
     type: Object,
     additionalProperties: true,
@@ -43,4 +61,12 @@ export class CreateCourseDto {
   @IsOptional()
   @IsUUID()
   levelId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Whether the course is visible/published to students',
+    default: true,
+  })
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
 }

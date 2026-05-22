@@ -12,6 +12,8 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { IsBoolean } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 import { Role } from '@repo/database';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -29,6 +31,12 @@ import { EnrollStudentDto } from './dto/enroll-student.dto';
 import { CreateCourseUnitDto } from './dto/create-course-unit.dto';
 import { UpdateCourseUnitDto } from './dto/update-course-unit.dto';
 
+class SetCourseStatusDto {
+  @ApiProperty({ description: 'Set to true to publish, false to unpublish' })
+  @IsBoolean()
+  isActive: boolean;
+}
+
 @ApiBearerAuth()
 @ApiTags('courses')
 @Controller('courses')
@@ -40,15 +48,26 @@ export class CourseController {
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Tạo khóa học mới' })
   create(@Body() createCourseDto: CreateCourseDto, @Request() req: AuthenticatedRequest) {
-    const { title, slug, description, totalDuration, aiSettings, levelId } = createCourseDto;
+    const {
+      title,
+      slug,
+      description,
+      totalDuration,
+      coverImageUrl,
+      aiSettings,
+      levelId,
+      isActive,
+    } = createCourseDto;
 
     return this.courseService.create({
       title,
       slug,
       description,
       totalDuration,
+      coverImageUrl,
       aiSettings,
       levelId,
+      isActive,
       tenantId: getScopedTenantId(req),
     });
   }
@@ -189,6 +208,18 @@ export class CourseController {
     });
   }
 
+  @Patch(':id/status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Publish or unpublish a course' })
+  setStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: SetCourseStatusDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.courseService.setActive(id, getScopedTenantId(req), body.isActive);
+  }
+
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
@@ -203,8 +234,10 @@ export class CourseController {
       slug: updateCourseDto.slug,
       description: updateCourseDto.description,
       totalDuration: updateCourseDto.totalDuration,
+      coverImageUrl: updateCourseDto.coverImageUrl,
       aiSettings: updateCourseDto.aiSettings,
       levelId: updateCourseDto.levelId,
+      isActive: updateCourseDto.isActive,
     });
   }
 

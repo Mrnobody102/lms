@@ -20,6 +20,7 @@ import {
   useCreateCourseUnit,
   useUpdateCourseUnit,
   useDeleteCourseUnit,
+  useToggleCourseStatus,
 } from '@/hooks/use-courses';
 import { usePrograms } from '@/hooks/use-programs';
 import { LessonList } from '@/features/courses/lesson-list';
@@ -51,6 +52,8 @@ import {
   Settings,
   Users,
   BookOpen,
+  Globe,
+  EyeOff,
 } from 'lucide-react';
 import { Link } from '@/navigation';
 
@@ -85,12 +88,17 @@ export default function CourseEditorPage() {
   const [localLevelId, setLocalLevelId] = useState<string>('');
   const [localAiEnabled, setLocalAiEnabled] = useState(false);
   const [localAiPrompt, setLocalAiPrompt] = useState('');
+  const [localCoverImageUrl, setLocalCoverImageUrl] = useState('');
+
+  const toggleCourseStatus = useToggleCourseStatus();
+  const courseIsActive = course?.isActive !== false;
 
   useEffect(() => {
     if (!course) return;
 
     setLocalTitle(course.title);
     setLocalLevelId(course.levelId || '');
+    setLocalCoverImageUrl(course.coverImageUrl || '');
     const aiSettings = normalizeCourseAiSettings(course.aiSettings);
     setLocalAiEnabled(aiSettings.enabled);
     setLocalAiPrompt(aiSettings.prompt);
@@ -113,12 +121,24 @@ export default function CourseEditorPage() {
         data: {
           title: localTitle,
           levelId: localLevelId || undefined,
+          coverImageUrl: localCoverImageUrl.trim() || undefined,
           aiSettings: buildCourseAiSettings(localAiEnabled, localAiPrompt),
         },
       },
       {
         onSuccess: () => showMsg('success', 'courseSaved'),
         onError: () => showMsg('error', 'courseSaveError'),
+      },
+    );
+  };
+
+  const handleToggleStatus = () => {
+    toggleCourseStatus.mutate(
+      { id: courseId, isActive: !courseIsActive },
+      {
+        onSuccess: () =>
+          showMsg('success', courseIsActive ? 'courseUnpublished' : 'coursePublished'),
+        onError: () => showMsg('error', 'courseStatusError'),
       },
     );
   };
@@ -520,6 +540,12 @@ export default function CourseEditorPage() {
                     >
                       {lessonReadiness.isReady ? t('readyToSave') : t('needsAttention')}
                     </Badge>
+                    <Badge
+                      variant={courseIsActive ? 'success' : 'secondary'}
+                      className="cursor-default pointer-events-none mt-1 sm:mt-0"
+                    >
+                      {courseIsActive ? t('published') : t('draft')}
+                    </Badge>
                   </div>
                 </div>
 
@@ -536,6 +562,22 @@ export default function CourseEditorPage() {
                       </Button>
                     </a>
                   )}
+                  <Button
+                    variant={courseIsActive ? 'outline' : 'default'}
+                    onClick={handleToggleStatus}
+                    disabled={toggleCourseStatus.isPending}
+                    size="sm"
+                    className="gap-1.5 rounded-full shadow-sm"
+                  >
+                    {toggleCourseStatus.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : courseIsActive ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Globe className="w-4 h-4" />
+                    )}
+                    {courseIsActive ? t('unpublishCourse') : t('publishCourse')}
+                  </Button>
                   <Button
                     onClick={handleUpdateCourse}
                     disabled={updateCourse.isPending}
@@ -643,6 +685,32 @@ export default function CourseEditorPage() {
                 <div className="space-y-6">
                   <div className="bg-card border rounded-2xl shadow-sm p-6 space-y-6">
                     <h2 className="text-lg font-semibold">{t('basicInfo')}</h2>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium">{t('coverImageUrl')}</Label>
+                      <input
+                        type="url"
+                        value={localCoverImageUrl}
+                        onChange={(e) => setLocalCoverImageUrl(e.target.value)}
+                        onBlur={handleUpdateCourse}
+                        placeholder={t('coverImageUrlPlaceholder')}
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
+                      />
+                      {localCoverImageUrl && (
+                        <div className="mt-2 rounded-lg overflow-hidden border aspect-video bg-muted relative">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={localCoverImageUrl}
+                            alt="Course cover preview"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground">{t('coverImageUrlDesc')}</p>
+                    </div>
 
                     <div className="space-y-1.5">
                       <Label className="text-sm font-medium">{t('levelOptional')}</Label>

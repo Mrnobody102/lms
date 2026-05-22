@@ -88,6 +88,19 @@ export default function CourseDetailPage() {
     <div className="min-h-screen bg-background font-sans">
       <StudentNav showLinks />
 
+      {/* Cover Image Banner */}
+      {course.coverImageUrl && (
+        <div className="relative h-52 w-full overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={course.coverImageUrl}
+            alt={course.title}
+            className="h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/20 to-background" />
+        </div>
+      )}
+
       <main className="mx-auto max-w-7xl px-6 py-10">
         <div className="mb-6 flex items-center justify-between gap-3">
           <Link

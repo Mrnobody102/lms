@@ -185,6 +185,7 @@ model Course {
   title            String
   slug             String? // SEO-friendly slug
   description      String?
+  coverImageUrl    String? // URL to the course cover/thumbnail image
   isActive         Boolean               @default(true)
   deletedAt        DateTime?
   tenantId         String

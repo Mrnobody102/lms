@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { Button, Input, Label } from '@/components/ui';
 import { LessonType } from '@/lib/course-api';
+import { RichTextEditor } from '@/components/authoring/rich-text-editor';
 
 export interface MicroCardDraft {
   front: string;
@@ -99,11 +100,11 @@ export function LessonTypeFields({
     return (
       <div className="space-y-1.5">
         <Label className="text-sm">{t('lessonContent')}</Label>
-        <textarea
+        <RichTextEditor
           value={content}
-          onChange={(event) => onContentChange(event.target.value)}
+          onChange={onContentChange}
           placeholder={t('lessonContentPlaceholder')}
-          className="min-h-32 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
+          minHeight="14rem"
         />
       </div>
     );

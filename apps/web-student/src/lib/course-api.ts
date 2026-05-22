@@ -37,6 +37,7 @@ export interface Course {
   _count?: { lessons: number };
   description?: string | null;
   totalDuration?: number;
+  coverImageUrl?: string | null;
   levelId?: string | null;
   level?: {
     id: string;

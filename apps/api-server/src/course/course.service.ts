@@ -39,8 +39,10 @@ export class CourseService {
     slug?: string;
     description?: string;
     totalDuration?: number;
+    coverImageUrl?: string;
     aiSettings?: Record<string, unknown>;
     levelId?: string;
+    isActive?: boolean;
   }) {
     return this.prisma.$transaction(async (tx) => {
       const course = await tx.course.create({
@@ -49,9 +51,11 @@ export class CourseService {
           slug: data.slug,
           description: data.description,
           totalDuration: data.totalDuration,
+          coverImageUrl: data.coverImageUrl,
           aiSettings: this.toJsonInput(data.aiSettings),
           levelId: data.levelId,
           tenantId: data.tenantId,
+          ...(data.isActive !== undefined ? { isActive: data.isActive } : {}),
         },
       });
 
@@ -245,8 +249,10 @@ export class CourseService {
       slug?: string;
       description?: string;
       totalDuration?: number;
+      coverImageUrl?: string | null;
       aiSettings?: Record<string, unknown>;
       levelId?: string;
+      isActive?: boolean;
     },
   ) {
     // Ensure course exists and belongs to tenant
@@ -257,8 +263,10 @@ export class CourseService {
       slug: data.slug,
       description: data.description,
       totalDuration: data.totalDuration,
+      coverImageUrl: data.coverImageUrl,
       levelId: data.levelId,
       aiSettings: this.toJsonInput(data.aiSettings),
+      ...(data.isActive !== undefined ? { isActive: data.isActive } : {}),
     };
 
     return this.prisma.course.update({
@@ -274,6 +282,16 @@ export class CourseService {
     return this.prisma.course.update({
       where: { id_tenantId: { id, tenantId } },
       data: { deletedAt: new Date() },
+    });
+  }
+
+  async setActive(id: string, tenantId: string, isActive: boolean) {
+    // Ensure course exists and belongs to tenant
+    await this.findOne(id, tenantId, undefined, { includeInactive: true });
+
+    return this.prisma.course.update({
+      where: { id_tenantId: { id, tenantId } },
+      data: { isActive },
     });
   }
 

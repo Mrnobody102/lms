@@ -68,6 +68,18 @@ export function useDeleteCourse() {
   });
 }
 
+export function useToggleCourseStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
+      courseApi.setCourseStatus(id, isActive),
+    onSuccess: (_data, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['course', vars.id] });
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
+    },
+  });
+}
+
 export function useEnrollStudent() {
   const queryClient = useQueryClient();
   return useMutation({
