@@ -47,9 +47,18 @@ export function useSkillsReport(filters: { courseId?: string; programId?: string
   });
 }
 
-export function useActivityTrend(filters: { courseId?: string; programId?: string } = {}) {
+export function useActivityTrend(
+  filters: { courseId?: string; programId?: string; cohortId?: string } = {},
+) {
   return useQuery({
     queryKey: ['reports', 'activity-trend', filters],
     queryFn: () => reportsApi.getActivityTrend(filters),
+  });
+}
+
+export function useMasteryTrend(filters: { cohortId?: string } = {}) {
+  return useQuery({
+    queryKey: ['reports', 'mastery-trend', filters],
+    queryFn: () => reportsApi.getMasteryTrend(filters),
   });
 }

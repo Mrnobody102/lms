@@ -37,6 +37,8 @@ import { StorageModule } from './storage/storage.module';
 import { MediaModule } from './media/media.module';
 import { JobsModule } from './jobs/jobs.module';
 
+import { CohortModule } from './cohort/cohort.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -87,6 +89,7 @@ import { JobsModule } from './jobs/jobs.module';
     ProgramModule,
     SkillModule,
     SrsModule,
+    CohortModule,
     MetricsModule,
     HealthModule,
     MailModule,

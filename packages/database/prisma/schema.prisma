@@ -72,71 +72,75 @@ enum MediaAssetStatus {
 }
 
 model Tenant {
-  id               String                @id @default(uuid())
-  name             String
-  slug             String                @unique // Ví dụ: "trung-tam-a"
-  domain           String?               @unique // Custom domain sau này
-  settings         Json // Lưu logo, màu sắc, config
-  users            User[]
-  courses          Course[]
-  units            CourseUnit[]
-  lessons          Lesson[]
-  enrollments      CourseEnrollment[]
-  activities       LearningActivity[]
-  questions        PracticeQuestion[]
-  exerciseSets     PracticeExerciseSet[]
-  practiceAttempts PracticeAttempt[]
-  exams            Exam[]
-  examAttempts     ExamAttempt[]
-  activationCodes  ActivationCode[]
-  redemptions      ActivationRedemption[]
-  programs         Program[]
-  levels           Level[]
-  skills           Skill[]
-  skillMasteries   SkillMastery[]
-  reviewCards      ReviewCard[]
-  aiUsageQuotas    AiUsageQuota[]
-  mediaAssets      MediaAsset[]
-  isActive         Boolean               @default(true)
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @default(now()) @updatedAt
+  id                    String                 @id @default(uuid())
+  name                  String
+  slug                  String                 @unique // Ví dụ: "trung-tam-a"
+  domain                String?                @unique // Custom domain sau này
+  settings              Json // Lưu logo, màu sắc, config
+  users                 User[]
+  courses               Course[]
+  units                 CourseUnit[]
+  lessons               Lesson[]
+  enrollments           CourseEnrollment[]
+  activities            LearningActivity[]
+  questions             PracticeQuestion[]
+  exerciseSets          PracticeExerciseSet[]
+  practiceAttempts      PracticeAttempt[]
+  exams                 Exam[]
+  examAttempts          ExamAttempt[]
+  activationCodes       ActivationCode[]
+  redemptions           ActivationRedemption[]
+  programs              Program[]
+  levels                Level[]
+  skills                Skill[]
+  skillMasteries        SkillMastery[]
+  skillMasterySnapshots SkillMasterySnapshot[]
+  reviewCards           ReviewCard[]
+  aiUsageQuotas         AiUsageQuota[]
+  mediaAssets           MediaAsset[]
+  cohorts               Cohort[]
+  isActive              Boolean                @default(true)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @default(now()) @updatedAt
 
   @@index([isActive])
 }
 
 model User {
-  id               String               @id @default(uuid())
-  email            String
-  password         String
-  googleSubject   String?
-  googleEmailVerified Boolean              @default(false)
-  fullName         String
-  phoneNumber      String?
-  avatarUrl        String?
-  role             Role                 @default(STUDENT)
-  isActive         Boolean              @default(true)
-  deletedAt        DateTime?
-  tokenVersion     Int                  @default(0)
+  id                     String                 @id @default(uuid())
+  email                  String
+  password               String
+  googleSubject          String?
+  googleEmailVerified    Boolean                @default(false)
+  fullName               String
+  phoneNumber            String?
+  avatarUrl              String?
+  role                   Role                   @default(STUDENT)
+  isActive               Boolean                @default(true)
+  deletedAt              DateTime?
+  tokenVersion           Int                    @default(0)
   passwordResetTokenHash String?
   passwordResetExpiresAt DateTime?
-  failedLoginAttempts    Int               @default(0)
+  failedLoginAttempts    Int                    @default(0)
   lockoutUntil           DateTime?
-  tenantId         String
-  tenant           Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  progress         UserLessonProgress[]
-  enrollments      CourseEnrollment[]
-  activities       LearningActivity[]
-  practiceAttempts PracticeAttempt[]
-  examAttempts     ExamAttempt[]
-  refreshTokens    RefreshToken[]
-  auditLogs        AuditLog[]
-  redemptions      ActivationRedemption[]
-  skillMasteries   SkillMastery[]
-  reviewCards      ReviewCard[]
-  aiUsageQuotas    AiUsageQuota[]
-  mediaAssets      MediaAsset[]
-  createdAt        DateTime             @default(now())
-  updatedAt        DateTime             @updatedAt
+  tenantId               String
+  tenant                 Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  progress               UserLessonProgress[]
+  enrollments            CourseEnrollment[]
+  activities             LearningActivity[]
+  practiceAttempts       PracticeAttempt[]
+  examAttempts           ExamAttempt[]
+  refreshTokens          RefreshToken[]
+  auditLogs              AuditLog[]
+  redemptions            ActivationRedemption[]
+  skillMasteries         SkillMastery[]
+  skillMasterySnapshots  SkillMasterySnapshot[]
+  reviewCards            ReviewCard[]
+  aiUsageQuotas          AiUsageQuota[]
+  mediaAssets            MediaAsset[]
+  cohortMemberships      CohortMembership[]
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
 
   @@unique([tenantId, email])
   @@unique([tenantId, googleSubject])
@@ -168,11 +172,11 @@ model AuditLog {
   userId    String?
   user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   tenantId  String
-  action    String   // e.g., 'LOGIN', 'PASSWORD_CHANGE', 'PROFILE_UPDATE'
-  status    String   // 'SUCCESS', 'FAILURE'
+  action    String // e.g., 'LOGIN', 'PASSWORD_CHANGE', 'PROFILE_UPDATE'
+  status    String // 'SUCCESS', 'FAILURE'
   ipAddress String?
   userAgent String?
-  metadata  Json?    // Any extra context
+  metadata  Json? // Any extra context
   createdAt DateTime @default(now())
 
   @@index([tenantId, userId])
@@ -215,36 +219,36 @@ model Course {
 }
 
 model Program {
-  id               String      @id @default(uuid())
-  title            String
-  slug             String?
-  description      String?
-  isActive         Boolean     @default(true)
-  deletedAt        DateTime?
-  tenantId         String
-  tenant           Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  levels           Level[]
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+  id          String    @id @default(uuid())
+  title       String
+  slug        String?
+  description String?
+  isActive    Boolean   @default(true)
+  deletedAt   DateTime?
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  levels      Level[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@unique([id, tenantId])
   @@index([tenantId, isActive, deletedAt])
 }
 
 model Level {
-  id               String      @id @default(uuid())
-  title            String
-  description      String?
-  order            Int         @default(0)
-  isActive         Boolean     @default(true)
-  deletedAt        DateTime?
-  tenantId         String
-  tenant           Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  programId        String
-  program          Program     @relation(fields: [programId, tenantId], references: [id, tenantId], onDelete: Cascade)
-  courses          Course[]
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  order       Int       @default(0)
+  isActive    Boolean   @default(true)
+  deletedAt   DateTime?
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  programId   String
+  program     Program   @relation(fields: [programId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  courses     Course[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@unique([id, tenantId])
   @@index([tenantId, programId, deletedAt])
@@ -361,27 +365,27 @@ model LearningActivity {
 }
 
 model PracticeQuestion {
-  id            String                        @id @default(uuid())
-  tenantId      String
-  tenant        Tenant                        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  courseId      String
-  course        Course                        @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
-  unitId        String?
-  unit          CourseUnit?                   @relation(fields: [unitId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
-  type          PracticeQuestionType          @default(MULTIPLE_CHOICE)
-  prompt        String
-  options       Json?
-  correctAnswer Json
-  explanation   String?
-  skillTags     String[]
+  id                String                        @id @default(uuid())
+  tenantId          String
+  tenant            Tenant                        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  courseId          String
+  course            Course                        @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  unitId            String?
+  unit              CourseUnit?                   @relation(fields: [unitId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
+  type              PracticeQuestionType          @default(MULTIPLE_CHOICE)
+  prompt            String
+  options           Json?
+  correctAnswer     Json
+  explanation       String?
+  skillTags         String[]
   audioMediaAssetId String?
-  audioMediaAsset   MediaAsset?               @relation("PracticeQuestionAudio", fields: [audioMediaAssetId], references: [id], onDelete: SetNull)
+  audioMediaAsset   MediaAsset?                   @relation("PracticeQuestionAudio", fields: [audioMediaAssetId], references: [id], onDelete: SetNull)
   audioReplayLimit  Int?
-  deletedAt     DateTime?
-  createdAt     DateTime                      @default(now())
-  updatedAt     DateTime                      @updatedAt
-  exerciseLinks PracticeExerciseSetQuestion[]
-  answers       PracticeAnswer[]
+  deletedAt         DateTime?
+  createdAt         DateTime                      @default(now())
+  updatedAt         DateTime                      @updatedAt
+  exerciseLinks     PracticeExerciseSetQuestion[]
+  answers           PracticeAnswer[]
 
   @@unique([id, tenantId])
   @@index([tenantId, courseId, deletedAt])
@@ -505,23 +509,23 @@ model ExamSection {
 }
 
 model ExamQuestion {
-  id            String           @id @default(uuid())
-  tenantId      String
-  sectionId     String
-  section       ExamSection      @relation(fields: [sectionId, tenantId], references: [id, tenantId], onDelete: Cascade)
-  type          ExamQuestionType @default(MULTIPLE_CHOICE)
-  prompt        String
-  options       Json?
-  correctAnswer Json
-  explanation   String?
-  points        Int              @default(1)
-  skillTags     String[]
+  id                String           @id @default(uuid())
+  tenantId          String
+  sectionId         String
+  section           ExamSection      @relation(fields: [sectionId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  type              ExamQuestionType @default(MULTIPLE_CHOICE)
+  prompt            String
+  options           Json?
+  correctAnswer     Json
+  explanation       String?
+  points            Int              @default(1)
+  skillTags         String[]
   audioMediaAssetId String?
-  audioMediaAsset   MediaAsset?  @relation("ExamQuestionAudio", fields: [audioMediaAssetId], references: [id], onDelete: SetNull)
+  audioMediaAsset   MediaAsset?      @relation("ExamQuestionAudio", fields: [audioMediaAssetId], references: [id], onDelete: SetNull)
   audioReplayLimit  Int?
-  order         Int              @default(0)
-  createdAt     DateTime         @default(now())
-  answers       ExamAnswer[]
+  order             Int              @default(0)
+  createdAt         DateTime         @default(now())
+  answers           ExamAnswer[]
 
   @@unique([id, tenantId])
   @@index([tenantId, sectionId, order])
@@ -571,21 +575,21 @@ model ExamAnswer {
 }
 
 model ActivationCode {
-  id               String                 @id @default(uuid())
-  tenantId         String
-  tenant           Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  code             String
-  description      String?
-  maxUses          Int                    @default(1)
-  usedCount        Int                    @default(0)
-  expiresAt        DateTime?
-  courseId         String?
-  course           Course?                @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
-  isActive         Boolean                @default(true)
-  deletedAt        DateTime?
-  createdAt        DateTime               @default(now())
-  updatedAt        DateTime               @updatedAt
-  redemptions      ActivationRedemption[]
+  id          String                 @id @default(uuid())
+  tenantId    String
+  tenant      Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  code        String
+  description String?
+  maxUses     Int                    @default(1)
+  usedCount   Int                    @default(0)
+  expiresAt   DateTime?
+  courseId    String?
+  course      Course?                @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  isActive    Boolean                @default(true)
+  deletedAt   DateTime?
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+  redemptions ActivationRedemption[]
 
   @@unique([id, tenantId])
   @@unique([tenantId, code])
@@ -608,20 +612,21 @@ model ActivationRedemption {
 }
 
 model Skill {
-  id          String         @id @default(uuid())
+  id          String                 @id @default(uuid())
   tenantId    String
-  tenant      Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant      Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   code        String
   name        String
   nameVi      String?
   color       String?
   description String?
-  isActive    Boolean        @default(true)
-  sortOrder   Int            @default(0)
+  isActive    Boolean                @default(true)
+  sortOrder   Int                    @default(0)
   deletedAt   DateTime?
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
   masteries   SkillMastery[]
+  snapshots   SkillMasterySnapshot[]
 
   @@unique([tenantId, code])
   @@index([tenantId, deletedAt])
@@ -699,21 +704,67 @@ model AiUsageQuota {
 }
 
 model MediaAsset {
-  id           String            @id @default(uuid())
-  tenantId     String
-  tenant       Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  userId       String
-  user         User              @relation(fields: [userId, tenantId], references: [id, tenantId], onDelete: Cascade)
-  filename     String
-  mimeType     String
-  sizeBytes    Int
-  storageKey   String            @unique
-  url          String?
-  status       MediaAssetStatus  @default(UPLOADING)
+  id                String             @id @default(uuid())
+  tenantId          String
+  tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId            String
+  user              User               @relation(fields: [userId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  filename          String
+  mimeType          String
+  sizeBytes         Int
+  storageKey        String             @unique
+  url               String?
+  status            MediaAssetStatus   @default(UPLOADING)
   practiceQuestions PracticeQuestion[] @relation("PracticeQuestionAudio")
   examQuestions     ExamQuestion[]     @relation("ExamQuestionAudio")
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 
   @@index([tenantId, status])
+}
+
+model Cohort {
+  id          String             @id @default(uuid())
+  tenantId    String
+  tenant      Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  isActive    Boolean            @default(true)
+  deletedAt   DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  memberships CohortMembership[]
+
+  @@unique([id, tenantId])
+  @@unique([tenantId, name])
+  @@index([tenantId, isActive, deletedAt])
+}
+
+model CohortMembership {
+  id        String   @id @default(uuid())
+  tenantId  String
+  cohortId  String
+  cohort    Cohort   @relation(fields: [cohortId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([cohortId, userId])
+  @@index([tenantId, userId])
+}
+
+model SkillMasterySnapshot {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  skillCode String
+  skill     Skill?   @relation(fields: [tenantId, skillCode], references: [tenantId, code], onDelete: NoAction, onUpdate: Cascade)
+  mastery   Float
+  date      DateTime @db.Date // Stores the UTC date of the snapshot
+  createdAt DateTime @default(now())
+
+  @@unique([tenantId, userId, skillCode, date])
+  @@index([tenantId, skillCode, date])
 }

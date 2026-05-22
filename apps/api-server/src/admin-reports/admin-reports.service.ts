@@ -5,6 +5,7 @@ import {
   PracticeAttemptStatus,
   ProgressStatus,
   LearningActivityType,
+  Prisma,
 } from '@repo/database';
 import { PrismaService } from '../common/services/prisma.service';
 import { buildAnswerAccuracy, type AccuracyReport } from '../common/utils/answer-accuracy.util';
@@ -493,7 +494,7 @@ export class AdminReportsService {
 
   async getActivityTrend(
     tenantId: string,
-    filters: { courseId?: string; programId?: string } = {},
+    filters: { courseId?: string; programId?: string; cohortId?: string } = {},
   ) {
     const courseFilter = await this.resolveCourseFilter(tenantId, filters);
 
@@ -508,6 +509,9 @@ export class AdminReportsService {
         tenantId,
         occurredAt: { gte: startDate },
         ...(courseFilter ? { courseId: courseFilter } : {}),
+        ...(filters.cohortId
+          ? { user: { cohortMemberships: { some: { cohortId: filters.cohortId } } } }
+          : {}),
       },
       select: {
         occurredAt: true,
@@ -532,6 +536,75 @@ export class AdminReportsService {
       if (bucket) {
         if (record.type === LearningActivityType.LESSON_OPENED) bucket.opened += 1;
         if (record.type === LearningActivityType.LESSON_COMPLETED) bucket.completed += 1;
+      }
+    }
+
+    return {
+      trend: Array.from(trendMap.values()),
+    };
+  }
+
+  async getMasteryTrend(tenantId: string, filters: { cohortId?: string } = {}) {
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - 6);
+    startDate.setHours(0, 0, 0, 0);
+
+    const whereClause: Prisma.SkillMasterySnapshotWhereInput = {
+      tenantId,
+      date: { gte: startDate },
+    };
+
+    if (filters.cohortId) {
+      whereClause.user = {
+        cohortMemberships: {
+          some: { cohortId: filters.cohortId },
+        },
+      };
+    }
+
+    const records = await this.prisma.skillMasterySnapshot.findMany({
+      where: whereClause,
+      select: {
+        skillCode: true,
+        mastery: true,
+        date: true,
+      },
+    });
+
+    const trendMap = new Map<string, Record<string, number | string>>();
+
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(startDate);
+      d.setDate(d.getDate() + i);
+      const dateStr = d.toISOString().split('T')[0];
+      trendMap.set(dateStr, { date: dateStr });
+    }
+
+    const aggregated = new Map<string, { [skillCode: string]: { sum: number; count: number } }>();
+
+    for (const record of records) {
+      const dateStr = record.date.toISOString().split('T')[0];
+      let dayAgg = aggregated.get(dateStr);
+      if (!dayAgg) {
+        dayAgg = {};
+        aggregated.set(dateStr, dayAgg);
+      }
+      let skillAgg = dayAgg[record.skillCode];
+      if (!skillAgg) {
+        skillAgg = { sum: 0, count: 0 };
+        dayAgg[record.skillCode] = skillAgg;
+      }
+      skillAgg.sum += record.mastery;
+      skillAgg.count += 1;
+    }
+
+    for (const [dateStr, dayAgg] of aggregated.entries()) {
+      const bucket = trendMap.get(dateStr);
+      if (bucket) {
+        for (const skillCode in dayAgg) {
+          bucket[skillCode] = Math.round((dayAgg[skillCode].sum / dayAgg[skillCode].count) * 100);
+        }
       }
     }
 

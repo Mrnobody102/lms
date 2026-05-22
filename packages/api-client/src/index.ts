@@ -212,7 +212,8 @@ export function createApiClient(config: ApiClientConfig = {}): AxiosInstance {
           } else {
             const locale = detectLocale(supportedLocales, defaultLocale);
             const redirectUrl = buildLoginRedirectUrl(locale, getReturnUrl());
-            if (window.location.pathname !== `/${locale}/login`) {
+            const currentPath = window.location.pathname.replace(/\/$/, '');
+            if (currentPath !== `/${locale}/login`) {
               window.location.assign(redirectUrl);
             }
           }
@@ -235,7 +236,8 @@ export function createApiClient(config: ApiClientConfig = {}): AxiosInstance {
         } else {
           const locale = detectLocale(supportedLocales, defaultLocale);
           const redirectUrl = buildLoginRedirectUrl(locale, getReturnUrl());
-          if (window.location.pathname !== `/${locale}/login`) {
+          const currentPath = window.location.pathname.replace(/\/$/, '');
+          if (currentPath !== `/${locale}/login`) {
             window.location.assign(redirectUrl);
           }
         }

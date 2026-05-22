@@ -85,29 +85,69 @@ export class SkillMasteryService {
       select: { id: true, mastery: true, attempts: true, correctAttempts: true },
     });
 
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+
     if (existing) {
       const newMastery = clamp01(EWMA_ALPHA * existing.mastery + (1 - EWMA_ALPHA) * correctRatio);
-      await this.prisma.skillMastery.update({
-        where: { id: existing.id },
-        data: {
-          mastery: newMastery,
-          attempts: existing.attempts + batch.attempts,
-          correctAttempts: existing.correctAttempts + batch.correctAttempts,
-        },
+
+      await this.prisma.$transaction(async (tx) => {
+        await tx.skillMastery.update({
+          where: { id: existing.id },
+          data: {
+            mastery: newMastery,
+            attempts: existing.attempts + batch.attempts,
+            correctAttempts: existing.correctAttempts + batch.correctAttempts,
+          },
+        });
+
+        await tx.skillMasterySnapshot.upsert({
+          where: {
+            tenantId_userId_skillCode_date: {
+              tenantId,
+              userId,
+              skillCode,
+              date: today,
+            },
+          },
+          create: {
+            tenantId,
+            userId,
+            skillCode,
+            mastery: newMastery,
+            date: today,
+          },
+          update: {
+            mastery: newMastery,
+          },
+        });
       });
       return;
     }
 
     // First exposure: bootstrap mastery from this batch's correct ratio.
-    await this.prisma.skillMastery.create({
-      data: {
-        tenantId,
-        userId,
-        skillCode,
-        mastery: clamp01(correctRatio),
-        attempts: batch.attempts,
-        correctAttempts: batch.correctAttempts,
-      },
+    const initialMastery = clamp01(correctRatio);
+    await this.prisma.$transaction(async (tx) => {
+      await tx.skillMastery.create({
+        data: {
+          tenantId,
+          userId,
+          skillCode,
+          mastery: initialMastery,
+          attempts: batch.attempts,
+          correctAttempts: batch.correctAttempts,
+        },
+      });
+
+      await tx.skillMasterySnapshot.create({
+        data: {
+          tenantId,
+          userId,
+          skillCode,
+          mastery: initialMastery,
+          date: today,
+        },
+      });
     });
   }
 

@@ -642,6 +642,34 @@
         "nextPage": "Sau"
       }
     },
+    "cohorts": {
+      "navLabel": "Lớp học / Cohort",
+      "title": "Danh sách Lớp học",
+      "subtitle": "Quản lý các nhóm lớp (cohort) và danh sách học viên.",
+      "createBtn": "Tạo Lớp học",
+      "members": "Thành viên",
+      "manageBtn": "Quản lý",
+      "emptyStateTitle": "Chưa có lớp học nào",
+      "emptyStateDesc": "Tạo lớp học đầu tiên để bắt đầu phân nhóm học viên.",
+      "createTitle": "Tạo lớp học mới",
+      "editTitle": "Chỉnh sửa lớp học",
+      "nameLabel": "Tên lớp học",
+      "namePlaceholder": "Ví dụ: Lớp Mùa Xuân 2026",
+      "descLabel": "Mô tả (Tuỳ chọn)",
+      "descPlaceholder": "Mô tả ngắn gọn về lớp học này...",
+      "membersSubtitle": "Quản lý danh sách thành viên lớp học",
+      "bulkEnrollTitle": "Ghi danh hàng loạt",
+      "bulkEnrollDesc": "Ghi danh tất cả thành viên của lớp này vào một khóa học.",
+      "selectCourse": "Chọn một khóa học...",
+      "enrollBtn": "Ghi danh thành viên",
+      "membersListTitle": "Thành viên lớp học",
+      "userIdPlaceholder": "User ID...",
+      "noMembers": "Lớp này chưa có thành viên.",
+      "confirmEnroll": "Ghi danh tất cả thành viên vào khóa học này?",
+      "enrollSuccess": "Ghi danh thành viên thành công.",
+      "enrollError": "Có lỗi xảy ra khi ghi danh.",
+      "filterLabel": "Lớp học:"
+    },
     "coursesFound": "{count, plural, =0 {Không tìm thấy khóa học nào} other {Tìm thấy # khóa học}}",
     "footer": {
       "copyright": "© 2026 LMS Platform. Bảo lưu mọi quyền."

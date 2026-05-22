@@ -15,7 +15,7 @@ import {
 } from 'recharts';
 
 interface ActivityTrendPanelProps {
-  filters?: { courseId?: string; programId?: string };
+  filters?: { courseId?: string; programId?: string; cohortId?: string };
 }
 
 export function ActivityTrendPanel({ filters = {} }: ActivityTrendPanelProps) {

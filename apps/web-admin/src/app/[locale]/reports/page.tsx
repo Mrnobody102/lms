@@ -11,6 +11,9 @@ import { AlertCircle, ChevronRight, Layers } from 'lucide-react';
 import { AccuracyCell, ProgressBarCell, ReportTable } from '@/components/reports/report-table';
 import { SkillAccuracyPanel } from '@/components/reports/skill-accuracy-panel';
 import { ActivityTrendPanel } from '@/components/reports/activity-trend-panel';
+import { TrendReportPanel } from '@/components/reports/trend-report-panel';
+import { useCohorts } from '@/hooks/use-cohorts';
+import { useState } from 'react';
 import type { ProgramRollupRow, UnassignedRollupRow } from '@/lib/reports-api';
 
 type Row = ProgramRollupRow | UnassignedRollupRow;
@@ -18,6 +21,10 @@ type Row = ProgramRollupRow | UnassignedRollupRow;
 export default function ReportsHomePage() {
   const t = useTranslations('Admin');
   const { data, isLoading, error } = useProgramsReport();
+  const { cohorts } = useCohorts();
+  const [selectedCohortId, setSelectedCohortId] = useState<string>('');
+
+  const filters = selectedCohortId ? { cohortId: selectedCohortId } : {};
 
   const rows: Row[] = data
     ? data.unassigned
@@ -31,7 +38,26 @@ export default function ReportsHomePage() {
         <AdminSidebar />
         <main className="flex-1 md:ml-64 p-6 lg:p-8">
           <div className="max-w-6xl mx-auto">
-            <AdminHeader title={t('reports.title')} description={t('reports.titleDesc')} />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <AdminHeader title={t('reports.title')} description={t('reports.titleDesc')} />
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">
+                  {t('cohorts.filterLabel', { fallback: 'Cohort:' })}
+                </span>
+                <select
+                  className="h-9 px-3 rounded-md border border-input bg-background text-sm min-w-[200px]"
+                  value={selectedCohortId}
+                  onChange={(e) => setSelectedCohortId(e.target.value)}
+                >
+                  <option value="">{t('common.all', { fallback: 'All' })}</option>
+                  {cohorts.map((cohort) => (
+                    <option key={cohort.id} value={cohort.id}>
+                      {cohort.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
 
             {error ? (
               <Alert variant="destructive">
@@ -42,7 +68,8 @@ export default function ReportsHomePage() {
               <div className="space-y-6">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   <div className="lg:col-span-2 space-y-6">
-                    <ActivityTrendPanel />
+                    <ActivityTrendPanel filters={filters} />
+                    <TrendReportPanel filters={filters} />
                     {isLoading ? (
                       <div className="rounded-md border bg-card p-6 space-y-2">
                         {Array.from({ length: 3 }).map((_, i) => (

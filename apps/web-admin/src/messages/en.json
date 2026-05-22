@@ -642,6 +642,34 @@
         "nextPage": "Next"
       }
     },
+    "cohorts": {
+      "navLabel": "Cohorts",
+      "title": "Cohorts",
+      "subtitle": "Manage student cohorts and group enrollments.",
+      "createBtn": "Create Cohort",
+      "members": "Members",
+      "manageBtn": "Manage",
+      "emptyStateTitle": "No cohorts found",
+      "emptyStateDesc": "Create your first cohort to start grouping students.",
+      "createTitle": "Create New Cohort",
+      "editTitle": "Edit Cohort",
+      "nameLabel": "Cohort Name",
+      "namePlaceholder": "e.g. Spring 2026 Cohort",
+      "descLabel": "Description (Optional)",
+      "descPlaceholder": "Brief description of this cohort...",
+      "membersSubtitle": "Manage cohort members and enrollments",
+      "bulkEnrollTitle": "Bulk Enroll",
+      "bulkEnrollDesc": "Enroll all current members of this cohort into a course.",
+      "selectCourse": "Select a course...",
+      "enrollBtn": "Enroll Members",
+      "membersListTitle": "Cohort Members",
+      "userIdPlaceholder": "User ID...",
+      "noMembers": "No members in this cohort yet.",
+      "confirmEnroll": "Enroll all members in this course?",
+      "enrollSuccess": "Successfully enrolled members.",
+      "enrollError": "Failed to enroll members.",
+      "filterLabel": "Cohort:"
+    },
     "coursesFound": "{count, plural, =0 {No courses found} one {# course found} other {# courses found}}",
     "footer": {
       "copyright": "© 2026 LMS Platform. All rights reserved."

@@ -133,8 +133,19 @@ export class AdminReportsController {
     @Request() req: AuthenticatedRequest,
     @Query('courseId') courseId?: string,
     @Query('programId') programId?: string,
+    @Query('cohortId') cohortId?: string,
   ) {
-    return this.reportsService.getActivityTrend(getScopedTenantId(req), { courseId, programId });
+    return this.reportsService.getActivityTrend(getScopedTenantId(req), {
+      courseId,
+      programId,
+      cohortId,
+    });
+  }
+
+  @Get('mastery-trend')
+  @ApiOperation({ summary: 'Get daily mastery trends (time-series)' })
+  getMasteryTrend(@Request() req: AuthenticatedRequest, @Query('cohortId') cohortId?: string) {
+    return this.reportsService.getMasteryTrend(getScopedTenantId(req), { cohortId });
   }
 
   @Get('skills.csv')

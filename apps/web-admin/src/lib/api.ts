@@ -12,7 +12,8 @@ export default createApiClient({
     const safeLocale = (locales as readonly string[]).includes(locale) ? locale : defaultLocale;
     const loginPath = `/${safeLocale}/login`;
 
-    if (window.location.pathname === loginPath) {
+    const normalizedPath = window.location.pathname.replace(/\/$/, '');
+    if (normalizedPath === loginPath) {
       return;
     }
 
