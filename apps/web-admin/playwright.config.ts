@@ -33,7 +33,7 @@ export default defineConfig({
   webServer: {
     command: 'pnpm exec next dev --webpack -H 127.0.0.1 -p 3101',
     url: 'http://127.0.0.1:3101/en/login',
-    reuseExistingServer: false,
+    reuseExistingServer: !process.env.CI,
     timeout: 240 * 1000,
   },
 });
