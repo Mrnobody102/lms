@@ -6,7 +6,13 @@ describe('SkillMasteryService', () => {
     const findUnique = vi.fn().mockResolvedValue(null);
     const create = vi.fn().mockResolvedValue({});
     const update = vi.fn();
-    const prisma = { skillMastery: { findUnique, create, update, findMany: vi.fn() } };
+    const skillMastery = { findUnique, create, update, findMany: vi.fn() };
+    const skillMasterySnapshot = { create: vi.fn(), upsert: vi.fn() };
+    const prisma = {
+      skillMastery,
+      skillMasterySnapshot,
+      $transaction: vi.fn((cb) => cb({ skillMastery, skillMasterySnapshot })),
+    };
     const service = new SkillMasteryService(prisma as never);
 
     await service.applyAnswerEvents('tenant-1', 'user-1', [
@@ -38,7 +44,13 @@ describe('SkillMasteryService', () => {
     });
     const update = vi.fn().mockResolvedValue({});
     const create = vi.fn();
-    const prisma = { skillMastery: { findUnique, create, update, findMany: vi.fn() } };
+    const skillMastery = { findUnique, create, update, findMany: vi.fn() };
+    const skillMasterySnapshot = { create: vi.fn(), upsert: vi.fn() };
+    const prisma = {
+      skillMastery,
+      skillMasterySnapshot,
+      $transaction: vi.fn((cb) => cb({ skillMastery, skillMasterySnapshot })),
+    };
     const service = new SkillMasteryService(prisma as never);
 
     await service.applyAnswerEvents('tenant-1', 'user-1', [
@@ -57,8 +69,12 @@ describe('SkillMasteryService', () => {
   it('aggregates events across multiple skills independently', async () => {
     const findUnique = vi.fn().mockResolvedValue(null);
     const create = vi.fn().mockResolvedValue({});
+    const skillMastery = { findUnique, create, update: vi.fn(), findMany: vi.fn() };
+    const skillMasterySnapshot = { create: vi.fn(), upsert: vi.fn() };
     const prisma = {
-      skillMastery: { findUnique, create, update: vi.fn(), findMany: vi.fn() },
+      skillMastery,
+      skillMasterySnapshot,
+      $transaction: vi.fn((cb) => cb({ skillMastery, skillMasterySnapshot })),
     };
     const service = new SkillMasteryService(prisma as never);
 
@@ -75,8 +91,12 @@ describe('SkillMasteryService', () => {
   it('skips events with no skill codes silently', async () => {
     const findUnique = vi.fn();
     const create = vi.fn();
+    const skillMastery = { findUnique, create, update: vi.fn(), findMany: vi.fn() };
+    const skillMasterySnapshot = { create: vi.fn(), upsert: vi.fn() };
     const prisma = {
-      skillMastery: { findUnique, create, update: vi.fn(), findMany: vi.fn() },
+      skillMastery,
+      skillMasterySnapshot,
+      $transaction: vi.fn((cb) => cb({ skillMastery, skillMasterySnapshot })),
     };
     const service = new SkillMasteryService(prisma as never);
 
@@ -91,8 +111,12 @@ describe('SkillMasteryService', () => {
 
   it('swallows prisma errors so submit flow is not blocked', async () => {
     const findUnique = vi.fn().mockRejectedValue(new Error('boom'));
+    const skillMastery = { findUnique, create: vi.fn(), update: vi.fn(), findMany: vi.fn() };
+    const skillMasterySnapshot = { create: vi.fn(), upsert: vi.fn() };
     const prisma = {
-      skillMastery: { findUnique, create: vi.fn(), update: vi.fn(), findMany: vi.fn() },
+      skillMastery,
+      skillMasterySnapshot,
+      $transaction: vi.fn((cb) => cb({ skillMastery, skillMasterySnapshot })),
     };
     const service = new SkillMasteryService(prisma as never);
 

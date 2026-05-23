@@ -52,14 +52,8 @@ export function TrendReportPanel({ filters = {} }: TrendReportPanelProps) {
             <TrendingUp className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold">
-              {t('reports.masteryTrend', { fallback: 'Skill Mastery Trend' })}
-            </h3>
-            <p className="text-xs text-muted-foreground">
-              {t('reports.masteryTrendDesc', {
-                fallback: 'Average mastery per skill over the last 7 days.',
-              })}
-            </p>
+            <h3 className="text-sm font-semibold">{t('reports.masteryTrend')}</h3>
+            <p className="text-xs text-muted-foreground">{t('reports.masteryTrendDesc')}</p>
           </div>
         </div>
       </div>
@@ -71,9 +65,7 @@ export function TrendReportPanel({ filters = {} }: TrendReportPanelProps) {
           ))}
         </div>
       ) : !data || data.trend.length === 0 || skillCodes.size === 0 ? (
-        <p className="text-sm text-muted-foreground py-6 text-center">
-          {t('reports.noData', { fallback: 'No data available' })}
-        </p>
+        <p className="text-sm text-muted-foreground py-6 text-center">{t('reports.noData')}</p>
       ) : (
         <div className="w-full h-[300px] mt-6">
           <ResponsiveContainer width="100%" height="100%">

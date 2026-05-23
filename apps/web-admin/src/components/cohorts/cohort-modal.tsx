@@ -36,7 +36,7 @@ export function CohortModal({ isOpen, onClose, cohort }: CohortModalProps) {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      setError(t('common.required', { fallback: 'This field is required' }));
+      setError(t('common.required'));
       return;
     }
 
@@ -69,18 +69,16 @@ export function CohortModal({ isOpen, onClose, cohort }: CohortModalProps) {
         <div className="bg-card w-full max-w-md rounded-xl shadow-lg border border-border overflow-hidden">
           <div className="p-6 border-b border-border">
             <h2 className="text-xl font-semibold">
-              {cohort
-                ? t('cohorts.editTitle', { fallback: 'Edit Cohort' })
-                : t('cohorts.createTitle', { fallback: 'Create New Cohort' })}
+              {cohort ? t('cohorts.editTitle') : t('cohorts.createTitle')}
             </h2>
           </div>
 
           <form onSubmit={onSubmit} className="p-6 space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">{t('cohorts.nameLabel', { fallback: 'Cohort Name' })}</Label>
+              <Label htmlFor="name">{t('cohorts.nameLabel')}</Label>
               <Input
                 id="name"
-                placeholder={t('cohorts.namePlaceholder', { fallback: 'e.g. Spring 2026 Cohort' })}
+                placeholder={t('cohorts.namePlaceholder')}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className={error ? 'border-red-500' : ''}
@@ -89,14 +87,10 @@ export function CohortModal({ isOpen, onClose, cohort }: CohortModalProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">
-                {t('cohorts.descLabel', { fallback: 'Description (Optional)' })}
-              </Label>
+              <Label htmlFor="description">{t('cohorts.descLabel')}</Label>
               <textarea
                 id="description"
-                placeholder={t('cohorts.descPlaceholder', {
-                  fallback: 'Brief description of this cohort...',
-                })}
+                placeholder={t('cohorts.descPlaceholder')}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
@@ -113,18 +107,16 @@ export function CohortModal({ isOpen, onClose, cohort }: CohortModalProps) {
                 className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
               />
               <Label htmlFor="isActive" className="cursor-pointer">
-                {t('common.active', { fallback: 'Active' })}
+                {t('common.active')}
               </Label>
             </div>
 
             <div className="flex justify-end gap-3 pt-6 border-t border-border mt-6">
               <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>
-                {t('common.cancel', { fallback: 'Cancel' })}
+                {t('common.cancel')}
               </Button>
               <Button type="submit" disabled={isPending}>
-                {cohort
-                  ? t('common.save', { fallback: 'Save Changes' })
-                  : t('common.create', { fallback: 'Create' })}
+                {cohort ? t('common.save') : t('common.create')}
               </Button>
             </div>
           </form>

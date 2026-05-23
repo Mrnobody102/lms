@@ -1,5 +1,6 @@
+import { randomUUID } from 'crypto';
 import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { ReviewCardGrade, ReviewCardSource, type ReviewCard } from '@repo/database';
+import { Prisma, ReviewCardGrade, ReviewCardSource, type ReviewCard } from '@repo/database';
 import { PrismaService } from '../common/services/prisma.service';
 
 const MIN_EASE_FACTOR = 1.3;
@@ -39,6 +40,18 @@ export interface DueSummary {
   dueNow: number;
   dueToday: number;
   total: number;
+}
+
+export interface CustomCardContent {
+  front: string;
+  back?: string;
+  pinyin?: string;
+  example?: string;
+}
+
+export interface CustomCardInput {
+  customContent: CustomCardContent;
+  skillCodes?: string[];
 }
 
 interface ScheduleResult {
@@ -238,20 +251,34 @@ export class SrsService {
         card.sourceType === ReviewCardSource.PRACTICE_QUESTION
           ? practiceById.get(card.sourceId)
           : examById.get(card.sourceId);
-      const question: QueueQuestionPayload | null = source
-        ? {
-            id: source.id,
-            prompt: source.prompt,
-            type: String(source.type),
-            options: source.options,
-            correctAnswer: source.correctAnswer,
-            explanation: source.explanation,
-            audioMediaAsset: source.audioMediaAsset
-              ? { id: source.audioMediaAsset.id, url: source.audioMediaAsset.url }
-              : null,
-            audioReplayLimit: source.audioReplayLimit ?? null,
-          }
-        : null;
+      let question: QueueQuestionPayload | null = null;
+
+      if (card.sourceType === ReviewCardSource.CUSTOM && card.customContent) {
+        const customContent = card.customContent as Record<string, string>;
+        question = {
+          id: card.sourceId,
+          prompt: customContent.front || '',
+          type: 'micro_card',
+          options: null,
+          correctAnswer: null,
+          explanation: customContent.back || '',
+          audioMediaAsset: null,
+          audioReplayLimit: null,
+        };
+      } else if (source) {
+        question = {
+          id: source.id,
+          prompt: source.prompt,
+          type: String(source.type),
+          options: source.options,
+          correctAnswer: source.correctAnswer,
+          explanation: source.explanation,
+          audioMediaAsset: source.audioMediaAsset
+            ? { id: source.audioMediaAsset.id, url: source.audioMediaAsset.url }
+            : null,
+          audioReplayLimit: source.audioReplayLimit ?? null,
+        };
+      }
       return {
         cardId: card.id,
         sourceType: card.sourceType,
@@ -270,12 +297,12 @@ export class SrsService {
     userId: string,
     cardId: string,
     grade: ReviewCardGrade,
+    durationMs?: number,
   ): Promise<ReviewCard> {
-    const card = await this.prisma.reviewCard.findUnique({ where: { id: cardId } });
+    const card = await this.prisma.reviewCard.findUnique({
+      where: { id: cardId, tenantId, userId },
+    });
     if (!card) throw new NotFoundException('Review card not found');
-    if (card.tenantId !== tenantId || card.userId !== userId) {
-      throw new ForbiddenException('Review card belongs to another user');
-    }
 
     const next = this.scheduleNext(
       {
@@ -287,18 +314,34 @@ export class SrsService {
       grade,
     );
 
-    return this.prisma.reviewCard.update({
-      where: { id: card.id },
-      data: {
-        reps: next.reps,
-        lapses: next.lapses,
-        easeFactor: next.easeFactor,
-        interval: next.interval,
-        dueAt: next.dueAt,
-        lastReviewedAt: new Date(),
-        lastGrade: grade,
-        isSuspended: false,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      const updatedCard = await tx.reviewCard.update({
+        where: { id: card.id, tenantId, userId },
+        data: {
+          reps: next.reps,
+          lapses: next.lapses,
+          easeFactor: next.easeFactor,
+          interval: next.interval,
+          dueAt: next.dueAt,
+          lastReviewedAt: new Date(),
+          lastGrade: grade,
+          isSuspended: false,
+        },
+      });
+
+      await tx.reviewLog.create({
+        data: {
+          tenantId,
+          userId,
+          cardId: card.id,
+          grade,
+          easeFactor: next.easeFactor,
+          interval: next.interval,
+          durationMs,
+        },
+      });
+
+      return updatedCard;
     });
   }
 
@@ -320,5 +363,108 @@ export class SrsService {
     ]);
 
     return { dueNow, dueToday, total };
+  }
+
+  async createCustomCard(
+    tenantId: string,
+    userId: string,
+    data: CustomCardInput,
+  ): Promise<ReviewCard> {
+    return this.prisma.reviewCard.create({
+      data: {
+        tenantId,
+        userId,
+        sourceType: ReviewCardSource.CUSTOM,
+        sourceId: randomUUID(),
+        skillCodes: data.skillCodes || [],
+        dueAt: new Date(),
+        customContent: this.toCustomCardJson(data.customContent),
+      },
+    });
+  }
+
+  async getCustomCards(tenantId: string, userId: string): Promise<ReviewCard[]> {
+    return this.prisma.reviewCard.findMany({
+      where: { tenantId, userId, sourceType: ReviewCardSource.CUSTOM },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async updateCustomCard(
+    tenantId: string,
+    userId: string,
+    cardId: string,
+    data: CustomCardInput,
+  ): Promise<ReviewCard> {
+    const card = await this.prisma.reviewCard.findUnique({
+      where: { id: cardId, tenantId, userId },
+    });
+    if (!card) throw new NotFoundException('Review card not found');
+    if (card.sourceType !== ReviewCardSource.CUSTOM) {
+      throw new ForbiddenException('Only custom cards can be updated');
+    }
+
+    return this.prisma.reviewCard.update({
+      where: { id: cardId, tenantId, userId },
+      data: {
+        customContent: this.toCustomCardJson(data.customContent),
+        skillCodes: data.skillCodes || [],
+      },
+    });
+  }
+
+  async deleteCustomCard(tenantId: string, userId: string, cardId: string): Promise<void> {
+    const card = await this.prisma.reviewCard.findUnique({
+      where: { id: cardId, tenantId, userId },
+    });
+    if (!card) throw new NotFoundException('Review card not found');
+    if (card.sourceType !== ReviewCardSource.CUSTOM) {
+      throw new ForbiddenException('Only custom cards can be deleted');
+    }
+
+    await this.prisma.reviewCard.delete({
+      where: { id: cardId, tenantId, userId },
+    });
+  }
+
+  async getReviewStats(
+    tenantId: string,
+    userId: string,
+    days: number = 30,
+  ): Promise<Array<{ date: string; count: number }>> {
+    const windowDays = Math.min(Math.max(days, 1), 365);
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - windowDays);
+
+    const logs = await this.prisma.reviewLog.findMany({
+      where: {
+        tenantId,
+        userId,
+        createdAt: { gte: startDate },
+      },
+      select: { createdAt: true },
+    });
+
+    const countsByDate = new Map<string, number>();
+    for (const log of logs) {
+      const dateStr = log.createdAt.toISOString().split('T')[0];
+      countsByDate.set(dateStr, (countsByDate.get(dateStr) ?? 0) + 1);
+    }
+
+    return Array.from(countsByDate.entries())
+      .map(([date, count]) => ({ date, count }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  private toCustomCardJson(content: CustomCardContent): Prisma.InputJsonObject {
+    const json: Record<string, string> = {
+      front: content.front,
+    };
+
+    if (content.back) json.back = content.back;
+    if (content.pinyin) json.pinyin = content.pinyin;
+    if (content.example) json.example = content.example;
+
+    return json;
   }
 }

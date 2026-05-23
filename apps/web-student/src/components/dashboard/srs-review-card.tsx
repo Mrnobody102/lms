@@ -1,4 +1,4 @@
-import { BrainCircuit, CheckCircle2 } from 'lucide-react';
+import { BrainCircuit, CheckCircle2, Settings } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/navigation';
 import { useSrsSummary } from '@/hooks/use-srs';
@@ -25,7 +25,16 @@ export function SrsReviewCard() {
           <CheckCircle2 className="h-6 w-6" />
         </div>
         <h3 className="text-lg font-bold">{t('dailyReviewEmpty')}</h3>
-        <p className="mt-1 text-sm text-muted-foreground max-w-sm">{t('dailyReviewEmptyDesc')}</p>
+        <p className="mt-1 mb-4 text-sm text-muted-foreground max-w-sm">
+          {t('dailyReviewEmptyDesc')}
+        </p>
+        <Link
+          href="/review/custom-cards"
+          className="inline-flex h-9 items-center justify-center gap-2 rounded-md border px-4 text-xs font-semibold hover:bg-muted transition-colors"
+        >
+          <Settings className="h-3.5 w-3.5" />
+          {t('customCards.managerTitle')}
+        </Link>
       </section>
     );
   }
@@ -45,13 +54,22 @@ export function SrsReviewCard() {
         </div>
         <h3 className="text-2xl font-bold mb-1">{t('dailyReviewSubtitle', { count: dueNow })}</h3>
         <p className="text-sm text-muted-foreground mb-6 max-w-md">{t('dailyReviewDesc')}</p>
-        <Link
-          href="/review"
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-primary px-6 text-sm font-bold text-primary-foreground hover:opacity-90 transition-all shadow-lg shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0"
-        >
-          <BrainCircuit className="h-4 w-4" />
-          {t('dailyReviewCta')}
-        </Link>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Link
+            href="/review"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-primary px-6 text-sm font-bold text-primary-foreground hover:opacity-90 transition-all shadow-lg shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0"
+          >
+            <BrainCircuit className="h-4 w-4" />
+            {t('dailyReviewCta')}
+          </Link>
+          <Link
+            href="/review/custom-cards"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-md border-2 border-primary/20 px-4 text-sm font-bold hover:bg-primary/10 transition-colors"
+          >
+            <Settings className="h-4 w-4" />
+            {t('customCards.managerTitle')}
+          </Link>
+        </div>
       </div>
     </section>
   );

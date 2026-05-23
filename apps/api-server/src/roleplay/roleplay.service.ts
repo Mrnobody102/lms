@@ -1,7 +1,13 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import type { ModelMessage } from 'ai';
+import { MessageRole, Prisma, RoleplaySessionStatus } from '@repo/database';
 import { PrismaService } from '../common/services/prisma.service';
 import { AiService } from '../ai/ai.service';
-import { MessageRole, RoleplaySessionStatus } from '@repo/database';
+
+interface RoleplayMessageForModel {
+  role: MessageRole;
+  content: string;
+}
 
 @Injectable()
 export class RoleplayService {
@@ -29,14 +35,7 @@ export class RoleplayService {
       },
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const dbMessages = session.messages as any[];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const coreMessages = dbMessages.map((m: any) => ({
-      role:
-        m.role === MessageRole.USER ? 'user' : m.role === MessageRole.AI ? 'assistant' : 'system',
-      content: m.content,
-    })) as { role: 'user' | 'assistant' | 'system'; content: string }[];
+    const coreMessages = this.toModelMessages(session.messages);
 
     const aiReply = await this.aiService.chatRoleplay(
       tenantId,
@@ -95,12 +94,7 @@ export class RoleplayService {
     });
 
     const updatedSession = await this.getSession(tenantId, userId, sessionId);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const coreMessages = (updatedSession.messages as any[]).map((m: any) => ({
-      role:
-        m.role === MessageRole.USER ? 'user' : m.role === MessageRole.AI ? 'assistant' : 'system',
-      content: m.content,
-    })) as { role: 'user' | 'assistant' | 'system'; content: string }[];
+    const coreMessages = this.toModelMessages(updatedSession.messages);
 
     const aiReply = await this.aiService.chatRoleplay(
       tenantId,
@@ -128,12 +122,7 @@ export class RoleplayService {
       return session; // Already completed
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const coreMessages = (session.messages as any[]).map((m: any) => ({
-      role:
-        m.role === MessageRole.USER ? 'user' : m.role === MessageRole.AI ? 'assistant' : 'system',
-      content: m.content,
-    })) as { role: 'user' | 'assistant' | 'system'; content: string }[];
+    const coreMessages = this.toModelMessages(session.messages);
 
     const evaluation = await this.aiService.evaluateRoleplaySession(
       tenantId,
@@ -143,13 +132,12 @@ export class RoleplayService {
     );
 
     const updatedSession = await this.prisma.roleplaySession.update({
-      where: { id: sessionId },
+      where: { id: sessionId, tenantId, userId },
       data: {
         status: RoleplaySessionStatus.COMPLETED,
         completedAt: new Date(),
         score: evaluation.score,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        feedback: evaluation.feedback as any,
+        feedback: evaluation.feedback as Prisma.InputJsonValue,
       },
       include: {
         messages: {
@@ -159,5 +147,18 @@ export class RoleplayService {
     });
 
     return updatedSession;
+  }
+
+  private toModelMessages(messages: RoleplayMessageForModel[]): ModelMessage[] {
+    return messages.map((message) => ({
+      role: this.toModelRole(message.role),
+      content: message.content,
+    }));
+  }
+
+  private toModelRole(role: MessageRole): 'user' | 'assistant' | 'system' {
+    if (role === MessageRole.USER) return 'user';
+    if (role === MessageRole.AI) return 'assistant';
+    return 'system';
   }
 }

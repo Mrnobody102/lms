@@ -166,6 +166,34 @@
         "continueCta": "Resume",
         "practiceCta": "Practice",
         "browseCta": "Explore"
+      },
+      "customCards": {
+        "title": "Custom Cards",
+        "description": "Manage vocabulary or grammar flashcards you created.",
+        "addCard": "Add new card",
+        "front": "Front (Vocabulary/Question)",
+        "frontPlaceholder": "Enter vocabulary, e.g., 学习",
+        "back": "Back (Explanation)",
+        "backPlaceholder": "Enter explanation, e.g., To study",
+        "pinyin": "Pinyin",
+        "pinyinPlaceholder": "e.g., xuéxí",
+        "example": "Example",
+        "examplePlaceholder": "Enter example sentence",
+        "skillCode": "Skill (e.g., VOCAB_1)",
+        "save": "Save card",
+        "cancel": "Cancel",
+        "edit": "Edit",
+        "delete": "Delete",
+        "deleteConfirm": "Are you sure you want to delete this card?",
+        "noCards": "No custom cards yet.",
+        "saveSuccess": "Card saved successfully.",
+        "deleteSuccess": "Card deleted successfully.",
+        "managerTitle": "Manage custom cards",
+        "loading": "Loading custom cards..."
+      },
+      "stats": {
+        "title": "Review activity (last 30 days)",
+        "empty": "No review activity in the last 30 days"
       }
     },
     "features": {

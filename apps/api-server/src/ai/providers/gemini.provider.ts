@@ -1,13 +1,149 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { generateText, generateObject } from 'ai';
+import { generateObject, generateText, jsonSchema, type ModelMessage } from 'ai';
 import { google } from '@ai-sdk/google';
-import { z } from 'zod';
 import {
   IAiProvider,
   GenerateExplanationOptions,
   GeneratePracticeOptions,
   GeneratedPracticeQuestion,
 } from '../interfaces/ai-provider.interface';
+
+interface GeneratedMultipleChoiceQuestion {
+  prompt: string;
+  options: Array<{ id: string; text: string }>;
+  correctAnswer: { optionId: string };
+  explanation: string;
+}
+
+interface GeneratedFillBlankQuestion {
+  prompt: string;
+  correctAnswer: { words: string[] };
+  explanation: string;
+}
+
+interface GeneratedMultipleChoiceResponse {
+  questions: GeneratedMultipleChoiceQuestion[];
+}
+
+interface GeneratedFillBlankResponse {
+  questions: GeneratedFillBlankQuestion[];
+}
+
+interface RoleplayEvaluation {
+  score: number;
+  feedback: {
+    grammar: string;
+    vocabulary: string;
+    overall: string;
+  };
+}
+
+function multipleChoiceQuestionSchema(count: number) {
+  return jsonSchema<GeneratedMultipleChoiceResponse>({
+    type: 'object',
+    additionalProperties: false,
+    required: ['questions'],
+    properties: {
+      questions: {
+        type: 'array',
+        minItems: count,
+        maxItems: count,
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['prompt', 'options', 'correctAnswer', 'explanation'],
+          properties: {
+            prompt: { type: 'string', description: 'The question prompt' },
+            options: {
+              type: 'array',
+              minItems: 4,
+              maxItems: 4,
+              description: 'Exactly 4 options with unique IDs like A, B, C, D',
+              items: {
+                type: 'object',
+                additionalProperties: false,
+                required: ['id', 'text'],
+                properties: {
+                  id: { type: 'string' },
+                  text: { type: 'string' },
+                },
+              },
+            },
+            correctAnswer: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['optionId'],
+              properties: {
+                optionId: { type: 'string', description: 'The ID of the correct option' },
+              },
+            },
+            explanation: { type: 'string', description: 'Explanation of the correct answer' },
+          },
+        },
+      },
+    },
+  });
+}
+
+function fillBlankQuestionSchema(count: number) {
+  return jsonSchema<GeneratedFillBlankResponse>({
+    type: 'object',
+    additionalProperties: false,
+    required: ['questions'],
+    properties: {
+      questions: {
+        type: 'array',
+        minItems: count,
+        maxItems: count,
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['prompt', 'correctAnswer', 'explanation'],
+          properties: {
+            prompt: {
+              type: 'string',
+              description: 'The question prompt with a blank represented as ___',
+            },
+            correctAnswer: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['words'],
+              properties: {
+                words: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'Correct words to fill in the blank',
+                },
+              },
+            },
+            explanation: { type: 'string', description: 'Explanation of the correct answer' },
+          },
+        },
+      },
+    },
+  });
+}
+
+function roleplayEvaluationSchema() {
+  return jsonSchema<RoleplayEvaluation>({
+    type: 'object',
+    additionalProperties: false,
+    required: ['score', 'feedback'],
+    properties: {
+      score: { type: 'number', minimum: 0, maximum: 100 },
+      feedback: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['grammar', 'vocabulary', 'overall'],
+        properties: {
+          grammar: { type: 'string' },
+          vocabulary: { type: 'string' },
+          overall: { type: 'string' },
+        },
+      },
+    },
+  });
+}
 
 @Injectable()
 export class GeminiProvider implements IAiProvider {
@@ -67,90 +203,57 @@ Language: Vietnamese.
 Context/Reference material (use this if provided to base your questions on):
 ${context || 'None'}
 
-Target Skills: ${skillTags?.join(', ') || 'General'}`;
+      Target Skills: ${skillTags?.join(', ') || 'General'}`;
 
-      let schema;
       if (questionType === 'MULTIPLE_CHOICE') {
-        schema = z.object({
-          questions: z
-            .array(
-              z.object({
-                prompt: z.string().describe('The question prompt'),
-                options: z
-                  .array(
-                    z.object({
-                      id: z.string(),
-                      text: z.string(),
-                    }),
-                  )
-                  .length(4)
-                  .describe(
-                    'Exactly 4 multiple choice options. Give them unique IDs like A, B, C, D',
-                  ),
-                correctAnswer: z.object({
-                  optionId: z.string().describe('The ID of the correct option'),
-                }),
-                explanation: z.string().describe('Explanation of the correct answer'),
-              }),
-            )
-            .length(count),
+        const { object } = await generateObject({
+          model: google('gemini-1.5-flash'),
+          system: systemPrompt,
+          prompt: `Please generate the questions in the specified JSON schema.`,
+          schema: multipleChoiceQuestionSchema(count),
+          temperature: 0.5,
         });
+
+        return object.questions.map((question) => ({
+          type: questionType,
+          prompt: question.prompt,
+          options: question.options,
+          correctAnswer: question.correctAnswer,
+          explanation: question.explanation,
+          skillTags: skillTags || [],
+        }));
       } else if (questionType === 'FILL_BLANK') {
-        schema = z.object({
-          questions: z
-            .array(
-              z.object({
-                prompt: z.string().describe('The question prompt with a blank represented as ___'),
-                correctAnswer: z.object({
-                  words: z
-                    .array(z.string())
-                    .describe(
-                      'The correct words to fill in the blank. Can be multiple acceptable answers.',
-                    ),
-                }),
-                explanation: z.string().describe('Explanation of the correct answer'),
-              }),
-            )
-            .length(count),
+        const { object } = await generateObject({
+          model: google('gemini-1.5-flash'),
+          system: systemPrompt,
+          prompt: `Please generate the questions in the specified JSON schema.`,
+          schema: fillBlankQuestionSchema(count),
+          temperature: 0.5,
         });
+
+        return object.questions.map((question) => ({
+          type: questionType,
+          prompt: question.prompt,
+          options: null,
+          correctAnswer: question.correctAnswer,
+          explanation: question.explanation,
+          skillTags: skillTags || [],
+        }));
       } else {
         throw new Error(`Unsupported question type for AI generation: ${questionType}`);
       }
-
-      const { object } = await generateObject({
-        model: google('gemini-1.5-flash'),
-        system: systemPrompt,
-        prompt: `Please generate the questions in the specified JSON schema.`,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        schema: schema as any,
-        temperature: 0.5,
-      });
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return (object as any).questions.map((q: any) => ({
-        type: questionType,
-        prompt: q.prompt,
-        options: q.options || null,
-        correctAnswer: q.correctAnswer,
-        explanation: q.explanation,
-        skillTags: skillTags || [],
-      }));
     } catch (error) {
       this.logger.error('Error generating practice questions from Gemini', error);
       throw new Error('Failed to generate practice questions from AI provider.');
     }
   }
 
-  async chatRoleplay(
-    messages: { role: 'user' | 'assistant' | 'system'; content: string }[],
-    systemPrompt: string,
-  ): Promise<string> {
+  async chatRoleplay(messages: ModelMessage[], systemPrompt: string): Promise<string> {
     try {
       const { text } = await generateText({
         model: google('gemini-1.5-flash'),
         system: systemPrompt,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        messages: messages as any,
+        messages,
         temperature: 0.7,
       });
       return text;
@@ -161,7 +264,7 @@ Target Skills: ${skillTags?.join(', ') || 'General'}`;
   }
 
   async evaluateRoleplaySession(
-    messages: { role: 'user' | 'assistant' | 'system'; content: string }[],
+    messages: ModelMessage[],
     scenario: string,
   ): Promise<{ score: number; feedback: unknown }> {
     try {
@@ -175,25 +278,14 @@ Feedback should contain at least:
 - vocabulary: string
 - overall: string`;
 
-      const schema = z.object({
-        score: z.number().min(0).max(100),
-        feedback: z.object({
-          grammar: z.string(),
-          vocabulary: z.string(),
-          overall: z.string(),
-        }),
-      });
-
       const { object } = await generateObject({
         model: google('gemini-1.5-flash'),
         system: systemPrompt,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        messages: messages as any,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        schema: schema as any,
+        messages,
+        schema: roleplayEvaluationSchema(),
       });
 
-      return object as { score: number; feedback: unknown };
+      return object;
     } catch (error) {
       this.logger.error('Error in evaluateRoleplaySession', error);
       throw new Error('Failed to evaluate roleplay session.');

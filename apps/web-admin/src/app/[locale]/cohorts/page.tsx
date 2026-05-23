@@ -25,29 +25,25 @@ export default function CohortsPage() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm(t('common.confirmDelete', { fallback: 'Are you sure you want to delete this?' }))) {
+    if (confirm(t('common.confirmDelete'))) {
       deleteCohort.mutate(id);
     }
   };
 
   if (isLoading) {
-    return <div className="p-8 text-center">{t('common.loading', { fallback: 'Loading...' })}</div>;
+    return <div className="p-8 text-center">{t('common.loading')}</div>;
   }
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            {t('cohorts.title', { fallback: 'Cohorts' })}
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            {t('cohorts.subtitle', { fallback: 'Manage student cohorts and group enrollments.' })}
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">{t('cohorts.title')}</h1>
+          <p className="text-muted-foreground mt-2">{t('cohorts.subtitle')}</p>
         </div>
         <Button onClick={handleCreate} className="gap-2">
           <Plus className="w-4 h-4" />
-          {t('cohorts.createBtn', { fallback: 'Create Cohort' })}
+          {t('cohorts.createBtn')}
         </Button>
       </div>
 
@@ -69,23 +65,21 @@ export default function CohortsPage() {
               <div
                 className={`px-2 py-1 rounded-full text-xs font-medium ${cohort.isActive ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'}`}
               >
-                {cohort.isActive
-                  ? t('common.active', { fallback: 'Active' })
-                  : t('common.inactive', { fallback: 'Inactive' })}
+                {cohort.isActive ? t('common.active') : t('common.inactive')}
               </div>
             </div>
 
             <div className="flex items-center gap-2 text-sm text-muted-foreground mt-auto pt-4 border-t border-border">
               <Users className="w-4 h-4" />
               <span>
-                {cohort._count?.memberships || 0} {t('cohorts.members', { fallback: 'Members' })}
+                {cohort._count?.memberships || 0} {t('cohorts.members')}
               </span>
             </div>
 
             <div className="flex gap-2 mt-4">
               <Link href={`/cohorts/${cohort.id}`} className="flex-1">
                 <Button variant="outline" className="w-full">
-                  {t('cohorts.manageBtn', { fallback: 'Manage' })}
+                  {t('cohorts.manageBtn')}
                 </Button>
               </Link>
               <Button variant="ghost" size="icon" onClick={() => handleEdit(cohort)}>
@@ -106,14 +100,8 @@ export default function CohortsPage() {
         {cohorts.length === 0 && (
           <div className="col-span-full py-12 text-center bg-muted/30 rounded-xl border border-dashed border-border">
             <Users className="w-12 h-12 mx-auto text-muted-foreground mb-4 opacity-50" />
-            <h3 className="text-lg font-medium">
-              {t('cohorts.emptyStateTitle', { fallback: 'No cohorts found' })}
-            </h3>
-            <p className="text-muted-foreground mt-1">
-              {t('cohorts.emptyStateDesc', {
-                fallback: 'Create your first cohort to start grouping students.',
-              })}
-            </p>
+            <h3 className="text-lg font-medium">{t('cohorts.emptyStateTitle')}</h3>
+            <p className="text-muted-foreground mt-1">{t('cohorts.emptyStateDesc')}</p>
           </div>
         )}
       </div>

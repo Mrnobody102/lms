@@ -32,7 +32,7 @@ export function AdminSidebar() {
   const menuItems = [
     { name: t('dashboard'), icon: LayoutDashboard, href: '/' },
     { name: t('students'), icon: Users, href: '/students' },
-    { name: t('cohorts.navLabel', { fallback: 'Cohorts' }), icon: Users, href: '/cohorts' },
+    { name: t('cohorts.navLabel'), icon: Users, href: '/cohorts' },
     { name: t('programs'), icon: Layers, href: '/programs' },
     { name: t('courses'), icon: BookOpen, href: '/courses' },
     { name: t('practice'), icon: Dumbbell, href: '/practice' },

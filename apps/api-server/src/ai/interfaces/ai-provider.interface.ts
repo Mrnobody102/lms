@@ -1,3 +1,4 @@
+import type { ModelMessage } from 'ai';
 import { PracticeQuestionType } from '@repo/database';
 
 export interface GenerateExplanationOptions {
@@ -41,16 +42,13 @@ export interface IAiProvider {
   /**
    * Chat interface for Roleplay Session.
    */
-  chatRoleplay(
-    messages: { role: 'user' | 'assistant' | 'system'; content: string }[],
-    systemPrompt: string,
-  ): Promise<string>;
+  chatRoleplay(messages: ModelMessage[], systemPrompt: string): Promise<string>;
 
   /**
    * Evaluate a completed Roleplay Session.
    */
   evaluateRoleplaySession(
-    messages: { role: 'user' | 'assistant' | 'system'; content: string }[],
+    messages: ModelMessage[],
     scenario: string,
   ): Promise<{ score: number; feedback: unknown }>;
 }

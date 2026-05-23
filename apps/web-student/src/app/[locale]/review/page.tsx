@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { BrainCircuit, CheckCircle2, ArrowRight } from 'lucide-react';
 import { useReviewQueue, useSubmitReview } from '@/hooks/use-srs';
@@ -13,7 +13,12 @@ export default function ReviewPage() {
   const { data: queue, isLoading } = useReviewQueue();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
+  const startTimeRef = useRef(0);
   const { mutate: submitReview, isPending } = useSubmitReview();
+
+  useEffect(() => {
+    startTimeRef.current = Date.now();
+  }, [currentIndex]);
 
   if (isLoading) {
     return (
@@ -53,8 +58,9 @@ export default function ReviewPage() {
   const question = currentCard.question;
 
   const handleGrade = (grade: 'AGAIN' | 'HARD' | 'GOOD' | 'EASY') => {
+    const durationMs = Date.now() - startTimeRef.current;
     submitReview(
-      { cardId: currentCard.cardId, grade },
+      { cardId: currentCard.cardId, grade, durationMs },
       {
         onSuccess: () => {
           setShowAnswer(false);

@@ -37,6 +37,18 @@
     "finance": "Finance",
     "schedule": "Schedule",
     "settingsLabel": "Settings",
+    "common": {
+      "active": "Active",
+      "add": "Add",
+      "all": "All",
+      "cancel": "Cancel",
+      "confirmDelete": "Are you sure you want to delete this?",
+      "create": "Create",
+      "inactive": "Inactive",
+      "loading": "Loading...",
+      "required": "This field is required",
+      "save": "Save Changes"
+    },
     "reports": {
       "navLabel": "Reports",
       "title": "Reports",
@@ -83,7 +95,9 @@
       "activityTrend": "Learning activity",
       "activityTrendDesc": "Lesson opens and completions recorded per day.",
       "activityOpened": "Opened",
-      "activityCompleted": "Completed"
+      "activityCompleted": "Completed",
+      "masteryTrend": "Skill mastery trend",
+      "masteryTrendDesc": "Average mastery per skill over the last 7 days."
     },
     "questionAudio": {
       "label": "Listening audio",
@@ -97,6 +111,21 @@
       "replayLimitPlaceholder": "Empty = unlimited",
       "replayLimitHint": "Maximum 20 plays per attempt."
     },
+    "generateWithAi": "Generate with AI",
+    "aiGenerateQuestions": "Generate with AI",
+    "aiGenerateDescription": "Let AI automatically generate practice questions for your course.",
+    "aiTopic": "Topic or prompt",
+    "aiTopicPlaceholder": "e.g. Present Perfect Tense",
+    "aiTopicRequired": "Topic is required",
+    "aiContext": "Reference material (optional)",
+    "aiContextPlaceholder": "Paste text or lesson content here...",
+    "aiQuestionType": "Question type",
+    "aiQuestionCount": "Number of questions",
+    "aiSkillTags": "Skill tags (comma separated)",
+    "aiSkillTagsPlaceholder": "grammar, vocab",
+    "aiGenerateSuccess": "Questions generated successfully",
+    "aiGenerateError": "Failed to generate questions",
+    "generate": "Generate",
     "skills": {
       "navLabel": "Skills",
       "title": "Skills",

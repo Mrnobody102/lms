@@ -166,6 +166,34 @@
         "continueCta": "Học tiếp",
         "practiceCta": "Luyện tập",
         "browseCta": "Khám phá"
+      },
+      "customCards": {
+        "title": "Thẻ cá nhân",
+        "description": "Quản lý thẻ từ vựng hoặc ngữ pháp do bạn tự tạo.",
+        "addCard": "Thêm thẻ mới",
+        "front": "Mặt trước (Từ vựng/Câu hỏi)",
+        "frontPlaceholder": "Nhập từ vựng, ví dụ: 学习",
+        "back": "Mặt sau (Giải thích)",
+        "backPlaceholder": "Nhập giải thích, ví dụ: Học tập",
+        "pinyin": "Pinyin",
+        "pinyinPlaceholder": "Ví dụ: xuéxí",
+        "example": "Ví dụ",
+        "examplePlaceholder": "Nhập câu ví dụ",
+        "skillCode": "Kỹ năng (ví dụ: VOCAB_1)",
+        "save": "Lưu thẻ",
+        "cancel": "Hủy",
+        "edit": "Sửa",
+        "delete": "Xóa",
+        "deleteConfirm": "Bạn có chắc chắn muốn xóa thẻ này không?",
+        "noCards": "Chưa có thẻ cá nhân nào.",
+        "saveSuccess": "Đã lưu thẻ thành công.",
+        "deleteSuccess": "Đã xóa thẻ thành công.",
+        "managerTitle": "Quản lý thẻ cá nhân",
+        "loading": "Đang tải thẻ cá nhân..."
+      },
+      "stats": {
+        "title": "Hoạt động ôn tập (30 ngày gần nhất)",
+        "empty": "Chưa có hoạt động ôn tập trong 30 ngày gần nhất"
       }
     },
     "features": {

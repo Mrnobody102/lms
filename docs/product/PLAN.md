@@ -350,8 +350,7 @@ Cơ sở khoa học:
 
 Còn cần (SRS Core):
 
-- Lịch sử ôn tập (Review Log) để vẽ biểu đồ và phân tích chi tiết.
-- Tính năng edit custom card cho học viên (nếu cần mở rộng học từ vựng riêng).
+- Tính năng SRS cơ bản đã hoàn thiện đầy đủ.
 
 ### P10. Media Storage Và Background Jobs
 

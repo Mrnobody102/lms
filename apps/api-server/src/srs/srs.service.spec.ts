@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { ReviewCardGrade, ReviewCardSource } from '@repo/database';
 import { SrsService } from './srs.service';
 
@@ -12,14 +12,23 @@ function makePrisma(overrides: Record<string, unknown> = {}) {
     findUnique: vi.fn(),
     update: vi.fn(),
     count: vi.fn().mockResolvedValue(0),
+    create: vi.fn(),
+    delete: vi.fn(),
+  };
+  const reviewLog = {
+    create: vi.fn(),
+    findMany: vi.fn().mockResolvedValue([]),
+    groupBy: vi.fn().mockResolvedValue([]),
   };
   const practiceQuestion = { findMany: vi.fn().mockResolvedValue([]) };
   const examQuestion = { findMany: vi.fn().mockResolvedValue([]) };
   return {
     reviewCard,
+    reviewLog,
     practiceQuestion,
     examQuestion,
     ...overrides,
+    $transaction: vi.fn((cb) => cb({ reviewCard, reviewLog, practiceQuestion, examQuestion })),
   };
 }
 
@@ -263,22 +272,17 @@ describe('SrsService.getQueue', () => {
 });
 
 describe('SrsService.submitReview', () => {
-  it('rejects when card belongs to another tenant', async () => {
+  it('uses tenant-scoped lookup and returns NotFound outside the user scope', async () => {
     const prisma = makePrisma();
-    prisma.reviewCard.findUnique.mockResolvedValue({
-      id: 'card-1',
-      tenantId: 'tenant-2',
-      userId: 'user-1',
-      reps: 0,
-      lapses: 0,
-      easeFactor: 2.5,
-      interval: 0,
-    });
+    prisma.reviewCard.findUnique.mockResolvedValue(null);
     const service = new SrsService(prisma as never);
 
     await expect(
       service.submitReview('tenant-1', 'user-1', 'card-1', ReviewCardGrade.GOOD),
-    ).rejects.toBeInstanceOf(ForbiddenException);
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(prisma.reviewCard.findUnique).toHaveBeenCalledWith({
+      where: { id: 'card-1', tenantId: 'tenant-1', userId: 'user-1' },
+    });
   });
 
   it('throws NotFound when card is missing', async () => {
@@ -301,14 +305,15 @@ describe('SrsService.submitReview', () => {
       lapses: 0,
       easeFactor: 2.5,
       interval: 0,
+      customContent: null,
     });
     prisma.reviewCard.update.mockResolvedValue({ id: 'card-1' });
     const service = new SrsService(prisma as never);
 
-    await service.submitReview('tenant-1', 'user-1', 'card-1', ReviewCardGrade.GOOD);
+    await service.submitReview('tenant-1', 'user-1', 'card-1', ReviewCardGrade.GOOD, 1200);
 
     expect(prisma.reviewCard.update).toHaveBeenCalledWith({
-      where: { id: 'card-1' },
+      where: { id: 'card-1', tenantId: 'tenant-1', userId: 'user-1' },
       data: expect.objectContaining({
         reps: 1,
         interval: 1,
@@ -317,6 +322,97 @@ describe('SrsService.submitReview', () => {
         isSuspended: false,
       }),
     });
+    expect(prisma.reviewLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        cardId: 'card-1',
+        grade: ReviewCardGrade.GOOD,
+        durationMs: 1200,
+        easeFactor: 2.5,
+      }),
+    });
+  });
+});
+
+describe('SrsService Custom Cards', () => {
+  it('creates custom card', async () => {
+    const prisma = makePrisma();
+    const service = new SrsService(prisma as never);
+
+    await service.createCustomCard('tenant-1', 'user-1', {
+      customContent: { front: 'A', back: 'B' },
+      skillCodes: ['V'],
+    });
+
+    expect(prisma.reviewCard.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        tenantId: 'tenant-1',
+        userId: 'user-1',
+        sourceType: ReviewCardSource.CUSTOM,
+        skillCodes: ['V'],
+        customContent: { front: 'A', back: 'B' },
+      }),
+    });
+  });
+
+  it('updates custom card', async () => {
+    const prisma = makePrisma();
+    prisma.reviewCard.findUnique.mockResolvedValue({
+      id: 'card-1',
+      tenantId: 'tenant-1',
+      userId: 'user-1',
+      sourceType: ReviewCardSource.CUSTOM,
+    });
+    const service = new SrsService(prisma as never);
+
+    await service.updateCustomCard('tenant-1', 'user-1', 'card-1', {
+      customContent: { front: 'C', back: 'D' },
+      skillCodes: ['G'],
+    });
+
+    expect(prisma.reviewCard.update).toHaveBeenCalledWith({
+      where: { id: 'card-1', tenantId: 'tenant-1', userId: 'user-1' },
+      data: expect.objectContaining({
+        customContent: { front: 'C', back: 'D' },
+        skillCodes: ['G'],
+      }),
+    });
+  });
+
+  it('deletes custom card', async () => {
+    const prisma = makePrisma();
+    prisma.reviewCard.findUnique.mockResolvedValue({
+      id: 'card-1',
+      tenantId: 'tenant-1',
+      userId: 'user-1',
+      sourceType: ReviewCardSource.CUSTOM,
+    });
+    const service = new SrsService(prisma as never);
+
+    await service.deleteCustomCard('tenant-1', 'user-1', 'card-1');
+
+    expect(prisma.reviewCard.delete).toHaveBeenCalledWith({
+      where: { id: 'card-1', tenantId: 'tenant-1', userId: 'user-1' },
+    });
+  });
+});
+
+describe('SrsService.getReviewStats', () => {
+  it('groups logs by date', async () => {
+    const prisma = makePrisma();
+    prisma.reviewLog.findMany.mockResolvedValue([
+      { createdAt: new Date('2026-05-18T10:00:00Z') },
+      { createdAt: new Date('2026-05-19T10:00:00Z') },
+      { createdAt: new Date('2026-05-19T11:00:00Z') },
+    ]);
+    const service = new SrsService(prisma as never);
+
+    const stats = await service.getReviewStats('tenant-1', 'user-1', 7);
+
+    expect(stats).toHaveLength(2);
+    expect(stats[0].date).toBe('2026-05-18');
+    expect(stats[0].count).toBe(1);
+    expect(stats[1].date).toBe('2026-05-19');
+    expect(stats[1].count).toBe(2);
   });
 });
 

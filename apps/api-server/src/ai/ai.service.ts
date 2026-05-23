@@ -1,4 +1,5 @@
 import { Injectable, Logger, Inject, BadRequestException } from '@nestjs/common';
+import type { ModelMessage } from 'ai';
 import { PrismaService } from '../common/services/prisma.service';
 import { IAiProvider, AI_PROVIDER_TOKEN } from './interfaces/ai-provider.interface';
 
@@ -38,7 +39,7 @@ export class AiService {
     // Reset logic
     if (quota.resetAt <= new Date()) {
       quota = await this.prisma.aiUsageQuota.update({
-        where: { id: quota.id },
+        where: { tenantId_userId: { tenantId, userId } },
         data: {
           requestsUsed: 0,
           resetAt: new Date(today.getTime() + 24 * 60 * 60 * 1000),
@@ -53,7 +54,7 @@ export class AiService {
     }
 
     await this.prisma.aiUsageQuota.update({
-      where: { id: quota.id },
+      where: { tenantId_userId: { tenantId, userId } },
       data: { requestsUsed: { increment: 1 } },
     });
   }
@@ -89,7 +90,7 @@ export class AiService {
   async chatRoleplay(
     tenantId: string,
     userId: string,
-    messages: { role: 'user' | 'assistant' | 'system'; content: string }[],
+    messages: ModelMessage[],
     systemPrompt: string,
   ): Promise<string> {
     await this.consumeQuota(tenantId, userId);
@@ -99,7 +100,7 @@ export class AiService {
   async evaluateRoleplaySession(
     tenantId: string,
     userId: string,
-    messages: { role: 'user' | 'assistant' | 'system'; content: string }[],
+    messages: ModelMessage[],
     scenario: string,
   ): Promise<{ score: number; feedback: unknown }> {
     await this.consumeQuota(tenantId, userId);

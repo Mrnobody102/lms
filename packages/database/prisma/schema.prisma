@@ -107,6 +107,7 @@ model Tenant {
   skillMasteries        SkillMastery[]
   skillMasterySnapshots SkillMasterySnapshot[]
   reviewCards           ReviewCard[]
+  reviewLogs            ReviewLog[]
   aiUsageQuotas         AiUsageQuota[]
   mediaAssets           MediaAsset[]
   cohorts               Cohort[]
@@ -148,6 +149,7 @@ model User {
   skillMasteries         SkillMastery[]
   skillMasterySnapshots  SkillMasterySnapshot[]
   reviewCards            ReviewCard[]
+  reviewLogs             ReviewLog[]
   aiUsageQuotas          AiUsageQuota[]
   mediaAssets            MediaAsset[]
   cohortMemberships      CohortMembership[]
@@ -667,6 +669,7 @@ model SkillMastery {
 enum ReviewCardSource {
   PRACTICE_QUESTION
   EXAM_QUESTION
+  CUSTOM
 }
 
 enum ReviewCardGrade {
@@ -693,12 +696,32 @@ model ReviewCard {
   lastReviewedAt DateTime?
   lastGrade      ReviewCardGrade?
   isSuspended    Boolean          @default(false)
+  customContent  Json?
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
+  logs           ReviewLog[]
 
   @@unique([tenantId, userId, sourceType, sourceId])
   @@index([tenantId, userId, dueAt])
   @@index([tenantId, userId, isSuspended])
+}
+
+model ReviewLog {
+  id         String          @id @default(uuid())
+  tenantId   String
+  tenant     Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User            @relation(fields: [userId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  cardId     String
+  card       ReviewCard      @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  grade      ReviewCardGrade
+  easeFactor Float
+  interval   Int
+  durationMs Int?
+  createdAt  DateTime        @default(now())
+
+  @@index([tenantId, userId, createdAt])
+  @@index([cardId])
 }
 
 model AiUsageQuota {

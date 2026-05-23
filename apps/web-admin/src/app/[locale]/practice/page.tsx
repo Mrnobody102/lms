@@ -663,7 +663,7 @@ export default function AdminPracticePage() {
                             onClick={() => setAiGenerationModalOpen(true)}
                           >
                             <Sparkles className="w-4 h-4" />
-                            {t('generateWithAi', { fallback: 'Generate with AI' })}
+                            {t('generateWithAi')}
                           </Button>
                           <Button
                             variant="outline"
@@ -1396,7 +1396,7 @@ export default function AdminPracticePage() {
       <AiGenerationModal
         open={aiGenerationModalOpen}
         onOpenChange={setAiGenerationModalOpen}
-        courseId={courseId}
+        _courseId={courseId}
         onError={(msg) => setMessage({ type: 'error', text: msg })}
         onSuccess={(msg) => setMessage({ type: 'success', text: msg })}
         onGenerated={(generatedQuestions) => {

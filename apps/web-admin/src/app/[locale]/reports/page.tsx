@@ -41,15 +41,13 @@ export default function ReportsHomePage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <AdminHeader title={t('reports.title')} description={t('reports.titleDesc')} />
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">
-                  {t('cohorts.filterLabel', { fallback: 'Cohort:' })}
-                </span>
+                <span className="text-sm font-medium">{t('cohorts.filterLabel')}</span>
                 <select
                   className="h-9 px-3 rounded-md border border-input bg-background text-sm min-w-[200px]"
                   value={selectedCohortId}
                   onChange={(e) => setSelectedCohortId(e.target.value)}
                 >
-                  <option value="">{t('common.all', { fallback: 'All' })}</option>
+                  <option value="">{t('common.all')}</option>
                   {cohorts.map((cohort) => (
                     <option key={cohort.id} value={cohort.id}>
                       {cohort.name}

@@ -25,7 +25,7 @@ export default function CohortDetailsPage() {
   const [selectedCourse, setSelectedCourse] = useState('');
 
   if (!cohort) {
-    return <div className="p-8 text-center">{t('common.loading', { fallback: 'Loading...' })}</div>;
+    return <div className="p-8 text-center">{t('common.loading')}</div>;
   }
 
   const handleAddMember = async (e: React.FormEvent) => {
@@ -41,21 +41,21 @@ export default function CohortDetailsPage() {
   };
 
   const handleRemoveMember = async (userId: string) => {
-    if (confirm(t('common.confirmDelete', { fallback: 'Are you sure?' }))) {
+    if (confirm(t('common.confirmDelete'))) {
       await removeMember.mutateAsync(userId);
     }
   };
 
   const handleEnrollCourse = async () => {
     if (!selectedCourse) return;
-    if (confirm(t('cohorts.confirmEnroll', { fallback: 'Enroll all members in this course?' }))) {
+    if (confirm(t('cohorts.confirmEnroll'))) {
       try {
         await enrollCourse.mutateAsync(selectedCourse);
         setSelectedCourse('');
-        alert(t('cohorts.enrollSuccess', { fallback: 'Successfully enrolled members.' }));
+        alert(t('cohorts.enrollSuccess'));
       } catch (err) {
         console.error('Failed to enroll', err);
-        alert(t('cohorts.enrollError', { fallback: 'Failed to enroll members.' }));
+        alert(t('cohorts.enrollError'));
       }
     }
   };
@@ -68,9 +68,7 @@ export default function CohortDetailsPage() {
         </Link>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{cohort.name}</h1>
-          <p className="text-muted-foreground mt-1">
-            {t('cohorts.membersSubtitle', { fallback: 'Manage cohort members and enrollments' })}
-          </p>
+          <p className="text-muted-foreground mt-1">{t('cohorts.membersSubtitle')}</p>
         </div>
       </div>
 
@@ -80,22 +78,16 @@ export default function CohortDetailsPage() {
           <div className="bg-card border border-border rounded-xl p-5 shadow-sm">
             <h3 className="font-semibold flex items-center gap-2 mb-4">
               <GraduationCap className="w-5 h-5 text-primary" />
-              {t('cohorts.bulkEnrollTitle', { fallback: 'Bulk Enroll' })}
+              {t('cohorts.bulkEnrollTitle')}
             </h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              {t('cohorts.bulkEnrollDesc', {
-                fallback: 'Enroll all current members of this cohort into a course.',
-              })}
-            </p>
+            <p className="text-sm text-muted-foreground mb-4">{t('cohorts.bulkEnrollDesc')}</p>
             <div className="space-y-3">
               <select
                 className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
                 value={selectedCourse}
                 onChange={(e) => setSelectedCourse(e.target.value)}
               >
-                <option value="">
-                  {t('cohorts.selectCourse', { fallback: 'Select a course...' })}
-                </option>
+                <option value="">{t('cohorts.selectCourse')}</option>
                 {courses?.map((course: { id: string; title: string }) => (
                   <option key={course.id} value={course.id}>
                     {course.title}
@@ -107,9 +99,7 @@ export default function CohortDetailsPage() {
                 disabled={!selectedCourse || enrollCourse.isPending || members.length === 0}
                 onClick={handleEnrollCourse}
               >
-                {enrollCourse.isPending
-                  ? t('common.loading', { fallback: 'Loading...' })
-                  : t('cohorts.enrollBtn', { fallback: 'Enroll Members' })}
+                {enrollCourse.isPending ? t('common.loading') : t('cohorts.enrollBtn')}
               </Button>
             </div>
           </div>
@@ -121,12 +111,12 @@ export default function CohortDetailsPage() {
             <div className="p-5 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <h3 className="font-semibold flex items-center gap-2">
                 <Users className="w-5 h-5" />
-                {t('cohorts.membersListTitle', { fallback: 'Cohort Members' })} ({members.length})
+                {t('cohorts.membersListTitle')} ({members.length})
               </h3>
 
               <form onSubmit={handleAddMember} className="flex gap-2">
                 <Input
-                  placeholder={t('cohorts.userIdPlaceholder', { fallback: 'User ID...' })}
+                  placeholder={t('cohorts.userIdPlaceholder')}
                   value={userIdInput}
                   onChange={(e) => setUserIdInput(e.target.value)}
                   className="w-48 text-sm h-9"
@@ -137,22 +127,18 @@ export default function CohortDetailsPage() {
                   disabled={!userIdInput.trim() || addMembers.isPending}
                 >
                   <UserPlus className="w-4 h-4 mr-2" />
-                  {t('common.add', { fallback: 'Add' })}
+                  {t('common.add')}
                 </Button>
               </form>
             </div>
 
             <div className="flex-1 overflow-y-auto p-0">
               {isLoading ? (
-                <div className="p-8 text-center text-muted-foreground">
-                  {t('common.loading', { fallback: 'Loading...' })}
-                </div>
+                <div className="p-8 text-center text-muted-foreground">{t('common.loading')}</div>
               ) : members.length === 0 ? (
                 <div className="p-12 text-center flex flex-col items-center justify-center h-full">
                   <Users className="w-12 h-12 text-muted-foreground opacity-30 mb-3" />
-                  <p className="text-muted-foreground">
-                    {t('cohorts.noMembers', { fallback: 'No members in this cohort yet.' })}
-                  </p>
+                  <p className="text-muted-foreground">{t('cohorts.noMembers')}</p>
                 </div>
               ) : (
                 <ul className="divide-y divide-border">

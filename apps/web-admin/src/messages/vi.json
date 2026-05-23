@@ -37,6 +37,18 @@
     "finance": "Tài chính",
     "schedule": "Lịch học",
     "settingsLabel": "Cài đặt",
+    "common": {
+      "active": "Đang hoạt động",
+      "add": "Thêm",
+      "all": "Tất cả",
+      "cancel": "Hủy",
+      "confirmDelete": "Bạn có chắc chắn muốn xóa mục này không?",
+      "create": "Tạo mới",
+      "inactive": "Tạm ngưng",
+      "loading": "Đang tải...",
+      "required": "Trường này là bắt buộc",
+      "save": "Lưu thay đổi"
+    },
     "reports": {
       "navLabel": "Báo cáo",
       "title": "Báo cáo",
@@ -83,7 +95,9 @@
       "activityTrend": "Hoạt động học tập",
       "activityTrendDesc": "Lượt mở bài và hoàn thành bài theo từng ngày.",
       "activityOpened": "Mở bài",
-      "activityCompleted": "Hoàn thành"
+      "activityCompleted": "Hoàn thành",
+      "masteryTrend": "Xu hướng mastery theo kỹ năng",
+      "masteryTrendDesc": "Mastery trung bình theo từng kỹ năng trong 7 ngày gần nhất."
     },
     "questionAudio": {
       "label": "Audio (Listening)",
@@ -97,6 +111,21 @@
       "replayLimitPlaceholder": "Bỏ trống = không giới hạn",
       "replayLimitHint": "Tối đa 20 lần mỗi lần làm bài."
     },
+    "generateWithAi": "Tạo bằng AI",
+    "aiGenerateQuestions": "Tạo bằng AI",
+    "aiGenerateDescription": "Để AI tự động tạo câu hỏi luyện tập cho khóa học.",
+    "aiTopic": "Chủ đề hoặc prompt",
+    "aiTopicPlaceholder": "Ví dụ: Thì hiện tại hoàn thành",
+    "aiTopicRequired": "Vui lòng nhập chủ đề",
+    "aiContext": "Tài liệu tham khảo (tùy chọn)",
+    "aiContextPlaceholder": "Dán nội dung bài học hoặc tài liệu vào đây...",
+    "aiQuestionType": "Loại câu hỏi",
+    "aiQuestionCount": "Số lượng câu hỏi",
+    "aiSkillTags": "Tag kỹ năng (phân tách bằng dấu phẩy)",
+    "aiSkillTagsPlaceholder": "ngữ pháp, từ vựng",
+    "aiGenerateSuccess": "Đã tạo câu hỏi thành công",
+    "aiGenerateError": "Không thể tạo câu hỏi",
+    "generate": "Tạo",
     "skills": {
       "navLabel": "Kỹ năng",
       "title": "Kỹ năng",
