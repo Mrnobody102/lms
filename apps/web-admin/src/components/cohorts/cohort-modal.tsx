@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Button, Dialog, DialogContent, Input, Label } from '@repo/ui';
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Input, Label } from '@repo/ui';
 import { useCohorts, Cohort } from '@/hooks/use-cohorts';
 
 interface CohortModalProps {
@@ -66,11 +66,11 @@ export function CohortModal({ isOpen, onClose, cohort }: CohortModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md p-0 overflow-hidden border-border">
-        <div className="p-6 border-b border-border">
-          <h2 className="text-xl font-semibold">
+        <DialogHeader className="p-6 border-b border-border">
+          <DialogTitle className="text-xl font-semibold">
             {cohort ? t('cohorts.editTitle') : t('cohorts.createTitle')}
-          </h2>
-        </div>
+          </DialogTitle>
+        </DialogHeader>
 
         <form onSubmit={onSubmit} className="p-6 space-y-4">
           <div className="space-y-2">

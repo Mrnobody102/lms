@@ -1,7 +1,9 @@
-import { IsString, IsNotEmpty } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsUUID, IsNotEmpty } from 'class-validator';
 
 export class EnrollCohortDto {
-  @IsString()
+  @ApiProperty({ example: 'uuid-of-course', description: 'Course ID to enroll cohort members in' })
+  @IsUUID('4')
   @IsNotEmpty()
   courseId: string;
 }

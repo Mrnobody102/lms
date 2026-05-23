@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Loader2, User, Mail, Phone, Image as ImageIcon, Save } from 'lucide-react';
-import { Button, Input, Label } from '@repo/ui';
+import { Loader2, User, Mail, Phone, Save } from 'lucide-react';
+import { Button, Input, Label, ImageUpload } from '@repo/ui';
 import { defaultApiClient } from '@repo/api-client';
 import { useAuthStore } from '../../auth/auth.store';
+import { useMediaUpload } from '../../../hooks/use-media-upload';
 
 export function ProfileForm() {
   const t = useTranslations('Student');
@@ -18,6 +19,13 @@ export function ProfileForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  const { uploadFile, isUploading: isUploadingMedia } = useMediaUpload();
+
+  const handleAvatarUpload = async (file: File) => {
+    const result = await uploadFile(file);
+    return result;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,25 +119,20 @@ export function ProfileForm() {
           </div>
         </div>
 
-        {/* Avatar URL */}
+        {/* Avatar Upload */}
         <div className="space-y-2">
           <Label>{t('settings.profile.avatar')}</Label>
-          <div className="relative">
-            <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-muted-foreground">
-              <ImageIcon className="h-4 w-4" />
-            </div>
-            <Input
-              value={avatarUrl}
-              onChange={(e) => setAvatarUrl(e.target.value)}
-              placeholder={t('settings.profile.avatarPlaceholder')}
-              className="h-12 py-0 pl-11"
-            />
-          </div>
+          <ImageUpload
+            value={avatarUrl}
+            onValueChange={setAvatarUrl}
+            onUpload={handleAvatarUpload}
+            isUploading={isUploadingMedia}
+          />
         </div>
       </div>
 
       <div className="flex justify-end pt-4">
-        <Button type="submit" disabled={loading} className="min-w-[140px]">
+        <Button type="submit" disabled={loading || isUploadingMedia} className="min-w-[140px]">
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin mr-2" />

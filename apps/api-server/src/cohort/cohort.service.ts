@@ -1,14 +1,18 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../common/services/prisma.service';
 import { Prisma, CohortMembership, User } from '@repo/database';
+import { AuditAction, AuditLogService, AuditStatus } from '../common/services/audit-log.service';
 import { CreateCohortDto } from './dto/create-cohort.dto';
 import { UpdateCohortDto } from './dto/update-cohort.dto';
 
 @Injectable()
 export class CohortService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private auditLog: AuditLogService,
+  ) {}
 
-  async create(tenantId: string, createCohortDto: CreateCohortDto) {
+  async create(tenantId: string, createCohortDto: CreateCohortDto, actorId?: string) {
     const existing = await this.prisma.cohort.findUnique({
       where: {
         tenantId_name: {
@@ -27,12 +31,22 @@ export class CohortService {
       throw new ConflictException('A cohort with this name already exists.');
     }
 
-    return this.prisma.cohort.create({
+    const cohort = await this.prisma.cohort.create({
       data: {
         tenantId,
         ...createCohortDto,
       },
     });
+
+    await this.auditLog.log({
+      userId: actorId,
+      tenantId,
+      action: AuditAction.COHORT_CREATE,
+      status: AuditStatus.SUCCESS,
+      metadata: { cohortId: cohort.id, name: cohort.name },
+    });
+
+    return cohort;
   }
 
   async findAll(tenantId: string) {
@@ -64,7 +78,7 @@ export class CohortService {
     return cohort;
   }
 
-  async update(tenantId: string, id: string, updateCohortDto: UpdateCohortDto) {
+  async update(tenantId: string, id: string, updateCohortDto: UpdateCohortDto, actorId?: string) {
     await this.findOne(tenantId, id);
 
     if (updateCohortDto.name) {
@@ -82,19 +96,39 @@ export class CohortService {
       }
     }
 
-    return this.prisma.cohort.update({
+    const cohort = await this.prisma.cohort.update({
       where: { id_tenantId: { id, tenantId } },
       data: updateCohortDto,
     });
+
+    await this.auditLog.log({
+      userId: actorId,
+      tenantId,
+      action: AuditAction.COHORT_UPDATE,
+      status: AuditStatus.SUCCESS,
+      metadata: { cohortId: id, changedFields: Object.keys(updateCohortDto) },
+    });
+
+    return cohort;
   }
 
-  async remove(tenantId: string, id: string) {
+  async remove(tenantId: string, id: string, actorId?: string) {
     await this.findOne(tenantId, id);
 
-    return this.prisma.cohort.update({
+    const cohort = await this.prisma.cohort.update({
       where: { id_tenantId: { id, tenantId } },
       data: { deletedAt: new Date() },
     });
+
+    await this.auditLog.log({
+      userId: actorId,
+      tenantId,
+      action: AuditAction.COHORT_DELETE,
+      status: AuditStatus.SUCCESS,
+      metadata: { cohortId: id },
+    });
+
+    return cohort;
   }
 
   async getMembers(tenantId: string, id: string) {
@@ -130,7 +164,7 @@ export class CohortService {
     );
   }
 
-  async addMembers(tenantId: string, id: string, userIds: string[]) {
+  async addMembers(tenantId: string, id: string, userIds: string[], actorId?: string) {
     await this.findOne(tenantId, id);
 
     // Get valid users in a single query
@@ -146,6 +180,13 @@ export class CohortService {
     const validUserIds = validUsers.map((u) => u.id);
 
     if (validUserIds.length === 0) {
+      await this.auditLog.log({
+        userId: actorId,
+        tenantId,
+        action: AuditAction.COHORT_MEMBERS_ADD,
+        status: AuditStatus.SUCCESS,
+        metadata: { cohortId: id, requestedCount: userIds.length, addedCount: 0 },
+      });
       return { addedCount: 0 };
     }
 
@@ -162,6 +203,13 @@ export class CohortService {
     const userIdsToAdd = validUserIds.filter((userId) => !existingUserIds.has(userId));
 
     if (userIdsToAdd.length === 0) {
+      await this.auditLog.log({
+        userId: actorId,
+        tenantId,
+        action: AuditAction.COHORT_MEMBERS_ADD,
+        status: AuditStatus.SUCCESS,
+        metadata: { cohortId: id, requestedCount: userIds.length, addedCount: 0 },
+      });
       return { addedCount: 0 };
     }
 
@@ -174,10 +222,24 @@ export class CohortService {
       skipDuplicates: true,
     });
 
+    await this.auditLog.log({
+      userId: actorId,
+      tenantId,
+      action: AuditAction.COHORT_MEMBERS_ADD,
+      status: AuditStatus.SUCCESS,
+      metadata: {
+        cohortId: id,
+        requestedCount: userIds.length,
+        validCount: validUserIds.length,
+        addedCount: count,
+        skippedCount: validUserIds.length - count,
+      },
+    });
+
     return { addedCount: count };
   }
 
-  async removeMember(tenantId: string, cohortId: string, userId: string) {
+  async removeMember(tenantId: string, cohortId: string, userId: string, actorId?: string) {
     await this.findOne(tenantId, cohortId);
 
     const membership = await this.prisma.cohortMembership.findUnique({
@@ -190,6 +252,14 @@ export class CohortService {
 
     await this.prisma.cohortMembership.delete({
       where: { cohortId_userId: { cohortId, userId } },
+    });
+
+    await this.auditLog.log({
+      userId: actorId,
+      tenantId,
+      action: AuditAction.COHORT_MEMBER_REMOVE,
+      status: AuditStatus.SUCCESS,
+      metadata: { cohortId, targetUserId: userId },
     });
 
     return { success: true };
@@ -267,7 +337,7 @@ export class CohortService {
         data: {
           tenantId,
           userId: adminUserId,
-          action: 'BULK_ENROLL_COHORT',
+          action: AuditAction.COHORT_BULK_ENROLL,
           status: 'SUCCESS',
           metadata: { cohortId, courseId, enrolledCount, skippedCount, userIds },
         },

@@ -92,6 +92,10 @@
         "strong": "Đã vững"
       }
     },
+    "skillMasteryTrend": {
+      "title": "Xu hướng mastery",
+      "subtitle": "Biến động mastery hằng ngày trong 30 ngày gần nhất."
+    },
     "dashboard": {
       "badge": "Bảng học tập",
       "title": "Tiếp tục khóa học",

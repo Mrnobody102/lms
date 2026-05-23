@@ -92,6 +92,10 @@
         "strong": "Strong"
       }
     },
+    "skillMasteryTrend": {
+      "title": "Mastery trend",
+      "subtitle": "Daily mastery movement over the last 30 days."
+    },
     "dashboard": {
       "badge": "Learning dashboard",
       "title": "Continue your course",

@@ -343,8 +343,8 @@ export default function AdminStudentsPage() {
               </div>
             ) : (
               <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
-                <div className="grid grid-cols-[2rem_minmax(0,1.1fr)_140px_140px_180px] gap-4 border-b bg-muted/30 px-5 py-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  <span>{t('selectItem')}</span>
+                <div className="grid grid-cols-[3rem_minmax(0,1.1fr)_140px_160px_180px] gap-4 border-b bg-muted/30 px-5 py-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground items-center">
+                  <span className="flex justify-center">{t('selectItem')}</span>
                   <span>{t('students')}</span>
                   <span>{t('status')}</span>
                   <span>{t('tenant')}</span>
@@ -355,15 +355,19 @@ export default function AdminStudentsPage() {
                   {visibleStudents.map((student) => (
                     <div
                       key={student.id}
-                      className="grid grid-cols-[2rem_minmax(0,1.1fr)_140px_140px_180px] gap-4 px-5 py-4 hover:bg-muted/50 transition-colors"
+                      className="grid grid-cols-[3rem_minmax(0,1.1fr)_140px_160px_180px] gap-4 px-5 py-4 hover:bg-muted/50 transition-colors items-center"
                     >
-                      <input
-                        type="checkbox"
-                        className="mt-1"
-                        checked={selectedStudentIds.includes(student.id)}
-                        onChange={(event) => handleToggleStudent(student.id, event.target.checked)}
-                        aria-label={t('selectItem')}
-                      />
+                      <div className="flex justify-center">
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                          checked={selectedStudentIds.includes(student.id)}
+                          onChange={(event) =>
+                            handleToggleStudent(student.id, event.target.checked)
+                          }
+                          aria-label={t('selectItem')}
+                        />
+                      </div>
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium">
                           {student.fullName || student.email}

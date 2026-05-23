@@ -49,17 +49,17 @@ Nguyên tắc learning-science:
 
 Chưa có hoặc mới ở mức sơ khai:
 
-- Dashboard học tập đã có continue learning, streak, activity calendar, performance report, daily review và "next best item"; còn chart nâng cao.
+- Dashboard học tập đã có continue learning, streak, activity calendar, performance report, daily review, "next best item" và mastery trend.
 - Practice backend, admin UI và student attempt UI MVP đã có. Question types đã có multiple choice, fill blank, matching, ordering; listening audio prompt đã có bằng audio overlay trên question hiện có.
 - Exam/test backend MVP, admin template UI và student exam UI đã có với cùng bộ question types và listening audio prompt.
-- Reporting theo enrollment/progress, activity calendar, practice/exam accuracy, drill-down Program → Level → Course → Unit/Skills đã có. Còn thiếu time-series trends và cohort drill-down.
+- Reporting theo enrollment/progress, activity calendar, practice/exam accuracy, drill-down Program → Level → Course → Unit/Skills, time-series trends và cohort drill-down đã có.
 - Activation/license code đã hoàn thành MVP.
 - Program/Level hierarchy đã có (Batch A): schema, API, admin UI, hierarchical reporting.
 - Skill mastery model: đã có MVP (`Skill`, `SkillMastery`, EWMA).
 - Spaced repetition system: đã có MVP (`ReviewCard`, daily review, SM-2 scheduling).
 - AI in-context tutor đã có MVP; AI conversation roleplay chưa có.
 - Media storage/background jobs cho audio/video: đã có hạ tầng core và đã dùng cho listening audio prompt.
-- Audit log cho hành động enrollment nhạy cảm (bulk) đã có; còn thiếu cohort/class và trend report nâng cao.
+- Audit log cho hành động enrollment/cohort nhạy cảm đã có; còn thiếu report V2 polish như risk flags và compare cohort.
 
 ## Nguyên tắc roadmap
 
@@ -89,6 +89,7 @@ Trạng thái: phần lớn đã hoàn thành.
 - Health/readiness với DB + Redis.
 - Request id + request metrics.
 - CI/release verification.
+- Web-student cookie login smoke qua Next rewrite (`pnpm smoke:web-student-login`).
 - Production migration runbook và `db:push` guard.
 
 Còn cần theo dõi:
@@ -110,10 +111,11 @@ Trạng thái: đang làm, backend/API/UI core đã có.
 - Admin enrollment search is server-side.
 - Bulk enroll/unenroll học viên theo course đã có API, admin UI và test service.
 
-Còn cần:
+Đã làm thêm:
 
-- Reporting theo enrollment ở mức course detail đã có; dashboard tổng hợp theo tenant đã có bước đầu, còn thiếu phần theo class/cohort và filtering nâng cao.
-- Admin UX quản lý học viên đã có search + active/inactive filter + status toggle + bulk enroll theo course; còn class/cohort và bulk action nâng cao.
+- Reporting theo enrollment ở mức course detail, tenant overview, class/cohort và cohort filter.
+- Admin UX quản lý học viên có search, active/inactive filter, cohort filter, status toggle và bulk enroll theo course.
+- Cohort/class model, membership UI và cohort enrollment vào course.
 - Xem trạng thái học viên trong từng course.
 
 ### P2. Student Dashboard V1
@@ -173,7 +175,6 @@ Mô hình hiện tại:
 
 Còn cần:
 
-- Drag/drop reorder unit và lesson trong admin UI.
 - Microlearning lesson type (`micro_card`) cho định dạng vuốt dọc 1–3 phút (xem [interactive-learning-plan.md](interactive-learning-plan.md) Phase 3).
 
 ### P4. Practice Engine
@@ -242,7 +243,7 @@ Student reports:
 
 - Completion by course/unit.
 - Streak/activity calendar.
-- Accuracy by skill (snapshot — chưa có time-series).
+- Accuracy by skill và mastery trend theo `SkillMasterySnapshot`.
 - Recent attempts.
 
 Admin reports:
@@ -258,9 +259,9 @@ Admin reports:
 
 Còn cần:
 
-- Export/filter nâng cao theo range thời gian.
-- Reporting theo unit/skill cho student-side đã có; có thể thêm so sánh giữa các khóa.
-- Skill mastery report dựa trên `SkillMastery` thay vì rolling accuracy snapshot — cần P9 prerequisite.
+- Student report V2 polish: so sánh giữa các khóa và giải thích "điểm yếu cần luyện".
+- Admin report V2 polish: compare cohort, risk flags và export/filter nâng cao theo range thời gian.
+- Cursor pagination/virtualization cho log hoặc time-series chi tiết nếu mở màn hình dữ liệu lớn.
 
 ### P7. Activation Và Licensing
 
@@ -334,10 +335,11 @@ Cơ sở khoa học:
 - Model `Skill` (catalog tenant-scoped: code, name, nameVi, color, sortOrder, isActive, soft-delete).
 - Model `SkillMastery(userId, skillId, mastery, attempts, correctAttempts, lastUpdatedAt)` cập nhật từ `PracticeAnswer`/`ExamAnswer` qua EWMA (α=0.7).
 - Hook best-effort sync trong `PracticeService.submitAttempt` và `ExamService.submitAttempt` — không block submit nếu mastery update fail.
-- API: `GET /api/skills`, `POST/PATCH/DELETE /api/skills` (admin với audit log SKILL_CREATE/UPDATE/DELETE), `GET /api/skills/mastery` cho student order ASC.
+- API: `GET /api/skills`, `POST/PATCH/DELETE /api/skills` (admin với audit log SKILL_CREATE/UPDATE/DELETE), `GET /api/skills/mastery` cho student order ASC, `GET /api/skills/mastery-trend` cho student time-series.
 - Practice exercise set list filter `?skill=CODE` hoặc CSV `?skill=CODE_A,CODE_B`.
 - Admin UI `/skills` quản lý catalog (badge color, soft-delete, edit dialog).
 - Student dashboard `SkillMasteryPanel` hiển thị 5 kỹ năng yếu nhất với progress bar và link "Luyện ngay".
+- Student dashboard `SkillMasteryTrendPanel` hiển thị mastery trend 30 ngày từ snapshot.
 - Student practice page có multi-select chip filter theo skill, URL-driven (`/practice?skill=VOCABULARY,GRAMMAR`), empty state đặc thù.
 - Student `/vocabulary` route quản lý custom SRS cards như thẻ từ vựng cá nhân.
 - Seed 5 canonical skill (VOCABULARY/GRAMMAR/READING/LISTENING/WRITING) + normalize legacy `vocabulary` → `VOCABULARY`.
@@ -382,8 +384,8 @@ Thứ tự ưu tiên dựa trên giá trị giáo dục, dependencies và hiện
 5. **Media upload pipeline** (P10) ✅ DONE: Hạ tầng lưu trữ S3 Storage client và background job queue (BullMQ + Redis) hoàn thành.
 6. **Listening audio prompt** (P4/P5 close-out) ✅ DONE: Practice/exam questions có audio attachment, admin upload, student player và SRS playback.
 7. **Time-series reporting + cohort drill-down** (P6 close-out) ✅ DONE: cohort filter xuyên rollup/detail/trend/CSV, trend window 7/30/90 ngày.
-8. **AI-Generated Practice** (P8b) → **AI Conversation Roleplay** (P8c). ← **NEXT**
-9. **Drag/drop reorder unit và lesson** (P3 polish, có thể chen ngang khi có thời gian).
+8. **Student/Admin report V2 polish**: compare course/cohort, risk flags, CTA luyện theo điểm yếu.
+9. **AI-Generated Practice** (P8b) → **AI Conversation Roleplay** (P8c). ← **NEXT**
 
 ## Definition Of Done Cấp Dự Án
 

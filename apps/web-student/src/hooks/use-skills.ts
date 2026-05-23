@@ -17,3 +17,11 @@ export function useSkillMastery() {
     staleTime: 30 * 1000,
   });
 }
+
+export function useSkillMasteryTrend(days = 30) {
+  return useQuery({
+    queryKey: ['skill-mastery-trend', days],
+    queryFn: () => skillApi.getMasteryTrend(days),
+    staleTime: 60 * 1000,
+  });
+}

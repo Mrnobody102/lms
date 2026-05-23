@@ -19,3 +19,4 @@ export * from './language-toggle';
 export * from './google-sign-in-button';
 export * from './pagination-controls';
 export * from './lib/utils';
+export * from './image-upload';

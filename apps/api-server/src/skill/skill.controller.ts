@@ -1,9 +1,11 @@
 import {
   Body,
   Controller,
+  DefaultValuePipe,
   Delete,
   Get,
   Param,
+  ParseIntPipe,
   ParseUUIDPipe,
   Patch,
   Post,
@@ -56,6 +58,16 @@ export class SkillController {
   @ApiOperation({ summary: 'Get current user skill mastery snapshot' })
   async getMastery(@Request() req: AuthenticatedRequest) {
     return this.skillMastery.getStudentMastery(req.user.tenantId, req.user.id);
+  }
+
+  @Get('mastery-trend')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get current user skill mastery trend' })
+  async getMasteryTrend(
+    @Request() req: AuthenticatedRequest,
+    @Query('days', new DefaultValuePipe(30), ParseIntPipe) days: number,
+  ) {
+    return this.skillMastery.getStudentMasteryTrend(req.user.tenantId, req.user.id, days);
   }
 
   @Post()

@@ -89,6 +89,19 @@ const SkillMasteryPanel = dynamic(
   },
 );
 
+const SkillMasteryTrendPanel = dynamic(
+  () =>
+    import('../../components/dashboard/skill-mastery-trend-panel').then((mod) => ({
+      default: mod.SkillMasteryTrendPanel,
+    })),
+  {
+    loading: () => (
+      <div className="h-80 rounded-2xl bg-card animate-pulse border border-border/50" />
+    ),
+    ssr: false,
+  },
+);
+
 export default function LearningDashboard() {
   const locale = useLocale();
   const t = useTranslations('Student');
@@ -290,8 +303,9 @@ export default function LearningDashboard() {
         {!isLoading && courses.length > 0 && <RecentLearningWork />}
 
         {!isLoading && courses.length > 0 ? (
-          <div className="mt-8">
+          <div className="mt-8 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
             <SkillMasteryPanel locale={locale} />
+            <SkillMasteryTrendPanel locale={locale} />
           </div>
         ) : null}
 

@@ -141,25 +141,27 @@ curl -X POST http://localhost:4000/api/auth/logout \
 
 ## Scripts thường dùng
 
-| Lệnh                       | Mục đích                                    |
-| -------------------------- | ------------------------------------------- |
-| `pnpm dev`                 | Chạy toàn bộ app ở dev mode                 |
-| `pnpm build`               | Build workspace                             |
-| `pnpm run check:contracts` | Kiểm i18n keys/ICU và API response contract |
-| `pnpm test`                | Chạy test                                   |
-| `pnpm test:e2e`            | Chạy E2E test                               |
-| `pnpm db:up`               | Bật database                                |
-| `pnpm db:down`             | Tắt database                                |
-| `pnpm db:migrate`          | Chạy migration                              |
-| `pnpm db:deploy`           | Apply migration đã commit                   |
-| `pnpm db:reset:demo`       | Reset DB local và seed lại dữ liệu demo     |
-| `pnpm db:status`           | Kiểm tra trạng thái migration               |
-| `pnpm db:resolve`          | Resolve baseline/recovery migration         |
-| `pnpm db:seed`             | Seed dữ liệu mẫu                            |
-| `pnpm db:studio`           | Mở Prisma Studio                            |
+| Lệnh                           | Mục đích                                        |
+| ------------------------------ | ----------------------------------------------- |
+| `pnpm dev`                     | Chạy toàn bộ app ở dev mode                     |
+| `pnpm build`                   | Build workspace                                 |
+| `pnpm run check:contracts`     | Kiểm i18n keys/ICU và API response contract     |
+| `pnpm test`                    | Chạy test                                       |
+| `pnpm test:e2e`                | Chạy E2E test                                   |
+| `pnpm smoke:web-student-login` | Smoke login web-student qua Next rewrite `/api` |
+| `pnpm db:up`                   | Bật database                                    |
+| `pnpm db:down`                 | Tắt database                                    |
+| `pnpm db:migrate`              | Chạy migration                                  |
+| `pnpm db:deploy`               | Apply migration đã commit                       |
+| `pnpm db:reset:demo`           | Reset DB local và seed lại dữ liệu demo         |
+| `pnpm db:status`               | Kiểm tra trạng thái migration                   |
+| `pnpm db:resolve`              | Resolve baseline/recovery migration             |
+| `pnpm db:seed`                 | Seed dữ liệu mẫu                                |
+| `pnpm db:studio`               | Mở Prisma Studio                                |
 
 `pnpm test:e2e` build các shared workspace dependency trước khi mở Playwright để Next app không đọc nhầm artifact `dist` cũ.
 Đây là browser UI smoke với API mock; để kiểm API + DB + Redis thật, dùng `pnpm smoke:api`.
+Để kiểm nhanh cookie login flow của student portal với API thật đang chạy, bật `api-server` và `web-student`, sau đó dùng `pnpm smoke:web-student-login`.
 
 ## Production-readiness notes
 
@@ -172,6 +174,10 @@ curl -X POST http://localhost:4000/api/auth/logout \
 - Student-facing practice/exam reads do not expose correct answers or explanations before submission.
 - Exam attempts now enforce time from `startedAt + durationMinutes`; the student UI resumes an active attempt and blocks late submission.
 - Exam student flows now include recent-attempt history, resume links for active attempts, and dedicated review routes.
+- Admin course builder supports drag/drop reorder for units and lessons.
+- Cohort/class management supports membership, student filtering, cohort enrollment into courses, and cohort-aware reporting.
+- Admin reports include cohort filters, CSV exports, activity trends, and skill mastery trend windows.
+- Student dashboard includes current weakest skills and a 30-day mastery trend from `SkillMasterySnapshot`.
 - Dependencies are pinned in package manifests; run `pnpm install --frozen-lockfile` in CI/release flows.
 - MCP is optional and should remain disabled unless a deployment explicitly configures `MCP_ENABLED=true` and `MCP_API_KEY`.
 - If tenant-scoped MCP data tools are enabled, also configure `MCP_TENANT_ID` so the server cannot read across tenants by default.
@@ -186,7 +192,8 @@ Trạng thái sản phẩm và lộ trình chi tiết nằm ở:
 
 Thứ tự làm tiếp hiện tại:
 
-1. Practice/Exam reporting theo unit/skill.
-2. Activation/license.
-3. Reporting nâng cao theo unit/practice/exam.
-4. Mở rộng question types cho practice/exam.
+1. Student report V2 polish: compare course, giải thích điểm yếu và CTA luyện tập.
+2. Admin report V2 polish: compare cohort, risk flags, export/filter nâng cao.
+3. AI-generated practice và AI conversation roleplay.
+4. Reporting nâng cao theo unit/practice/exam.
+5. Mở rộng question types cho practice/exam.

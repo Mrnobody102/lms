@@ -1,6 +1,6 @@
 # Backlog Kỹ Thuật Và Theo Dõi Tiến Độ
 
-Cập nhật lần cuối: 2026-05-21 (Batch Auth/List Handling — Google login + pagination)
+Cập nhật lần cuối: 2026-05-23 (Batch 0-5 close-out — login smoke, reorder/cohort/reporting foundation)
 
 ## Mục tiêu
 
@@ -24,9 +24,9 @@ Nguyên tắc:
 | Health/readiness có DB + Redis check   | Đã làm               | Có `live`, `ready` và smoke runtime thật                                                                                                                                             |
 | CI release-grade checks                | Đã làm               | Đã tách fast/build/e2e/api smoke trong workflow                                                                                                                                      |
 | Migration hygiene production-safe      | Đã làm               | Có runbook baseline, `db:status`, `db:resolve`, guard `db:push` production                                                                                                           |
-| Enrollment / access model              | Đang làm             | Đã có DB/API/UI access control, shared policy, DB constraints; bulk enroll/unenroll; đã có reporting theo course, tenant overview và accuracy/dashboard cơ bản                       |
-| Student dashboard / continue learning  | Đang làm             | Đã có dashboard shell, streak UI, session count, activity calendar, performance report, daily review card và "next best item"; còn chart nâng cao                                    |
-| Content hierarchy (Program/Level)      | Đã làm               | Program, Level, CourseUnit, lesson; hierarchical reporting; còn drag/drop reorder                                                                                                    |
+| Enrollment / access model              | Đã làm nền V1        | Đã có DB/API/UI access control, shared policy, DB constraints, bulk enroll/unenroll, cohort/class model, cohort enroll và cohort-filtered reporting                                  |
+| Student dashboard / continue learning  | Đã có V1+            | Đã có dashboard shell, streak UI, session count, activity calendar, performance report, daily review card, "next best item" và mastery trend; còn polish student report V2           |
+| Content hierarchy (Program/Level)      | Đã làm V1            | Program, Level, CourseUnit, lesson; hierarchical reporting; drag/drop reorder unit/lesson đã có trong admin course editor                                                            |
 | Practice engine                        | Đã có Student UI MVP | Question bank, exercise set, submit attempt/scoring, enrollment authorization, admin/student practice UI; question types: MC, fill-blank, matching, ordering, listening audio prompt |
 | Quiz / Exam attempt                    | Đã có Student UI MVP | Exam template, section/question, start/submit attempt, scoring, review, enrollment authorization, admin/student UI; cùng bộ question types và listening audio prompt                 |
 | Activation / license code              | Đã làm               | Activation code, license grant, redemption history, expiration/usage limits.                                                                                                         |
@@ -62,6 +62,7 @@ Nguyên tắc:
 - [x] `ports:free` chỉ dọn process thuộc repo này.
 - [x] `build:stable` cho Windows khi parallel build không ổn định.
 - [x] `smoke:api` cho runtime check gần production nhưng vẫn gọn.
+- [x] `smoke:web-student-login` cho cookie login flow qua Next rewrite `/api`.
 - [x] `release:check` gom build/test/smoke/e2e.
 - [x] `api-server` build tự clean `dist` để tránh artifact cũ.
 
@@ -134,7 +135,9 @@ Task:
 - [x] Reporting theo enrollment
 - [x] Audit log cho bulk enroll/unenroll (actorId, targetUserIds, courseId, count, ip, userAgent)
 - [x] Surface `BulkEnrollmentResult.skippedCount`/`duplicateCount` lên admin UI toast
-- [ ] Drag/drop reorder unit và lesson trong admin UI
+- [x] Cohort/class model, membership UI, student filter theo cohort và cohort enroll vào course
+- [x] Audit log cho cohort enrollment và membership changes
+- [x] Drag/drop reorder unit và lesson trong admin UI
 
 ### Epic L. Codebase Maintainability Hardening
 
@@ -180,7 +183,7 @@ Task:
 - [x] Admin UI quản lý unit/chapter
 - [x] Student lesson sidebar theo unit/chapter
 - [x] Test ordering và soft-delete ở service level
-- [ ] Drag/drop reorder unit và lesson trong admin UI
+- [x] Drag/drop reorder unit và lesson trong admin UI
 - [x] Progress/reporting aggregate theo unit (admin `/reports/courses/:id` tab Units)
 
 ### Epic G. Practice Engine
@@ -228,9 +231,10 @@ Task:
 - [x] Admin report dashboard cơ bản
 - [x] Admin drill-down Program → Level → Course → Unit/Students/Skills
 - [x] CSV export cho course-students, course-units, skills snapshot
-- [ ] Time-series trends (skill mastery / activity theo week/month)
-- [ ] Cohort/class drill-down (sau khi có cohort model)
-- [ ] Skill mastery time-series dựa trên `SkillMastery` table (P9 prerequisite)
+- [x] Time-series trends cho activity và mastery, window 7/30/90/custom qua `days`
+- [x] Cohort/class drill-down/filter xuyên rollup/detail/trend/CSV
+- [x] Skill mastery time-series dựa trên `SkillMasterySnapshot`
+- [x] Student-facing mastery trend: `GET /api/skills/mastery-trend` + dashboard chart
 
 ### Epic J. Activation Và License
 
@@ -293,7 +297,7 @@ Trạng thái: Đã hoàn thành (Batch P9.1, 2026-05-19 và Batch P9.2, 2026-05
 - [x] Seed 5 canonical skill (VOCABULARY/GRAMMAR/READING/LISTENING/WRITING) + normalize legacy tags
 - [x] Best-effort sync trong submit transaction (try/catch không block)
 - [x] Unit tests cho EWMA correctness, multi-skill, empty codes, error swallowing (140 tests pass)
-- [ ] Skill mastery time-series chart trên student report (cần `SkillMasteryHistory` table)
+- [x] Skill mastery time-series chart trên student dashboard/report dựa trên `SkillMasterySnapshot`
 
 #### SRS Core (Batch P9.2)
 

@@ -142,4 +142,61 @@ describe('SkillMasteryService', () => {
     );
     expect(result).toHaveLength(1);
   });
+
+  it('returns student mastery trend from daily snapshots', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-05-23T13:00:00.000Z'));
+    const findMany = vi.fn().mockResolvedValue([
+      {
+        skillCode: 'GRAMMAR',
+        mastery: 0.42,
+        date: new Date('2026-05-22T00:00:00.000Z'),
+        skill: {
+          code: 'GRAMMAR',
+          name: 'Grammar',
+          nameVi: 'Ngữ pháp',
+          color: '#22c55e',
+        },
+      },
+      {
+        skillCode: 'VOCABULARY',
+        mastery: 0.875,
+        date: new Date('2026-05-23T00:00:00.000Z'),
+        skill: {
+          code: 'VOCABULARY',
+          name: 'Vocabulary',
+          nameVi: 'Từ vựng',
+          color: '#3b82f6',
+        },
+      },
+    ]);
+    const prisma = { skillMasterySnapshot: { findMany } };
+    const service = new SkillMasteryService(prisma as never);
+
+    const result = await service.getStudentMasteryTrend('tenant-1', 'user-1', 3);
+
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          tenantId: 'tenant-1',
+          userId: 'user-1',
+          date: { gte: new Date('2026-05-21T00:00:00.000Z') },
+        }),
+        orderBy: [{ date: 'asc' }, { skillCode: 'asc' }],
+      }),
+    );
+    expect(result).toEqual({
+      days: 3,
+      skills: [
+        { code: 'GRAMMAR', name: 'Grammar', nameVi: 'Ngữ pháp', color: '#22c55e' },
+        { code: 'VOCABULARY', name: 'Vocabulary', nameVi: 'Từ vựng', color: '#3b82f6' },
+      ],
+      trend: [
+        { date: '2026-05-21' },
+        { date: '2026-05-22', GRAMMAR: 42 },
+        { date: '2026-05-23', VOCABULARY: 88 },
+      ],
+    });
+    vi.useRealTimers();
+  });
 });

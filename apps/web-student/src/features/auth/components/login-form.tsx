@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { useAuthStore } from '../auth.store';
 import { Loader2, AlertCircle, Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
@@ -20,6 +20,8 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+  const emailId = useId();
+  const passwordId = useId();
 
   useEffect(() => {
     setIsHydrated(true);
@@ -51,10 +53,13 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
 
       {/* Email */}
       <div className="space-y-2">
-        <Label className="block">{t('auth.email')}</Label>
+        <Label htmlFor={emailId} className="block">
+          {t('auth.email')}
+        </Label>
         <div className="relative">
           <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
           <Input
+            id={emailId}
             type="email"
             required
             value={email}
@@ -70,10 +75,13 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
 
       {/* Password */}
       <div className="space-y-2">
-        <Label className="block">{t('auth.password')}</Label>
+        <Label htmlFor={passwordId} className="block">
+          {t('auth.password')}
+        </Label>
         <div className="relative">
           <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
           <Input
+            id={passwordId}
             type={showPassword ? 'text' : 'password'}
             required
             value={password}
@@ -104,7 +112,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
       </div>
 
       {/* Submit */}
-      <Button type="submit" disabled={loading} className="w-full">
+      <Button type="submit" disabled={loading || !isHydrated} className="w-full">
         {loading ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
