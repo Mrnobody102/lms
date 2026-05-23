@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useLocale } from 'next-intl';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Languages } from 'lucide-react';
 import { isLocale, locales, localeNames, type Locale } from '@repo/shared';
 import { cn } from './lib/utils';
@@ -18,6 +18,7 @@ export function LanguageToggle({
 }: LanguageToggleProps) {
   const locale = useLocale();
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
 
   const handleLanguageChange = (newLocale: Locale) => {
@@ -38,11 +39,12 @@ export function LanguageToggle({
     const newPath = pathParts.join('/') || '/';
     const suffix =
       typeof window === 'undefined' ? '' : `${window.location.search}${window.location.hash}`;
-    window.location.assign(`${newPath}${suffix}`);
+    setOpen(false);
+    router.replace(`${newPath}${suffix}`, { scroll: false });
   };
 
   return (
-    <div className="relative z-[80]" onMouseLeave={() => setOpen(false)}>
+    <div className="relative z-50" onMouseLeave={() => setOpen(false)}>
       <button
         type="button"
         aria-expanded={open}
@@ -59,7 +61,7 @@ export function LanguageToggle({
       <div
         role="menu"
         className={cn(
-          'absolute w-40 bg-card border rounded-xl shadow-xl transition-all duration-200 z-[90] p-1',
+          'absolute z-50 w-40 rounded-xl border bg-card p-1 shadow-xl transition-all duration-200',
           open ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none',
           menuAlign === 'left' ? 'left-0' : 'right-0',
           menuPlacement === 'top' ? 'bottom-full mb-2' : 'mt-2',

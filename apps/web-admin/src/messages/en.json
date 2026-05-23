@@ -126,6 +126,51 @@
         "draft": "Draft"
       }
     },
+    "financePage": {
+      "title": "Finance",
+      "desc": "Track activation capacity, redeemed seats, and billing readiness for this tenant.",
+      "loading": "Loading finance data...",
+      "loadError": "Could not load finance data. Please try again.",
+      "activeEnrollments": "Active enrollments",
+      "trackedSessions": "{count, plural, =0 {0 tracked sessions} one {# tracked session} other {# tracked sessions}}",
+      "activationCapacity": "Activation capacity",
+      "activeCodes": "{count, plural, =0 {No active codes} one {# active code} other {# active codes}}",
+      "redeemedActivations": "Redeemed activations",
+      "redemptionRate": "{value}% redeemed",
+      "availableSeats": "Available seats",
+      "unredeemedCapacity": "Unredeemed capacity",
+      "readinessTitle": "Billing readiness",
+      "readinessDesc": "Finance uses activation and enrollment data now. Revenue recognition needs a billing provider and pricing rules.",
+      "billingProviderTitle": "Billing provider",
+      "billingProviderDesc": "Connect payment or invoice processing before collecting online payments.",
+      "pricingRulesTitle": "Pricing rules",
+      "pricingRulesDesc": "Course prices and discounts are not configured in the current data model.",
+      "exportTitle": "Finance export",
+      "exportDesc": "Activation and enrollment export can be wired once report scope is finalized.",
+      "notConfigured": "Not configured",
+      "availableSoon": "Soon",
+      "activationTableTitle": "Activation codes",
+      "activationTableDesc": "Operational finance view based on issued and redeemed seats.",
+      "codeCount": "{count, plural, =0 {No codes} one {# code} other {# codes}}",
+      "emptyTitle": "No activation codes",
+      "emptyDesc": "Create activation codes to track paid or manually assigned seats.",
+      "codeColumn": "Code",
+      "courseColumn": "Course",
+      "usageColumn": "Usage",
+      "expiryColumn": "Expiry",
+      "statusColumn": "Status",
+      "noDescription": "No description",
+      "allCourses": "All courses",
+      "usageValue": "{used} / {total} used",
+      "remainingValue": "{count, plural, =0 {No seats remaining} one {# seat remaining} other {# seats remaining}}",
+      "noExpiry": "No expiry",
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive",
+        "expired": "Expired",
+        "usedUp": "Used up"
+      }
+    },
     "questionAudio": {
       "label": "Listening audio",
       "attach": "Attach audio",
@@ -742,7 +787,31 @@
     "coverImageUrlPlaceholder": "https://...",
     "coverImageUrlDesc": "Enter cover image URL for the course (16:9)",
     "publishCourse": "Publish",
-    "unpublishCourse": "Unpublish"
+    "unpublishCourse": "Unpublish",
+    "notifications": {
+      "title": "Notifications",
+      "subtitle": "Broadcast announcements to all students.",
+      "sendBroadcast": "Send Broadcast",
+      "sendBroadcastDesc": "This message will be sent to all active users in your tenant.",
+      "form": {
+        "titleLabel": "Title *",
+        "titlePlaceholder": "E.g., System Maintenance",
+        "typeLabel": "Type",
+        "typeInfo": "Information",
+        "typeSuccess": "Success",
+        "typeWarning": "Warning",
+        "contentLabel": "Message Content (Optional)",
+        "contentPlaceholder": "Detailed message...",
+        "actionUrlLabel": "Internal action path (Optional)",
+        "actionUrlPlaceholder": "/courses",
+        "sendBtn": "Send to All Users"
+      },
+      "validation": {
+        "titleRequired": "Validation Error: Title is required",
+        "success": "Success: Sent notification to {count} users",
+        "error": "Error: Failed to send notification"
+      }
+    }
   },
   "Common": {
     "search": "Search...",

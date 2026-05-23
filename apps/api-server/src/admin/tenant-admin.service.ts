@@ -100,6 +100,7 @@ export class TenantAdminService {
           slug: updateTenantDto.slug,
           domain: updateTenantDto.domain,
           settings: updateTenantDto.settings ?? undefined,
+          isActive: updateTenantDto.isActive,
         },
       });
 

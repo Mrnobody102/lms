@@ -1,19 +1,19 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { useSearchParams } from 'next/navigation';
 import { LoginForm } from '@/features/auth/components/login-form';
 import { useRouter } from '@/navigation';
 
 export default function AdminLoginPage() {
   const t = useTranslations('Admin');
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Redirect to dashboard after successful login
   const handleLoginSuccess = () => {
-    // router.replace('/') will trigger AuthGuard.
-    // Since login() already sets the user in store, we just need to ensure
-    // we don't have a race condition with next-intl's router.
-    router.replace('/');
+    const returnUrl = searchParams.get('returnUrl') || searchParams.get('next');
+    router.replace(getSafeReturnUrl(returnUrl) ?? '/');
   };
 
   return (
@@ -51,4 +51,12 @@ export default function AdminLoginPage() {
       </div>
     </div>
   );
+}
+
+function getSafeReturnUrl(returnUrl: string | null) {
+  if (!returnUrl || !returnUrl.startsWith('/') || returnUrl.startsWith('//')) {
+    return null;
+  }
+
+  return returnUrl;
 }

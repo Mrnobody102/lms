@@ -11,18 +11,64 @@
       "errorRedeeming": "There was an error redeeming the code. Please try again later.",
       "loginRequired": "Please log in to redeem an activation code."
     },
+    "authRequired": {
+      "title": "Login required",
+      "description": "Learning content is only available after login. Please sign in to continue.",
+      "loginCta": "Go to login"
+    },
     "nav": {
       "courses": "Courses",
-      "hsk": "HSK Roadmap",
       "vocab": "Vocabulary",
-      "blog": "Blog",
       "practice": "Practice",
+      "review": "Review",
+      "roleplay": "Roleplay",
       "home": "Home",
-      "exams": "Exams",
+      "exams": "Mock Tests",
       "activation": "Activation Code",
       "settings": "Settings",
       "profile": "Profile",
-      "notifications": "Notifications"
+      "notifications": "Notifications",
+      "viewAllNotifications": "View all notifications",
+      "menu": "Menu",
+      "comingSoon": "Coming soon",
+      "practiceGroup": "Practice"
+    },
+    "profile": {
+      "title": "Student Profile",
+      "loginPrompt": "Please log in to view your profile and learning statistics.",
+      "defaultName": "Student",
+      "avatarAlt": "Student avatar",
+      "editProfile": "Edit Profile",
+      "currentStreak": "Current Streak",
+      "longestStreak": "Longest Streak",
+      "timeLearned": "Time Learned",
+      "lessonsCompleted": "Lessons Completed",
+      "recentActivity": "Recent Activity",
+      "noActivity": "No recent activity found. Start learning to see your progress here!"
+    },
+    "notifications": {
+      "header": {
+        "title": "Notifications",
+        "unreadCount": "You have {count} unread notifications",
+        "markAllAsRead": "Mark all as read"
+      },
+      "loading": "Loading notifications...",
+      "empty": {
+        "title": "No notifications yet",
+        "description": "When new events occur, notifications will appear here."
+      },
+      "timeAgo": {
+        "justNow": "Just now",
+        "minutes": "{minutes}m ago",
+        "hours": "{hours}h ago",
+        "days": "{days}d ago"
+      },
+      "read": "Read",
+      "pagination": {
+        "prev": "Previous",
+        "next": "Next",
+        "page": "Page {page}"
+      }
     },
     "themeToggle": "Toggle theme",
     "hero": {

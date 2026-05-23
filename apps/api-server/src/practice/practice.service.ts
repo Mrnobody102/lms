@@ -140,12 +140,18 @@ export class PracticeService {
     return { generated: saved.length, questions: saved };
   }
 
-  async listPendingReview(tenantId: string, query: { courseId?: string; unitId?: string }) {
+  async listPendingReview(
+    tenantId: string,
+    query: { courseId?: string; unitId?: string; skill?: string },
+  ) {
+    const skills = this.parseSkillFilter(query.skill);
+
     return this.prisma.practiceQuestion.findMany({
       where: {
         tenantId,
         courseId: query.courseId,
         unitId: query.unitId,
+        skillTags: skills ? { hasSome: skills } : undefined,
         reviewStatus: 'PENDING_REVIEW',
         deletedAt: null,
       },
@@ -295,12 +301,18 @@ export class PracticeService {
     });
   }
 
-  async listQuestions(tenantId: string, query: { courseId?: string; unitId?: string }) {
+  async listQuestions(
+    tenantId: string,
+    query: { courseId?: string; unitId?: string; skill?: string },
+  ) {
+    const skills = this.parseSkillFilter(query.skill);
+
     return this.prisma.practiceQuestion.findMany({
       where: {
         tenantId,
         courseId: query.courseId,
         unitId: query.unitId,
+        skillTags: skills ? { hasSome: skills } : undefined,
         reviewStatus: 'APPROVED',
         deletedAt: null,
       },
@@ -456,14 +468,17 @@ export class PracticeService {
     }
 
     if (query.skill) {
-      where.questions = {
-        some: {
-          question: {
-            tenantId,
-            skillTags: { has: query.skill },
+      const skills = this.parseSkillFilter(query.skill);
+      if (skills) {
+        where.questions = {
+          some: {
+            question: {
+              tenantId,
+              skillTags: { hasSome: skills },
+            },
           },
-        },
-      };
+        };
+      }
     }
 
     return this.prisma.practiceExerciseSet.findMany({
@@ -858,6 +873,15 @@ export class PracticeService {
         return { ...link, question };
       }),
     };
+  }
+
+  private parseSkillFilter(skill?: string) {
+    const skills = skill
+      ?.split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    return skills && skills.length > 0 ? Array.from(new Set(skills)) : undefined;
   }
 
   private scoreAnswer(

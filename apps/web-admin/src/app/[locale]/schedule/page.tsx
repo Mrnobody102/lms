@@ -53,8 +53,8 @@ export default function AdminSchedulePage() {
         id: lesson.id,
         title: lesson.title,
         subtitle: lesson.unitId
-          ? (unitTitleById.get(lesson.unitId) ?? t('schedule.ungrouped'))
-          : t('schedule.ungrouped'),
+          ? (unitTitleById.get(lesson.unitId) ?? t('schedulePage.ungrouped'))
+          : t('schedulePage.ungrouped'),
         type: 'lesson' as const,
         order: index + 1,
         durationMinutes: lesson.duration,
@@ -64,7 +64,7 @@ export default function AdminSchedulePage() {
     const exams = (examsQuery.data ?? []).map((exam, index) => ({
       id: exam.id,
       title: exam.title,
-      subtitle: exam.unit?.title ?? t('schedule.courseCheckpoint'),
+      subtitle: exam.unit?.title ?? t('schedulePage.courseCheckpoint'),
       type: 'exam' as const,
       order: lessons.length + index + 1,
       durationMinutes: exam.durationMinutes,

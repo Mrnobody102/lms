@@ -12,11 +12,14 @@ export class PracticeQueryDto {
   @IsOptional()
   unitId?: string;
 
-  @ApiPropertyOptional({ description: 'Filter by skill code (e.g. VOCABULARY)' })
+  @ApiPropertyOptional({
+    description: 'Filter by skill code(s). Comma-separated list, e.g. VOCABULARY,GRAMMAR',
+  })
   @IsString()
-  @MaxLength(64)
-  @Matches(/^[A-Z][A-Z0-9_]*$/, {
-    message: 'skill must be uppercase letters/digits/underscore, starting with a letter',
+  @MaxLength(256)
+  @Matches(/^[A-Z][A-Z0-9_]*(,[A-Z][A-Z0-9_]*)*$/, {
+    message:
+      'skill must be uppercase codes (letters/digits/underscore), comma-separated, starting with a letter',
   })
   @IsOptional()
   skill?: string;

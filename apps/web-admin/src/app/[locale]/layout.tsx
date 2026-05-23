@@ -4,6 +4,7 @@ import { ThemeProvider } from '@repo/ui';
 import { QueryProvider } from '@/components/providers';
 import { ProgressBar } from '@/components/common/progress-bar';
 import { Suspense } from 'react';
+import { Toaster } from 'react-hot-toast';
 
 export const metadata: Metadata = {
   title: 'LMS Admin',
@@ -33,6 +34,7 @@ export default async function RootLayout(props: {
             <Suspense fallback={null}>
               <ProgressBar />
             </Suspense>
+            <Toaster position="top-right" />
             <QueryProvider>{children}</QueryProvider>
           </NextIntlClientProvider>
         </ThemeProvider>

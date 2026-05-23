@@ -4,9 +4,9 @@ import { useTranslations } from 'next-intl';
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useSrsStats } from '@/hooks/use-srs';
 
-export function SrsStatsChart() {
+export function SrsStatsChart({ enabled = true }: { enabled?: boolean }) {
   const t = useTranslations('Student.srs.stats');
-  const { data: stats, isLoading } = useSrsStats(30);
+  const { data: stats, isLoading } = useSrsStats(30, enabled);
 
   if (isLoading) {
     return <div className="h-48 animate-pulse rounded-xl bg-muted" />;

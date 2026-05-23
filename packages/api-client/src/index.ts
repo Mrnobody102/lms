@@ -178,6 +178,7 @@ export function createApiClient(config: ApiClientConfig = {}): AxiosInstance {
         axiosError.response?.status === 401 &&
         originalRequest &&
         !originalRequest._retry &&
+        originalRequest.skipUnauthorizedRedirect !== true &&
         !originalRequest.url?.includes('/auth/refresh') &&
         !originalRequest.url?.includes('/auth/login') &&
         typeof window !== 'undefined'

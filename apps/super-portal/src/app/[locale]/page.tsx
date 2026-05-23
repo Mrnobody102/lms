@@ -16,7 +16,10 @@ export default function SuperAdminHome() {
   const t = useTranslations('SuperPortal');
   const locale = useLocale();
   const { isAuthenticated, isInitialized } = useAuthStore();
-  const { data: tenants = [], isLoading } = useTenants({ enabled: isAuthenticated });
+  const { data: tenants = [], isLoading } = useTenants({
+    enabled: isAuthenticated,
+    includeInactive: true,
+  });
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   if (!isInitialized) {
@@ -50,7 +53,7 @@ export default function SuperAdminHome() {
           </button>
         </div>
 
-        <TenantStats totalActiveTenants={tenants.length} />
+        <TenantStats totalActiveTenants={tenants.filter((tenant) => tenant.isActive).length} />
         <TenantList tenants={tenants} loading={isLoading} />
       </div>
 

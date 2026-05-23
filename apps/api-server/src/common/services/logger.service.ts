@@ -17,19 +17,21 @@ export interface LogMeta {
 
 @Injectable()
 export class LoggerService implements NestLoggerService {
+  private readonly usePrettyTransport =
+    process.env.NODE_ENV !== 'production' && process.stdout.isTTY === true;
+
   private readonly logger: Logger = pino({
     level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
-    transport:
-      process.env.NODE_ENV === 'production'
-        ? undefined
-        : {
-            target: 'pino-pretty',
-            options: {
-              colorize: true,
-              translateTime: 'SYS:standard',
-              ignore: 'pid,hostname',
-            },
+    transport: this.usePrettyTransport
+      ? {
+          target: 'pino-pretty',
+          options: {
+            colorize: true,
+            translateTime: 'SYS:standard',
+            ignore: 'pid,hostname',
           },
+        }
+      : undefined,
   });
 
   private sanitizeMeta(meta?: LogMeta): Record<string, unknown> | undefined {

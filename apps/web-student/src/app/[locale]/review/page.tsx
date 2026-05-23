@@ -3,14 +3,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { BrainCircuit, CheckCircle2, ArrowRight } from 'lucide-react';
+import { AuthRequiredPanel } from '@/components/auth/auth-required-panel';
 import { useReviewQueue, useSubmitReview } from '@/hooks/use-srs';
 import { Link } from '@/navigation';
 import { StudentNav } from '@/components/layout/student-nav';
 import { AudioPromptPlayer } from '@/components/practice/audio-prompt-player';
+import { useAuthStore } from '@/features/auth/auth.store';
 
 export default function ReviewPage() {
   const t = useTranslations('Student.srs');
-  const { data: queue, isLoading } = useReviewQueue();
+  const { isAuthenticated, isInitialized } = useAuthStore();
+  const { data: queue, isLoading } = useReviewQueue(undefined, isAuthenticated);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
   const startTimeRef = useRef(0);
@@ -20,7 +23,18 @@ export default function ReviewPage() {
     startTimeRef.current = Date.now();
   }, [currentIndex]);
 
-  if (isLoading) {
+  if (isInitialized && !isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-background font-sans">
+        <StudentNav showLinks />
+        <main className="mx-auto max-w-3xl px-6 py-20">
+          <AuthRequiredPanel returnTo="/review" />
+        </main>
+      </div>
+    );
+  }
+
+  if (!isInitialized || isLoading) {
     return (
       <div className="min-h-screen bg-background font-sans">
         <StudentNav showLinks />

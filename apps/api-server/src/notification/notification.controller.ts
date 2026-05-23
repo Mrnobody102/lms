@@ -2,6 +2,7 @@ import { Controller, Get, Param, Patch, Query, UseGuards, UseInterceptors } from
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { TransformInterceptor } from '../common/interceptors/transform.interceptor';
+import { NotificationQueryDto } from './dto/notification-query.dto';
 import { NotificationService } from './notification.service';
 
 @Controller('notifications')
@@ -13,14 +14,13 @@ export class NotificationController {
   @Get()
   async getNotifications(
     @CurrentUser() user: { id: string; tenantId: string },
-    @Query('skip') skip?: string,
-    @Query('take') take?: string,
+    @Query() query: NotificationQueryDto,
   ) {
     return this.notificationService.getUserNotifications(
       user.tenantId,
       user.id,
-      skip ? parseInt(skip, 10) : 0,
-      take ? parseInt(take, 10) : 20,
+      query.skip,
+      query.take,
     );
   }
 

@@ -126,6 +126,51 @@
         "draft": "Bản nháp"
       }
     },
+    "financePage": {
+      "title": "Tài chính",
+      "desc": "Theo dõi sức chứa mã kích hoạt, ghế đã dùng và mức sẵn sàng billing của tenant.",
+      "loading": "Đang tải dữ liệu tài chính...",
+      "loadError": "Không tải được dữ liệu tài chính. Vui lòng thử lại.",
+      "activeEnrollments": "Enrollment đang active",
+      "trackedSessions": "{count, plural, =0 {0 lượt học được ghi nhận} one {# lượt học được ghi nhận} other {# lượt học được ghi nhận}}",
+      "activationCapacity": "Sức chứa mã kích hoạt",
+      "activeCodes": "{count, plural, =0 {Không có mã active} one {# mã active} other {# mã active}}",
+      "redeemedActivations": "Lượt kích hoạt đã dùng",
+      "redemptionRate": "Đã dùng {value}%",
+      "availableSeats": "Ghế còn lại",
+      "unredeemedCapacity": "Sức chứa chưa dùng",
+      "readinessTitle": "Mức sẵn sàng billing",
+      "readinessDesc": "Phần tài chính hiện dùng dữ liệu activation và enrollment. Ghi nhận doanh thu cần thêm cổng thanh toán và luật giá.",
+      "billingProviderTitle": "Cổng thanh toán",
+      "billingProviderDesc": "Kết nối thanh toán hoặc xuất hóa đơn trước khi thu tiền online.",
+      "pricingRulesTitle": "Luật giá",
+      "pricingRulesDesc": "Giá khóa học và khuyến mãi chưa được cấu hình trong data model hiện tại.",
+      "exportTitle": "Xuất dữ liệu tài chính",
+      "exportDesc": "Có thể nối export activation và enrollment sau khi chốt phạm vi báo cáo.",
+      "notConfigured": "Chưa cấu hình",
+      "availableSoon": "Sắp có",
+      "activationTableTitle": "Mã kích hoạt",
+      "activationTableDesc": "Góc nhìn tài chính vận hành dựa trên ghế đã phát hành và đã kích hoạt.",
+      "codeCount": "{count, plural, =0 {Chưa có mã} one {# mã} other {# mã}}",
+      "emptyTitle": "Chưa có mã kích hoạt",
+      "emptyDesc": "Tạo mã kích hoạt để theo dõi ghế đã bán hoặc đã cấp thủ công.",
+      "codeColumn": "Mã",
+      "courseColumn": "Khóa học",
+      "usageColumn": "Sử dụng",
+      "expiryColumn": "Hết hạn",
+      "statusColumn": "Trạng thái",
+      "noDescription": "Chưa có mô tả",
+      "allCourses": "Tất cả khóa học",
+      "usageValue": "Đã dùng {used} / {total}",
+      "remainingValue": "{count, plural, =0 {Không còn ghế} one {Còn # ghế} other {Còn # ghế}}",
+      "noExpiry": "Không hết hạn",
+      "status": {
+        "active": "Đang hoạt động",
+        "inactive": "Tạm ngưng",
+        "expired": "Đã hết hạn",
+        "usedUp": "Đã dùng hết"
+      }
+    },
     "questionAudio": {
       "label": "Audio (Listening)",
       "attach": "Đính kèm audio",
@@ -742,7 +787,31 @@
     "coverImageUrlPlaceholder": "https://...",
     "coverImageUrlDesc": "Nhập URL ảnh bìa cho khóa học (16:9)",
     "publishCourse": "Xuất bản",
-    "unpublishCourse": "Hủy xuất bản"
+    "unpublishCourse": "Hủy xuất bản",
+    "notifications": {
+      "title": "Thông báo",
+      "subtitle": "Gửi thông báo đến toàn bộ học viên.",
+      "sendBroadcast": "Gửi thông báo",
+      "sendBroadcastDesc": "Tin nhắn này sẽ được gửi tới tất cả người dùng đang hoạt động trong hệ thống.",
+      "form": {
+        "titleLabel": "Tiêu đề *",
+        "titlePlaceholder": "VD: Bảo trì hệ thống",
+        "typeLabel": "Loại thông báo",
+        "typeInfo": "Thông tin",
+        "typeSuccess": "Thành công",
+        "typeWarning": "Cảnh báo",
+        "contentLabel": "Nội dung (Không bắt buộc)",
+        "contentPlaceholder": "Chi tiết thông báo...",
+        "actionUrlLabel": "Đường dẫn nội bộ (Không bắt buộc)",
+        "actionUrlPlaceholder": "/courses",
+        "sendBtn": "Gửi đến mọi người"
+      },
+      "validation": {
+        "titleRequired": "Lỗi: Vui lòng nhập tiêu đề",
+        "success": "Thành công: Đã gửi thông báo tới {count} người dùng",
+        "error": "Lỗi: Không thể gửi thông báo"
+      }
+    }
   },
   "Common": {
     "search": "Tìm kiếm...",

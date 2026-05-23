@@ -17,18 +17,12 @@ import {
 import { Notification } from '../../../lib/notification-api';
 import { Link } from '@/navigation';
 
-function timeAgo(dateStr: string) {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+function getInternalActionUrl(actionUrl: string | null) {
+  if (!actionUrl || !actionUrl.startsWith('/') || actionUrl.startsWith('//')) {
+    return null;
+  }
 
-  if (seconds < 60) return 'Just now';
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
+  return actionUrl;
 }
 
 export function NotificationBell() {
@@ -39,6 +33,19 @@ export function NotificationBell() {
 
   const notifications = data?.notifications || [];
   const unreadCount = data?.unreadCount || 0;
+  const timeAgo = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (seconds < 60) return t('notifications.timeAgo.justNow');
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return t('notifications.timeAgo.minutes', { minutes });
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return t('notifications.timeAgo.hours', { hours });
+    const days = Math.floor(hours / 24);
+    return t('notifications.timeAgo.days', { days });
+  };
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -64,10 +71,10 @@ export function NotificationBell() {
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-[380px] p-0">
+      <DropdownMenuContent align="end" className="w-[calc(100vw-2rem)] max-w-[380px] p-0">
         <div className="flex items-center justify-between px-4 py-3 border-b">
           <DropdownMenuLabel className="p-0 font-semibold">
-            {t('nav.notifications') || 'Notifications'}
+            {t('nav.notifications')}
           </DropdownMenuLabel>
           {unreadCount > 0 && (
             <Button
@@ -76,62 +83,73 @@ export function NotificationBell() {
               className="h-auto p-0 text-xs font-medium text-primary"
               onClick={() => markAllAsRead.mutate()}
             >
-              Mark all as read
+              {t('notifications.header.markAllAsRead')}
             </Button>
           )}
         </div>
         <div className="max-h-[300px] overflow-y-auto">
           {isLoading ? (
-            <div className="p-4 text-center text-sm text-muted-foreground">Loading...</div>
+            <div className="p-4 text-center text-sm text-muted-foreground">
+              {t('notifications.loading')}
+            </div>
           ) : notifications.length === 0 ? (
             <div className="p-4 text-center text-sm text-muted-foreground">
-              No notifications yet
+              {t('notifications.empty.title')}
             </div>
           ) : (
-            notifications.map((n: Notification) => (
-              <div
-                key={n.id}
-                className={`relative flex items-start gap-3 p-4 transition-colors hover:bg-muted/50 ${
-                  !n.readAt ? 'bg-primary/5' : ''
-                }`}
-              >
-                {!n.readAt && (
-                  <span className="absolute left-2 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-primary" />
-                )}
-                <div className="mt-0.5 shrink-0">{getIcon(n.type)}</div>
-                <div className="flex-1 space-y-1 pl-1">
-                  <p className="text-sm font-medium leading-none">
-                    {n.actionUrl ? (
-                      <Link
-                        href={n.actionUrl}
-                        className="hover:underline"
-                        onClick={() => !n.readAt && markAsRead.mutate(n.id)}
-                      >
-                        {n.title}
-                      </Link>
-                    ) : (
-                      <span>{n.title}</span>
-                    )}
-                  </p>
-                  {n.content && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">{n.content}</p>
+            notifications.map((n: Notification) => {
+              const actionUrl = getInternalActionUrl(n.actionUrl);
+
+              return (
+                <div
+                  key={n.id}
+                  className={`group relative flex items-start gap-3 p-4 transition-colors hover:bg-muted/50 ${
+                    !n.readAt ? 'bg-primary/5' : ''
+                  }`}
+                >
+                  {!n.readAt && (
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-primary" />
                   )}
-                  <p className="text-xs text-muted-foreground">{timeAgo(n.createdAt)}</p>
+                  <div className="mt-0.5 shrink-0">{getIcon(n.type)}</div>
+                  <div className="min-w-0 flex-1 space-y-1 pl-1 pr-8">
+                    <p className="truncate text-sm font-medium leading-none">
+                      {actionUrl ? (
+                        <Link
+                          href={actionUrl}
+                          className="hover:underline"
+                          onClick={() => !n.readAt && markAsRead.mutate(n.id)}
+                        >
+                          {n.title}
+                        </Link>
+                      ) : (
+                        <span>{n.title}</span>
+                      )}
+                    </p>
+                    {n.content && (
+                      <p className="line-clamp-2 text-sm text-muted-foreground">{n.content}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground">{timeAgo(n.createdAt)}</p>
+                  </div>
+                  {!n.readAt && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-2 top-2 h-6 w-6 shrink-0 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100"
+                      onClick={() => markAsRead.mutate(n.id)}
+                      title={t('notifications.read')}
+                    >
+                      <Check className="w-3 h-3" />
+                    </Button>
+                  )}
                 </div>
-                {!n.readAt && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity absolute right-2 top-2"
-                    onClick={() => markAsRead.mutate(n.id)}
-                    title="Mark as read"
-                  >
-                    <Check className="w-3 h-3" />
-                  </Button>
-                )}
-              </div>
-            ))
+              );
+            })
           )}
+        </div>
+        <div className="p-2 border-t text-center">
+          <Link href="/notifications" className="text-xs font-medium text-primary hover:underline">
+            {t('nav.viewAllNotifications')}
+          </Link>
         </div>
       </DropdownMenuContent>
     </DropdownMenu>

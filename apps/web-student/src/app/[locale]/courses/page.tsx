@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { AuthRequiredPanel } from '../../../components/auth/auth-required-panel';
 import { StudentNav } from '../../../components/layout/student-nav';
 import { useAuthStore } from '../../../features/auth/auth.store';
 import { useCourses } from '../../../hooks/use-courses';
@@ -30,8 +31,8 @@ type StatusFilter = 'all' | CourseProgressState;
 
 export default function CoursesPage() {
   const t = useTranslations('Student');
-  const { isAuthenticated } = useAuthStore();
-  const { data: courses = [], isLoading, isError } = useCourses();
+  const { isAuthenticated, isInitialized } = useAuthStore();
+  const { data: courses = [], isLoading, isError } = useCourses(isAuthenticated);
   const { data: progressSummary, isLoading: isProgressLoading } =
     useProgressSummary(isAuthenticated);
   const [query, setQuery] = useState('');
@@ -206,123 +207,129 @@ export default function CoursesPage() {
       <StudentNav showLinks />
 
       <main className="mx-auto max-w-7xl px-6 py-12">
-        <header className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <h1 className="mb-2 text-3xl font-bold tracking-tight">{t('courses.title')}</h1>
-            <p className="max-w-2xl text-base text-muted-foreground">{t('courses.subtitle')}</p>
-          </div>
-          <div className="relative w-full lg:w-80">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder={t('courses.searchPlaceholder')}
-              className="h-10 w-full rounded-md border bg-background pl-9 pr-3 text-sm outline-none focus:border-primary"
-            />
-          </div>
-        </header>
-
-        {isLoading || (isAuthenticated && isProgressLoading) ? (
-          <div className="flex flex-col items-center justify-center space-y-4 py-24 opacity-50">
-            <Loader2 className="h-10 w-10 animate-spin text-primary" />
-            <p className="text-sm font-medium text-muted-foreground">{t('courses.loading')}</p>
-          </div>
-        ) : isError ? (
-          <div className="rounded-md border border-destructive/20 bg-destructive/5 p-5 text-sm text-destructive">
-            {t('courses.loadError')}
-          </div>
-        ) : courses.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-              <GraduationCap className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <h3 className="mb-2 text-lg font-semibold">{t('courses.empty')}</h3>
-            <p className="text-sm text-muted-foreground">{t('courses.emptyDesc')}</p>
-          </div>
+        {isInitialized && !isAuthenticated ? (
+          <AuthRequiredPanel returnTo="/courses" />
         ) : (
-          <div className="space-y-8">
-            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <CourseMetric
-                icon={BookOpen}
-                label={t('courses.availableCourses')}
-                value={t('courses.availableCoursesValue', { count: courses.length })}
-              />
-              <CourseMetric
-                icon={GraduationCap}
-                label={t('dashboard.enrolledCourses')}
-                value={progressSummary?.totals.courses ?? 0}
-              />
-              <CourseMetric
-                icon={CheckCircle2}
-                label={t('dashboard.completedLessons')}
-                value={progressSummary?.totals.completedLessons ?? 0}
-              />
-              <CourseMetric
-                icon={BarChart3}
-                label={t('dashboard.overallProgress')}
-                value={`${progressSummary?.totals.completionPercentage ?? 0}%`}
-              />
-            </section>
-
-            <section className="space-y-4">
-              <div className="flex flex-wrap gap-2">
-                {filters.map((item) => (
-                  <button
-                    key={item.key}
-                    type="button"
-                    onClick={() => setFilter(item.key)}
-                    className={`h-9 rounded-md border px-3 text-sm font-medium transition-colors ${
-                      filter === item.key
-                        ? 'border-primary bg-primary text-primary-foreground'
-                        : 'bg-background hover:bg-muted'
-                    }`}
-                  >
-                    {item.label}
-                  </button>
-                ))}
+          <>
+            <header className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <h1 className="mb-2 text-3xl font-bold tracking-tight">{t('courses.title')}</h1>
+                <p className="max-w-2xl text-base text-muted-foreground">{t('courses.subtitle')}</p>
               </div>
+              <div className="relative w-full lg:w-80">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder={t('courses.searchPlaceholder')}
+                  className="h-10 w-full rounded-md border bg-background pl-9 pr-3 text-sm outline-none focus:border-primary"
+                />
+              </div>
+            </header>
 
-              {filteredCourses.length === 0 ? (
-                <div className="rounded-md border border-dashed p-8 text-center">
-                  <h2 className="text-lg font-semibold">{t('courses.noFilteredTitle')}</h2>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    {t('courses.noFilteredDesc')}
-                  </p>
+            {!isInitialized || isLoading || (isAuthenticated && isProgressLoading) ? (
+              <div className="flex flex-col items-center justify-center space-y-4 py-24 opacity-50">
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                <p className="text-sm font-medium text-muted-foreground">{t('courses.loading')}</p>
+              </div>
+            ) : isError ? (
+              <div className="rounded-md border border-destructive/20 bg-destructive/5 p-5 text-sm text-destructive">
+                {t('courses.loadError')}
+              </div>
+            ) : courses.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-24 text-center">
+                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+                  <GraduationCap className="h-8 w-8 text-muted-foreground" />
                 </div>
-              ) : (
-                <div className="flex flex-col gap-10">
-                  {Object.values(groupedCourses).map((program) => (
-                    <div key={program.title} className="space-y-6">
-                      <h2 className="text-2xl font-bold tracking-tight text-primary">
-                        {program.title}
-                      </h2>
-                      {Object.values(program.levels).map((level) => (
-                        <div key={level.title} className="space-y-4">
-                          <h3 className="text-xl font-semibold border-b pb-2">{level.title}</h3>
-                          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                            {level.courses.map((course) => renderCourseCard(course))}
-                          </div>
+                <h3 className="mb-2 text-lg font-semibold">{t('courses.empty')}</h3>
+                <p className="text-sm text-muted-foreground">{t('courses.emptyDesc')}</p>
+              </div>
+            ) : (
+              <div className="space-y-8">
+                <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                  <CourseMetric
+                    icon={BookOpen}
+                    label={t('courses.availableCourses')}
+                    value={t('courses.availableCoursesValue', { count: courses.length })}
+                  />
+                  <CourseMetric
+                    icon={GraduationCap}
+                    label={t('dashboard.enrolledCourses')}
+                    value={progressSummary?.totals.courses ?? 0}
+                  />
+                  <CourseMetric
+                    icon={CheckCircle2}
+                    label={t('dashboard.completedLessons')}
+                    value={progressSummary?.totals.completedLessons ?? 0}
+                  />
+                  <CourseMetric
+                    icon={BarChart3}
+                    label={t('dashboard.overallProgress')}
+                    value={`${progressSummary?.totals.completionPercentage ?? 0}%`}
+                  />
+                </section>
+
+                <section className="space-y-4">
+                  <div className="flex flex-wrap gap-2">
+                    {filters.map((item) => (
+                      <button
+                        key={item.key}
+                        type="button"
+                        onClick={() => setFilter(item.key)}
+                        className={`h-9 rounded-md border px-3 text-sm font-medium transition-colors ${
+                          filter === item.key
+                            ? 'border-primary bg-primary text-primary-foreground'
+                            : 'bg-background hover:bg-muted'
+                        }`}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {filteredCourses.length === 0 ? (
+                    <div className="rounded-md border border-dashed p-8 text-center">
+                      <h2 className="text-lg font-semibold">{t('courses.noFilteredTitle')}</h2>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        {t('courses.noFilteredDesc')}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-10">
+                      {Object.values(groupedCourses).map((program) => (
+                        <div key={program.title} className="space-y-6">
+                          <h2 className="text-2xl font-bold tracking-tight text-primary">
+                            {program.title}
+                          </h2>
+                          {Object.values(program.levels).map((level) => (
+                            <div key={level.title} className="space-y-4">
+                              <h3 className="text-xl font-semibold border-b pb-2">{level.title}</h3>
+                              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                {level.courses.map((course) => renderCourseCard(course))}
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       ))}
-                    </div>
-                  ))}
 
-                  {ungroupedCourses.length > 0 && (
-                    <div className="space-y-6">
-                      {Object.values(groupedCourses).length > 0 && (
-                        <h2 className="text-2xl font-bold tracking-tight text-primary">
-                          {t('courses.otherCourses')}
-                        </h2>
+                      {ungroupedCourses.length > 0 && (
+                        <div className="space-y-6">
+                          {Object.values(groupedCourses).length > 0 && (
+                            <h2 className="text-2xl font-bold tracking-tight text-primary">
+                              {t('courses.otherCourses')}
+                            </h2>
+                          )}
+                          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                            {ungroupedCourses.map((course) => renderCourseCard(course))}
+                          </div>
+                        </div>
                       )}
-                      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {ungroupedCourses.map((course) => renderCourseCard(course))}
-                      </div>
                     </div>
                   )}
-                </div>
-              )}
-            </section>
-          </div>
+                </section>
+              </div>
+            )}
+          </>
         )}
       </main>
     </div>

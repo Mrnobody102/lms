@@ -1,16 +1,22 @@
 'use client';
 
 import {
+  BookOpen,
+  ChevronDown,
   Dumbbell,
   FileCheck2,
+  Home,
   KeyRound,
+  Library,
   LogOut,
   User as UserIcon,
   UserPlus,
   Settings,
   MessageSquare,
   Menu,
+  RefreshCcw,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import {
   LanguageToggle,
   ThemeToggle,
@@ -18,13 +24,15 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   Sheet,
   SheetContent,
   SheetTrigger,
   SheetTitle,
 } from '@repo/ui';
 import { useTranslations } from 'next-intl';
-import { Link } from '../../navigation';
+import { Link, usePathname } from '../../navigation';
 import { useAuthStore } from '../../features/auth/auth.store';
 import { NotificationBell } from '../../features/notifications/components/notification-bell';
 
@@ -32,179 +40,355 @@ interface StudentNavProps {
   showLinks?: boolean;
 }
 
+interface StudentNavItem {
+  href?: string;
+  icon: LucideIcon;
+  label: string;
+  disabled?: boolean;
+}
+
 export function StudentNav({ showLinks = false }: StudentNavProps) {
   const t = useTranslations('Student');
+  const pathname = usePathname();
   const { isAuthenticated, user, logout, isInitialized } = useAuthStore();
 
+  const mainItems: StudentNavItem[] = [
+    { href: '/', icon: Home, label: t('nav.home') },
+    { href: '/courses', icon: BookOpen, label: t('nav.courses') },
+  ];
+  const practiceItems: StudentNavItem[] = [
+    { href: '/practice', icon: Dumbbell, label: t('nav.practice') },
+    { href: '/vocabulary', icon: Library, label: t('nav.vocab') },
+    { href: '/review', icon: RefreshCcw, label: t('nav.review') },
+    { href: '/roleplay', icon: MessageSquare, label: t('nav.roleplay') },
+  ];
+  const examsItem: StudentNavItem = {
+    href: '/exams',
+    icon: FileCheck2,
+    label: t('nav.exams'),
+  };
+
+  const isActive = (href?: string) => {
+    if (!href) return false;
+    if (href === '/') return pathname === '/';
+    return pathname === href || pathname.startsWith(`${href}/`);
+  };
+  const isGroupActive = (items: StudentNavItem[]) => items.some((i) => isActive(i.href));
+
+  const linkClass = (active: boolean) =>
+    `inline-flex h-9 items-center gap-1.5 rounded-md px-3 transition-colors ${
+      active ? 'bg-primary/10 text-primary' : 'hover:bg-muted hover:text-primary'
+    }`;
+
   return (
-    <nav className="sticky top-0 z-10 flex items-center justify-between border-b bg-card/80 px-4 py-3 backdrop-blur-md transition-colors duration-300 sm:px-6">
-      <Link href="/" className="flex min-w-0 items-center gap-2">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary font-bold text-primary-foreground shadow-lg shadow-primary/20">
-          L
-        </div>
-        <span className="truncate text-base font-bold tracking-tight sm:text-lg">LMS Learning</span>
-      </Link>
-
-      {showLinks && (
-        <>
-          <div className="hidden md:flex gap-5 text-sm font-medium text-muted-foreground">
-            <Link href="/courses" className="hover:text-primary transition-colors">
-              {t('nav.courses')}
-            </Link>
-            <Link
-              href="/practice"
-              className="inline-flex items-center gap-1.5 hover:text-primary transition-colors"
-            >
-              <Dumbbell className="h-3.5 w-3.5" />
-              {t('nav.practice')}
-            </Link>
-            <Link
-              href="/roleplay"
-              className="inline-flex items-center gap-1.5 hover:text-primary transition-colors"
-            >
-              <MessageSquare className="h-3.5 w-3.5" />
-              Roleplay
-            </Link>
-            <Link
-              href="/exams"
-              className="inline-flex items-center gap-1.5 hover:text-primary transition-colors"
-            >
-              <FileCheck2 className="h-3.5 w-3.5" />
-              {t('nav.exams')}
-            </Link>
-            <Link
-              href="/activation"
-              className="inline-flex items-center gap-1.5 hover:text-primary transition-colors"
-            >
-              <KeyRound className="h-3.5 w-3.5" />
-              {t('nav.activation')}
-            </Link>
-            <Link href="#" className="hover:text-primary transition-colors">
-              {t('nav.hsk')}
-            </Link>
-            <Link href="#" className="hover:text-primary transition-colors">
-              {t('nav.vocab')}
-            </Link>
-            <Link href="#" className="hover:text-primary transition-colors">
-              {t('nav.blog')}
-            </Link>
+    <header className="sticky top-0 z-40 border-b bg-card/80 backdrop-blur-md transition-colors duration-300">
+      <nav className="flex items-center justify-between gap-2 px-4 py-3 sm:px-6">
+        <Link href="/" className="flex min-w-0 shrink-0 items-center gap-2">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary font-bold text-primary-foreground shadow-lg shadow-primary/20">
+            L
           </div>
+          <span className="hidden truncate text-base font-bold tracking-tight sm:inline sm:text-lg">
+            LMS Learning
+          </span>
+        </Link>
 
-          <div className="md:hidden flex items-center">
-            <Sheet>
-              <SheetTrigger asChild>
-                <button className="p-2 text-muted-foreground hover:bg-muted hover:text-foreground rounded-md transition-colors mr-1">
-                  <Menu className="h-5 w-5" />
-                </button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-[280px] sm:w-[350px] p-6 flex flex-col gap-6">
-                <SheetTitle className="text-left font-bold tracking-tight">Menu</SheetTitle>
-                <div className="flex flex-col gap-4 text-sm font-medium text-muted-foreground mt-4">
-                  <Link
-                    href="/courses"
-                    className="hover:text-primary transition-colors py-2 border-b"
-                  >
-                    {t('nav.courses')}
-                  </Link>
-                  <Link
-                    href="/practice"
-                    className="flex items-center gap-2 hover:text-primary transition-colors py-2 border-b"
-                  >
-                    <Dumbbell className="h-4 w-4" />
-                    {t('nav.practice')}
-                  </Link>
-                  <Link
-                    href="/roleplay"
-                    className="flex items-center gap-2 hover:text-primary transition-colors py-2 border-b"
-                  >
-                    <MessageSquare className="h-4 w-4" />
-                    Roleplay
-                  </Link>
-                  <Link
-                    href="/exams"
-                    className="flex items-center gap-2 hover:text-primary transition-colors py-2 border-b"
-                  >
-                    <FileCheck2 className="h-4 w-4" />
-                    {t('nav.exams')}
-                  </Link>
-                  <Link
-                    href="/activation"
-                    className="flex items-center gap-2 hover:text-primary transition-colors py-2 border-b"
-                  >
-                    <KeyRound className="h-4 w-4" />
-                    {t('nav.activation')}
-                  </Link>
-                </div>
-              </SheetContent>
-            </Sheet>
-          </div>
-        </>
-      )}
+        {showLinks && (
+          <div className="hidden min-w-0 flex-1 justify-center gap-1 text-sm font-medium text-muted-foreground lg:flex">
+            {mainItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href ?? '/'}
+                className={linkClass(isActive(item.href))}
+              >
+                <item.icon className="h-3.5 w-3.5 shrink-0" />
+                <span>{item.label}</span>
+              </Link>
+            ))}
 
-      <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-        <ThemeToggle label={t('themeToggle')} />
-        <LanguageToggle />
-        <div className="w-px h-5 bg-border" />
-        {!isInitialized ? (
-          <div className="w-20 h-8 animate-pulse bg-muted rounded-lg" />
-        ) : isAuthenticated ? (
-          <div className="flex items-center gap-1.5">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <div className="flex items-center gap-1.5 cursor-pointer rounded-lg hover:bg-muted p-1 pr-2">
-                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                    <UserIcon className="w-4 h-4" />
-                  </div>
-                  <p className="text-sm font-medium hidden lg:block max-w-[100px] truncate">
-                    {user?.fullName}
-                  </p>
-                </div>
+                <button type="button" className={linkClass(isGroupActive(practiceItems))}>
+                  <Dumbbell className="h-3.5 w-3.5 shrink-0" />
+                  <span>{t('nav.practiceGroup')}</span>
+                  <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-60" />
+                </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem asChild>
-                  <Link href="/profile" className="flex items-center gap-2 w-full">
-                    <UserIcon className="h-4 w-4" />
-                    <span>{t('nav.profile', { defaultMessage: 'Profile' })}</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/settings" className="flex items-center gap-2 w-full">
-                    <Settings className="h-4 w-4" />
-                    <span>{t('nav.settings')}</span>
-                  </Link>
-                </DropdownMenuItem>
+              <DropdownMenuContent align="center" className="w-52">
+                {practiceItems.map((item) => {
+                  if (item.disabled) {
+                    return (
+                      <DropdownMenuItem
+                        key={item.href ?? item.label}
+                        disabled
+                        className="flex items-center gap-2 opacity-60"
+                        title={t('nav.comingSoon')}
+                      >
+                        <item.icon className="h-4 w-4 shrink-0" />
+                        <span>{item.label}</span>
+                        <span className="ml-auto text-[10px] uppercase tracking-wide text-muted-foreground">
+                          {t('nav.comingSoon')}
+                        </span>
+                      </DropdownMenuItem>
+                    );
+                  }
+                  return (
+                    <DropdownMenuItem key={item.href} asChild>
+                      <Link
+                        href={item.href ?? '/'}
+                        className={`flex w-full items-center gap-2 ${
+                          isActive(item.href) ? 'text-primary' : ''
+                        }`}
+                      >
+                        <item.icon className="h-4 w-4 shrink-0" />
+                        <span>{item.label}</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  );
+                })}
               </DropdownMenuContent>
             </DropdownMenu>
-            <NotificationBell />
-            <button
-              onClick={() => {
-                void logout();
-              }}
-              className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-destructive transition-all rounded-lg hover:bg-destructive/5"
-              aria-label={t('cta.logout')}
-              title={t('cta.logout')}
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <Link
-              href="/login"
-              className="hidden rounded-lg border border-transparent px-3.5 py-2 text-sm font-medium text-muted-foreground transition-all hover:border-border hover:bg-muted hover:text-foreground sm:inline-flex"
-            >
-              {t('cta.login')}
-            </Link>
-            <Link
-              href="/register"
-              className="inline-flex items-center justify-center rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90"
-            >
-              <UserPlus className="mr-2 h-4 w-4" />
-              {t('cta.register')}
+
+            <Link href={examsItem.href ?? '/'} className={linkClass(isActive(examsItem.href))}>
+              <examsItem.icon className="h-3.5 w-3.5 shrink-0" />
+              <span>{examsItem.label}</span>
             </Link>
           </div>
         )}
+
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          {showLinks && (
+            <div className="flex items-center lg:hidden">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <button
+                    className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    aria-label={t('nav.menu')}
+                    title={t('nav.menu')}
+                  >
+                    <Menu className="h-5 w-5" />
+                  </button>
+                </SheetTrigger>
+                <SheetContent
+                  side="left"
+                  className="flex w-[280px] flex-col gap-4 p-6 sm:w-[350px]"
+                >
+                  <SheetTitle className="text-left font-bold tracking-tight">
+                    {t('nav.menu')}
+                  </SheetTitle>
+
+                  <MobileGroup items={mainItems} isActive={isActive} t={t} />
+
+                  <MobileGroup
+                    title={t('nav.practiceGroup')}
+                    items={practiceItems}
+                    isActive={isActive}
+                    t={t}
+                  />
+
+                  <MobileGroup items={[examsItem]} isActive={isActive} t={t} />
+                </SheetContent>
+              </Sheet>
+            </div>
+          )}
+          <ThemeToggle label={t('themeToggle')} />
+          <LanguageToggle />
+          <div className="w-px h-5 bg-border" />
+          {!isInitialized ? (
+            <div className="w-20 h-8 animate-pulse bg-muted rounded-lg" />
+          ) : isAuthenticated ? (
+            <div className="flex items-center gap-1.5">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <div className="flex items-center gap-1.5 cursor-pointer rounded-lg hover:bg-muted p-1 pr-2">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                      <UserIcon className="w-4 h-4" />
+                    </div>
+                    <p className="text-sm font-medium hidden 2xl:block max-w-[100px] truncate">
+                      {user?.fullName}
+                    </p>
+                  </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52">
+                  {user?.fullName && (
+                    <>
+                      <DropdownMenuLabel className="truncate">{user.fullName}</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile" className="flex items-center gap-2 w-full">
+                      <UserIcon className="h-4 w-4" />
+                      <span>{t('nav.profile')}</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/activation" className="flex items-center gap-2 w-full">
+                      <KeyRound className="h-4 w-4" />
+                      <span>{t('nav.activation')}</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings" className="flex items-center gap-2 w-full">
+                      <Settings className="h-4 w-4" />
+                      <span>{t('nav.settings')}</span>
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <NotificationBell />
+              <button
+                onClick={() => {
+                  void logout();
+                }}
+                className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-destructive transition-all rounded-lg hover:bg-destructive/5"
+                aria-label={t('cta.logout')}
+                title={t('cta.logout')}
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <Link
+                href="/login"
+                className="hidden rounded-lg border border-transparent px-3.5 py-2 text-sm font-medium text-muted-foreground transition-all hover:border-border hover:bg-muted hover:text-foreground sm:inline-flex"
+              >
+                {t('cta.login')}
+              </Link>
+              <Link
+                href="/register"
+                className="inline-flex items-center justify-center rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90"
+              >
+                <UserPlus className="mr-2 h-4 w-4" />
+                {t('cta.register')}
+              </Link>
+            </div>
+          )}
+        </div>
+      </nav>
+
+      {isGroupActive(practiceItems) ? (
+        <PracticeTabStrip
+          items={practiceItems}
+          isActive={isActive}
+          comingSoonLabel={t('nav.comingSoon')}
+        />
+      ) : null}
+    </header>
+  );
+}
+
+function PracticeTabStrip({
+  items,
+  isActive,
+  comingSoonLabel,
+}: {
+  items: StudentNavItem[];
+  isActive: (href?: string) => boolean;
+  comingSoonLabel: string;
+}) {
+  return (
+    <div className="border-t bg-background/80">
+      <div className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-4 py-2 sm:px-6">
+        {items.map((item) => {
+          const active = isActive(item.href);
+          const className = `inline-flex h-9 shrink-0 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors ${
+            active
+              ? 'bg-primary/10 text-primary'
+              : 'text-muted-foreground hover:bg-muted hover:text-primary'
+          }`;
+          const content = (
+            <>
+              <item.icon className="h-4 w-4 shrink-0" />
+              <span>{item.label}</span>
+            </>
+          );
+
+          if (item.disabled) {
+            return (
+              <button
+                key={item.href ?? item.label}
+                type="button"
+                disabled
+                aria-disabled="true"
+                title={comingSoonLabel}
+                className={`${className} cursor-not-allowed opacity-50 hover:bg-transparent hover:text-muted-foreground`}
+              >
+                {content}
+              </button>
+            );
+          }
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href ?? '/'}
+              aria-current={active ? 'page' : undefined}
+              className={className}
+            >
+              {content}
+            </Link>
+          );
+        })}
       </div>
-    </nav>
+    </div>
+  );
+}
+
+function MobileGroup({
+  title,
+  items,
+  isActive,
+  t,
+}: {
+  title?: string;
+  items: StudentNavItem[];
+  isActive: (href?: string) => boolean;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  return (
+    <div className="flex flex-col gap-1 text-sm font-medium text-muted-foreground">
+      {title && (
+        <p className="px-2 pt-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+          {title}
+        </p>
+      )}
+      {items.map((item) => {
+        const content = (
+          <>
+            <item.icon className="h-4 w-4 shrink-0" />
+            <span>{item.label}</span>
+          </>
+        );
+
+        if (item.disabled) {
+          return (
+            <button
+              key={item.label}
+              type="button"
+              disabled
+              aria-disabled="true"
+              title={t('nav.comingSoon')}
+              className="flex min-h-11 cursor-not-allowed items-center gap-3 rounded-md px-2 py-2 text-muted-foreground/50"
+            >
+              {content}
+            </button>
+          );
+        }
+
+        const active = isActive(item.href);
+        return (
+          <Link
+            key={item.href}
+            href={item.href ?? '/'}
+            className={`flex min-h-11 items-center gap-3 rounded-md px-2 py-2 transition-colors ${
+              active ? 'bg-primary/10 text-primary' : 'hover:bg-muted hover:text-primary'
+            }`}
+          >
+            {content}
+          </Link>
+        );
+      })}
+    </div>
   );
 }

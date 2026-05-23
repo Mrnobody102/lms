@@ -6,10 +6,11 @@ export const notificationKeys = {
   list: (skip: number, take: number) => [...notificationKeys.all, 'list', skip, take] as const,
 };
 
-export function useNotifications(skip = 0, take = 20) {
+export function useNotifications(skip = 0, take = 20, enabled = true) {
   return useQuery({
     queryKey: notificationKeys.list(skip, take),
     queryFn: () => notificationApi.getNotifications(skip, take),
+    enabled,
     refetchInterval: 30000, // Poll every 30 seconds
   });
 }

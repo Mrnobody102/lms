@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import api from "@/lib/api";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import api from '@/lib/api';
 
 export interface Tenant {
   id: string;
@@ -11,11 +11,28 @@ export interface Tenant {
   createdAt: string;
 }
 
-export function useTenants(options?: { enabled?: boolean }) {
+export interface TenantMutationPayload {
+  name: string;
+  slug: string;
+  domain?: string;
+  settings?: Record<string, unknown>;
+}
+
+export interface TenantUpdatePayload {
+  name?: string;
+  slug?: string;
+  domain?: string | null;
+  settings?: Record<string, unknown>;
+  isActive?: boolean;
+}
+
+export function useTenants(options?: { enabled?: boolean; includeInactive?: boolean }) {
   return useQuery({
-    queryKey: ["tenants"],
+    queryKey: ['tenants', { includeInactive: options?.includeInactive === true }],
     queryFn: async () => {
-      const response = await api.get<Tenant[]>("/admin/tenants");
+      const response = await api.get<Tenant[]>('/admin/tenants', {
+        params: options?.includeInactive ? { includeInactive: 'true' } : undefined,
+      });
       return response.data;
     },
     enabled: options?.enabled ?? true,
@@ -23,14 +40,14 @@ export function useTenants(options?: { enabled?: boolean }) {
   });
 }
 
-export function useTenant(id: string) {
+export function useTenant(id: string, options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: ["tenant", id],
+    queryKey: ['tenant', id],
     queryFn: async () => {
       const response = await api.get<Tenant>(`/admin/tenants/${id}`);
       return response.data;
     },
-    enabled: !!id,
+    enabled: !!id && (options?.enabled ?? true),
     staleTime: 60 * 1000,
   });
 }
@@ -38,12 +55,12 @@ export function useTenant(id: string) {
 export function useCreateTenant() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: { name: string; slug: string }) => {
-      const response = await api.post<Tenant>("/admin/tenants", data);
+    mutationFn: async (data: TenantMutationPayload) => {
+      const response = await api.post<Tenant>('/admin/tenants', data);
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tenants"] });
+      queryClient.invalidateQueries({ queryKey: ['tenants'] });
     },
   });
 }
@@ -51,13 +68,13 @@ export function useCreateTenant() {
 export function useUpdateTenant() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<Tenant> }) => {
+    mutationFn: async ({ id, data }: { id: string; data: TenantUpdatePayload }) => {
       const response = await api.put<Tenant>(`/admin/tenants/${id}`, data);
       return response.data;
     },
     onSuccess: (_data, vars) => {
-      queryClient.invalidateQueries({ queryKey: ["tenants"] });
-      queryClient.invalidateQueries({ queryKey: ["tenant", vars.id] });
+      queryClient.invalidateQueries({ queryKey: ['tenants'] });
+      queryClient.invalidateQueries({ queryKey: ['tenant', vars.id] });
     },
   });
 }
@@ -69,7 +86,7 @@ export function useDeleteTenant() {
       await api.delete(`/admin/tenants/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tenants"] });
+      queryClient.invalidateQueries({ queryKey: ['tenants'] });
     },
   });
 }
@@ -81,7 +98,7 @@ export function useRestoreTenant() {
       await api.patch(`/admin/tenants/${id}/restore`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tenants"] });
+      queryClient.invalidateQueries({ queryKey: ['tenants'] });
     },
   });
 }

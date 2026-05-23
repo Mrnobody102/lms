@@ -36,7 +36,7 @@ export function LoginModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md">
       <div className="w-full max-w-sm overflow-hidden rounded-3xl border bg-card p-6 shadow-2xl sm:p-8">
         <div className="mb-4 flex justify-end">
           <LanguageToggle />

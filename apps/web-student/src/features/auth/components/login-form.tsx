@@ -15,7 +15,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   const t = useTranslations('Student');
   const locale = useLocale();
   const { login, loginWithGoogle, loading, error, clearError } = useAuthStore();
-  const displayError = error ? t('auth.loginError') : null;
+  const displayError = error ?? null;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);

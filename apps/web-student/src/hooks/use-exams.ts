@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { examApi } from '@/lib/exam-api';
 
-export function useExams(params?: { courseId?: string; unitId?: string }) {
+export function useExams(params?: { courseId?: string; unitId?: string }, enabled = true) {
   return useQuery({
     queryKey: ['exams', params],
     queryFn: () => examApi.getExams(params),
+    enabled,
     staleTime: 60 * 1000,
   });
 }
@@ -18,10 +19,14 @@ export function useExam(id: string) {
   });
 }
 
-export function useExamAttempts(params?: { courseId?: string; examId?: string; limit?: number }) {
+export function useExamAttempts(
+  params?: { courseId?: string; examId?: string; limit?: number },
+  enabled = true,
+) {
   return useQuery({
     queryKey: ['exam-attempts', params],
     queryFn: () => examApi.getAttempts(params),
+    enabled,
     staleTime: 30 * 1000,
   });
 }

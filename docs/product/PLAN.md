@@ -1,6 +1,6 @@
 # Kế Hoạch Triển Khai LMS Platform
 
-Cập nhật lần cuối: 2026-05-21 (Batch Auth/List Handling — Google login + pagination)
+Cập nhật lần cuối: 2026-05-23 (Auth guard hardening, practice multi-skill filter, vocabulary/SRS route, tenant management polish)
 
 ## Định hướng sản phẩm
 
@@ -195,11 +195,13 @@ Trạng thái: backend MVP, admin management UI và student attempt UI đã có.
 - Student-facing practice reads không lộ đáp án hoặc giải thích trước khi submit.
 - Student có attempt history/review UI cho practice qua recent attempts và route review riêng.
 - Skill tags theo practice question (vocabulary, grammar, reading, listening) và audio media prompt cho câu hỏi nghe.
+- Student practice skill filter hỗ trợ chọn nhiều skill bằng CSV URL (`?skill=VOCABULARY,GRAMMAR`) và backend dùng `hasSome`.
+- Nhóm Luyện tập có secondary tab strip cho Practice / Vocabulary / Review / Roleplay; Vocabulary dùng custom SRS cards.
 - Listening audio prompt: admin gắn audio từ media pipeline, student nghe bằng player có replay limit trong attempt/review/SRS.
 
 Còn cần:
 
-- Skill tags filter trên student practice UI (chọn luyện theo kỹ năng yếu).
+- Nâng cao adaptive sequencing dựa trên nhiều skill yếu và SRS due.
 
 Không nên nhét lâu dài vào `Lesson.quiz`; cần tách domain practice.
 
@@ -333,10 +335,11 @@ Cơ sở khoa học:
 - Model `SkillMastery(userId, skillId, mastery, attempts, correctAttempts, lastUpdatedAt)` cập nhật từ `PracticeAnswer`/`ExamAnswer` qua EWMA (α=0.7).
 - Hook best-effort sync trong `PracticeService.submitAttempt` và `ExamService.submitAttempt` — không block submit nếu mastery update fail.
 - API: `GET /api/skills`, `POST/PATCH/DELETE /api/skills` (admin với audit log SKILL_CREATE/UPDATE/DELETE), `GET /api/skills/mastery` cho student order ASC.
-- Practice exercise set list filter `?skill=CODE`.
+- Practice exercise set list filter `?skill=CODE` hoặc CSV `?skill=CODE_A,CODE_B`.
 - Admin UI `/skills` quản lý catalog (badge color, soft-delete, edit dialog).
 - Student dashboard `SkillMasteryPanel` hiển thị 5 kỹ năng yếu nhất với progress bar và link "Luyện ngay".
-- Student practice page có chip filter theo skill, URL-driven (`/practice?skill=CODE`), empty state đặc thù.
+- Student practice page có multi-select chip filter theo skill, URL-driven (`/practice?skill=VOCABULARY,GRAMMAR`), empty state đặc thù.
+- Student `/vocabulary` route quản lý custom SRS cards như thẻ từ vựng cá nhân.
 - Seed 5 canonical skill (VOCABULARY/GRAMMAR/READING/LISTENING/WRITING) + normalize legacy `vocabulary` → `VOCABULARY`.
 
 Đã làm tiếp (Batch P9.2 - SRS Core):

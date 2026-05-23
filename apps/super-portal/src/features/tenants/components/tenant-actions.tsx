@@ -89,7 +89,7 @@ export function TenantActions({ tenant }: { tenant: Tenant }) {
       />
 
       {isDeleteModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-background/80 backdrop-blur-md">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-md">
           <div className="w-full max-w-sm overflow-hidden rounded-2xl border bg-card p-8 text-center shadow-2xl">
             <ShieldAlert className="mx-auto mb-4 h-12 w-12 text-destructive" />
             <h3 className="mb-2 text-xl font-bold">{t('confirmTitle')}</h3>

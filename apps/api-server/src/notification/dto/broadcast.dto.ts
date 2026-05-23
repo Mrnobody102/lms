@@ -1,4 +1,4 @@
-import { IsEnum, IsNotEmpty, IsOptional, IsString, IsUrl } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
 
 export enum NotificationType {
   INFO = 'INFO',
@@ -9,17 +9,23 @@ export enum NotificationType {
 export class BroadcastNotificationDto {
   @IsString()
   @IsNotEmpty()
+  @MaxLength(140)
   title: string;
 
   @IsString()
   @IsOptional()
+  @MaxLength(2000)
   content?: string;
 
   @IsEnum(NotificationType)
   @IsOptional()
   type?: NotificationType = NotificationType.INFO;
 
-  @IsUrl()
+  @IsString()
   @IsOptional()
+  @MaxLength(500)
+  @Matches(/^\/(?!\/)[^\s]*$/, {
+    message: 'actionUrl must be an internal path starting with /',
+  })
   actionUrl?: string;
 }

@@ -1,6 +1,6 @@
 # Tài liệu API LMS Platform
 
-Cập nhật lần cuối: 2026-05-14
+Cập nhật lần cuối: 2026-05-23
 
 ## Tổng quan
 
@@ -144,6 +144,35 @@ interface PaginatedData<T> {
 `GET /api/progress/summary`
 
 - **Response**: Trả về thông tin khóa học đang học, bài học tiếp theo, và tỷ lệ hoàn thành.
+
+### 4. Practice
+
+#### Danh sách exercise set
+
+`GET /api/practice/exercise-sets?skill=VOCABULARY,GRAMMAR`
+
+- `skill` là optional CSV uppercase skill code. Backend lọc bằng logic "match any" (`hasSome`).
+- Student request yêu cầu auth và chỉ trả nội dung trong tenant/enrollment hợp lệ.
+
+### 5. SRS / Vocabulary
+
+#### Custom vocabulary cards
+
+- `GET /api/srs/cards/custom`
+- `POST /api/srs/cards/custom`
+- `PUT /api/srs/cards/custom/:cardId`
+- `DELETE /api/srs/cards/custom/:cardId`
+
+Các route này dùng `ReviewCardSource.CUSTOM`, tenant-scoped theo user hiện tại và được dùng bởi student `/vocabulary`.
+
+### 6. Super Portal Tenant Management
+
+`GET /api/admin/tenants?includeInactive=true`
+
+- Yêu cầu role `SUPER_ADMIN`.
+- `includeInactive=true` trả cả tenant inactive để super portal có thể restore.
+- `PUT /api/admin/tenants/:id` hỗ trợ cập nhật `name`, `slug`, `domain`, `settings`, `isActive`.
+- `DELETE /api/admin/tenants/:id` soft-deactivate tenant; `PATCH /api/admin/tenants/:id/restore` restore.
 
 ## Ghi chú cho Developer & AI Agent
 

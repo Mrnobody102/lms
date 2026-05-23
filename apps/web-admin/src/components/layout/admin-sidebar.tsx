@@ -41,7 +41,7 @@ export function AdminSidebar() {
     { name: t('exams'), icon: FileCheck2, href: '/exams' },
     { name: t('skills.navLabel'), icon: Sparkles, href: '/skills' },
     { name: t('reports.navLabel'), icon: BarChart3, href: '/reports' },
-    { name: 'Notifications', icon: Bell, href: '/notifications' },
+    { name: t('notifications.title'), icon: Bell, href: '/notifications' },
     { name: t('finance'), icon: DollarSign, href: '/finance' },
     { name: t('schedule'), icon: Calendar, href: '/schedule' },
     { name: t('settingsLabel'), icon: Settings, href: '/settings' },

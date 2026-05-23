@@ -9,10 +9,11 @@ export const srsKeys = {
   customCards: () => [...srsKeys.all, 'customCards'] as const,
 };
 
-export function useReviewQueue(skill?: string) {
+export function useReviewQueue(skill?: string, enabled = true) {
   return useQuery({
     queryKey: srsKeys.queue(skill),
     queryFn: () => srsApi.getQueue({ skill }),
+    enabled,
   });
 }
 
@@ -44,17 +45,19 @@ export function useSubmitReview() {
   });
 }
 
-export function useSrsStats(days: number = 30) {
+export function useSrsStats(days: number = 30, enabled = true) {
   return useQuery({
     queryKey: srsKeys.stats(days),
     queryFn: () => srsApi.getStats(days),
+    enabled,
   });
 }
 
-export function useCustomCards() {
+export function useCustomCards(enabled = true) {
   return useQuery({
     queryKey: srsKeys.customCards(),
     queryFn: () => srsApi.getCustomCards(),
+    enabled,
   });
 }
 

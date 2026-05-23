@@ -1,14 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { practiceApi } from '@/lib/practice-api';
 
-export function usePracticeExerciseSets(params?: {
-  courseId?: string;
-  unitId?: string;
-  skill?: string;
-}) {
+export function usePracticeExerciseSets(
+  params?: {
+    courseId?: string;
+    unitId?: string;
+    skill?: string;
+  },
+  enabled = true,
+) {
   return useQuery({
     queryKey: ['practice-exercise-sets', params],
     queryFn: () => practiceApi.getExerciseSets(params),
+    enabled,
     staleTime: 60 * 1000,
   });
 }
@@ -22,14 +26,18 @@ export function usePracticeExerciseSet(id: string) {
   });
 }
 
-export function usePracticeAttempts(params?: {
-  courseId?: string;
-  exerciseSetId?: string;
-  limit?: number;
-}) {
+export function usePracticeAttempts(
+  params?: {
+    courseId?: string;
+    exerciseSetId?: string;
+    limit?: number;
+  },
+  enabled = true,
+) {
   return useQuery({
     queryKey: ['practice-attempts', params],
     queryFn: () => practiceApi.getAttempts(params),
+    enabled,
     staleTime: 30 * 1000,
   });
 }

@@ -346,6 +346,85 @@ describe('PracticeService', () => {
     expect(result.questions[0].question).not.toHaveProperty('explanation');
   });
 
+  it('should filter approved practice questions by any selected skill tag', async () => {
+    const prisma = {
+      practiceQuestion: {
+        findMany: vi.fn().mockResolvedValue([]),
+      },
+    };
+    const learningAccess = {
+      courseWhere: vi.fn(),
+    };
+    const service = new PracticeService(
+      prisma as never,
+      learningAccess as never,
+      createSkillMasteryStub() as never,
+      createSrsStub() as never,
+      createMediaStub() as never,
+      createAiServiceStub() as never,
+    );
+
+    await service.listQuestions('tenant-1', {
+      courseId: 'course-1',
+      skill: 'VOCABULARY,GRAMMAR,VOCABULARY',
+    });
+
+    expect(prisma.practiceQuestion.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          tenantId: 'tenant-1',
+          courseId: 'course-1',
+          skillTags: { hasSome: ['VOCABULARY', 'GRAMMAR'] },
+          reviewStatus: 'APPROVED',
+          deletedAt: null,
+        }),
+      }),
+    );
+  });
+
+  it('should filter visible exercise sets by any selected skill tag', async () => {
+    const prisma = {
+      practiceExerciseSet: {
+        findMany: vi.fn().mockResolvedValue([]),
+      },
+    };
+    const learningAccess = {
+      courseWhere: vi.fn().mockReturnValue({ tenantId: 'tenant-1', userId: 'user-1' }),
+    };
+    const service = new PracticeService(
+      prisma as never,
+      learningAccess as never,
+      createSkillMasteryStub() as never,
+      createSrsStub() as never,
+      createMediaStub() as never,
+      createAiServiceStub() as never,
+    );
+
+    await service.listExerciseSets(
+      'tenant-1',
+      { id: 'user-1', role: Role.STUDENT },
+      { skill: 'VOCABULARY,GRAMMAR' },
+    );
+
+    expect(prisma.practiceExerciseSet.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          tenantId: 'tenant-1',
+          isPublished: true,
+          course: { tenantId: 'tenant-1', userId: 'user-1' },
+          questions: {
+            some: {
+              question: {
+                tenantId: 'tenant-1',
+                skillTags: { hasSome: ['VOCABULARY', 'GRAMMAR'] },
+              },
+            },
+          },
+        }),
+      }),
+    );
+  });
+
   it('should list recent practice attempts for the current student', async () => {
     const prisma = {
       practiceAttempt: {

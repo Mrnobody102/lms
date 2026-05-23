@@ -11,18 +11,64 @@
       "errorRedeeming": "Có lỗi xảy ra khi kích hoạt mã. Vui lòng thử lại sau.",
       "loginRequired": "Vui lòng đăng nhập để nhập mã kích hoạt."
     },
+    "authRequired": {
+      "title": "Bạn cần đăng nhập",
+      "description": "Nội dung học tập chỉ hiển thị sau khi đăng nhập. Vui lòng đăng nhập để tiếp tục.",
+      "loginCta": "Đi đến trang đăng nhập"
+    },
     "nav": {
       "courses": "Khóa học",
-      "hsk": "Lộ trình HSK",
       "vocab": "Từ vựng",
-      "blog": "Blog",
       "practice": "Luyện tập",
+      "review": "Ôn tập",
+      "roleplay": "Nhập vai",
       "home": "Trang chủ",
-      "exams": "Kiểm tra",
+      "exams": "Luyện thi",
       "activation": "Mã kích hoạt",
       "settings": "Cài đặt",
       "profile": "Hồ sơ",
-      "notifications": "Thông báo"
+      "notifications": "Thông báo",
+      "viewAllNotifications": "Xem tất cả thông báo",
+      "menu": "Menu",
+      "comingSoon": "Sắp ra mắt",
+      "practiceGroup": "Luyện tập"
+    },
+    "profile": {
+      "title": "Hồ sơ Học viên",
+      "loginPrompt": "Vui lòng đăng nhập để xem hồ sơ và thống kê học tập.",
+      "defaultName": "Học viên",
+      "avatarAlt": "Ảnh đại diện học viên",
+      "editProfile": "Chỉnh sửa hồ sơ",
+      "currentStreak": "Chuỗi học hiện tại",
+      "longestStreak": "Chuỗi học dài nhất",
+      "timeLearned": "Thời gian đã học",
+      "lessonsCompleted": "Bài học đã hoàn thành",
+      "recentActivity": "Hoạt động gần đây",
+      "noActivity": "Chưa có hoạt động nào. Hãy bắt đầu học để theo dõi tiến độ của bạn tại đây!"
+    },
+    "notifications": {
+      "header": {
+        "title": "Thông báo",
+        "unreadCount": "Bạn có {count} thông báo chưa đọc",
+        "markAllAsRead": "Đánh dấu tất cả đã đọc"
+      },
+      "loading": "Đang tải thông báo...",
+      "empty": {
+        "title": "Chưa có thông báo nào",
+        "description": "Khi có sự kiện mới, thông báo sẽ hiển thị ở đây."
+      },
+      "timeAgo": {
+        "justNow": "Vừa xong",
+        "minutes": "{minutes} phút trước",
+        "hours": "{hours} giờ trước",
+        "days": "{days} ngày trước"
+      },
+      "read": "Đã đọc",
+      "pagination": {
+        "prev": "Trang trước",
+        "next": "Trang sau",
+        "page": "Trang {page}"
+      }
     },
     "themeToggle": "Đổi giao diện",
     "hero": {
