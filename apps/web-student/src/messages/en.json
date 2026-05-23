@@ -509,6 +509,7 @@
       "emptyDesc": "Check back later for new courses."
     },
     "practice": {
+      "feedbackDetails": "Feedback Details:",
       "badge": "Practice",
       "title": "Practice exercises",
       "subtitle": "Review published exercise sets from your enrolled courses and get instant feedback.",

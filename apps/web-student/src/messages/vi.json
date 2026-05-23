@@ -509,6 +509,7 @@
       "emptyDesc": "Hãy quay lại sau để khám phá các khóa học mới."
     },
     "practice": {
+      "feedbackDetails": "Chi tiết nhận xét:",
       "badge": "Luyện tập",
       "title": "Bài luyện tập",
       "subtitle": "Làm các bộ bài đã xuất bản từ khóa học đã enroll và nhận feedback ngay.",
