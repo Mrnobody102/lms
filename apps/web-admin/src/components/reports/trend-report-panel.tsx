@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { TrendingUp } from 'lucide-react';
 import { useMasteryTrend } from '@/hooks/use-reports';
+import type { ReportFilters } from '@/lib/reports-api';
 import {
   LineChart,
   Line,
@@ -15,14 +16,13 @@ import {
 } from 'recharts';
 
 interface TrendReportPanelProps {
-  filters?: { cohortId?: string };
+  filters?: ReportFilters & { days?: number };
 }
 
 export function TrendReportPanel({ filters = {} }: TrendReportPanelProps) {
   const t = useTranslations('Admin');
   const { data, isLoading } = useMasteryTrend(filters);
 
-  // Extract all unique skill codes to generate lines dynamically
   const skillCodes = new Set<string>();
   if (data?.trend) {
     data.trend.forEach((day) => {
@@ -32,7 +32,6 @@ export function TrendReportPanel({ filters = {} }: TrendReportPanelProps) {
     });
   }
 
-  // Define a color palette for the lines
   const colors = [
     'hsl(var(--primary))',
     'hsl(var(--destructive))',

@@ -21,6 +21,41 @@ function makeCurrentUser(overrides: Partial<AuthenticatedUser> = {}): Authentica
 }
 
 describe('UserAdminService', () => {
+  it('should combine search, status, role, and cohort filters in the user list', async () => {
+    const prisma = {
+      user: {
+        count: vi.fn().mockResolvedValue(0),
+        findMany: vi.fn().mockResolvedValue([]),
+      },
+    };
+
+    const service = new UserAdminService(prisma as never);
+    await service.getUserList(makeCurrentUser(), {
+      page: 1,
+      limit: 20,
+      search: 'alice',
+      role: Role.STUDENT,
+      isActive: true,
+      cohortId: 'cohort-1',
+    });
+
+    expect(prisma.user.count).toHaveBeenCalledWith({
+      where: {
+        deletedAt: null,
+        tenantId: 'tenant-1',
+        OR: [
+          { email: { contains: 'alice', mode: 'insensitive' } },
+          { fullName: { contains: 'alice', mode: 'insensitive' } },
+        ],
+        role: Role.STUDENT,
+        isActive: true,
+        cohortMemberships: {
+          some: { cohortId: 'cohort-1', tenantId: 'tenant-1' },
+        },
+      },
+    });
+  });
+
   it('should not update a soft-deleted user status', async () => {
     const prisma = {
       user: {

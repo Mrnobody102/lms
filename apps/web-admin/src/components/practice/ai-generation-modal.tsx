@@ -14,16 +14,17 @@ import {
   Label,
 } from '@/components/ui';
 import { useGeneratePracticeQuestions } from '@/hooks/use-practice';
-import { PracticeQuestionType, PracticeQuestion } from '@/lib/practice-api';
+import { PracticeQuestionType } from '@/lib/practice-api';
 import { Loader2, Sparkles } from 'lucide-react';
 
 interface AiGenerationModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onGenerated: (questions: Partial<PracticeQuestion>[]) => void;
+  onGenerated: () => void;
   onError: (msg: string) => void;
   onSuccess: (msg: string) => void;
-  _courseId?: string;
+  courseId?: string;
+  unitId?: string;
 }
 
 export function AiGenerationModal({
@@ -32,7 +33,8 @@ export function AiGenerationModal({
   onGenerated,
   onError,
   onSuccess,
-  _courseId,
+  courseId,
+  unitId,
 }: AiGenerationModalProps) {
   const t = useTranslations('Admin');
   const [topic, setTopic] = useState('');
@@ -43,6 +45,14 @@ export function AiGenerationModal({
 
   const generateMutation = useGeneratePracticeQuestions();
 
+  const resetDraft = () => {
+    setTopic('');
+    setContext('');
+    setCount(3);
+    setQuestionType('MULTIPLE_CHOICE');
+    setSkillTags('');
+  };
+
   const handleGenerate = (e: FormEvent) => {
     e.preventDefault();
     if (!topic.trim()) {
@@ -50,8 +60,15 @@ export function AiGenerationModal({
       return;
     }
 
+    if (!courseId) {
+      onError('Course must be selected first');
+      return;
+    }
+
     generateMutation.mutate(
       {
+        courseId,
+        unitId,
         topic,
         context,
         count,
@@ -62,12 +79,11 @@ export function AiGenerationModal({
           .filter(Boolean),
       },
       {
-        onSuccess: (data) => {
+        onSuccess: () => {
           onSuccess(t('aiGenerateSuccess'));
-          onGenerated(data);
+          onGenerated();
           onOpenChange(false);
-          setTopic('');
-          setContext('');
+          resetDraft();
         },
         onError: (error) => {
           onError(t('aiGenerateError'));
@@ -149,7 +165,14 @@ export function AiGenerationModal({
           </div>
 
           <AlertDialogFooter className="mt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                resetDraft();
+                onOpenChange(false);
+              }}
+            >
               {t('cancel')}
             </Button>
             <Button

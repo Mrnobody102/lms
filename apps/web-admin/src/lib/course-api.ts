@@ -225,6 +225,14 @@ export const courseApi = {
       .get('/lessons', { params: { ...params, courseId } })
       .then((r) => r.data as PaginatedResponse<Lesson>);
   },
+
+  reorderUnits(courseId: string, unitIds: string[]) {
+    return api.patch(`/courses/${courseId}/units/reorder`, { unitIds });
+  },
+
+  reorderLessons(courseId: string, unitId: string, lessonIds: string[]) {
+    return api.patch(`/lessons/reorder`, { courseId, unitId, lessonIds });
+  },
 };
 
 export function normalizeCourseAiSettings(value: unknown): CourseAiSettings {

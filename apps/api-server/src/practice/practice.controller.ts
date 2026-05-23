@@ -43,6 +43,52 @@ export class PracticeController {
     return this.practiceService.generateAiQuestions(getScopedTenantId(req), req.user.id, dto);
   }
 
+  @Get('review-queue')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'List practice questions pending review' })
+  listPendingReview(@Query() query: PracticeQueryDto, @Request() req: AuthenticatedRequest) {
+    return this.practiceService.listPendingReview(getScopedTenantId(req), query);
+  }
+
+  @Post('review-queue/:id/approve')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Approve an AI-generated practice question' })
+  approveQuestion(@Param('id', ParseUUIDPipe) id: string, @Request() req: AuthenticatedRequest) {
+    return this.practiceService.approveQuestion(id, getScopedTenantId(req));
+  }
+
+  @Post('review-queue/:id/reject')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Reject an AI-generated practice question' })
+  rejectQuestion(@Param('id', ParseUUIDPipe) id: string, @Request() req: AuthenticatedRequest) {
+    return this.practiceService.rejectQuestion(id, getScopedTenantId(req));
+  }
+
+  @Post('review-queue/bulk-approve')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Bulk approve AI-generated practice questions' })
+  bulkApproveQuestions(
+    @Body() dto: import('./dto/bulk-review.dto').BulkReviewDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.practiceService.bulkApproveQuestions(dto.ids, getScopedTenantId(req));
+  }
+
+  @Post('review-queue/bulk-reject')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Bulk reject AI-generated practice questions' })
+  bulkRejectQuestions(
+    @Body() dto: import('./dto/bulk-review.dto').BulkReviewDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.practiceService.bulkRejectQuestions(dto.ids, getScopedTenantId(req));
+  }
+
   @Post('questions')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)

@@ -234,7 +234,7 @@ Còn cần:
 
 Mục tiêu: phục vụ menu "Báo cáo" cho student và admin.
 
-Trạng thái: đã có nền cơ bản và bước đầu drill-down theo Program/Level/Unit/Skill cho admin.
+Trạng thái: đã có nền cơ bản, drill-down Program/Level/Unit/Skill cho admin, cohort drill-down và trend window cho activity/mastery.
 
 Student reports:
 
@@ -251,11 +251,11 @@ Admin reports:
 - Practice/exam performance.
 - Drill-down Program → Level → Course → Unit/Students/Skills (admin `/reports`).
 - CSV export cho course-students, course-units, skills snapshot.
+- Cohort filter xuyên suốt rollup/detail/trend/CSV và preserve qua drill-down URL.
+- Time-series activity/mastery trend có window 7/30/90 ngày.
 
 Còn cần:
 
-- Drill-down theo class/cohort (sau khi thêm cohort model).
-- Time-series trends (week/month) cho skill mastery và activity.
 - Export/filter nâng cao theo range thời gian.
 - Reporting theo unit/skill cho student-side đã có; có thể thêm so sánh giữa các khóa.
 - Skill mastery report dựa trên `SkillMastery` thay vì rolling accuracy snapshot — cần P9 prerequisite.
@@ -378,8 +378,8 @@ Thứ tự ưu tiên dựa trên giá trị giáo dục, dependencies và hiện
 4. **AI In-Context Tutor** (P8a) ✅ DONE: Nhúng "Giải thích vì sao sai" vào practice/exam review, dùng usage quota và Gemini API.
 5. **Media upload pipeline** (P10) ✅ DONE: Hạ tầng lưu trữ S3 Storage client và background job queue (BullMQ + Redis) hoàn thành.
 6. **Listening audio prompt** (P4/P5 close-out) ✅ DONE: Practice/exam questions có audio attachment, admin upload, student player và SRS playback.
-7. **Time-series reporting + cohort drill-down** (P6 close-out): khi có dữ liệu skill mastery theo thời gian. ← **NEXT**
-8. **AI-Generated Practice** (P8b) → **AI Conversation Roleplay** (P8c).
+7. **Time-series reporting + cohort drill-down** (P6 close-out) ✅ DONE: cohort filter xuyên rollup/detail/trend/CSV, trend window 7/30/90 ngày.
+8. **AI-Generated Practice** (P8b) → **AI Conversation Roleplay** (P8c). ← **NEXT**
 9. **Drag/drop reorder unit và lesson** (P3 polish, có thể chen ngang khi có thời gian).
 
 ## Definition Of Done Cấp Dự Án

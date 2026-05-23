@@ -56,11 +56,21 @@ export class RoleplayService {
     return this.getSession(tenantId, userId, session.id);
   }
 
-  async getSessions(tenantId: string, userId: string) {
-    return this.prisma.roleplaySession.findMany({
-      where: { tenantId, userId },
-      orderBy: { createdAt: 'desc' },
-    });
+  async getSessions(tenantId: string, userId: string, page: number = 1, limit: number = 10) {
+    const skip = (page - 1) * limit;
+    const [data, total] = await Promise.all([
+      this.prisma.roleplaySession.findMany({
+        where: { tenantId, userId },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.roleplaySession.count({
+        where: { tenantId, userId },
+      }),
+    ]);
+
+    return { data, total };
   }
 
   async getSession(tenantId: string, userId: string, sessionId: string) {
@@ -84,7 +94,7 @@ export class RoleplayService {
       throw new BadRequestException('Session is already completed');
     }
 
-    await this.prisma.roleplayMessage.create({
+    const userMessage = await this.prisma.roleplayMessage.create({
       data: {
         tenantId,
         sessionId,
@@ -93,8 +103,7 @@ export class RoleplayService {
       },
     });
 
-    const updatedSession = await this.getSession(tenantId, userId, sessionId);
-    const coreMessages = this.toModelMessages(updatedSession.messages);
+    const coreMessages = this.toModelMessages([...session.messages, userMessage]);
 
     const aiReply = await this.aiService.chatRoleplay(
       tenantId,
@@ -103,7 +112,7 @@ export class RoleplayService {
       `You are in a roleplay. Scenario: ${session.scenario}`,
     );
 
-    await this.prisma.roleplayMessage.create({
+    const aiMessage = await this.prisma.roleplayMessage.create({
       data: {
         tenantId,
         sessionId,
@@ -112,7 +121,10 @@ export class RoleplayService {
       },
     });
 
-    return this.getSession(tenantId, userId, sessionId);
+    return {
+      ...session,
+      messages: [...session.messages, userMessage, aiMessage],
+    };
   }
 
   async completeSession(tenantId: string, userId: string, sessionId: string) {

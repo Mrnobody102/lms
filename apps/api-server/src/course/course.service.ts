@@ -241,6 +241,19 @@ export class CourseService {
     });
   }
 
+  async reorderUnits(courseId: string, tenantId: string, unitIds: string[]) {
+    await this.findOne(courseId, tenantId, undefined, { includeInactive: true });
+
+    return this.prisma.$transaction(
+      unitIds.map((id, index) =>
+        this.prisma.courseUnit.update({
+          where: { id_tenantId: { id, tenantId } },
+          data: { order: index },
+        }),
+      ),
+    );
+  }
+
   async update(
     id: string,
     tenantId: string,

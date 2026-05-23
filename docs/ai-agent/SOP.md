@@ -37,6 +37,10 @@ Use a short plan for non-trivial work:
 
 Avoid broad rewrites unless the user explicitly asks for a refactor.
 
+If a written plan includes open questions, pause for human confirmation before changing schema,
+database state, or public API contracts. Proceed without confirmation only when the user explicitly
+asks the agent to continue or the unanswered choice is low-risk and reversible.
+
 ## 3. Implementation Rules
 
 - Keep changes close to the requested behavior.
@@ -88,6 +92,23 @@ Only commit when the user asks for it.
    - `docs: ...`
    - `test: ...`
 5. Push only after the commit succeeds and the working tree is clean.
+
+Never push as part of an implementation batch unless the newest user instruction explicitly asks for
+push. A prior approval applies only to the batch in which it was given.
+
+## 5.1 Runtime Smoke
+
+When a task changes any portal UI, verify the relevant dev servers and API are running:
+
+```bash
+pnpm --filter api-server dev      # http://localhost:4000/api
+pnpm --filter web-student dev     # http://localhost:3100
+pnpm --filter web-admin dev       # http://localhost:3101
+pnpm --filter super-portal dev    # http://localhost:3102
+```
+
+At minimum, check `/api/health`, the login/me flow for the touched portal, and one route that uses
+the changed UI. If a sidebar link exists, the route must render a real page or be removed from nav.
 
 ## 6. Human Handoff
 

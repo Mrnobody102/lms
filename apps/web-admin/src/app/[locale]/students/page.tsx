@@ -2,11 +2,13 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
+import { useSearchParams } from 'next/navigation';
 import { AdminHeader } from '@/components/layout/admin-header';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
 import { Alert, AlertDescription, Badge, Button, Input } from '@/components/ui';
 import { useStudents, useUpdateStudentStatus } from '@/hooks/use-admin-users';
+import { useCohorts } from '@/hooks/use-cohorts';
 import { PaginationControls } from '@repo/ui';
 import {
   AlertCircle,
@@ -24,7 +26,10 @@ type StatusFilter = 'all' | 'active' | 'inactive';
 export default function AdminStudentsPage() {
   const t = useTranslations('Admin');
   const locale = useLocale();
+  const searchParams = useSearchParams();
   const [search, setSearch] = useState('');
+  const [emailFilter, setEmailFilter] = useState('');
+  const [cohortId, setCohortId] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
   const [page, setPage] = useState(1);
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
@@ -33,27 +38,33 @@ export default function AdminStudentsPage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const debouncedSearch = useDebounce(search, 500);
+  const debouncedEmail = useDebounce(emailFilter, 500);
   const isActive = statusFilter === 'all' ? undefined : statusFilter === 'active' ? true : false;
+  const { cohorts } = useCohorts();
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const initialStatus = new URLSearchParams(window.location.search).get('status');
-      if (initialStatus) {
-        setStatusFilter(normalizeStatusFilter(initialStatus));
-      }
+    const initialStatus = searchParams.get('status');
+    const initialCohortId = searchParams.get('cohortId');
+    if (initialStatus) {
+      setStatusFilter(normalizeStatusFilter(initialStatus));
     }
-  }, []);
+    if (initialCohortId) {
+      setCohortId(initialCohortId);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     setPage(1);
     setSelectedStudentIds([]);
-  }, [debouncedSearch, statusFilter]);
+  }, [cohortId, debouncedEmail, debouncedSearch, statusFilter]);
 
   const { data, isLoading, isError } = useStudents({
     page,
     limit: 20,
     search: debouncedSearch.trim() || undefined,
+    email: debouncedEmail.trim() || undefined,
     isActive,
+    cohortId: cohortId || undefined,
   });
   const updateStudentStatus = useUpdateStudentStatus();
 
@@ -74,7 +85,11 @@ export default function AdminStudentsPage() {
     () => visibleStudents.filter((student) => selectedStudentIds.includes(student.id)),
     [selectedStudentIds, visibleStudents],
   );
-  const hasFilters = Boolean(search.trim()) || statusFilter !== 'all';
+  const hasFilters =
+    Boolean(search.trim()) ||
+    Boolean(emailFilter.trim()) ||
+    Boolean(cohortId) ||
+    statusFilter !== 'all';
 
   const filterItems = useMemo(
     () => [
@@ -87,6 +102,8 @@ export default function AdminStudentsPage() {
 
   const clearFilters = () => {
     setSearch('');
+    setEmailFilter('');
+    setCohortId('');
     setStatusFilter('all');
     setPage(1);
     setSelectedStudentIds([]);
@@ -158,8 +175,8 @@ export default function AdminStudentsPage() {
               {t('studentsFound', { count: total })}
             </div>
 
-            <div className="mb-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto]">
-              <div className="flex h-11 items-center rounded-xl border border-input bg-background text-foreground shadow-sm transition-all focus-within:ring-4 focus-within:ring-primary/10 focus-within:border-primary/50">
+            <div className="mb-4 grid gap-3 lg:grid-cols-[minmax(220px,1fr)_minmax(220px,0.7fr)_220px_auto_auto]">
+              <div className="flex h-10 items-center rounded-md border border-input bg-background text-foreground shadow-sm transition-all focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10">
                 <Search className="ml-3.5 h-4 w-4 shrink-0 text-muted-foreground pointer-events-none" />
                 <Input
                   value={search}
@@ -171,6 +188,30 @@ export default function AdminStudentsPage() {
                   className="h-full min-w-0 flex-1 border-0 bg-transparent px-3 py-0 shadow-none focus-visible:ring-0"
                 />
               </div>
+              <Input
+                value={emailFilter}
+                onChange={(event) => {
+                  setEmailFilter(event.target.value);
+                  setSelectedStudentIds([]);
+                }}
+                placeholder={t('filterByEmail')}
+                className="h-10 rounded-md"
+              />
+              <select
+                value={cohortId}
+                onChange={(event) => {
+                  setCohortId(event.target.value);
+                  setSelectedStudentIds([]);
+                }}
+                className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="">{t('allCohorts')}</option>
+                {cohorts.map((cohort) => (
+                  <option key={cohort.id} value={cohort.id}>
+                    {cohort.name}
+                  </option>
+                ))}
+              </select>
               <div className="flex flex-wrap gap-2">
                 {filterItems.map((filter) => (
                   <button

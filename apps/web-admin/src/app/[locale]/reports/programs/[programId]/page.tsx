@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { AdminHeader } from '@/components/layout/admin-header';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
@@ -11,13 +11,17 @@ import { Link } from '@/navigation';
 import { AlertCircle, ChevronRight, Layers } from 'lucide-react';
 import { AccuracyCell, ProgressBarCell, ReportTable } from '@/components/reports/report-table';
 import { SkillAccuracyPanel } from '@/components/reports/skill-accuracy-panel';
+import { withCohortQuery } from '@/lib/report-links';
 import type { LevelRollupRow } from '@/lib/reports-api';
 
 export default function ProgramReportPage() {
   const t = useTranslations('Admin');
   const params = useParams<{ programId: string }>();
+  const searchParams = useSearchParams();
   const programId = params.programId;
-  const { data, isLoading, error } = useProgramReport(programId);
+  const cohortId = searchParams.get('cohortId') ?? undefined;
+  const filters = cohortId ? { cohortId } : {};
+  const { data, isLoading, error } = useProgramReport(programId, filters);
 
   return (
     <AuthGuard>
@@ -26,7 +30,7 @@ export default function ProgramReportPage() {
         <main className="flex-1 md:ml-64 p-6 lg:p-8">
           <div className="max-w-6xl mx-auto">
             <nav className="text-xs text-muted-foreground mb-3">
-              <Link href="/reports" className="hover:text-foreground">
+              <Link href={withCohortQuery('/reports', cohortId)} className="hover:text-foreground">
                 {t('reports.title')}
               </Link>
               <span className="mx-2">/</span>
@@ -96,7 +100,7 @@ export default function ProgramReportPage() {
                           align: 'right',
                           render: (r) => (
                             <Link
-                              href={`/reports/levels/${r.id}`}
+                              href={withCohortQuery(`/reports/levels/${r.id}`, cohortId)}
                               className="text-primary hover:underline inline-flex items-center gap-1 text-sm"
                             >
                               {t('reports.drillDown')}
@@ -109,7 +113,7 @@ export default function ProgramReportPage() {
                   )}
                 </div>
 
-                <SkillAccuracyPanel filters={{ programId }} />
+                <SkillAccuracyPanel filters={{ programId, ...filters }} />
               </div>
             )}
           </div>

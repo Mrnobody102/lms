@@ -89,14 +89,128 @@ export class PracticeService {
     });
   }
 
-  async generateAiQuestions(tenantId: string, userId: string, dto: GeneratePracticeDto) {
-    return this.aiService.generatePracticeQuestions(tenantId, userId, {
+  async generateAiQuestions(
+    tenantId: string,
+    userId: string,
+    dto: GeneratePracticeDto & { courseId: string; unitId?: string },
+  ) {
+    await this.ensureCourse(tenantId, dto.courseId);
+    if (dto.unitId) {
+      await this.ensureUnit(tenantId, dto.courseId, dto.unitId);
+    }
+
+    const generated = await this.aiService.generatePracticeQuestions(tenantId, userId, {
       topic: dto.topic,
       context: dto.context,
       count: dto.count,
       questionType: dto.questionType,
       skillTags: dto.skillTags,
     });
+
+    // Save generated questions to DB with PENDING_REVIEW status
+    const saved = await Promise.all(
+      generated.map((q) => {
+        const payload = normalizeQuestionPayload({
+          type: q.type,
+          options: q.options,
+          correctAnswer: q.correctAnswer,
+        });
+
+        return this.prisma.practiceQuestion.create({
+          data: {
+            tenantId,
+            courseId: dto.courseId,
+            unitId: dto.unitId,
+            type: q.type,
+            prompt: q.prompt,
+            options:
+              payload.options === undefined
+                ? undefined
+                : (payload.options as Prisma.InputJsonValue),
+            correctAnswer: payload.correctAnswer as Prisma.InputJsonValue,
+            explanation: q.explanation,
+            skillTags: q.skillTags ?? [],
+            aiGenerated: true,
+            reviewStatus: 'PENDING_REVIEW',
+          },
+        });
+      }),
+    );
+
+    return { generated: saved.length, questions: saved };
+  }
+
+  async listPendingReview(tenantId: string, query: { courseId?: string; unitId?: string }) {
+    return this.prisma.practiceQuestion.findMany({
+      where: {
+        tenantId,
+        courseId: query.courseId,
+        unitId: query.unitId,
+        reviewStatus: 'PENDING_REVIEW',
+        deletedAt: null,
+      },
+      include: {
+        course: { select: { id: true, title: true } },
+        unit: { select: { id: true, title: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async approveQuestion(id: string, tenantId: string) {
+    const question = await this.prisma.practiceQuestion.findFirst({
+      where: { id, tenantId, deletedAt: null },
+    });
+
+    if (!question) {
+      throw new NotFoundException(`Practice question with ID ${id} not found`);
+    }
+
+    return this.prisma.practiceQuestion.update({
+      where: { id_tenantId: { id, tenantId } },
+      data: { reviewStatus: 'APPROVED' },
+    });
+  }
+
+  async rejectQuestion(id: string, tenantId: string) {
+    const question = await this.prisma.practiceQuestion.findFirst({
+      where: { id, tenantId, deletedAt: null },
+    });
+
+    if (!question) {
+      throw new NotFoundException(`Practice question with ID ${id} not found`);
+    }
+
+    return this.prisma.practiceQuestion.update({
+      where: { id_tenantId: { id, tenantId } },
+      data: { reviewStatus: 'REJECTED' },
+    });
+  }
+
+  async bulkApproveQuestions(ids: string[], tenantId: string) {
+    const result = await this.prisma.practiceQuestion.updateMany({
+      where: {
+        id: { in: ids },
+        tenantId,
+        deletedAt: null,
+        reviewStatus: 'PENDING_REVIEW',
+      },
+      data: { reviewStatus: 'APPROVED' },
+    });
+    return { approved: result.count };
+  }
+
+  async bulkRejectQuestions(ids: string[], tenantId: string) {
+    const result = await this.prisma.practiceQuestion.updateMany({
+      where: {
+        id: { in: ids },
+        tenantId,
+        deletedAt: null,
+        reviewStatus: 'PENDING_REVIEW',
+      },
+      data: { reviewStatus: 'REJECTED' },
+    });
+    return { rejected: result.count };
   }
 
   async updateQuestion(
@@ -187,6 +301,7 @@ export class PracticeService {
         tenantId,
         courseId: query.courseId,
         unitId: query.unitId,
+        reviewStatus: 'APPROVED',
         deletedAt: null,
       },
       orderBy: { createdAt: 'desc' },

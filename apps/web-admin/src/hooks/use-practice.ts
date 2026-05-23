@@ -140,13 +140,75 @@ export function useDeletePracticeExerciseSet() {
 }
 
 export function useGeneratePracticeQuestions() {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (data: {
+      courseId: string;
+      unitId?: string;
       topic: string;
       context?: string;
       count: number;
       questionType: PracticeQuestionType;
       skillTags?: string[];
     }) => practiceApi.generateAiQuestions(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['practice-review-queue'] });
+    },
+  });
+}
+
+export function useReviewQueue(params?: { courseId?: string; unitId?: string }) {
+  return useQuery({
+    queryKey: ['practice-review-queue', params],
+    queryFn: () => practiceApi.getReviewQueue(params),
+    enabled: Boolean(params?.courseId),
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useApprovePracticeQuestion() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => practiceApi.approveQuestion(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['practice-review-queue'] });
+      queryClient.invalidateQueries({ queryKey: ['practice-questions'] });
+    },
+  });
+}
+
+export function useRejectPracticeQuestion() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => practiceApi.rejectQuestion(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['practice-review-queue'] });
+    },
+  });
+}
+
+export function useBulkApprovePracticeQuestions() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (ids: string[]) => practiceApi.bulkApproveQuestions(ids),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['practice-review-queue'] });
+      queryClient.invalidateQueries({ queryKey: ['practice-questions'] });
+    },
+  });
+}
+
+export function useBulkRejectPracticeQuestions() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (ids: string[]) => practiceApi.bulkRejectQuestions(ids),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['practice-review-queue'] });
+    },
   });
 }

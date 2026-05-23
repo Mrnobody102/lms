@@ -37,6 +37,11 @@ import {
   usePracticeQuestions,
   useUpdatePracticeExerciseSet,
   useUpdatePracticeQuestion,
+  useReviewQueue,
+  useApprovePracticeQuestion,
+  useRejectPracticeQuestion,
+  useBulkApprovePracticeQuestions,
+  useBulkRejectPracticeQuestions,
 } from '@/hooks/use-practice';
 import type { PracticeExerciseSet, PracticeQuestion } from '@/lib/practice-api';
 import { PracticeQuestionType } from '@/lib/practice-api';
@@ -97,8 +102,10 @@ export default function AdminPracticePage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [aiGenerationModalOpen, setAiGenerationModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    'questions' | 'question-editor' | 'sets' | 'set-editor'
+    'questions' | 'question-editor' | 'sets' | 'set-editor' | 'review-queue'
   >('questions');
+  const [selectedReviewIds, setSelectedReviewIds] = useState<string[]>([]);
+  const [reviewBulkAction, setReviewBulkAction] = useState<'approve' | 'reject' | null>(null);
 
   const { data: selectedCourse } = useCourse(courseId);
   const units = selectedCourse?.units ?? [];
@@ -113,8 +120,15 @@ export default function AdminPracticePage() {
   const { data: editingExerciseSet } = usePracticeExerciseSet(editingExerciseSetId ?? '');
   const updateExerciseSet = useUpdatePracticeExerciseSet();
   const deleteExerciseSet = useDeletePracticeExerciseSet();
+  const approveQuestion = useApprovePracticeQuestion();
+  const rejectQuestion = useRejectPracticeQuestion();
+  const bulkApproveQuestions = useBulkApprovePracticeQuestions();
+  const bulkRejectQuestions = useBulkRejectPracticeQuestions();
+  const { data: reviewQueue = [], isLoading: reviewQueueLoading } = useReviewQueue(query);
+
   const questionSaving = createQuestion.isPending || updateQuestion.isPending;
   const exerciseSetSaving = createExerciseSet.isPending || updateExerciseSet.isPending;
+  const reviewBulkPending = reviewBulkAction !== null;
   const filteredQuestions = useMemo(() => {
     const search = questionSearch.trim();
     return questions.filter((question) => {
@@ -184,6 +198,7 @@ export default function AdminPracticePage() {
     setUnitId('');
     setSelectedQuestionIds([]);
     setSelectedExerciseSetIds([]);
+    setSelectedReviewIds([]);
     setEditingQuestionId(null);
     setEditingExerciseSetId(null);
   }, [courseId]);
@@ -529,6 +544,46 @@ export default function AdminPracticePage() {
     }
   };
 
+  const handleApproveQuestion = (id: string) => {
+    approveQuestion.mutate(id, {
+      onSuccess: () => setMessage({ type: 'success', text: t('practiceQuestionUpdated') }),
+      onError: () => setMessage({ type: 'error', text: t('practiceQuestionUpdateError') }),
+    });
+  };
+
+  const handleRejectQuestion = (id: string) => {
+    rejectQuestion.mutate(id, {
+      onSuccess: () => setMessage({ type: 'success', text: t('practiceQuestionUpdated') }),
+      onError: () => setMessage({ type: 'error', text: t('practiceQuestionUpdateError') }),
+    });
+  };
+
+  const handleBulkApproveReview = () => {
+    if (selectedReviewIds.length === 0) return;
+    setReviewBulkAction('approve');
+    bulkApproveQuestions.mutate(selectedReviewIds, {
+      onSuccess: () => {
+        setSelectedReviewIds([]);
+        setMessage({ type: 'success', text: t('practiceQuestionUpdated') });
+      },
+      onError: () => setMessage({ type: 'error', text: t('practiceQuestionUpdateError') }),
+      onSettled: () => setReviewBulkAction(null),
+    });
+  };
+
+  const handleBulkRejectReview = () => {
+    if (selectedReviewIds.length === 0) return;
+    setReviewBulkAction('reject');
+    bulkRejectQuestions.mutate(selectedReviewIds, {
+      onSuccess: () => {
+        setSelectedReviewIds([]);
+        setMessage({ type: 'success', text: t('practiceQuestionUpdated') });
+      },
+      onError: () => setMessage({ type: 'error', text: t('practiceQuestionUpdateError') }),
+      onSettled: () => setReviewBulkAction(null),
+    });
+  };
+
   return (
     <AuthGuard>
       <div className="min-h-screen flex bg-background">
@@ -625,13 +680,32 @@ export default function AdminPracticePage() {
                     </button>
                     <button
                       onClick={() => setActiveTab('sets')}
-                      className={`pb-3 text-sm font-medium transition-colors border-b-2 ${
+                      className={`pb-3 text-sm font-medium transition-colors border-b-2 flex items-center gap-2 ${
                         activeTab === 'sets'
                           ? 'border-primary text-primary'
                           : 'border-transparent text-muted-foreground hover:text-foreground'
                       }`}
                     >
                       {t('exerciseSetsTab')}
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('review-queue')}
+                      className={`pb-3 text-sm font-medium transition-colors border-b-2 flex items-center gap-2 ${
+                        activeTab === 'review-queue'
+                          ? 'border-primary text-primary'
+                          : 'border-transparent text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      {t('reviewQueue')}
+                      {reviewQueue.length > 0 && (
+                        <Badge
+                          variant="secondary"
+                          className="ml-1 h-5 w-5 p-0 flex items-center justify-center rounded-full"
+                        >
+                          {reviewQueue.length}
+                        </Badge>
+                      )}
                     </button>
                     <button
                       onClick={() => setActiveTab('set-editor')}
@@ -850,6 +924,167 @@ export default function AdminPracticePage() {
                             ))}
                           </div>
                         </>
+                      )}
+                    </section>
+                  )}
+
+                  {activeTab === 'review-queue' && (
+                    <section className="rounded-xl border bg-card p-5">
+                      <div className="mb-4 flex items-center justify-between">
+                        <div>
+                          <h2 className="text-base font-semibold">{t('reviewQueue')}</h2>
+                          <p className="text-sm text-muted-foreground">{t('reviewQueueDesc')}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary">{reviewQueue.length}</Badge>
+                          {reviewQueue.length > 0 && (
+                            <>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setSelectedReviewIds(reviewQueue.map((q) => q.id))}
+                                disabled={reviewQueue.length === 0}
+                              >
+                                {t('selectAllItems')}
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setSelectedReviewIds([])}
+                                disabled={selectedReviewIds.length === 0}
+                              >
+                                {t('clearSelection')}
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {reviewQueueLoading ? (
+                        <LoadingRow label={t('loading')} />
+                      ) : reviewQueue.length === 0 ? (
+                        <EmptyState title={t('noQuestions')} />
+                      ) : (
+                        <div className="grid gap-3">
+                          {selectedReviewIds.length > 0 && (
+                            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/40 p-3">
+                              <span className="text-sm font-medium">
+                                {t('selectedItemsValue', { count: selectedReviewIds.length })}
+                              </span>
+                              <div className="flex flex-wrap gap-2">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  className="gap-2 text-emerald-600 hover:text-emerald-700"
+                                  disabled={reviewBulkPending}
+                                  onClick={handleBulkApproveReview}
+                                >
+                                  {reviewBulkAction === 'approve' ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  ) : (
+                                    <CheckCircle2 className="h-3.5 w-3.5" />
+                                  )}
+                                  {t('approveSelected')}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  className="gap-2 text-destructive hover:text-destructive"
+                                  disabled={reviewBulkPending}
+                                  onClick={handleBulkRejectReview}
+                                >
+                                  {reviewBulkAction === 'reject' ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  ) : (
+                                    <X className="h-3.5 w-3.5" />
+                                  )}
+                                  {t('rejectSelected')}
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                          {reviewQueue.map((question) => (
+                            <label
+                              key={question.id}
+                              className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors hover:bg-muted/50 ${
+                                selectedReviewIds.includes(question.id)
+                                  ? 'border-primary bg-primary/5'
+                                  : ''
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                className="mt-1"
+                                aria-label={t('selectItem')}
+                                checked={selectedReviewIds.includes(question.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedReviewIds((prev) => [...prev, question.id]);
+                                  } else {
+                                    setSelectedReviewIds((prev) =>
+                                      prev.filter((id) => id !== question.id),
+                                    );
+                                  }
+                                }}
+                              />
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <Badge variant="secondary">
+                                      {getPracticeQuestionTypeLabel(question.type, t)}
+                                    </Badge>
+                                    {question.aiGenerated && (
+                                      <Badge
+                                        variant="secondary"
+                                        className="gap-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-50 dark:bg-indigo-900/30 dark:text-indigo-400"
+                                      >
+                                        <Sparkles className="h-3 w-3" />
+                                        AI Generated
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <div className="flex shrink-0 items-center gap-1">
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-8 text-emerald-600 hover:text-emerald-700"
+                                      disabled={approveQuestion.isPending}
+                                      onClick={(event) => {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                        handleApproveQuestion(question.id);
+                                      }}
+                                    >
+                                      <CheckCircle2 className="mr-1 h-3.5 w-3.5" />
+                                      {t('approve')}
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-8 text-destructive hover:text-destructive"
+                                      disabled={rejectQuestion.isPending}
+                                      onClick={(event) => {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                        handleRejectQuestion(question.id);
+                                      }}
+                                    >
+                                      <X className="mr-1 h-3.5 w-3.5" />
+                                      {t('reject')}
+                                    </Button>
+                                  </div>
+                                </div>
+                                <p className="mt-2 text-sm font-medium">{question.prompt}</p>
+                              </div>
+                            </label>
+                          ))}
+                        </div>
                       )}
                     </section>
                   )}
@@ -1396,23 +1631,14 @@ export default function AdminPracticePage() {
       <AiGenerationModal
         open={aiGenerationModalOpen}
         onOpenChange={setAiGenerationModalOpen}
-        _courseId={courseId}
+        courseId={courseId}
+        unitId={unitId || undefined}
         onError={(msg) => setMessage({ type: 'error', text: msg })}
         onSuccess={(msg) => setMessage({ type: 'success', text: msg })}
-        onGenerated={(generatedQuestions) => {
-          generatedQuestions.forEach((q) => {
-            if (!q.type || !q.prompt || q.correctAnswer === undefined) return;
-            createQuestion.mutate({
-              courseId,
-              unitId: unitId || undefined,
-              type: q.type,
-              prompt: q.prompt,
-              options: q.options,
-              correctAnswer: q.correctAnswer,
-              explanation: q.explanation ?? undefined,
-              skillTags: q.skillTags ?? [],
-            });
-          });
+        onGenerated={() => {
+          // Questions are now saved by the backend in PENDING_REVIEW state.
+          // They will appear in the Review Queue.
+          // Invalidate the questions query in case we want to show a toast or transition
         }}
       />
     </AuthGuard>

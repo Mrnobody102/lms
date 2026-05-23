@@ -11,6 +11,7 @@ describe('LessonController', () => {
     findOne: ReturnType<typeof vi.fn>;
     update: ReturnType<typeof vi.fn>;
     remove: ReturnType<typeof vi.fn>;
+    reorderLessons: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
@@ -20,6 +21,7 @@ describe('LessonController', () => {
       findOne: vi.fn().mockResolvedValue({ id: '1', title: 'Test Lesson' }),
       update: vi.fn().mockResolvedValue({ id: '1', title: 'Updated Lesson' }),
       remove: vi.fn().mockResolvedValue({ id: '1' }),
+      reorderLessons: vi.fn().mockResolvedValue([{ id: '1' }, { id: '2' }]),
     };
 
     const module: TestingModule = await Test.createTestingModule({

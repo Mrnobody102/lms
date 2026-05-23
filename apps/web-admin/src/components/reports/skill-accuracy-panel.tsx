@@ -3,10 +3,11 @@
 import { useTranslations } from 'next-intl';
 import { Brain } from 'lucide-react';
 import { useSkillsReport } from '@/hooks/use-reports';
+import type { CourseReportFilters } from '@/lib/reports-api';
 import { CsvDownloadButton } from './csv-download-button';
 
 interface SkillAccuracyPanelProps {
-  filters?: { courseId?: string; programId?: string };
+  filters?: CourseReportFilters;
   showCsv?: boolean;
 }
 
@@ -17,6 +18,7 @@ export function SkillAccuracyPanel({ filters = {}, showCsv = true }: SkillAccura
   const csvParams = new URLSearchParams();
   if (filters.courseId) csvParams.set('courseId', filters.courseId);
   if (filters.programId) csvParams.set('programId', filters.programId);
+  if (filters.cohortId) csvParams.set('cohortId', filters.cohortId);
   const csvPath = `/admin/reports/skills.csv${csvParams.toString() ? `?${csvParams.toString()}` : ''}`;
 
   return (

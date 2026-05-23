@@ -22,6 +22,7 @@ import { LessonService } from './lesson.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
 import { LessonQueryDto } from './dto/lesson-query.dto';
+import { ReorderLessonsDto } from './dto/reorder-lessons.dto';
 
 @ApiBearerAuth()
 @ApiTags('lessons')
@@ -59,6 +60,19 @@ export class LessonController {
   @ApiOperation({ summary: 'Lấy chi tiết một bài học' })
   findOne(@Param('id', ParseUUIDPipe) id: string, @Request() req: AuthenticatedRequest) {
     return this.lessonService.findOne(id, getScopedTenantId(req), req.user);
+  }
+
+  @Patch('reorder')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Reorder lessons inside a unit' })
+  reorderLessons(@Body() dto: ReorderLessonsDto, @Request() req: AuthenticatedRequest) {
+    return this.lessonService.reorderLessons(
+      dto.courseId,
+      dto.unitId,
+      getScopedTenantId(req),
+      dto.lessonIds,
+    );
   }
 
   @Patch(':id')

@@ -30,6 +30,7 @@ import { CourseQueryDto } from './dto/course-query.dto';
 import { EnrollStudentDto } from './dto/enroll-student.dto';
 import { CreateCourseUnitDto } from './dto/create-course-unit.dto';
 import { UpdateCourseUnitDto } from './dto/update-course-unit.dto';
+import { ReorderUnitsDto } from './dto/reorder-units.dto';
 
 class SetCourseStatusDto {
   @ApiProperty({ description: 'Set to true to publish, false to unpublish' })
@@ -107,6 +108,18 @@ export class CourseController {
     @Request() req: AuthenticatedRequest,
   ) {
     return this.courseService.createUnit(id, getScopedTenantId(req), createCourseUnitDto);
+  }
+
+  @Patch(':id/units/reorder')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Reorder units inside a course' })
+  reorderUnits(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() reorderUnitsDto: ReorderUnitsDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.courseService.reorderUnits(id, getScopedTenantId(req), reorderUnitsDto.unitIds);
   }
 
   @Patch(':id/units/:unitId')

@@ -29,6 +29,11 @@ export class AdminUserQueryDto {
   @IsString()
   email?: string;
 
+  @ApiPropertyOptional({ example: 'uuid-of-cohort', description: 'Filter by cohort membership' })
+  @IsOptional()
+  @IsString()
+  cohortId?: string;
+
   @ApiPropertyOptional({ example: Role.STUDENT, description: 'Filter by role' })
   @IsOptional()
   @IsEnum(Role)

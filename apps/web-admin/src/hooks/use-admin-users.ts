@@ -13,7 +13,9 @@ export function useStudents(params?: {
   page?: number;
   limit?: number;
   search?: string;
+  email?: string;
   isActive?: boolean;
+  cohortId?: string;
 }) {
   return useQuery({
     queryKey: ['admin-students', params],
@@ -21,8 +23,10 @@ export function useStudents(params?: {
       adminUserApi.getStudents({
         page: params?.page ?? 1,
         search: params?.search,
+        email: params?.email,
         limit: params?.limit ?? 20,
         isActive: params?.isActive,
+        cohortId: params?.cohortId,
       }),
     staleTime: 60 * 1000,
   });

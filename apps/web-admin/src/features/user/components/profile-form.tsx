@@ -81,7 +81,7 @@ export function ProfileForm() {
         <div className="space-y-2">
           <Label>{t('settings.profile.fullName')}</Label>
           <div className="relative">
-            <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-muted-foreground">
+            <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted-foreground">
               <User className="h-4 w-4" />
             </div>
             <Input
@@ -89,7 +89,7 @@ export function ProfileForm() {
               onChange={(e) => setFullName(e.target.value)}
               required
               placeholder={t('settings.profile.fullNamePlaceholder')}
-              className="h-12 pl-11"
+              className="h-10 rounded-md pl-10"
             />
           </div>
         </div>
@@ -98,13 +98,13 @@ export function ProfileForm() {
         <div className="space-y-2 opacity-70">
           <Label>{t('settings.profile.email')}</Label>
           <div className="relative">
-            <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-muted-foreground">
+            <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted-foreground">
               <Mail className="h-4 w-4" />
             </div>
             <Input
               value={user?.email || ''}
               disabled
-              className="h-12 cursor-not-allowed bg-muted/50 pl-11"
+              className="h-10 cursor-not-allowed rounded-md bg-muted/50 pl-10"
             />
           </div>
         </div>
@@ -113,14 +113,14 @@ export function ProfileForm() {
         <div className="space-y-2">
           <Label>{t('settings.profile.phoneNumber')}</Label>
           <div className="relative">
-            <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-muted-foreground">
+            <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted-foreground">
               <Phone className="h-4 w-4" />
             </div>
             <Input
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
               placeholder={t('settings.profile.phonePlaceholder')}
-              className="h-12 pl-11"
+              className="h-10 rounded-md pl-10"
             />
           </div>
         </div>
@@ -129,14 +129,14 @@ export function ProfileForm() {
         <div className="space-y-2">
           <Label>{t('settings.profile.avatar')}</Label>
           <div className="relative">
-            <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-muted-foreground">
+            <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted-foreground">
               <ImageIcon className="h-4 w-4" />
             </div>
             <Input
               value={avatarUrl}
               onChange={(e) => setAvatarUrl(e.target.value)}
               placeholder={t('settings.profile.avatarPlaceholder')}
-              className="h-12 pl-11"
+              className="h-10 rounded-md pl-10"
             />
           </div>
         </div>

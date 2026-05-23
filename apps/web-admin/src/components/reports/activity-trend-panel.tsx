@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { LineChart as LineChartIcon } from 'lucide-react';
 import { useActivityTrend } from '@/hooks/use-reports';
+import type { TrendReportFilters } from '@/lib/reports-api';
 import {
   BarChart,
   Bar,
@@ -15,7 +16,7 @@ import {
 } from 'recharts';
 
 interface ActivityTrendPanelProps {
-  filters?: { courseId?: string; programId?: string; cohortId?: string };
+  filters?: TrendReportFilters;
 }
 
 export function ActivityTrendPanel({ filters = {} }: ActivityTrendPanelProps) {

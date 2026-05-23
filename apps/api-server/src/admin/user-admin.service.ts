@@ -10,7 +10,7 @@ export class UserAdminService {
   constructor(private prisma: PrismaService) {}
 
   async getUserList(currentUser: AuthenticatedUser, query: AdminUserQueryDto) {
-    const { page = 1, limit = 10, email, search, role, isActive } = query;
+    const { page = 1, limit = 10, email, search, role, isActive, cohortId } = query;
     const skip = (page - 1) * limit;
 
     const where: Prisma.UserWhereInput = {
@@ -38,6 +38,15 @@ export class UserAdminService {
 
     if (isActive !== undefined) {
       where.isActive = isActive;
+    }
+
+    if (cohortId) {
+      where.cohortMemberships = {
+        some: {
+          cohortId,
+          ...(currentUser.role === Role.ADMIN ? { tenantId: currentUser.tenantId } : {}),
+        },
+      };
     }
 
     const total = await this.prisma.user.count({ where });

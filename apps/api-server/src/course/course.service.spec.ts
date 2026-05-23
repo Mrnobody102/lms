@@ -358,4 +358,36 @@ describe('CourseService', () => {
       }),
     );
   });
+
+  it('should reorder units using bulk transactions', async () => {
+    const prisma = {
+      course: {
+        findFirst: vi.fn().mockResolvedValue({ id: 'course-1' }),
+      },
+      courseUnit: {
+        findMany: vi.fn().mockResolvedValue([{ id: 'unit-1' }, { id: 'unit-2' }]),
+        update: vi.fn().mockResolvedValue({ id: 'unit-1', order: 0 }),
+      },
+      $transaction: vi.fn(async (arg: any) => {
+        if (Array.isArray(arg)) {
+          return Promise.all(arg);
+        }
+        return arg(prisma);
+      }),
+    };
+    const learningAccess = {
+      courseWhere: vi.fn().mockReturnValue({ tenantId: 'tenant-1', id: 'course-1' }),
+    };
+    const service = new CourseService(
+      prisma as never,
+      learningAccess as never,
+      createAuditLogStub() as never,
+    );
+
+    await expect(
+      service.reorderUnits('course-1', 'tenant-1', ['unit-2', 'unit-1']),
+    ).resolves.toBeDefined();
+
+    expect(prisma.courseUnit.update).toHaveBeenCalledTimes(2);
+  });
 });

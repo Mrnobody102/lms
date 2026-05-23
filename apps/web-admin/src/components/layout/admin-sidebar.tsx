@@ -72,7 +72,7 @@ export function AdminSidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 p-3 pb-5 space-y-0.5 overflow-y-auto">
         {menuItems.map((item) => {
           const active = isActive(item.href);
           return (
@@ -94,7 +94,7 @@ export function AdminSidebar() {
       </nav>
 
       {/* Footer Section */}
-      <div className="flex flex-col gap-3 border-t border-border p-4">
+      <div className="relative z-30 flex flex-col gap-3 border-t border-border bg-card p-4 shadow-[0_-8px_18px_rgba(15,23,42,0.04)]">
         {/* User Profile Section */}
         <div className="flex items-center gap-3 px-1">
           <div className="w-10 h-10 shrink-0 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-sm font-bold">
@@ -112,8 +112,6 @@ export function AdminSidebar() {
 
         {/* Quick Actions Row */}
         <div className="flex items-center justify-between pt-1">
-          <LanguageToggle menuPlacement="top" />
-
           <div className="flex items-center gap-1">
             <button
               onClick={toggleTheme}
@@ -137,6 +135,7 @@ export function AdminSidebar() {
               <LogOut className="w-4 h-4" />
             </button>
           </div>
+          <LanguageToggle menuAlign="right" menuPlacement="top" />
         </div>
       </div>
     </aside>

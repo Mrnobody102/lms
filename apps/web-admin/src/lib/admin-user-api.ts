@@ -66,7 +66,14 @@ export const adminUserApi = {
     return api.get('/admin/overview').then((r) => r.data as AdminOverview);
   },
 
-  getStudents(params?: { page?: number; limit?: number; search?: string; isActive?: boolean }) {
+  getStudents(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    email?: string;
+    isActive?: boolean;
+    cohortId?: string;
+  }) {
     const hasExplicitActiveFilter = params ? 'isActive' in params : false;
 
     return api
@@ -76,7 +83,9 @@ export const adminUserApi = {
           limit: params?.limit ?? 20,
           role: 'STUDENT',
           search: params?.search,
+          email: params?.email,
           isActive: hasExplicitActiveFilter ? params?.isActive : true,
+          cohortId: params?.cohortId,
         },
       })
       .then((r) => r.data as PaginatedResponse<AdminUser>);

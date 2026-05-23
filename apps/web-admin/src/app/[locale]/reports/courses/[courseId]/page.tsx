@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { AdminHeader } from '@/components/layout/admin-header';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
@@ -14,18 +14,22 @@ import { cn } from '@/lib/utils';
 import { AccuracyCell, ProgressBarCell, ReportTable } from '@/components/reports/report-table';
 import { SkillAccuracyPanel } from '@/components/reports/skill-accuracy-panel';
 import { CsvDownloadButton } from '@/components/reports/csv-download-button';
-import type { CourseStudentRow, UnitRollupRow } from '@/lib/reports-api';
+import { buildReportCsvPath, withCohortQuery } from '@/lib/report-links';
+import type { CourseStudentRow, ReportFilters, UnitRollupRow } from '@/lib/reports-api';
 
 type Tab = 'units' | 'students' | 'skills';
 
 export default function CourseReportPage() {
   const t = useTranslations('Admin');
   const params = useParams<{ courseId: string }>();
+  const searchParams = useSearchParams();
   const courseId = params.courseId;
+  const cohortId = searchParams.get('cohortId') ?? undefined;
+  const filters = cohortId ? { cohortId } : {};
   const [tab, setTab] = useState<Tab>('units');
 
-  const unitsQuery = useCourseUnitsReport(courseId);
-  const studentsQuery = useCourseStudentsReport(courseId);
+  const unitsQuery = useCourseUnitsReport(courseId, filters);
+  const studentsQuery = useCourseStudentsReport(courseId, filters);
 
   const courseTitle = unitsQuery.data?.course.title ?? studentsQuery.data?.course.title ?? '';
 
@@ -36,7 +40,7 @@ export default function CourseReportPage() {
         <main className="flex-1 md:ml-64 p-6 lg:p-8">
           <div className="max-w-6xl mx-auto">
             <nav className="text-xs text-muted-foreground mb-3">
-              <Link href="/reports" className="hover:text-foreground">
+              <Link href={withCohortQuery('/reports', cohortId)} className="hover:text-foreground">
                 {t('reports.title')}
               </Link>
               <span className="mx-2">/</span>
@@ -69,6 +73,7 @@ export default function CourseReportPage() {
             {tab === 'units' && (
               <UnitsTab
                 courseId={courseId}
+                filters={filters}
                 rows={unitsQuery.data?.units ?? []}
                 isLoading={unitsQuery.isLoading}
                 error={unitsQuery.error}
@@ -77,12 +82,13 @@ export default function CourseReportPage() {
             {tab === 'students' && (
               <StudentsTab
                 courseId={courseId}
+                filters={filters}
                 rows={studentsQuery.data?.students ?? []}
                 isLoading={studentsQuery.isLoading}
                 error={studentsQuery.error}
               />
             )}
-            {tab === 'skills' && <SkillAccuracyPanel filters={{ courseId }} />}
+            {tab === 'skills' && <SkillAccuracyPanel filters={{ courseId, ...filters }} />}
           </div>
         </main>
       </div>
@@ -92,11 +98,13 @@ export default function CourseReportPage() {
 
 function UnitsTab({
   courseId,
+  filters,
   rows,
   isLoading,
   error,
 }: {
   courseId: string;
+  filters: ReportFilters;
   rows: UnitRollupRow[];
   isLoading: boolean;
   error: unknown;
@@ -116,7 +124,7 @@ function UnitsTab({
     <div className="space-y-4">
       <div className="flex justify-end">
         <CsvDownloadButton
-          path={`/admin/reports/courses/${courseId}/units.csv`}
+          path={buildReportCsvPath(`/admin/reports/courses/${courseId}/units.csv`, filters)}
           filename={`course-${courseId}-units.csv`}
           disabled={rows.length === 0}
         />
@@ -161,11 +169,13 @@ function UnitsTab({
 
 function StudentsTab({
   courseId,
+  filters,
   rows,
   isLoading,
   error,
 }: {
   courseId: string;
+  filters: ReportFilters;
   rows: CourseStudentRow[];
   isLoading: boolean;
   error: unknown;
@@ -185,7 +195,7 @@ function StudentsTab({
     <div className="space-y-4">
       <div className="flex justify-end">
         <CsvDownloadButton
-          path={`/admin/reports/courses/${courseId}/students.csv`}
+          path={buildReportCsvPath(`/admin/reports/courses/${courseId}/students.csv`, filters)}
           filename={`course-${courseId}-students.csv`}
           disabled={rows.length === 0}
         />

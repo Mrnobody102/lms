@@ -21,6 +21,8 @@ import {
   useUpdateCourseUnit,
   useDeleteCourseUnit,
   useToggleCourseStatus,
+  useReorderUnits,
+  useReorderLessons,
 } from '@/hooks/use-courses';
 import { usePrograms } from '@/hooks/use-programs';
 import { LessonList } from '@/features/courses/lesson-list';
@@ -78,6 +80,8 @@ export default function CourseEditorPage() {
   const createCourseUnit = useCreateCourseUnit();
   const updateCourseUnit = useUpdateCourseUnit();
   const deleteCourseUnit = useDeleteCourseUnit();
+  const reorderUnits = useReorderUnits();
+  const reorderLessons = useReorderLessons();
 
   const [activeTab, setActiveTab] = useState<'curriculum' | 'settings' | 'students'>('curriculum');
   const [showAddLesson, setShowAddLesson] = useState(false);
@@ -221,18 +225,11 @@ export default function CourseEditorPage() {
     newOrder.splice(newIndex, 0, movedItem);
 
     try {
-      await Promise.all(
-        newOrder.map((item, index) => {
-          if (item.order !== index) {
-            return updateLesson.mutateAsync({
-              id: item.id,
-              courseId,
-              data: { order: index },
-            });
-          }
-          return Promise.resolve();
-        }),
-      );
+      await reorderLessons.mutateAsync({
+        courseId,
+        unitId: lesson.unitId || '',
+        lessonIds: newOrder.map((item) => item.id),
+      });
       showMsg('success', 'lessonReordered');
     } catch {
       showMsg('error', 'lessonReorderError');
@@ -439,18 +436,10 @@ export default function CourseEditorPage() {
     newOrder.splice(newIndex, 0, movedItem);
 
     try {
-      await Promise.all(
-        newOrder.map((item, index) => {
-          if (item.order !== index) {
-            return updateCourseUnit.mutateAsync({
-              courseId,
-              unitId: item.id,
-              data: { order: index },
-            });
-          }
-          return Promise.resolve();
-        }),
-      );
+      await reorderUnits.mutateAsync({
+        courseId,
+        unitIds: newOrder.map((item) => item.id),
+      });
       showMsg('success', 'unitReordered');
     } catch {
       showMsg('error', 'unitReorderError');

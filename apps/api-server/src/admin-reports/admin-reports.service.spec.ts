@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { LearningActivityType } from '@repo/database';
 import { AdminReportsService } from './admin-reports.service';
 
 function buildPrismaMock(overrides: Record<string, unknown> = {}) {
@@ -13,6 +14,9 @@ function buildPrismaMock(overrides: Record<string, unknown> = {}) {
     course: {
       findMany: vi.fn().mockResolvedValue([]),
       findFirst: vi.fn(),
+    },
+    cohort: {
+      findFirst: vi.fn().mockResolvedValue({ id: 'cohort-1' }),
     },
     courseUnit: {
       findMany: vi.fn().mockResolvedValue([]),
@@ -116,6 +120,48 @@ describe('AdminReportsService', () => {
       expect(prisma.course.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({ tenantId: 'tenant-1', levelId: null }),
+        }),
+      );
+    });
+
+    it('applies cohort membership filters to rollup metrics', async () => {
+      const prisma = buildPrismaMock();
+      prisma.program.findMany = vi.fn().mockResolvedValue([
+        {
+          id: 'prog-1',
+          title: 'HSK',
+          _count: { levels: 1 },
+          levels: [{ id: 'lvl-1', courses: [{ id: 'course-1' }] }],
+        },
+      ]);
+
+      const service = new AdminReportsService(prisma as never);
+      await service.getProgramsRollup('tenant-1', { cohortId: 'cohort-1' });
+
+      expect(prisma.cohort.findFirst).toHaveBeenCalledWith({
+        where: { id: 'cohort-1', tenantId: 'tenant-1' },
+        select: { id: true },
+      });
+      expect(prisma.courseEnrollment.groupBy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            user: {
+              cohortMemberships: {
+                some: { tenantId: 'tenant-1', cohortId: 'cohort-1' },
+              },
+            },
+          }),
+        }),
+      );
+      expect(prisma.practiceAttempt.groupBy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            user: {
+              cohortMemberships: {
+                some: { tenantId: 'tenant-1', cohortId: 'cohort-1' },
+              },
+            },
+          }),
         }),
       );
     });
@@ -256,6 +302,65 @@ describe('AdminReportsService', () => {
       expect(vocab).toMatchObject({ accuracy: 50, totalQuestions: 2 });
       expect(reading).toMatchObject({ accuracy: 50, totalQuestions: 2 });
       expect(result.accuracyByUnit).toHaveLength(2);
+    });
+
+    it('rejects cohort filters outside the tenant before querying answers', async () => {
+      const prisma = buildPrismaMock();
+      prisma.cohort.findFirst = vi.fn().mockResolvedValue(null);
+
+      const service = new AdminReportsService(prisma as never);
+      await expect(service.getSkillsAccuracy('tenant-1', { cohortId: 'cohort-x' })).rejects.toThrow(
+        'Cohort not found in this tenant',
+      );
+      expect(prisma.practiceAnswer.findMany).not.toHaveBeenCalled();
+      expect(prisma.examAnswer.findMany).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getActivityTrend', () => {
+    it('returns the requested trend window and filters by cohort membership', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-05-23T12:00:00Z'));
+
+      try {
+        const prisma = buildPrismaMock();
+        prisma.learningActivity.findMany = vi.fn().mockResolvedValue([
+          {
+            occurredAt: new Date('2026-05-22T08:00:00Z'),
+            type: LearningActivityType.LESSON_OPENED,
+          },
+          {
+            occurredAt: new Date('2026-05-23T09:00:00Z'),
+            type: LearningActivityType.LESSON_COMPLETED,
+          },
+        ]);
+
+        const service = new AdminReportsService(prisma as never);
+        const result = await service.getActivityTrend('tenant-1', {
+          cohortId: 'cohort-1',
+          days: 3,
+        });
+
+        expect(result.trend).toEqual([
+          { date: '2026-05-21', opened: 0, completed: 0 },
+          { date: '2026-05-22', opened: 1, completed: 0 },
+          { date: '2026-05-23', opened: 0, completed: 1 },
+        ]);
+        expect(prisma.learningActivity.findMany).toHaveBeenCalledWith(
+          expect.objectContaining({
+            where: expect.objectContaining({
+              occurredAt: { gte: new Date('2026-05-21T00:00:00Z') },
+              user: {
+                cohortMemberships: {
+                  some: { tenantId: 'tenant-1', cohortId: 'cohort-1' },
+                },
+              },
+            }),
+          }),
+        );
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 

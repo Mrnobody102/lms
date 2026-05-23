@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Param,
@@ -29,8 +30,8 @@ export class AdminReportsController {
 
   @Get('programs')
   @ApiOperation({ summary: 'Programs rollup with completion + accuracy metrics' })
-  getPrograms(@Request() req: AuthenticatedRequest) {
-    return this.reportsService.getProgramsRollup(getScopedTenantId(req));
+  getPrograms(@Request() req: AuthenticatedRequest, @Query('cohortId') cohortId?: string) {
+    return this.reportsService.getProgramsRollup(getScopedTenantId(req), { cohortId });
   }
 
   @Get('programs/:programId')
@@ -38,14 +39,19 @@ export class AdminReportsController {
   getProgram(
     @Request() req: AuthenticatedRequest,
     @Param('programId', ParseUUIDPipe) programId: string,
+    @Query('cohortId') cohortId?: string,
   ) {
-    return this.reportsService.getProgramDetail(getScopedTenantId(req), programId);
+    return this.reportsService.getProgramDetail(getScopedTenantId(req), programId, { cohortId });
   }
 
   @Get('levels/:levelId')
   @ApiOperation({ summary: 'Level detail with per-course rollup' })
-  getLevel(@Request() req: AuthenticatedRequest, @Param('levelId', ParseUUIDPipe) levelId: string) {
-    return this.reportsService.getLevelDetail(getScopedTenantId(req), levelId);
+  getLevel(
+    @Request() req: AuthenticatedRequest,
+    @Param('levelId', ParseUUIDPipe) levelId: string,
+    @Query('cohortId') cohortId?: string,
+  ) {
+    return this.reportsService.getLevelDetail(getScopedTenantId(req), levelId, { cohortId });
   }
 
   @Get('courses/:courseId/units')
@@ -53,8 +59,9 @@ export class AdminReportsController {
   getCourseUnits(
     @Request() req: AuthenticatedRequest,
     @Param('courseId', ParseUUIDPipe) courseId: string,
+    @Query('cohortId') cohortId?: string,
   ) {
-    return this.reportsService.getCourseUnits(getScopedTenantId(req), courseId);
+    return this.reportsService.getCourseUnits(getScopedTenantId(req), courseId, { cohortId });
   }
 
   @Get('courses/:courseId/students')
@@ -62,8 +69,9 @@ export class AdminReportsController {
   getCourseStudents(
     @Request() req: AuthenticatedRequest,
     @Param('courseId', ParseUUIDPipe) courseId: string,
+    @Query('cohortId') cohortId?: string,
   ) {
-    return this.reportsService.getCourseStudents(getScopedTenantId(req), courseId);
+    return this.reportsService.getCourseStudents(getScopedTenantId(req), courseId, { cohortId });
   }
 
   @Get('skills')
@@ -72,10 +80,12 @@ export class AdminReportsController {
     @Request() req: AuthenticatedRequest,
     @Query('courseId') courseId?: string,
     @Query('programId') programId?: string,
+    @Query('cohortId') cohortId?: string,
   ) {
     return this.reportsService.getSkillsAccuracy(getScopedTenantId(req), {
       courseId,
       programId,
+      cohortId,
     });
   }
 
@@ -84,9 +94,12 @@ export class AdminReportsController {
   async getCourseStudentsCsv(
     @Request() req: AuthenticatedRequest,
     @Param('courseId', ParseUUIDPipe) courseId: string,
+    @Query('cohortId') cohortId: string | undefined,
     @Res() res: Response,
   ) {
-    const data = await this.reportsService.getCourseStudents(getScopedTenantId(req), courseId);
+    const data = await this.reportsService.getCourseStudents(getScopedTenantId(req), courseId, {
+      cohortId,
+    });
     const rows = data.students.slice(0, AdminReportsService.CSV_ROW_CAP);
     const csv = buildCsv(rows, [
       { header: 'Full Name', value: (r) => r.fullName },
@@ -113,9 +126,12 @@ export class AdminReportsController {
   async getCourseUnitsCsv(
     @Request() req: AuthenticatedRequest,
     @Param('courseId', ParseUUIDPipe) courseId: string,
+    @Query('cohortId') cohortId: string | undefined,
     @Res() res: Response,
   ) {
-    const data = await this.reportsService.getCourseUnits(getScopedTenantId(req), courseId);
+    const data = await this.reportsService.getCourseUnits(getScopedTenantId(req), courseId, {
+      cohortId,
+    });
     const rows = data.units.slice(0, AdminReportsService.CSV_ROW_CAP);
     const csv = buildCsv(rows, [
       { header: 'Unit', value: (r) => r.title },
@@ -134,18 +150,27 @@ export class AdminReportsController {
     @Query('courseId') courseId?: string,
     @Query('programId') programId?: string,
     @Query('cohortId') cohortId?: string,
+    @Query('days') days?: string,
   ) {
     return this.reportsService.getActivityTrend(getScopedTenantId(req), {
       courseId,
       programId,
       cohortId,
+      days: parseTrendDays(days),
     });
   }
 
   @Get('mastery-trend')
   @ApiOperation({ summary: 'Get daily mastery trends (time-series)' })
-  getMasteryTrend(@Request() req: AuthenticatedRequest, @Query('cohortId') cohortId?: string) {
-    return this.reportsService.getMasteryTrend(getScopedTenantId(req), { cohortId });
+  getMasteryTrend(
+    @Request() req: AuthenticatedRequest,
+    @Query('cohortId') cohortId?: string,
+    @Query('days') days?: string,
+  ) {
+    return this.reportsService.getMasteryTrend(getScopedTenantId(req), {
+      cohortId,
+      days: parseTrendDays(days),
+    });
   }
 
   @Get('skills.csv')
@@ -155,10 +180,12 @@ export class AdminReportsController {
     @Res() res: Response,
     @Query('courseId') courseId?: string,
     @Query('programId') programId?: string,
+    @Query('cohortId') cohortId?: string,
   ) {
     const data = await this.reportsService.getSkillsAccuracy(getScopedTenantId(req), {
       courseId,
       programId,
+      cohortId,
     });
     const rows = data.accuracyBySkill.slice(0, AdminReportsService.CSV_ROW_CAP);
     const csv = buildCsv(rows, [
@@ -174,4 +201,13 @@ function sendCsv(res: Response, filename: string, csv: string) {
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
   res.send(csv);
+}
+
+function parseTrendDays(value?: string): number | undefined {
+  if (!value) return undefined;
+  const days = Number(value);
+  if (!Number.isInteger(days) || days < 1) {
+    throw new BadRequestException('days must be a positive integer');
+  }
+  return days;
 }

@@ -1,5 +1,11 @@
 import { randomUUID } from 'crypto';
-import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma, ReviewCardGrade, ReviewCardSource, type ReviewCard } from '@repo/database';
 import { PrismaService } from '../common/services/prisma.service';
 
@@ -370,6 +376,21 @@ export class SrsService {
     userId: string,
     data: CustomCardInput,
   ): Promise<ReviewCard> {
+    const MAX_CUSTOM_CARDS = 500;
+    const currentCount = await this.prisma.reviewCard.count({
+      where: {
+        tenantId,
+        userId,
+        sourceType: ReviewCardSource.CUSTOM,
+      },
+    });
+
+    if (currentCount >= MAX_CUSTOM_CARDS) {
+      throw new BadRequestException(
+        `You have reached the maximum limit of ${MAX_CUSTOM_CARDS} custom cards.`,
+      );
+    }
+
     return this.prisma.reviewCard.create({
       data: {
         tenantId,
@@ -436,24 +457,20 @@ export class SrsService {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - windowDays);
 
-    const logs = await this.prisma.reviewLog.findMany({
-      where: {
-        tenantId,
-        userId,
-        createdAt: { gte: startDate },
-      },
-      select: { createdAt: true },
-    });
+    const result = await this.prisma.$queryRaw<{ date: string; count: bigint }[]>`
+      SELECT TO_CHAR("createdAt", 'YYYY-MM-DD') as date, COUNT(*)::bigint as count
+      FROM "ReviewLog"
+      WHERE "tenantId" = ${tenantId}
+        AND "userId" = ${userId}
+        AND "createdAt" >= ${startDate}
+      GROUP BY TO_CHAR("createdAt", 'YYYY-MM-DD')
+      ORDER BY date ASC
+    `;
 
-    const countsByDate = new Map<string, number>();
-    for (const log of logs) {
-      const dateStr = log.createdAt.toISOString().split('T')[0];
-      countsByDate.set(dateStr, (countsByDate.get(dateStr) ?? 0) + 1);
-    }
-
-    return Array.from(countsByDate.entries())
-      .map(([date, count]) => ({ date, count }))
-      .sort((a, b) => a.date.localeCompare(b.date));
+    return result.map((r) => ({
+      date: r.date,
+      count: Number(r.count),
+    }));
   }
 
   private toCustomCardJson(content: CustomCardContent): Prisma.InputJsonObject {

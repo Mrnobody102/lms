@@ -133,37 +133,48 @@ export class CohortService {
   async addMembers(tenantId: string, id: string, userIds: string[]) {
     await this.findOne(tenantId, id);
 
-    const result = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      let addedCount = 0;
-      for (const userId of userIds) {
-        // verify user exists and belongs to tenant
-        const user = await tx.user.findUnique({
-          where: { id_tenantId: { id: userId, tenantId } },
-        });
-
-        if (!user || user.deletedAt) {
-          continue; // skip invalid users
-        }
-
-        const existingMembership = await tx.cohortMembership.findUnique({
-          where: { cohortId_userId: { cohortId: id, userId } },
-        });
-
-        if (!existingMembership) {
-          await tx.cohortMembership.create({
-            data: {
-              tenantId,
-              cohortId: id,
-              userId,
-            },
-          });
-          addedCount++;
-        }
-      }
-      return { addedCount };
+    // Get valid users in a single query
+    const validUsers = await this.prisma.user.findMany({
+      where: {
+        tenantId,
+        id: { in: userIds },
+        deletedAt: null,
+      },
+      select: { id: true },
     });
 
-    return result;
+    const validUserIds = validUsers.map((u) => u.id);
+
+    if (validUserIds.length === 0) {
+      return { addedCount: 0 };
+    }
+
+    // Get existing memberships to skip them
+    const existingMemberships = await this.prisma.cohortMembership.findMany({
+      where: {
+        cohortId: id,
+        userId: { in: validUserIds },
+      },
+      select: { userId: true },
+    });
+
+    const existingUserIds = new Set(existingMemberships.map((m) => m.userId));
+    const userIdsToAdd = validUserIds.filter((userId) => !existingUserIds.has(userId));
+
+    if (userIdsToAdd.length === 0) {
+      return { addedCount: 0 };
+    }
+
+    const { count } = await this.prisma.cohortMembership.createMany({
+      data: userIdsToAdd.map((userId) => ({
+        tenantId,
+        cohortId: id,
+        userId,
+      })),
+      skipDuplicates: true,
+    });
+
+    return { addedCount: count };
   }
 
   async removeMember(tenantId: string, cohortId: string, userId: string) {

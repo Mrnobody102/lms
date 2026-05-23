@@ -398,12 +398,12 @@ describe('SrsService Custom Cards', () => {
 
 describe('SrsService.getReviewStats', () => {
   it('groups logs by date', async () => {
-    const prisma = makePrisma();
-    prisma.reviewLog.findMany.mockResolvedValue([
-      { createdAt: new Date('2026-05-18T10:00:00Z') },
-      { createdAt: new Date('2026-05-19T10:00:00Z') },
-      { createdAt: new Date('2026-05-19T11:00:00Z') },
-    ]);
+    const prisma = makePrisma({
+      $queryRaw: vi.fn().mockResolvedValue([
+        { date: '2026-05-18', count: 1n },
+        { date: '2026-05-19', count: 2n },
+      ]),
+    });
     const service = new SrsService(prisma as never);
 
     const stats = await service.getReviewStats('tenant-1', 'user-1', 7);

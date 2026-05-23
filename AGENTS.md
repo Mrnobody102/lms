@@ -1,6 +1,6 @@
 # LMS Platform Agent Guide
 
-<!-- last-updated: 2026-05-14 -->
+<!-- last-updated: 2026-05-23 -->
 <!-- schema-version: 2.2 -->
 
 This file is the root instruction entrypoint for **ANY** AI coding agent (Cursor, Claude Code, Gemini, GPT) working in this repository.
@@ -38,7 +38,7 @@ Every AI agent MUST follow these "Hard Rules" to maintain monorepo integrity:
 ## 🏗️ Project Snapshot
 
 - **Monorepo**: pnpm 9 + Turborepo.
-- **Apps**: `api-server` (4000), `web-student` (3000), `web-admin` (3001), `super-portal` (3002).
+- **Apps**: `api-server` (4000), `web-student` (3100), `web-admin` (3101), `super-portal` (3102).
 - **Core Stack**: NestJS, Next.js (App Router), Prisma, Tailwind CSS, Zustand, React Query v5.
 
 ## ✅ Validation Gate

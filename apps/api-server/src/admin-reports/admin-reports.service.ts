@@ -11,6 +11,21 @@ import { PrismaService } from '../common/services/prisma.service';
 import { buildAnswerAccuracy, type AccuracyReport } from '../common/utils/answer-accuracy.util';
 
 const CSV_ROW_CAP = 5000;
+const DEFAULT_TREND_DAYS = 30;
+const MAX_TREND_DAYS = 90;
+
+interface ReportFilters {
+  cohortId?: string;
+}
+
+interface CourseReportFilters extends ReportFilters {
+  courseId?: string;
+  programId?: string;
+}
+
+interface TrendReportFilters extends CourseReportFilters {
+  days?: number;
+}
 
 interface CourseAccuracyBucket {
   practiceScore: number;
@@ -37,7 +52,9 @@ export class AdminReportsService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async getProgramsRollup(tenantId: string) {
+  async getProgramsRollup(tenantId: string, filters: ReportFilters = {}) {
+    await this.ensureCohortInTenant(tenantId, filters.cohortId);
+
     const [programs, unassignedCourses] = await Promise.all([
       this.prisma.program.findMany({
         where: { tenantId, deletedAt: null },
@@ -79,7 +96,7 @@ export class AdminReportsService {
     const unassignedIds = unassignedCourses.map((c) => c.id);
     unassignedIds.forEach((id) => allCourseIds.add(id));
 
-    const metrics = await this.computeCourseMetrics(tenantId, [...allCourseIds]);
+    const metrics = await this.computeCourseMetrics(tenantId, [...allCourseIds], filters);
 
     const programRows = programs.map((program) => {
       const courseIds = programCourseIds.get(program.id) ?? [];
@@ -107,7 +124,9 @@ export class AdminReportsService {
     return { programs: programRows, unassigned };
   }
 
-  async getProgramDetail(tenantId: string, programId: string) {
+  async getProgramDetail(tenantId: string, programId: string, filters: ReportFilters = {}) {
+    await this.ensureCohortInTenant(tenantId, filters.cohortId);
+
     const program = await this.prisma.program.findFirst({
       where: { id: programId, tenantId, deletedAt: null },
       include: {
@@ -129,7 +148,7 @@ export class AdminReportsService {
     }
 
     const allCourseIds = program.levels.flatMap((level) => level.courses.map((c) => c.id));
-    const metrics = await this.computeCourseMetrics(tenantId, allCourseIds);
+    const metrics = await this.computeCourseMetrics(tenantId, allCourseIds, filters);
 
     const levels = program.levels.map((level) => {
       const courseIds = level.courses.map((c) => c.id);
@@ -152,7 +171,9 @@ export class AdminReportsService {
     };
   }
 
-  async getLevelDetail(tenantId: string, levelId: string) {
+  async getLevelDetail(tenantId: string, levelId: string, filters: ReportFilters = {}) {
+    await this.ensureCohortInTenant(tenantId, filters.cohortId);
+
     const level = await this.prisma.level.findFirst({
       where: {
         id: levelId,
@@ -178,7 +199,7 @@ export class AdminReportsService {
     }
 
     const courseIds = level.courses.map((c) => c.id);
-    const metrics = await this.computeCourseMetrics(tenantId, courseIds);
+    const metrics = await this.computeCourseMetrics(tenantId, courseIds, filters);
 
     const courses: CourseRollupRow[] = level.courses.map((course) => {
       const bucket = metrics.byCourse.get(course.id);
@@ -204,7 +225,9 @@ export class AdminReportsService {
     };
   }
 
-  async getCourseUnits(tenantId: string, courseId: string) {
+  async getCourseUnits(tenantId: string, courseId: string, filters: ReportFilters = {}) {
+    await this.ensureCohortInTenant(tenantId, filters.cohortId);
+
     const course = await this.prisma.course.findFirst({
       where: { id: courseId, tenantId, deletedAt: null },
       select: { id: true, title: true },
@@ -223,7 +246,7 @@ export class AdminReportsService {
       },
     });
 
-    const accuracy = await this.computeUnitAccuracy(tenantId, courseId);
+    const accuracy = await this.computeUnitAccuracy(tenantId, courseId, filters);
 
     const unitRows = units.map((unit) => {
       const unitAcc = accuracy.unitMap.get(unit.id);
@@ -243,7 +266,9 @@ export class AdminReportsService {
     };
   }
 
-  async getCourseStudents(tenantId: string, courseId: string) {
+  async getCourseStudents(tenantId: string, courseId: string, filters: ReportFilters = {}) {
+    await this.ensureCohortInTenant(tenantId, filters.cohortId);
+
     const course = await this.prisma.course.findFirst({
       where: { id: courseId, tenantId, deletedAt: null },
       select: {
@@ -251,7 +276,11 @@ export class AdminReportsService {
         title: true,
         lessons: { where: { deletedAt: null }, select: { id: true } },
         enrollments: {
-          where: { tenantId, status: EnrollmentStatus.ACTIVE },
+          where: {
+            tenantId,
+            status: EnrollmentStatus.ACTIVE,
+            ...this.cohortUserWhere(tenantId, filters.cohortId),
+          },
           orderBy: { enrolledAt: 'desc' },
           select: {
             id: true,
@@ -282,6 +311,7 @@ export class AdminReportsService {
                 userId: { in: learnerIds },
                 status: ProgressStatus.COMPLETED,
                 lesson: { courseId, deletedAt: null },
+                ...this.cohortUserWhere(tenantId, filters.cohortId),
               },
               select: { userId: true },
             }),
@@ -292,6 +322,7 @@ export class AdminReportsService {
                 tenantId,
                 courseId,
                 userId: { in: learnerIds },
+                ...this.cohortUserWhere(tenantId, filters.cohortId),
               },
               select: { userId: true, occurredAt: true },
               orderBy: { occurredAt: 'desc' },
@@ -305,6 +336,7 @@ export class AdminReportsService {
                 courseId,
                 userId: { in: learnerIds },
                 status: PracticeAttemptStatus.SUBMITTED,
+                ...this.cohortUserWhere(tenantId, filters.cohortId),
               },
               _sum: { score: true, totalPoints: true },
               _count: { id: true },
@@ -318,6 +350,7 @@ export class AdminReportsService {
                 courseId,
                 userId: { in: learnerIds },
                 status: ExamAttemptStatus.SUBMITTED,
+                ...this.cohortUserWhere(tenantId, filters.cohortId),
               },
               _sum: { score: true, totalPoints: true },
               _count: { id: true },
@@ -386,8 +419,9 @@ export class AdminReportsService {
 
   async getSkillsAccuracy(
     tenantId: string,
-    filters: { courseId?: string; programId?: string } = {},
-  ): Promise<AccuracyReport & { filters: { courseId?: string; programId?: string } }> {
+    filters: CourseReportFilters = {},
+  ): Promise<AccuracyReport & { filters: CourseReportFilters }> {
+    await this.ensureCohortInTenant(tenantId, filters.cohortId);
     const courseFilter = await this.resolveCourseFilter(tenantId, filters);
 
     const [practiceAnswers, examAnswers] = await Promise.all([
@@ -398,6 +432,7 @@ export class AdminReportsService {
             tenantId,
             status: PracticeAttemptStatus.SUBMITTED,
             ...(courseFilter ? { courseId: courseFilter } : {}),
+            ...this.cohortUserWhere(tenantId, filters.cohortId),
           },
         },
         include: {
@@ -417,6 +452,7 @@ export class AdminReportsService {
             tenantId,
             status: ExamAttemptStatus.SUBMITTED,
             ...(courseFilter ? { courseId: courseFilter } : {}),
+            ...this.cohortUserWhere(tenantId, filters.cohortId),
           },
         },
         include: {
@@ -492,26 +528,17 @@ export class AdminReportsService {
     return undefined;
   }
 
-  async getActivityTrend(
-    tenantId: string,
-    filters: { courseId?: string; programId?: string; cohortId?: string } = {},
-  ) {
+  async getActivityTrend(tenantId: string, filters: TrendReportFilters = {}) {
+    await this.ensureCohortInTenant(tenantId, filters.cohortId);
     const courseFilter = await this.resolveCourseFilter(tenantId, filters);
-
-    // Get last 7 days
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setDate(endDate.getDate() - 6);
-    startDate.setHours(0, 0, 0, 0);
+    const { startDate, days } = this.getTrendWindow(filters.days);
 
     const records = await this.prisma.learningActivity.findMany({
       where: {
         tenantId,
         occurredAt: { gte: startDate },
         ...(courseFilter ? { courseId: courseFilter } : {}),
-        ...(filters.cohortId
-          ? { user: { cohortMemberships: { some: { cohortId: filters.cohortId } } } }
-          : {}),
+        ...this.cohortUserWhere(tenantId, filters.cohortId),
       },
       select: {
         occurredAt: true,
@@ -519,11 +546,9 @@ export class AdminReportsService {
       },
     });
 
-    // Bucket by day (YYYY-MM-DD)
     const trendMap = new Map<string, { date: string; opened: number; completed: number }>();
 
-    // Initialize the last 7 days with 0
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < days; i++) {
       const d = new Date(startDate);
       d.setDate(d.getDate() + i);
       const dateStr = d.toISOString().split('T')[0];
@@ -544,11 +569,9 @@ export class AdminReportsService {
     };
   }
 
-  async getMasteryTrend(tenantId: string, filters: { cohortId?: string } = {}) {
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setDate(endDate.getDate() - 6);
-    startDate.setHours(0, 0, 0, 0);
+  async getMasteryTrend(tenantId: string, filters: ReportFilters & { days?: number } = {}) {
+    await this.ensureCohortInTenant(tenantId, filters.cohortId);
+    const { startDate, days } = this.getTrendWindow(filters.days);
 
     const whereClause: Prisma.SkillMasterySnapshotWhereInput = {
       tenantId,
@@ -558,7 +581,7 @@ export class AdminReportsService {
     if (filters.cohortId) {
       whereClause.user = {
         cohortMemberships: {
-          some: { cohortId: filters.cohortId },
+          some: { tenantId, cohortId: filters.cohortId },
         },
       };
     }
@@ -574,7 +597,7 @@ export class AdminReportsService {
 
     const trendMap = new Map<string, Record<string, number | string>>();
 
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < days; i++) {
       const d = new Date(startDate);
       d.setDate(d.getDate() + i);
       const dateStr = d.toISOString().split('T')[0];
@@ -613,12 +636,17 @@ export class AdminReportsService {
     };
   }
 
-  private async computeUnitAccuracy(tenantId: string, courseId: string) {
+  private async computeUnitAccuracy(tenantId: string, courseId: string, filters: ReportFilters) {
     const [practiceAnswers, examAnswers] = await Promise.all([
       this.prisma.practiceAnswer.findMany({
         where: {
           tenantId,
-          attempt: { tenantId, courseId, status: PracticeAttemptStatus.SUBMITTED },
+          attempt: {
+            tenantId,
+            courseId,
+            status: PracticeAttemptStatus.SUBMITTED,
+            ...this.cohortUserWhere(tenantId, filters.cohortId),
+          },
         },
         select: {
           isCorrect: true,
@@ -634,7 +662,12 @@ export class AdminReportsService {
       this.prisma.examAnswer.findMany({
         where: {
           tenantId,
-          attempt: { tenantId, courseId, status: ExamAttemptStatus.SUBMITTED },
+          attempt: {
+            tenantId,
+            courseId,
+            status: ExamAttemptStatus.SUBMITTED,
+            ...this.cohortUserWhere(tenantId, filters.cohortId),
+          },
         },
         select: {
           isCorrect: true,
@@ -677,7 +710,11 @@ export class AdminReportsService {
     return { unitMap, ...report };
   }
 
-  private async computeCourseMetrics(tenantId: string, courseIds: string[]) {
+  private async computeCourseMetrics(
+    tenantId: string,
+    courseIds: string[],
+    filters: ReportFilters = {},
+  ) {
     if (courseIds.length === 0) {
       return {
         byCourse: new Map<string, CourseAccuracyBucket>(),
@@ -694,6 +731,7 @@ export class AdminReportsService {
           tenantId,
           courseId: { in: courseIds },
           status: PracticeAttemptStatus.SUBMITTED,
+          ...this.cohortUserWhere(tenantId, filters.cohortId),
         },
         _sum: { score: true, totalPoints: true },
         _count: { id: true },
@@ -704,6 +742,7 @@ export class AdminReportsService {
           tenantId,
           courseId: { in: courseIds },
           status: ExamAttemptStatus.SUBMITTED,
+          ...this.cohortUserWhere(tenantId, filters.cohortId),
         },
         _sum: { score: true, totalPoints: true },
         _count: { id: true },
@@ -714,6 +753,7 @@ export class AdminReportsService {
           tenantId,
           courseId: { in: courseIds },
           status: EnrollmentStatus.ACTIVE,
+          ...this.cohortUserWhere(tenantId, filters.cohortId),
         },
         _count: { id: true },
       }),
@@ -727,6 +767,7 @@ export class AdminReportsService {
           tenantId,
           status: ProgressStatus.COMPLETED,
           lesson: { courseId: { in: courseIds }, deletedAt: null },
+          ...this.cohortUserWhere(tenantId, filters.cohortId),
         },
         select: {
           userId: true,
@@ -823,6 +864,40 @@ export class AdminReportsService {
     const completed = metrics.completedLessonsByCourse.get(courseId) ?? 0;
     const expected = lessonCount * enrollmentCount;
     return this.percent(completed, expected);
+  }
+
+  private async ensureCohortInTenant(tenantId: string, cohortId?: string): Promise<void> {
+    if (!cohortId) return;
+
+    const cohort = await this.prisma.cohort.findFirst({
+      where: { id: cohortId, tenantId },
+      select: { id: true },
+    });
+
+    if (!cohort) {
+      throw new NotFoundException(`Cohort not found in this tenant`);
+    }
+  }
+
+  private cohortUserWhere(tenantId: string, cohortId?: string) {
+    return cohortId
+      ? {
+          user: {
+            cohortMemberships: {
+              some: { tenantId, cohortId },
+            },
+          },
+        }
+      : {};
+  }
+
+  private getTrendWindow(days?: number): { startDate: Date; days: number } {
+    const windowDays = Math.min(Math.max(days ?? DEFAULT_TREND_DAYS, 1), MAX_TREND_DAYS);
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - (windowDays - 1));
+    startDate.setHours(0, 0, 0, 0);
+
+    return { startDate, days: windowDays };
   }
 
   private percent(numerator?: number | null, denominator?: number | null) {

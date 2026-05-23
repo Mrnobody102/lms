@@ -21,6 +21,8 @@ export interface PracticeQuestion {
   audioMediaAssetId?: string | null;
   audioMediaAsset?: { id: string; url: string | null; status: string } | null;
   audioReplayLimit?: number | null;
+  aiGenerated?: boolean;
+  reviewStatus?: 'APPROVED' | 'PENDING_REVIEW' | 'REJECTED';
   createdAt: string;
 }
 
@@ -128,6 +130,8 @@ export const practiceApi = {
   },
 
   generateAiQuestions(data: {
+    courseId: string;
+    unitId?: string;
     topic: string;
     context?: string;
     count: number;
@@ -136,6 +140,26 @@ export const practiceApi = {
   }) {
     return api
       .post('/practice/generate-ai', data)
-      .then((r) => r.data as Partial<PracticeQuestion>[]);
+      .then((r) => r.data as { generated: number; questions: PracticeQuestion[] });
+  },
+
+  getReviewQueue(params?: { courseId?: string; unitId?: string }) {
+    return api.get('/practice/review-queue', { params }).then((r) => r.data as PracticeQuestion[]);
+  },
+
+  approveQuestion(id: string) {
+    return api.post(`/practice/review-queue/${id}/approve`).then((r) => r.data);
+  },
+
+  rejectQuestion(id: string) {
+    return api.post(`/practice/review-queue/${id}/reject`).then((r) => r.data);
+  },
+
+  bulkApproveQuestions(ids: string[]) {
+    return api.post('/practice/review-queue/bulk-approve', { ids }).then((r) => r.data);
+  },
+
+  bulkRejectQuestions(ids: string[]) {
+    return api.post('/practice/review-queue/bulk-reject', { ids }).then((r) => r.data);
   },
 };

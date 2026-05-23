@@ -32,12 +32,12 @@ export const useCreateRoleplaySession = () => {
   });
 };
 
-export const useGetRoleplaySessions = () => {
+export const useGetRoleplaySessions = (params?: { page?: number; limit?: number }) => {
   return useQuery({
-    queryKey: ['roleplaySessions'],
+    queryKey: ['roleplaySessions', params],
     queryFn: async () => {
-      const response = await defaultApiClient.get('/roleplay/sessions');
-      return response.data as RoleplaySession[];
+      const response = await defaultApiClient.get('/roleplay/sessions', { params });
+      return response.data as { data: RoleplaySession[]; total: number };
     },
   });
 };

@@ -55,6 +55,7 @@ export function EditLessonDialog({
   const [quiz, setQuiz] = useState(createEmptyQuizDraft());
 
   useEffect(() => {
+    if (!open) return;
     if (lesson) {
       setTitle(lesson.title);
       setType(lesson.type);
@@ -66,7 +67,7 @@ export function EditLessonDialog({
       setMicroCard(parseMicroCardContent(lesson.content));
       setQuiz(parseQuizContent(lesson.quiz));
     }
-  }, [lesson]);
+  }, [lesson, open]);
 
   const handleSubmit = async () => {
     if (!isLessonDraftReady({ type, title, content, videoUrl, aiPrompt, microCard, quiz })) return;

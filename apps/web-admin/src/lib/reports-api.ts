@@ -1,5 +1,18 @@
 import api from './api';
 
+export interface ReportFilters {
+  cohortId?: string;
+}
+
+export interface CourseReportFilters extends ReportFilters {
+  courseId?: string;
+  programId?: string;
+}
+
+export interface TrendReportFilters extends CourseReportFilters {
+  days?: number;
+}
+
 export interface ProgramRollupRow {
   id: string;
   title: string;
@@ -113,44 +126,48 @@ export interface UnitAccuracyRow {
 export interface SkillsAccuracyResponse {
   accuracyByUnit: UnitAccuracyRow[];
   accuracyBySkill: SkillAccuracyRow[];
-  filters: { courseId?: string; programId?: string };
+  filters: CourseReportFilters;
 }
 
 export const reportsApi = {
-  getPrograms() {
-    return api.get('/admin/reports/programs').then((r) => r.data as ProgramsRollupResponse);
-  },
-  getProgram(programId: string) {
+  getPrograms(filters: ReportFilters = {}) {
     return api
-      .get(`/admin/reports/programs/${programId}`)
+      .get('/admin/reports/programs', { params: filters })
+      .then((r) => r.data as ProgramsRollupResponse);
+  },
+  getProgram(programId: string, filters: ReportFilters = {}) {
+    return api
+      .get(`/admin/reports/programs/${programId}`, { params: filters })
       .then((r) => r.data as ProgramDetailResponse);
   },
-  getLevel(levelId: string) {
-    return api.get(`/admin/reports/levels/${levelId}`).then((r) => r.data as LevelDetailResponse);
-  },
-  getCourseUnits(courseId: string) {
+  getLevel(levelId: string, filters: ReportFilters = {}) {
     return api
-      .get(`/admin/reports/courses/${courseId}/units`)
+      .get(`/admin/reports/levels/${levelId}`, { params: filters })
+      .then((r) => r.data as LevelDetailResponse);
+  },
+  getCourseUnits(courseId: string, filters: ReportFilters = {}) {
+    return api
+      .get(`/admin/reports/courses/${courseId}/units`, { params: filters })
       .then((r) => r.data as CourseUnitsResponse);
   },
-  getCourseStudents(courseId: string) {
+  getCourseStudents(courseId: string, filters: ReportFilters = {}) {
     return api
-      .get(`/admin/reports/courses/${courseId}/students`)
+      .get(`/admin/reports/courses/${courseId}/students`, { params: filters })
       .then((r) => r.data as CourseStudentsResponse);
   },
-  getSkills(filters: { courseId?: string; programId?: string } = {}) {
+  getSkills(filters: CourseReportFilters = {}) {
     return api
       .get('/admin/reports/skills', { params: filters })
       .then((r) => r.data as SkillsAccuracyResponse);
   },
 
-  getActivityTrend(filters: { courseId?: string; programId?: string; cohortId?: string } = {}) {
+  getActivityTrend(filters: TrendReportFilters = {}) {
     return api
       .get('/admin/reports/activity-trend', { params: filters })
       .then((r) => r.data as { trend: Array<{ date: string; opened: number; completed: number }> });
   },
 
-  getMasteryTrend(filters: { cohortId?: string } = {}) {
+  getMasteryTrend(filters: ReportFilters & { days?: number } = {}) {
     return api
       .get('/admin/reports/mastery-trend', { params: filters })
       .then((r) => r.data as { trend: Array<Record<string, string | number>> });

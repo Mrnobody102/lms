@@ -221,3 +221,33 @@ export function useDeleteCourseUnit() {
     },
   });
 }
+
+export function useReorderUnits() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ courseId, unitIds }: { courseId: string; unitIds: string[] }) =>
+      courseApi.reorderUnits(courseId, unitIds),
+    onSuccess: (_data, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['course', vars.courseId] });
+    },
+  });
+}
+
+export function useReorderLessons() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      courseId,
+      unitId,
+      lessonIds,
+    }: {
+      courseId: string;
+      unitId: string;
+      lessonIds: string[];
+    }) => courseApi.reorderLessons(courseId, unitId, lessonIds),
+    onSuccess: (_data, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['course', vars.courseId] });
+      queryClient.invalidateQueries({ queryKey: ['lessons', vars.courseId] });
+    },
+  });
+}

@@ -75,7 +75,7 @@ export function ChangePasswordForm() {
         <div className="space-y-2">
           <Label>{t('settings.security.currentPassword')}</Label>
           <div className="relative">
-            <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-muted-foreground">
+            <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted-foreground">
               <Lock className="h-4 w-4" />
             </div>
             <Input
@@ -84,7 +84,7 @@ export function ChangePasswordForm() {
               onChange={(e) => setCurrentPassword(e.target.value)}
               required
               autoComplete="current-password"
-              className="h-12 pl-11 pr-12"
+              className="h-10 rounded-md pl-10 pr-11"
             />
           </div>
         </div>
@@ -95,7 +95,7 @@ export function ChangePasswordForm() {
         <div className="space-y-2">
           <Label>{t('settings.security.newPassword')}</Label>
           <div className="relative">
-            <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-muted-foreground">
+            <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted-foreground">
               <Lock className="h-4 w-4" />
             </div>
             <Input
@@ -104,12 +104,12 @@ export function ChangePasswordForm() {
               onChange={(e) => setNewPassword(e.target.value)}
               required
               autoComplete="new-password"
-              className="h-12 pl-11 pr-12"
+              className="h-10 rounded-md pl-10 pr-11"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-muted-foreground hover:text-foreground"
+              className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-muted-foreground hover:text-foreground"
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
@@ -121,7 +121,7 @@ export function ChangePasswordForm() {
         <div className="space-y-2">
           <Label>{t('settings.security.confirmPassword')}</Label>
           <div className="relative">
-            <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-muted-foreground">
+            <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted-foreground">
               <Lock className="h-4 w-4" />
             </div>
             <Input
@@ -130,7 +130,7 @@ export function ChangePasswordForm() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               autoComplete="new-password"
-              className="h-12 pl-11"
+              className="h-10 rounded-md pl-10"
             />
           </div>
         </div>

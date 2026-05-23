@@ -19,8 +19,14 @@ const PREDEFINED_SCENARIOS = [
 
 export default function RoleplayDashboard() {
   const router = useRouter();
-  const { data: sessions = [], isLoading } = useGetRoleplaySessions();
+  const [page, setPage] = useState(1);
+  const limit = 9;
+  const { data: response, isLoading } = useGetRoleplaySessions({ page, limit });
   const { mutate: createSession, isPending } = useCreateRoleplaySession();
+
+  const sessions = response?.data || [];
+  const total = response?.total || 0;
+  const totalPages = Math.ceil(total / limit);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [customScenario, setCustomScenario] = useState('');
@@ -61,51 +67,77 @@ export default function RoleplayDashboard() {
             <span className="animate-pulse">Loading sessions...</span>
           </div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {sessions.map((session) => (
-              <div
-                key={session.id}
-                className="border rounded-xl p-5 bg-card hover:border-primary/40 transition-colors flex flex-col"
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-                    <MessageSquare className="w-5 h-5" />
-                  </div>
-                  <span
-                    className={`text-xs font-semibold px-2.5 py-1 rounded-full ${session.status === 'COMPLETED' ? 'bg-secondary text-secondary-foreground' : 'bg-primary/10 text-primary'}`}
-                  >
-                    {session.status}
-                  </span>
-                </div>
-                <p className="text-sm line-clamp-3 mb-4 flex-1 text-card-foreground/90 font-medium">
-                  &quot;{session.scenario}&quot;
-                </p>
-                {session.score !== null && session.score !== undefined && (
-                  <p className="text-sm font-bold text-primary mb-4">Score: {session.score}/100</p>
-                )}
-                <Link
-                  href={`/roleplay/${session.id}`}
-                  className="inline-flex items-center text-sm font-semibold text-primary hover:text-primary/80 group"
+          <>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {sessions.map((session) => (
+                <div
+                  key={session.id}
+                  className="border rounded-xl p-5 bg-card hover:border-primary/40 transition-colors flex flex-col"
                 >
-                  {session.status === 'COMPLETED' ? 'View Feedback' : 'Resume Conversation'}
-                  <ArrowRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" />
-                </Link>
-              </div>
-            ))}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                      <MessageSquare className="w-5 h-5" />
+                    </div>
+                    <span
+                      className={`text-xs font-semibold px-2.5 py-1 rounded-full ${session.status === 'COMPLETED' ? 'bg-secondary text-secondary-foreground' : 'bg-primary/10 text-primary'}`}
+                    >
+                      {session.status}
+                    </span>
+                  </div>
+                  <p className="text-sm line-clamp-3 mb-4 flex-1 text-card-foreground/90 font-medium">
+                    &quot;{session.scenario}&quot;
+                  </p>
+                  {session.score !== null && session.score !== undefined && (
+                    <p className="text-sm font-bold text-primary mb-4">
+                      Score: {session.score}/100
+                    </p>
+                  )}
+                  <Link
+                    href={`/roleplay/${session.id}`}
+                    className="inline-flex items-center text-sm font-semibold text-primary hover:text-primary/80 group"
+                  >
+                    {session.status === 'COMPLETED' ? 'View Feedback' : 'Resume Conversation'}
+                    <ArrowRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" />
+                  </Link>
+                </div>
+              ))}
 
-            {sessions.length === 0 && (
-              <div className="col-span-full py-12 text-center border rounded-xl border-dashed">
-                <Bot className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-semibold mb-2">No roleplay sessions yet</h3>
-                <p className="text-muted-foreground mb-4">
-                  Start a new conversation to practice your skills.
-                </p>
-                <Button onClick={() => setIsDialogOpen(true)} variant="outline">
-                  Start Practicing
+              {sessions.length === 0 && (
+                <div className="col-span-full py-12 text-center border rounded-xl border-dashed">
+                  <Bot className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                  <h3 className="text-lg font-semibold mb-2">No roleplay sessions yet</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Start a new conversation to practice your skills.
+                  </p>
+                  <Button onClick={() => setIsDialogOpen(true)} variant="outline">
+                    Start Practicing
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {totalPages > 1 && (
+              <div className="mt-8 flex justify-center items-center gap-4">
+                <Button
+                  variant="outline"
+                  disabled={page === 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                >
+                  Previous
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  Page {page} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  disabled={page === totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                >
+                  Next
                 </Button>
               </div>
             )}
-          </div>
+          </>
         )}
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

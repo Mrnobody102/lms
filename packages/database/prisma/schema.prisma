@@ -82,6 +82,12 @@ enum MediaAssetStatus {
   FAILED
 }
 
+enum QuestionReviewStatus {
+  APPROVED
+  PENDING_REVIEW
+  REJECTED
+}
+
 model Tenant {
   id                    String                 @id @default(uuid())
   name                  String
@@ -396,7 +402,9 @@ model PracticeQuestion {
   audioMediaAssetId String?
   audioMediaAsset   MediaAsset?                   @relation("PracticeQuestionAudio", fields: [audioMediaAssetId], references: [id], onDelete: SetNull)
   audioReplayLimit  Int?
-  deletedAt         DateTime?
+  aiGenerated        Boolean              @default(false)
+  reviewStatus       QuestionReviewStatus @default(APPROVED)
+  deletedAt          DateTime?
   createdAt         DateTime                      @default(now())
   updatedAt         DateTime                      @updatedAt
   exerciseLinks     PracticeExerciseSetQuestion[]

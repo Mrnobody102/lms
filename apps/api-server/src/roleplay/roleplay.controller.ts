@@ -1,5 +1,5 @@
-import { Controller, Post, Get, Body, Param, UseGuards, Request } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Post, Get, Body, Param, UseGuards, Request, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { RoleplayService } from './roleplay.service';
 import { CreateRoleplaySessionDto } from './dto/create-roleplay-session.dto';
 import { SendMessageDto } from './dto/send-message.dto';
@@ -22,8 +22,21 @@ export class RoleplayController {
 
   @Get('sessions')
   @ApiOperation({ summary: 'Get all roleplay sessions for the user' })
-  async getSessions(@Request() req: AuthenticatedRequest) {
-    return this.roleplayService.getSessions(getScopedTenantId(req), req.user.id);
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  async getSessions(
+    @Request() req: AuthenticatedRequest,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const pageNumber = page ? parseInt(page, 10) : 1;
+    const limitNumber = limit ? parseInt(limit, 10) : 10;
+    return this.roleplayService.getSessions(
+      getScopedTenantId(req),
+      req.user.id,
+      pageNumber,
+      limitNumber,
+    );
   }
 
   @Get('sessions/:id')
