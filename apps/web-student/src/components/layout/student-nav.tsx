@@ -15,6 +15,7 @@ import { LanguageToggle, ThemeToggle } from '@repo/ui';
 import { useTranslations } from 'next-intl';
 import { Link } from '../../navigation';
 import { useAuthStore } from '../../features/auth/auth.store';
+import { NotificationBell } from '../../features/notifications/components/notification-bell';
 
 interface StudentNavProps {
   showLinks?: boolean;
@@ -92,6 +93,7 @@ export function StudentNav({ showLinks = false }: StudentNavProps) {
             <p className="text-sm font-medium hidden lg:block max-w-[100px] truncate">
               {user?.fullName}
             </p>
+            <NotificationBell />
             <Link
               href="/settings"
               className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-primary transition-all rounded-lg hover:bg-primary/5"

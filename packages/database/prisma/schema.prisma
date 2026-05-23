@@ -121,6 +121,7 @@ model Tenant {
   isActive              Boolean                @default(true)
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @default(now()) @updatedAt
+  Notification          Notification[]
 
   @@index([isActive])
 }
@@ -162,6 +163,7 @@ model User {
   roleplaySessions       RoleplaySession[]
   createdAt              DateTime               @default(now())
   updatedAt              DateTime               @updatedAt
+  Notification           Notification[]
 
   @@unique([tenantId, email])
   @@unique([tenantId, googleSubject])
@@ -402,9 +404,9 @@ model PracticeQuestion {
   audioMediaAssetId String?
   audioMediaAsset   MediaAsset?                   @relation("PracticeQuestionAudio", fields: [audioMediaAssetId], references: [id], onDelete: SetNull)
   audioReplayLimit  Int?
-  aiGenerated        Boolean              @default(false)
-  reviewStatus       QuestionReviewStatus @default(APPROVED)
-  deletedAt          DateTime?
+  aiGenerated       Boolean                       @default(false)
+  reviewStatus      QuestionReviewStatus          @default(APPROVED)
+  deletedAt         DateTime?
   createdAt         DateTime                      @default(now())
   updatedAt         DateTime                      @updatedAt
   exerciseLinks     PracticeExerciseSetQuestion[]
@@ -847,4 +849,21 @@ model RoleplayMessage {
 
   @@unique([id, tenantId])
   @@index([sessionId, createdAt])
+}
+
+model Notification {
+  id        String    @id @default(uuid())
+  tenantId  String
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User      @relation(fields: [userId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  title     String
+  content   String?
+  type      String    @default("INFO") // INFO, WARNING, SUCCESS
+  actionUrl String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@unique([id, tenantId])
+  @@index([tenantId, userId, readAt])
 }

@@ -39,6 +39,7 @@ import { JobsModule } from './jobs/jobs.module';
 
 import { CohortModule } from './cohort/cohort.module';
 import { RoleplayModule } from './roleplay/roleplay.module';
+import { NotificationModule } from './notification/notification.module';
 
 @Module({
   imports: [
@@ -113,6 +114,7 @@ import { RoleplayModule } from './roleplay/roleplay.module';
     StorageModule,
     MediaModule,
     JobsModule,
+    NotificationModule,
   ],
   controllers: [],
   providers: [
