@@ -43,6 +43,56 @@ export class UserService {
     return user;
   }
 
+  async getUserStats(userId: string, tenantId: string) {
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, tenantId, deletedAt: null },
+      select: { currentStreak: true, longestStreak: true, lastActiveDate: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Get total time learned and recent activities
+    const activities = await this.prisma.learningActivity.findMany({
+      where: { userId, tenantId },
+      orderBy: { occurredAt: 'desc' },
+      include: {
+        lesson: {
+          select: { title: true, course: { select: { title: true } } },
+        },
+      },
+    });
+
+    const totalTimeLearnedSeconds = activities.reduce(
+      (sum, act) => sum + (act.timeSpentSeconds || 0),
+      0,
+    );
+
+    const completedLessons = await this.prisma.userLessonProgress.count({
+      where: {
+        userId,
+        tenantId,
+        status: 'COMPLETED',
+      },
+    });
+
+    return {
+      currentStreak: user.currentStreak,
+      longestStreak: user.longestStreak,
+      lastActiveDate: user.lastActiveDate,
+      totalTimeLearnedSeconds,
+      completedLessons,
+      recentActivities: activities.slice(0, 10).map((a) => ({
+        id: a.id,
+        type: a.type,
+        occurredAt: a.occurredAt,
+        lessonTitle: a.lesson?.title,
+        courseTitle: a.lesson?.course?.title,
+      })),
+    };
+  }
+
   async updateProfile(userId: string, tenantId: string, updateProfileDto: UpdateProfileDto) {
     const existingUser = await this.prisma.user.findFirst({
       where: { id: userId, tenantId, deletedAt: null },

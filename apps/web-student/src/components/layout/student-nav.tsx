@@ -4,14 +4,20 @@ import {
   Dumbbell,
   FileCheck2,
   KeyRound,
-  LogIn,
   LogOut,
   User as UserIcon,
   UserPlus,
   Settings,
   MessageSquare,
 } from 'lucide-react';
-import { LanguageToggle, ThemeToggle } from '@repo/ui';
+import {
+  LanguageToggle,
+  ThemeToggle,
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@repo/ui';
 import { useTranslations } from 'next-intl';
 import { Link } from '../../navigation';
 import { useAuthStore } from '../../features/auth/auth.store';
@@ -87,21 +93,33 @@ export function StudentNav({ showLinks = false }: StudentNavProps) {
           <div className="w-20 h-8 animate-pulse bg-muted rounded-lg" />
         ) : isAuthenticated ? (
           <div className="flex items-center gap-1.5">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-              <UserIcon className="w-4 h-4" />
-            </div>
-            <p className="text-sm font-medium hidden lg:block max-w-[100px] truncate">
-              {user?.fullName}
-            </p>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <div className="flex items-center gap-1.5 cursor-pointer rounded-lg hover:bg-muted p-1 pr-2">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                    <UserIcon className="w-4 h-4" />
+                  </div>
+                  <p className="text-sm font-medium hidden lg:block max-w-[100px] truncate">
+                    {user?.fullName}
+                  </p>
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem asChild>
+                  <Link href="/profile" className="flex items-center gap-2 w-full">
+                    <UserIcon className="h-4 w-4" />
+                    <span>{t('nav.profile', { defaultMessage: 'Profile' })}</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/settings" className="flex items-center gap-2 w-full">
+                    <Settings className="h-4 w-4" />
+                    <span>{t('nav.settings')}</span>
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <NotificationBell />
-            <Link
-              href="/settings"
-              className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-primary transition-all rounded-lg hover:bg-primary/5"
-              aria-label={t('nav.settings')}
-              title={t('nav.settings')}
-            >
-              <Settings className="w-4 h-4" />
-            </Link>
             <button
               onClick={() => {
                 void logout();
@@ -122,26 +140,11 @@ export function StudentNav({ showLinks = false }: StudentNavProps) {
               {t('cta.login')}
             </Link>
             <Link
-              href="/login"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all hover:border-border hover:bg-muted hover:text-foreground sm:hidden"
-              aria-label={t('cta.login')}
-              title={t('cta.login')}
-            >
-              <LogIn className="h-4 w-4" />
-            </Link>
-            <Link
               href="/register"
-              className="hidden rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground transition-all hover:opacity-90 hover:shadow-md sm:inline-flex"
+              className="inline-flex items-center justify-center rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90"
             >
+              <UserPlus className="mr-2 h-4 w-4" />
               {t('cta.register')}
-            </Link>
-            <Link
-              href="/register"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-all hover:opacity-90 hover:shadow-md sm:hidden"
-              aria-label={t('cta.register')}
-              title={t('cta.register')}
-            >
-              <UserPlus className="h-4 w-4" />
             </Link>
           </div>
         )}

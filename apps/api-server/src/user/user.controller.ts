@@ -24,6 +24,14 @@ export class UserController {
     return this.userService.getProfile(user.id);
   }
 
+  @Get('me/stats')
+  @ApiOperation({ summary: "Get current user's learning statistics" })
+  @ApiResponse({ status: 200, description: 'Stats retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getStats(@CurrentUser() user: AuthenticatedUser) {
+    return this.userService.getUserStats(user.id, user.tenantId);
+  }
+
   @Put('me')
   @ApiOperation({ summary: "Update current user's profile" })
   @ApiResponse({ status: 200, description: 'Profile updated successfully' })

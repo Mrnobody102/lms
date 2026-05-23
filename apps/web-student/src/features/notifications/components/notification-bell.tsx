@@ -102,9 +102,8 @@ export function NotificationBell() {
                 <div className="flex-1 space-y-1 pl-1">
                   <p className="text-sm font-medium leading-none">
                     {n.actionUrl ? (
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
                       <Link
-                        href={n.actionUrl as any}
+                        href={n.actionUrl}
                         className="hover:underline"
                         onClick={() => !n.readAt && markAsRead.mutate(n.id)}
                       >

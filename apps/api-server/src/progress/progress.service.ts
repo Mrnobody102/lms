@@ -93,7 +93,7 @@ export class ProgressService {
     });
     if (!lesson) throw new NotFoundException(`Lesson not found in this tenant`);
 
-    return this.prisma.learningActivity.create({
+    const activity = await this.prisma.learningActivity.create({
       data: {
         userId,
         tenantId,
@@ -101,6 +101,57 @@ export class ProgressService {
         lessonId: lesson.id,
         type,
         timeSpentSeconds,
+      },
+    });
+
+    // Update User Streak
+    await this.updateUserStreak(userId, tenantId);
+
+    return activity;
+  }
+
+  private async updateUserStreak(userId: string, tenantId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id_tenantId: { id: userId, tenantId } },
+      select: { currentStreak: true, longestStreak: true, lastActiveDate: true },
+    });
+
+    if (!user) return;
+
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+
+    const yesterday = new Date(today);
+    yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+
+    const lastActive = user.lastActiveDate ? new Date(user.lastActiveDate) : null;
+    if (lastActive) {
+      lastActive.setUTCHours(0, 0, 0, 0);
+    }
+
+    if (lastActive && lastActive.getTime() === today.getTime()) {
+      // Already active today, no need to update streak
+      return;
+    }
+
+    let newCurrentStreak = user.currentStreak;
+
+    if (!lastActive || lastActive.getTime() === yesterday.getTime()) {
+      // Active yesterday or first time, increment streak
+      newCurrentStreak += 1;
+    } else if (lastActive.getTime() < yesterday.getTime()) {
+      // Missed a day or more, reset streak
+      newCurrentStreak = 1;
+    }
+
+    const newLongestStreak = Math.max(user.longestStreak, newCurrentStreak);
+
+    await this.prisma.user.update({
+      where: { id_tenantId: { id: userId, tenantId } },
+      data: {
+        currentStreak: newCurrentStreak,
+        longestStreak: newLongestStreak,
+        lastActiveDate: new Date(),
       },
     });
   }
