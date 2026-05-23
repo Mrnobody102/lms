@@ -25,6 +25,8 @@ interface AiGenerationModalProps {
   onSuccess: (msg: string) => void;
   courseId?: string;
   unitId?: string;
+  defaultTopic?: string;
+  defaultSkillTags?: string;
 }
 
 export function AiGenerationModal({
@@ -35,22 +37,24 @@ export function AiGenerationModal({
   onSuccess,
   courseId,
   unitId,
+  defaultTopic = '',
+  defaultSkillTags = '',
 }: AiGenerationModalProps) {
   const t = useTranslations('Admin');
-  const [topic, setTopic] = useState('');
+  const [topic, setTopic] = useState(defaultTopic);
   const [context, setContext] = useState('');
   const [count, setCount] = useState(3);
   const [questionType, setQuestionType] = useState<PracticeQuestionType>('MULTIPLE_CHOICE');
-  const [skillTags, setSkillTags] = useState('');
+  const [skillTags, setSkillTags] = useState(defaultSkillTags);
 
   const generateMutation = useGeneratePracticeQuestions();
 
   const resetDraft = () => {
-    setTopic('');
+    setTopic(defaultTopic);
     setContext('');
     setCount(3);
     setQuestionType('MULTIPLE_CHOICE');
-    setSkillTags('');
+    setSkillTags(defaultSkillTags);
   };
 
   const handleGenerate = (e: FormEvent) => {

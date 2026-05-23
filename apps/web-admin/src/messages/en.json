@@ -203,6 +203,7 @@
     "aiGenerateSuccess": "Questions generated successfully",
     "aiGenerateError": "Failed to generate questions",
     "generate": "Generate",
+    "generatePracticeDesc": "Generate practice questions for this skill using AI",
     "skills": {
       "navLabel": "Skills",
       "title": "Skills",

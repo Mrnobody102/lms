@@ -203,6 +203,7 @@
     "aiGenerateSuccess": "Đã tạo câu hỏi thành công",
     "aiGenerateError": "Không thể tạo câu hỏi",
     "generate": "Tạo",
+    "generatePracticeDesc": "Tạo câu hỏi luyện tập cho kỹ năng này bằng AI",
     "skills": {
       "navLabel": "Kỹ năng",
       "title": "Kỹ năng",
