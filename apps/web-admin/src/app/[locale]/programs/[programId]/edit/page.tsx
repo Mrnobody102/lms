@@ -47,7 +47,7 @@ export default function EditProgramPage() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen flex bg-background">
+      <div className="min-h-screen flex flex-col md:flex-row bg-background">
         <AdminSidebar />
         <main className="flex-1 md:ml-64 p-6 lg:p-8">
           <div className="max-w-2xl mx-auto">

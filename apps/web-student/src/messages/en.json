@@ -20,7 +20,9 @@
       "home": "Home",
       "exams": "Exams",
       "activation": "Activation Code",
-      "settings": "Settings"
+      "settings": "Settings",
+      "profile": "Profile",
+      "notifications": "Notifications"
     },
     "themeToggle": "Toggle theme",
     "hero": {

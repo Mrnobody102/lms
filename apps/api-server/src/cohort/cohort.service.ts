@@ -222,30 +222,45 @@ export class CohortService {
       let enrolledCount = 0;
       let skippedCount = 0;
 
-      for (const userId of userIds) {
-        const existingEnrollment = await tx.courseEnrollment.findUnique({
-          where: { userId_courseId: { userId, courseId } },
-        });
+      const existingEnrollments = await tx.courseEnrollment.findMany({
+        where: {
+          userId: { in: userIds },
+          courseId,
+        },
+      });
 
-        if (!existingEnrollment) {
-          await tx.courseEnrollment.create({
-            data: {
-              tenantId,
-              userId,
-              courseId,
-              status: 'ACTIVE',
-            },
-          });
-          enrolledCount++;
-        } else if (existingEnrollment.status !== 'ACTIVE') {
-          await tx.courseEnrollment.update({
-            where: { userId_courseId: { userId, courseId } },
-            data: { status: 'ACTIVE', unenrolledAt: null },
-          });
-          enrolledCount++;
+      const existingMap = new Map(existingEnrollments.map((e) => [e.userId, e]));
+      const toCreate: { tenantId: string; userId: string; courseId: string; status: 'ACTIVE' }[] =
+        [];
+      const toUpdate: string[] = [];
+
+      for (const userId of userIds) {
+        const existing = existingMap.get(userId);
+        if (!existing) {
+          toCreate.push({ tenantId, userId, courseId, status: 'ACTIVE' });
+        } else if (existing.status !== 'ACTIVE') {
+          toUpdate.push(userId);
         } else {
           skippedCount++;
         }
+      }
+
+      if (toCreate.length > 0) {
+        await tx.courseEnrollment.createMany({
+          data: toCreate,
+        });
+        enrolledCount += toCreate.length;
+      }
+
+      if (toUpdate.length > 0) {
+        await tx.courseEnrollment.updateMany({
+          where: {
+            userId: { in: toUpdate },
+            courseId,
+          },
+          data: { status: 'ACTIVE', unenrolledAt: null },
+        });
+        enrolledCount += toUpdate.length;
       }
 
       await tx.auditLog.create({

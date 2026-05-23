@@ -16,12 +16,13 @@ import {
   BarChart3,
   Sparkles,
   Bell,
+  Menu,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useAuthStore } from '@/features/auth/auth.store';
 import { cn } from '@/lib/utils';
 import { Link, usePathname, useRouter } from '@/navigation';
-import { LanguageToggle, useTheme } from '@repo/ui';
+import { LanguageToggle, useTheme, Sheet, SheetContent, SheetTrigger, SheetTitle } from '@repo/ui';
 
 export function AdminSidebar() {
   const t = useTranslations('Admin');
@@ -61,8 +62,8 @@ export function AdminSidebar() {
     setTheme(theme === 'light' ? 'dark' : 'light');
   };
 
-  return (
-    <aside className="w-64 bg-card border-r fixed h-full hidden md:flex flex-col z-20">
+  const sidebarContent = (
+    <>
       {/* Logo */}
       <div className="px-6 py-5 border-b border-border">
         <Link href="/" className="flex items-center gap-2.5">
@@ -140,6 +141,38 @@ export function AdminSidebar() {
           <LanguageToggle menuAlign="right" menuPlacement="top" />
         </div>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile Top Bar */}
+      <div className="md:hidden sticky top-0 z-40 flex h-14 w-full items-center justify-between border-b border-border bg-card px-4">
+        <div className="flex items-center gap-2">
+          <Sheet>
+            <SheetTrigger asChild>
+              <button className="-ml-2 p-2 text-muted-foreground hover:text-foreground transition-colors">
+                <Menu className="h-5 w-5" />
+              </button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[280px] p-0 flex flex-col">
+              <SheetTitle className="sr-only">Menu</SheetTitle>
+              {sidebarContent}
+            </SheetContent>
+          </Sheet>
+          <span className="font-semibold text-sm">{t('brandName')}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
+            {user?.fullName?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || '?'}
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Sidebar */}
+      <aside className="w-64 bg-card border-r fixed h-full hidden md:flex flex-col z-20">
+        {sidebarContent}
+      </aside>
+    </>
   );
 }

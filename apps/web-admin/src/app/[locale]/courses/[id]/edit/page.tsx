@@ -498,7 +498,7 @@ export default function CourseEditorPage() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen flex bg-background">
+      <div className="min-h-screen flex flex-col md:flex-row bg-background">
         <AdminSidebar />
         <main className="flex-1 md:ml-64 relative">
           {/* Sticky Header with Title Edit and Tabs */}

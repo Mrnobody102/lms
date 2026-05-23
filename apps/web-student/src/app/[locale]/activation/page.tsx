@@ -39,10 +39,28 @@ export default function ActivationPage() {
     }
   };
 
+  const authT = useTranslations('Student.auth');
+
   if (!isAuthenticated) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background font-sans">
-        <p className="text-muted-foreground">{t('loginRequired')}</p>
+      <div className="min-h-screen bg-background font-sans">
+        <StudentNav showLinks />
+        <main className="mx-auto max-w-lg px-6 py-24">
+          <div className="rounded-xl border bg-card p-8 shadow-sm text-center">
+            <div className="mb-4 mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <KeyRound className="h-6 w-6" />
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
+            <p className="mt-4 text-muted-foreground">{t('loginRequired')}</p>
+            <Link
+              href="/login?next=/activation"
+              className="mt-8 flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary font-medium text-primary-foreground transition-all hover:bg-primary/90"
+            >
+              {authT('loginButton')}
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </main>
       </div>
     );
   }

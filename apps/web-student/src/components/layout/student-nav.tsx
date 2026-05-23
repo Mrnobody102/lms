@@ -9,6 +9,7 @@ import {
   UserPlus,
   Settings,
   MessageSquare,
+  Menu,
 } from 'lucide-react';
 import {
   LanguageToggle,
@@ -17,6 +18,10 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetTitle,
 } from '@repo/ui';
 import { useTranslations } from 'next-intl';
 import { Link } from '../../navigation';
@@ -41,48 +46,99 @@ export function StudentNav({ showLinks = false }: StudentNavProps) {
       </Link>
 
       {showLinks && (
-        <div className="hidden md:flex gap-5 text-sm font-medium text-muted-foreground">
-          <Link href="/courses" className="hover:text-primary transition-colors">
-            {t('nav.courses')}
-          </Link>
-          <Link
-            href="/practice"
-            className="inline-flex items-center gap-1.5 hover:text-primary transition-colors"
-          >
-            <Dumbbell className="h-3.5 w-3.5" />
-            {t('nav.practice')}
-          </Link>
-          <Link
-            href="/roleplay"
-            className="inline-flex items-center gap-1.5 hover:text-primary transition-colors"
-          >
-            <MessageSquare className="h-3.5 w-3.5" />
-            Roleplay
-          </Link>
-          <Link
-            href="/exams"
-            className="inline-flex items-center gap-1.5 hover:text-primary transition-colors"
-          >
-            <FileCheck2 className="h-3.5 w-3.5" />
-            {t('nav.exams')}
-          </Link>
-          <Link
-            href="/activation"
-            className="inline-flex items-center gap-1.5 hover:text-primary transition-colors"
-          >
-            <KeyRound className="h-3.5 w-3.5" />
-            {t('nav.activation')}
-          </Link>
-          <Link href="#" className="hover:text-primary transition-colors">
-            {t('nav.hsk')}
-          </Link>
-          <Link href="#" className="hover:text-primary transition-colors">
-            {t('nav.vocab')}
-          </Link>
-          <Link href="#" className="hover:text-primary transition-colors">
-            {t('nav.blog')}
-          </Link>
-        </div>
+        <>
+          <div className="hidden md:flex gap-5 text-sm font-medium text-muted-foreground">
+            <Link href="/courses" className="hover:text-primary transition-colors">
+              {t('nav.courses')}
+            </Link>
+            <Link
+              href="/practice"
+              className="inline-flex items-center gap-1.5 hover:text-primary transition-colors"
+            >
+              <Dumbbell className="h-3.5 w-3.5" />
+              {t('nav.practice')}
+            </Link>
+            <Link
+              href="/roleplay"
+              className="inline-flex items-center gap-1.5 hover:text-primary transition-colors"
+            >
+              <MessageSquare className="h-3.5 w-3.5" />
+              Roleplay
+            </Link>
+            <Link
+              href="/exams"
+              className="inline-flex items-center gap-1.5 hover:text-primary transition-colors"
+            >
+              <FileCheck2 className="h-3.5 w-3.5" />
+              {t('nav.exams')}
+            </Link>
+            <Link
+              href="/activation"
+              className="inline-flex items-center gap-1.5 hover:text-primary transition-colors"
+            >
+              <KeyRound className="h-3.5 w-3.5" />
+              {t('nav.activation')}
+            </Link>
+            <Link href="#" className="hover:text-primary transition-colors">
+              {t('nav.hsk')}
+            </Link>
+            <Link href="#" className="hover:text-primary transition-colors">
+              {t('nav.vocab')}
+            </Link>
+            <Link href="#" className="hover:text-primary transition-colors">
+              {t('nav.blog')}
+            </Link>
+          </div>
+
+          <div className="md:hidden flex items-center">
+            <Sheet>
+              <SheetTrigger asChild>
+                <button className="p-2 text-muted-foreground hover:bg-muted hover:text-foreground rounded-md transition-colors mr-1">
+                  <Menu className="h-5 w-5" />
+                </button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[280px] sm:w-[350px] p-6 flex flex-col gap-6">
+                <SheetTitle className="text-left font-bold tracking-tight">Menu</SheetTitle>
+                <div className="flex flex-col gap-4 text-sm font-medium text-muted-foreground mt-4">
+                  <Link
+                    href="/courses"
+                    className="hover:text-primary transition-colors py-2 border-b"
+                  >
+                    {t('nav.courses')}
+                  </Link>
+                  <Link
+                    href="/practice"
+                    className="flex items-center gap-2 hover:text-primary transition-colors py-2 border-b"
+                  >
+                    <Dumbbell className="h-4 w-4" />
+                    {t('nav.practice')}
+                  </Link>
+                  <Link
+                    href="/roleplay"
+                    className="flex items-center gap-2 hover:text-primary transition-colors py-2 border-b"
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    Roleplay
+                  </Link>
+                  <Link
+                    href="/exams"
+                    className="flex items-center gap-2 hover:text-primary transition-colors py-2 border-b"
+                  >
+                    <FileCheck2 className="h-4 w-4" />
+                    {t('nav.exams')}
+                  </Link>
+                  <Link
+                    href="/activation"
+                    className="flex items-center gap-2 hover:text-primary transition-colors py-2 border-b"
+                  >
+                    <KeyRound className="h-4 w-4" />
+                    {t('nav.activation')}
+                  </Link>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+        </>
       )}
 
       <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">

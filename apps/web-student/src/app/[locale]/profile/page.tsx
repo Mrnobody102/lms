@@ -2,7 +2,11 @@
 
 import { useProfileStats } from '../../../hooks/use-profile-stats';
 import { StudentNav } from '../../../components/layout/student-nav';
-import { Clock, Flame, Trophy, BookOpen, Activity, Loader2 } from 'lucide-react';
+import { Clock, Flame, Trophy, BookOpen, Activity, Loader2, User as UserIcon } from 'lucide-react';
+
+import { useAuthStore } from '../../../features/auth/auth.store';
+import { Link } from '../../../navigation';
+import { useTranslations } from 'next-intl';
 
 function timeAgo(dateString: string) {
   const date = new Date(dateString);
@@ -29,7 +33,34 @@ function formatDuration(seconds: number) {
 }
 
 export default function ProfilePage() {
+  const { isAuthenticated } = useAuthStore();
+  const authT = useTranslations('Student.auth');
   const { data: stats, isLoading } = useProfileStats();
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-background font-sans">
+        <StudentNav showLinks />
+        <main className="mx-auto max-w-lg px-6 py-24">
+          <div className="rounded-xl border bg-card p-8 shadow-sm text-center">
+            <div className="mb-4 mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <UserIcon className="h-6 w-6" />
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight">Hồ sơ Học viên</h1>
+            <p className="mt-4 text-muted-foreground">
+              Vui lòng đăng nhập để xem hồ sơ và thống kê học tập.
+            </p>
+            <Link
+              href="/login?next=/profile"
+              className="mt-8 flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary font-medium text-primary-foreground transition-all hover:bg-primary/90"
+            >
+              {authT('loginButton')}
+            </Link>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
