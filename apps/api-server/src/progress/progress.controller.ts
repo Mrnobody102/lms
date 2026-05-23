@@ -65,6 +65,14 @@ export class ProgressController {
     return this.progressService.getSummary(req.user.id, req.user.tenantId, req.user.role);
   }
 
+  @Get('course-metrics')
+  @ApiOperation({ summary: 'Get metrics across enrolled courses for comparison chart' })
+  @ApiResponse({ status: 200, description: 'Metrics retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getCourseMetrics(@Request() req: AuthenticatedRequest) {
+    return this.progressService.getCourseMetrics(req.user.id, req.user.tenantId, req.user.role);
+  }
+
   @Get('performance')
   @ApiOperation({ summary: 'Get student performance analytics by unit and skill' })
   @ApiResponse({ status: 200, description: 'Performance report retrieved successfully' })

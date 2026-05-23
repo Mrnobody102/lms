@@ -90,7 +90,10 @@
         "weak": "Needs practice",
         "progressing": "Progressing",
         "strong": "Strong"
-      }
+      },
+      "explainWeakness": "Why am I weak?",
+      "weaknessTip": "Improvement tip",
+      "noDescription": "Keep practicing to improve this skill."
     },
     "skillMasteryTrend": {
       "title": "Mastery trend",
@@ -101,6 +104,11 @@
       "title": "Continue your course",
       "subtitle": "Resume the next lesson and track completion across your enrolled courses.",
       "allCourses": "All courses",
+      "courseComparison": "Course Comparison",
+      "courseComparisonDesc": "Compare your progress, mastery, and time spent across courses.",
+      "comparisonCompletion": "Completion (%)",
+      "comparisonMastery": "Mastery (%)",
+      "comparisonTime": "Time (mins)",
       "loading": "Loading learning progress...",
       "emptyTitle": "No learning progress yet",
       "emptyDesc": "Open an enrolled course to start tracking progress.",

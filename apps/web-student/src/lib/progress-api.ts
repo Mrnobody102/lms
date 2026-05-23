@@ -130,4 +130,17 @@ export const progressApi = {
     });
     return response.data;
   },
+
+  getCourseMetrics: async () => {
+    const response = await api.get<
+      {
+        courseId: string;
+        courseName: string;
+        completionPercentage: number;
+        timeSpentMinutes: number;
+        mastery: number;
+      }[]
+    >('/progress/course-metrics');
+    return response.data;
+  },
 };

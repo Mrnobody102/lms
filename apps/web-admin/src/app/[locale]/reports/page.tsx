@@ -27,10 +27,15 @@ export default function ReportsHomePage() {
   const [selectedCohortId, setSelectedCohortId] = useState<string>(
     () => searchParams.get('cohortId') ?? '',
   );
+  const [compareCohortId, setCompareCohortId] = useState<string>('');
   const [trendDays, setTrendDays] = useState<number>(30);
 
   const filters = selectedCohortId ? { cohortId: selectedCohortId } : {};
-  const trendFilters = { ...filters, days: trendDays };
+  const trendFilters = {
+    ...filters,
+    days: trendDays,
+    cohortIds: [selectedCohortId, compareCohortId].filter(Boolean),
+  };
   const { data, isLoading, error } = useProgramsReport(filters);
 
   const rows: Row[] = data
@@ -63,6 +68,25 @@ export default function ReportsHomePage() {
                     ))}
                   </select>
                 </label>
+                {selectedCohortId && (
+                  <label className="flex items-center gap-2">
+                    <span className="text-sm font-medium">{t('reports.compareWithLabel')}</span>
+                    <select
+                      className="h-9 px-3 rounded-md border border-input bg-background text-sm min-w-[150px]"
+                      value={compareCohortId}
+                      onChange={(e) => setCompareCohortId(e.target.value)}
+                    >
+                      <option value="">{t('common.none') ?? 'None'}</option>
+                      {cohorts
+                        .filter((c) => c.id !== selectedCohortId)
+                        .map((cohort) => (
+                          <option key={cohort.id} value={cohort.id}>
+                            {cohort.name}
+                          </option>
+                        ))}
+                    </select>
+                  </label>
+                )}
                 <label className="flex items-center gap-2">
                   <span className="text-sm font-medium">{t('reports.trendWindowLabel')}</span>
                   <select

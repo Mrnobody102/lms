@@ -1,5 +1,7 @@
 'use client';
 
+import React, { useMemo } from 'react';
+
 import { useTranslations } from 'next-intl';
 import { TrendingUp } from 'lucide-react';
 import { useMasteryTrend } from '@/hooks/use-reports';
@@ -23,14 +25,48 @@ export function TrendReportPanel({ filters = {} }: TrendReportPanelProps) {
   const t = useTranslations('Admin');
   const { data, isLoading } = useMasteryTrend(filters);
 
-  const skillCodes = new Set<string>();
-  if (data?.trend) {
-    data.trend.forEach((day) => {
-      Object.keys(day).forEach((key) => {
-        if (key !== 'date') skillCodes.add(key);
+  const { chartData, lines } = useMemo(() => {
+    if (!data?.series?.length) return { chartData: [], lines: [] };
+
+    const map = new Map<string, Record<string, string | number>>();
+    const lines: { key: string; name: string }[] = [];
+
+    const isMulti = data.series.length > 1;
+
+    data.series.forEach((s) => {
+      const skillCodes = new Set<string>();
+      s.trend.forEach((day) => {
+        Object.keys(day).forEach((key) => {
+          if (key !== 'date') skillCodes.add(key);
+        });
+      });
+
+      skillCodes.forEach((code) => {
+        lines.push({
+          key: `${code}_${s.cohortId}`,
+          name: isMulti ? `${code} (${s.cohortName})` : code,
+        });
+      });
+
+      s.trend.forEach((t) => {
+        const dateStr = t.date as string;
+        let bucket = map.get(dateStr);
+        if (!bucket) {
+          bucket = { date: dateStr };
+          map.set(dateStr, bucket);
+        }
+        Object.keys(t).forEach((k) => {
+          if (k !== 'date') bucket[`${k}_${s.cohortId}`] = t[k];
+        });
       });
     });
-  }
+    return {
+      chartData: Array.from(map.values()).sort((a, b) =>
+        (a.date as string).localeCompare(b.date as string),
+      ),
+      lines,
+    };
+  }, [data]);
 
   const colors = [
     'hsl(var(--primary))',
@@ -63,12 +99,12 @@ export function TrendReportPanel({ filters = {} }: TrendReportPanelProps) {
             <div key={i} className="h-8 rounded bg-muted animate-pulse" />
           ))}
         </div>
-      ) : !data || data.trend.length === 0 || skillCodes.size === 0 ? (
+      ) : chartData.length === 0 || lines.length === 0 ? (
         <p className="text-sm text-muted-foreground py-6 text-center">{t('reports.noData')}</p>
       ) : (
         <div className="w-full h-[300px] mt-6">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data.trend} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+            <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
               <XAxis
                 dataKey="date"
@@ -99,12 +135,12 @@ export function TrendReportPanel({ filters = {} }: TrendReportPanelProps) {
                 formatter={(value) => [`${value}%`]}
               />
               <Legend wrapperStyle={{ paddingTop: '20px', fontSize: 14 }} />
-              {Array.from(skillCodes).map((code, index) => (
+              {lines.map((l, index) => (
                 <Line
-                  key={code}
+                  key={l.key}
                   type="monotone"
-                  dataKey={code}
-                  name={code}
+                  dataKey={l.key}
+                  name={l.name}
                   stroke={colors[index % colors.length]}
                   strokeWidth={2}
                   dot={{ r: 4, strokeWidth: 2 }}

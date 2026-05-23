@@ -341,7 +341,9 @@ describe('AdminReportsService', () => {
           days: 3,
         });
 
-        expect(result.trend).toEqual([
+        expect(result.series).toHaveLength(1);
+        expect(result.series[0].cohortId).toBe('cohort-1');
+        expect(result.series[0].trend).toEqual([
           { date: '2026-05-21', opened: 0, completed: 0 },
           { date: '2026-05-22', opened: 1, completed: 0 },
           { date: '2026-05-23', opened: 0, completed: 1 },

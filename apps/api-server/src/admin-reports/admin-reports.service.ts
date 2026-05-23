@@ -16,6 +16,8 @@ const MAX_TREND_DAYS = 90;
 
 interface ReportFilters {
   cohortId?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 interface CourseReportFilters extends ReportFilters {
@@ -25,6 +27,7 @@ interface CourseReportFilters extends ReportFilters {
 
 interface TrendReportFilters extends CourseReportFilters {
   days?: number;
+  cohortIds?: string[];
 }
 
 interface CourseAccuracyBucket {
@@ -301,6 +304,12 @@ export class AdminReportsService {
     const learnerIds = course.enrollments.map((e) => e.userId);
     const lessonCount = course.lessons.length;
 
+    const dateFilter = {
+      ...(filters.startDate ? { gte: new Date(filters.startDate) } : {}),
+      ...(filters.endDate ? { lte: new Date(filters.endDate) } : {}),
+    };
+    const hasDateFilter = Object.keys(dateFilter).length > 0;
+
     const [progressRecords, activityRecords, practiceAggregates, examAggregates] =
       await Promise.all([
         learnerIds.length === 0
@@ -312,6 +321,7 @@ export class AdminReportsService {
                 status: ProgressStatus.COMPLETED,
                 lesson: { courseId, deletedAt: null },
                 ...this.cohortUserWhere(tenantId, filters.cohortId),
+                ...(hasDateFilter ? { updatedAt: dateFilter } : {}),
               },
               select: { userId: true },
             }),
@@ -323,6 +333,7 @@ export class AdminReportsService {
                 courseId,
                 userId: { in: learnerIds },
                 ...this.cohortUserWhere(tenantId, filters.cohortId),
+                ...(hasDateFilter ? { occurredAt: dateFilter } : {}),
               },
               select: { userId: true, occurredAt: true },
               orderBy: { occurredAt: 'desc' },
@@ -337,6 +348,7 @@ export class AdminReportsService {
                 userId: { in: learnerIds },
                 status: PracticeAttemptStatus.SUBMITTED,
                 ...this.cohortUserWhere(tenantId, filters.cohortId),
+                ...(hasDateFilter ? { createdAt: dateFilter } : {}),
               },
               _sum: { score: true, totalPoints: true },
               _count: { id: true },
@@ -351,6 +363,7 @@ export class AdminReportsService {
                 userId: { in: learnerIds },
                 status: ExamAttemptStatus.SUBMITTED,
                 ...this.cohortUserWhere(tenantId, filters.cohortId),
+                ...(hasDateFilter ? { createdAt: dateFilter } : {}),
               },
               _sum: { score: true, totalPoints: true },
               _count: { id: true },
@@ -394,6 +407,38 @@ export class AdminReportsService {
         lessonCount === 0 ? 0 : Math.round((completedLessons / lessonCount) * 100);
       const practice = practiceByUser.get(enrollment.userId);
       const exam = examByUser.get(enrollment.userId);
+      const practiceAccuracy = this.percent(practice?.score, practice?.totalPoints);
+      const examAccuracy = this.percent(exam?.score, exam?.totalPoints);
+      const lastActivityAt = lastActivityByUser.get(enrollment.userId) ?? null;
+
+      const riskFlags: ('NO_ACTIVITY' | 'FALLING_BEHIND' | 'LOW_MASTERY')[] = [];
+      const now = new Date();
+      const enrolledDays = Math.floor(
+        (now.getTime() - enrollment.enrolledAt.getTime()) / (1000 * 60 * 60 * 24),
+      );
+
+      if (!lastActivityAt) {
+        if (enrolledDays > 7) riskFlags.push('NO_ACTIVITY');
+      } else {
+        const inactiveDays = Math.floor(
+          (now.getTime() - lastActivityAt.getTime()) / (1000 * 60 * 60 * 24),
+        );
+        if (inactiveDays > 7) riskFlags.push('NO_ACTIVITY');
+      }
+
+      if (enrolledDays > 14 && completionPercentage < 20) {
+        riskFlags.push('FALLING_BEHIND');
+      }
+
+      const hasPractice = practiceAccuracy !== null;
+      const hasExam = examAccuracy !== null;
+      if (hasPractice || hasExam) {
+        const avg =
+          ((practiceAccuracy ?? 0) + (examAccuracy ?? 0)) /
+          ((hasPractice ? 1 : 0) + (hasExam ? 1 : 0));
+        if (avg < 50) riskFlags.push('LOW_MASTERY');
+      }
+
       return {
         userId: enrollment.userId,
         fullName: enrollment.user.fullName,
@@ -403,11 +448,12 @@ export class AdminReportsService {
         completedLessons,
         totalLessons: lessonCount,
         completionPercentage,
-        practiceAccuracy: this.percent(practice?.score, practice?.totalPoints),
-        examAccuracy: this.percent(exam?.score, exam?.totalPoints),
+        practiceAccuracy,
+        examAccuracy,
         practiceAttempts: practice?.attempts ?? 0,
         examAttempts: exam?.attempts ?? 0,
-        lastActivityAt: lastActivityByUser.get(enrollment.userId) ?? null,
+        lastActivityAt,
+        riskFlags,
       };
     });
 
@@ -424,6 +470,12 @@ export class AdminReportsService {
     await this.ensureCohortInTenant(tenantId, filters.cohortId);
     const courseFilter = await this.resolveCourseFilter(tenantId, filters);
 
+    const dateFilter = {
+      ...(filters.startDate ? { gte: new Date(filters.startDate) } : {}),
+      ...(filters.endDate ? { lte: new Date(filters.endDate) } : {}),
+    };
+    const hasDateFilter = Object.keys(dateFilter).length > 0;
+
     const [practiceAnswers, examAnswers] = await Promise.all([
       this.prisma.practiceAnswer.findMany({
         where: {
@@ -433,6 +485,7 @@ export class AdminReportsService {
             status: PracticeAttemptStatus.SUBMITTED,
             ...(courseFilter ? { courseId: courseFilter } : {}),
             ...this.cohortUserWhere(tenantId, filters.cohortId),
+            ...(hasDateFilter ? { createdAt: dateFilter } : {}),
           },
         },
         include: {
@@ -453,6 +506,7 @@ export class AdminReportsService {
             status: ExamAttemptStatus.SUBMITTED,
             ...(courseFilter ? { courseId: courseFilter } : {}),
             ...this.cohortUserWhere(tenantId, filters.cohortId),
+            ...(hasDateFilter ? { createdAt: dateFilter } : {}),
           },
         },
         include: {
@@ -529,114 +583,185 @@ export class AdminReportsService {
   }
 
   async getActivityTrend(tenantId: string, filters: TrendReportFilters = {}) {
-    await this.ensureCohortInTenant(tenantId, filters.cohortId);
+    if (filters.cohortId) {
+      await this.ensureCohortInTenant(tenantId, filters.cohortId);
+    }
     const courseFilter = await this.resolveCourseFilter(tenantId, filters);
     const { startDate, days } = this.getTrendWindow(filters.days);
 
-    const records = await this.prisma.learningActivity.findMany({
-      where: {
-        tenantId,
-        occurredAt: { gte: startDate },
-        ...(courseFilter ? { courseId: courseFilter } : {}),
-        ...this.cohortUserWhere(tenantId, filters.cohortId),
-      },
-      select: {
-        occurredAt: true,
-        type: true,
-      },
-    });
+    const cohortIds = filters.cohortIds?.length
+      ? filters.cohortIds
+      : filters.cohortId
+        ? [filters.cohortId]
+        : [null];
 
-    const trendMap = new Map<string, { date: string; opened: number; completed: number }>();
-
-    for (let i = 0; i < days; i++) {
-      const d = new Date(startDate);
-      d.setDate(d.getDate() + i);
-      const dateStr = d.toISOString().split('T')[0];
-      trendMap.set(dateStr, { date: dateStr, opened: 0, completed: 0 });
+    const cohortNames = new Map<string, string>();
+    if (filters.cohortIds?.length) {
+      const cohorts = await this.prisma.cohort.findMany({
+        where: { tenantId, id: { in: filters.cohortIds } },
+        select: { id: true, name: true },
+      });
+      cohorts.forEach((c) => cohortNames.set(c.id, c.name));
+    } else if (filters.cohortId) {
+      const cohort = await this.prisma.cohort.findFirst({
+        where: { tenantId, id: filters.cohortId },
+        select: { id: true, name: true },
+      });
+      if (cohort) cohortNames.set(cohort.id, cohort.name);
     }
 
-    for (const record of records) {
-      const dateStr = record.occurredAt.toISOString().split('T')[0];
-      const bucket = trendMap.get(dateStr);
-      if (bucket) {
-        if (record.type === LearningActivityType.LESSON_OPENED) bucket.opened += 1;
-        if (record.type === LearningActivityType.LESSON_COMPLETED) bucket.completed += 1;
-      }
-    }
+    const series = await Promise.all(
+      cohortIds.map(async (cohortId) => {
+        const records = await this.prisma.learningActivity.findMany({
+          where: {
+            tenantId,
+            occurredAt: { gte: startDate },
+            ...(courseFilter ? { courseId: courseFilter } : {}),
+            ...this.cohortUserWhere(tenantId, cohortId || undefined),
+          },
+          select: {
+            occurredAt: true,
+            type: true,
+          },
+        });
 
-    return {
-      trend: Array.from(trendMap.values()),
-    };
+        const trendMap = new Map<string, { date: string; opened: number; completed: number }>();
+
+        for (let i = 0; i < days; i++) {
+          const d = new Date(startDate);
+          d.setDate(d.getDate() + i);
+          const dateStr = d.toISOString().split('T')[0];
+          trendMap.set(dateStr, { date: dateStr, opened: 0, completed: 0 });
+        }
+
+        for (const record of records) {
+          const dateStr = record.occurredAt.toISOString().split('T')[0];
+          const bucket = trendMap.get(dateStr);
+          if (bucket) {
+            if (record.type === LearningActivityType.LESSON_OPENED) bucket.opened += 1;
+            if (record.type === LearningActivityType.LESSON_COMPLETED) bucket.completed += 1;
+          }
+        }
+
+        return {
+          cohortId: cohortId || 'all',
+          cohortName: cohortId ? cohortNames.get(cohortId) || 'Unknown' : 'All Students',
+          trend: Array.from(trendMap.values()),
+        };
+      }),
+    );
+
+    return { series };
   }
 
-  async getMasteryTrend(tenantId: string, filters: ReportFilters & { days?: number } = {}) {
-    await this.ensureCohortInTenant(tenantId, filters.cohortId);
+  async getMasteryTrend(tenantId: string, filters: TrendReportFilters = {}) {
+    if (filters.cohortIds?.length) {
+      for (const cohortId of filters.cohortIds) await this.ensureCohortInTenant(tenantId, cohortId);
+    } else if (filters.cohortId) {
+      await this.ensureCohortInTenant(tenantId, filters.cohortId);
+    }
     const { startDate, days } = this.getTrendWindow(filters.days);
 
-    const whereClause: Prisma.SkillMasterySnapshotWhereInput = {
-      tenantId,
-      date: { gte: startDate },
-    };
+    const cohortIds = filters.cohortIds?.length
+      ? filters.cohortIds
+      : filters.cohortId
+        ? [filters.cohortId]
+        : [null];
 
-    if (filters.cohortId) {
-      whereClause.user = {
-        cohortMemberships: {
-          some: { tenantId, cohortId: filters.cohortId },
-        },
-      };
+    const cohortNames = new Map<string, string>();
+    if (filters.cohortIds?.length) {
+      const cohorts = await this.prisma.cohort.findMany({
+        where: { tenantId, id: { in: filters.cohortIds } },
+        select: { id: true, name: true },
+      });
+      cohorts.forEach((c) => cohortNames.set(c.id, c.name));
+    } else if (filters.cohortId) {
+      const cohort = await this.prisma.cohort.findFirst({
+        where: { tenantId, id: filters.cohortId },
+        select: { id: true, name: true },
+      });
+      if (cohort) cohortNames.set(cohort.id, cohort.name);
     }
 
-    const records = await this.prisma.skillMasterySnapshot.findMany({
-      where: whereClause,
-      select: {
-        skillCode: true,
-        mastery: true,
-        date: true,
-      },
-    });
+    const series = await Promise.all(
+      cohortIds.map(async (cohortId) => {
+        const whereClause: Prisma.SkillMasterySnapshotWhereInput = {
+          tenantId,
+          date: { gte: startDate },
+        };
 
-    const trendMap = new Map<string, Record<string, number | string>>();
-
-    for (let i = 0; i < days; i++) {
-      const d = new Date(startDate);
-      d.setDate(d.getDate() + i);
-      const dateStr = d.toISOString().split('T')[0];
-      trendMap.set(dateStr, { date: dateStr });
-    }
-
-    const aggregated = new Map<string, { [skillCode: string]: { sum: number; count: number } }>();
-
-    for (const record of records) {
-      const dateStr = record.date.toISOString().split('T')[0];
-      let dayAgg = aggregated.get(dateStr);
-      if (!dayAgg) {
-        dayAgg = {};
-        aggregated.set(dateStr, dayAgg);
-      }
-      let skillAgg = dayAgg[record.skillCode];
-      if (!skillAgg) {
-        skillAgg = { sum: 0, count: 0 };
-        dayAgg[record.skillCode] = skillAgg;
-      }
-      skillAgg.sum += record.mastery;
-      skillAgg.count += 1;
-    }
-
-    for (const [dateStr, dayAgg] of aggregated.entries()) {
-      const bucket = trendMap.get(dateStr);
-      if (bucket) {
-        for (const skillCode in dayAgg) {
-          bucket[skillCode] = Math.round((dayAgg[skillCode].sum / dayAgg[skillCode].count) * 100);
+        if (cohortId) {
+          whereClause.user = {
+            cohortMemberships: {
+              some: { tenantId, cohortId },
+            },
+          };
         }
-      }
-    }
 
-    return {
-      trend: Array.from(trendMap.values()),
-    };
+        const records = await this.prisma.skillMasterySnapshot.findMany({
+          where: whereClause,
+          select: {
+            skillCode: true,
+            mastery: true,
+            date: true,
+          },
+        });
+
+        const trendMap = new Map<string, Record<string, number | string>>();
+
+        for (let i = 0; i < days; i++) {
+          const d = new Date(startDate);
+          d.setDate(d.getDate() + i);
+          const dateStr = d.toISOString().split('T')[0];
+          trendMap.set(dateStr, { date: dateStr });
+        }
+
+        const aggregated = new Map<
+          string,
+          { [skillCode: string]: { sum: number; count: number } }
+        >();
+
+        for (const record of records) {
+          const dateStr = record.date.toISOString().split('T')[0];
+          let dayAgg = aggregated.get(dateStr);
+          if (!dayAgg) {
+            dayAgg = {};
+            aggregated.set(dateStr, dayAgg);
+          }
+          if (!dayAgg[record.skillCode]) {
+            dayAgg[record.skillCode] = { sum: 0, count: 0 };
+          }
+          dayAgg[record.skillCode].sum += record.mastery;
+          dayAgg[record.skillCode].count += 1;
+        }
+
+        for (const [dateStr, dayAgg] of aggregated.entries()) {
+          const bucket = trendMap.get(dateStr);
+          if (bucket) {
+            for (const [skillCode, stats] of Object.entries(dayAgg)) {
+              bucket[skillCode] = stats.count === 0 ? 0 : Math.round(stats.sum / stats.count);
+            }
+          }
+        }
+
+        return {
+          cohortId: cohortId || 'all',
+          cohortName: cohortId ? cohortNames.get(cohortId) || 'Unknown' : 'All Students',
+          trend: Array.from(trendMap.values()),
+        };
+      }),
+    );
+
+    return { series };
   }
 
   private async computeUnitAccuracy(tenantId: string, courseId: string, filters: ReportFilters) {
+    const dateFilter = {
+      ...(filters.startDate ? { gte: new Date(filters.startDate) } : {}),
+      ...(filters.endDate ? { lte: new Date(filters.endDate) } : {}),
+    };
+    const hasDateFilter = Object.keys(dateFilter).length > 0;
+
     const [practiceAnswers, examAnswers] = await Promise.all([
       this.prisma.practiceAnswer.findMany({
         where: {
@@ -646,6 +771,7 @@ export class AdminReportsService {
             courseId,
             status: PracticeAttemptStatus.SUBMITTED,
             ...this.cohortUserWhere(tenantId, filters.cohortId),
+            ...(hasDateFilter ? { createdAt: dateFilter } : {}),
           },
         },
         select: {
@@ -667,6 +793,7 @@ export class AdminReportsService {
             courseId,
             status: ExamAttemptStatus.SUBMITTED,
             ...this.cohortUserWhere(tenantId, filters.cohortId),
+            ...(hasDateFilter ? { createdAt: dateFilter } : {}),
           },
         },
         select: {
@@ -879,16 +1006,18 @@ export class AdminReportsService {
     }
   }
 
-  private cohortUserWhere(tenantId: string, cohortId?: string) {
-    return cohortId
-      ? {
-          user: {
-            cohortMemberships: {
-              some: { tenantId, cohortId },
-            },
+  private cohortUserWhere(tenantId: string, cohortId?: string | string[]) {
+    if (!cohortId || (Array.isArray(cohortId) && cohortId.length === 0)) return {};
+    return {
+      user: {
+        cohortMemberships: {
+          some: {
+            tenantId,
+            cohortId: Array.isArray(cohortId) ? { in: cohortId } : cohortId,
           },
-        }
-      : {};
+        },
+      },
+    };
   }
 
   private getTrendWindow(days?: number): { startDate: Date; days: number } {

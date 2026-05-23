@@ -231,6 +231,22 @@ function StudentsTab({
                 ),
             },
             {
+              header: t('reports.riskFlags'),
+              render: (r) => {
+                if (!r.riskFlags || r.riskFlags.length === 0)
+                  return <span className="text-muted-foreground">—</span>;
+                return (
+                  <div className="flex flex-col gap-1 items-start">
+                    {r.riskFlags.map((flag) => (
+                      <Badge key={flag} variant="destructive" className="text-[10px] px-1.5 py-0">
+                        {t(`reports.risk${flag}` as Parameters<typeof t>[0])}
+                      </Badge>
+                    ))}
+                  </div>
+                );
+              },
+            },
+            {
               header: t('reports.completion'),
               render: (r) => <ProgressBarCell value={r.completionPercentage} />,
             },

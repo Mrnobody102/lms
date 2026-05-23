@@ -95,10 +95,14 @@ export class AdminReportsController {
     @Request() req: AuthenticatedRequest,
     @Param('courseId', ParseUUIDPipe) courseId: string,
     @Query('cohortId') cohortId: string | undefined,
+    @Query('startDate') startDate: string | undefined,
+    @Query('endDate') endDate: string | undefined,
     @Res() res: Response,
   ) {
     const data = await this.reportsService.getCourseStudents(getScopedTenantId(req), courseId, {
       cohortId,
+      startDate,
+      endDate,
     });
     const rows = data.students.slice(0, AdminReportsService.CSV_ROW_CAP);
     const csv = buildCsv(rows, [
@@ -127,10 +131,14 @@ export class AdminReportsController {
     @Request() req: AuthenticatedRequest,
     @Param('courseId', ParseUUIDPipe) courseId: string,
     @Query('cohortId') cohortId: string | undefined,
+    @Query('startDate') startDate: string | undefined,
+    @Query('endDate') endDate: string | undefined,
     @Res() res: Response,
   ) {
     const data = await this.reportsService.getCourseUnits(getScopedTenantId(req), courseId, {
       cohortId,
+      startDate,
+      endDate,
     });
     const rows = data.units.slice(0, AdminReportsService.CSV_ROW_CAP);
     const csv = buildCsv(rows, [
@@ -150,12 +158,15 @@ export class AdminReportsController {
     @Query('courseId') courseId?: string,
     @Query('programId') programId?: string,
     @Query('cohortId') cohortId?: string,
+    @Query('cohortIds') cohortIds?: string | string[],
     @Query('days') days?: string,
   ) {
+    const cIds = cohortIds ? (Array.isArray(cohortIds) ? cohortIds : [cohortIds]) : undefined;
     return this.reportsService.getActivityTrend(getScopedTenantId(req), {
       courseId,
       programId,
       cohortId,
+      cohortIds: cIds,
       days: parseTrendDays(days),
     });
   }
@@ -165,10 +176,13 @@ export class AdminReportsController {
   getMasteryTrend(
     @Request() req: AuthenticatedRequest,
     @Query('cohortId') cohortId?: string,
+    @Query('cohortIds') cohortIds?: string | string[],
     @Query('days') days?: string,
   ) {
+    const cIds = cohortIds ? (Array.isArray(cohortIds) ? cohortIds : [cohortIds]) : undefined;
     return this.reportsService.getMasteryTrend(getScopedTenantId(req), {
       cohortId,
+      cohortIds: cIds,
       days: parseTrendDays(days),
     });
   }
@@ -181,11 +195,15 @@ export class AdminReportsController {
     @Query('courseId') courseId?: string,
     @Query('programId') programId?: string,
     @Query('cohortId') cohortId?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
   ) {
     const data = await this.reportsService.getSkillsAccuracy(getScopedTenantId(req), {
       courseId,
       programId,
       cohortId,
+      startDate,
+      endDate,
     });
     const rows = data.accuracyBySkill.slice(0, AdminReportsService.CSV_ROW_CAP);
     const csv = buildCsv(rows, [

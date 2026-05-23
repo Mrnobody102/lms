@@ -2,6 +2,8 @@ import api from './api';
 
 export interface ReportFilters {
   cohortId?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface CourseReportFilters extends ReportFilters {
@@ -11,6 +13,7 @@ export interface CourseReportFilters extends ReportFilters {
 
 export interface TrendReportFilters extends CourseReportFilters {
   days?: number;
+  cohortIds?: string[];
 }
 
 export interface ProgramRollupRow {
@@ -103,6 +106,7 @@ export interface CourseStudentRow {
   examAccuracy: number;
   examAttempts: number;
   lastActivityAt: string | null;
+  riskFlags: ('NO_ACTIVITY' | 'FALLING_BEHIND' | 'LOW_MASTERY')[];
 }
 
 export interface CourseStudentsResponse {
@@ -164,13 +168,31 @@ export const reportsApi = {
   getActivityTrend(filters: TrendReportFilters = {}) {
     return api
       .get('/admin/reports/activity-trend', { params: filters })
-      .then((r) => r.data as { trend: Array<{ date: string; opened: number; completed: number }> });
+      .then(
+        (r) =>
+          r.data as {
+            series: Array<{
+              cohortId: string;
+              cohortName: string;
+              trend: Array<{ date: string; opened: number; completed: number }>;
+            }>;
+          },
+      );
   },
 
-  getMasteryTrend(filters: ReportFilters & { days?: number } = {}) {
+  getMasteryTrend(filters: TrendReportFilters = {}) {
     return api
       .get('/admin/reports/mastery-trend', { params: filters })
-      .then((r) => r.data as { trend: Array<Record<string, string | number>> });
+      .then(
+        (r) =>
+          r.data as {
+            series: Array<{
+              cohortId: string;
+              cohortName: string;
+              trend: Array<Record<string, string | number>>;
+            }>;
+          },
+      );
   },
 
   /**

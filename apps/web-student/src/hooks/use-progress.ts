@@ -48,3 +48,11 @@ export function useProgressSummary(enabled = true) {
     staleTime: 60 * 1000,
   });
 }
+
+export function useCourseMetrics() {
+  return useQuery({
+    queryKey: ['course-metrics'],
+    queryFn: () => progressApi.getCourseMetrics(),
+    staleTime: 60 * 1000,
+  });
+}

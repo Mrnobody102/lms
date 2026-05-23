@@ -1,6 +1,15 @@
 'use client';
 
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight, Sparkles, HelpCircle } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  Button,
+} from '@repo/ui';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/navigation';
 import { useSkillMastery } from '@/hooks/use-skills';
@@ -69,7 +78,53 @@ export function SkillMasteryPanel({ locale }: { locale: string }) {
               />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-medium truncate">{displayName(entry, locale)}</span>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-sm font-medium truncate">
+                      {displayName(entry, locale)}
+                    </span>
+                    {entry.mastery < 0.7 && (
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <button
+                            className="text-muted-foreground hover:text-primary transition-colors focus:outline-none shrink-0"
+                            aria-label={t('explainWeakness')}
+                          >
+                            <HelpCircle className="h-3.5 w-3.5" />
+                          </button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[400px]">
+                          <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2">
+                              <div
+                                className="h-3 w-3 rounded-full shrink-0"
+                                style={{ backgroundColor: color }}
+                              />
+                              {displayName(entry, locale)}
+                            </DialogTitle>
+                            <DialogDescription className="text-left mt-2 whitespace-pre-line text-sm text-foreground">
+                              {entry.skill?.description || t('noDescription')}
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="mt-2 p-3 bg-muted/50 rounded-lg border border-border/50">
+                            <h4 className="text-sm font-medium mb-1">{t('weaknessTip')}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              {t('attempts', { count: entry.attempts })}. {t(`label.${label}`)}.
+                            </p>
+                          </div>
+                          <div className="mt-4 flex justify-end">
+                            <Button asChild>
+                              <Link
+                                href={{ pathname: '/practice', query: { skill: entry.skillCode } }}
+                              >
+                                {t('practiceNow')}
+                                <ArrowRight className="ml-2 h-4 w-4" />
+                              </Link>
+                            </Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    )}
+                  </div>
                   <span className="text-xs font-semibold text-muted-foreground tabular-nums">
                     {pct}%
                   </span>

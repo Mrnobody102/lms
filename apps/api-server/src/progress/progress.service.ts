@@ -444,4 +444,68 @@ export class ProgressService {
       return { dueNow: 0, dueToday: 0, total: 0 };
     }
   }
+
+  async getCourseMetrics(userId: string, tenantId: string, role: Role) {
+    const courses = await this.prisma.course.findMany({
+      where: this.learningAccess.courseWhere(tenantId, { id: userId, role }),
+      select: {
+        id: true,
+        title: true,
+        lessons: {
+          where: { deletedAt: null },
+          select: {
+            id: true,
+            progress: {
+              where: { userId, tenantId },
+              select: { status: true },
+              take: 1,
+            },
+          },
+        },
+      },
+    });
+
+    const metrics = await Promise.all(
+      courses.map(async (course) => {
+        // Calculate completion
+        const totalLessons = course.lessons.length;
+        const completedLessons = course.lessons.filter(
+          (lesson) => lesson.progress[0]?.status === ProgressStatus.COMPLETED,
+        ).length;
+        const completionPercentage =
+          totalLessons === 0 ? 0 : Math.round((completedLessons / totalLessons) * 100);
+
+        // Get time spent
+        const activities = await this.prisma.learningActivity.findMany({
+          where: { userId, tenantId, courseId: course.id },
+          select: { timeSpentSeconds: true },
+        });
+        const timeSpentSeconds = activities.reduce(
+          (sum, act) => sum + (act.timeSpentSeconds || 0),
+          0,
+        );
+        const timeSpentMinutes = Math.round(timeSpentSeconds / 60);
+
+        // Get mastery (accuracy)
+        const perf = await this.getPerformanceReport(userId, tenantId, role, course.id);
+        const accuracy =
+          perf.accuracyByUnit.length > 0
+            ? Math.round(
+                perf.accuracyByUnit.reduce((sum, u) => sum + u.accuracy, 0) /
+                  perf.accuracyByUnit.length,
+              )
+            : 0;
+
+        return {
+          courseId: course.id,
+          courseName: course.title,
+          completionPercentage,
+          timeSpentMinutes,
+          mastery: accuracy,
+        };
+      }),
+    );
+
+    return metrics;
+  }
 }

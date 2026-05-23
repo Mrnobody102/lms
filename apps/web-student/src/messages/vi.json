@@ -90,7 +90,10 @@
         "weak": "Cần luyện thêm",
         "progressing": "Đang tiến bộ",
         "strong": "Đã vững"
-      }
+      },
+      "explainWeakness": "Tại sao tôi yếu?",
+      "weaknessTip": "Mẹo cải thiện",
+      "noDescription": "Tiếp tục luyện tập để cải thiện kỹ năng này nhé."
     },
     "skillMasteryTrend": {
       "title": "Xu hướng mastery",
@@ -101,6 +104,11 @@
       "title": "Tiếp tục khóa học",
       "subtitle": "Mở lại bài tiếp theo và theo dõi tiến độ các khóa học đã được enroll.",
       "allCourses": "Tất cả khóa học",
+      "courseComparison": "So sánh khóa học",
+      "courseComparisonDesc": "So sánh tiến độ, độ thông thạo và thời gian học giữa các khóa.",
+      "comparisonCompletion": "Tiến độ (%)",
+      "comparisonMastery": "Thông thạo (%)",
+      "comparisonTime": "Thời gian (phút)",
       "loading": "Đang tải tiến độ học tập...",
       "emptyTitle": "Chưa có tiến độ học tập",
       "emptyDesc": "Mở một khóa học đã được enroll để bắt đầu ghi nhận tiến độ.",
