@@ -7,6 +7,8 @@ import { LessonHeader } from '../../../../components/lessons/lesson-header';
 import { LessonSidebar } from '../../../../components/lessons/lesson-sidebar';
 import { LessonContent } from '../../../../components/lessons/lesson-content';
 import { LessonNavigation } from '../../../../components/lessons/lesson-navigation';
+import { CourseCertificatePanel } from '../../../../components/certificates/course-certificate-panel';
+import { DiscussionPanel } from '../../../../components/discussions/discussion-panel';
 import { useLesson, useCourse } from '../../../../hooks/use-courses';
 import {
   useCourseProgress,
@@ -132,6 +134,10 @@ export default function LessonPage() {
               (p) => p.lessonId === currentLesson.id && p.status === ProgressStatus.COMPLETED,
             )}
           />
+          <div className="mx-auto mb-10 w-full max-w-5xl px-4 sm:px-6 lg:px-10">
+            <CourseCertificatePanel courseId={currentLesson.courseId} />
+          </div>
+          <DiscussionPanel targetType="LESSON" lessonId={currentLesson.id} />
         </main>
 
         <LessonSidebar

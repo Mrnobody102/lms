@@ -38,6 +38,10 @@ interface RoleplayEvaluation {
   };
 }
 
+function isGeminiConfigured() {
+  return Boolean(process.env.GOOGLE_GENERATIVE_AI_API_KEY) && process.env.AI_PROVIDER !== 'off';
+}
+
 function multipleChoiceQuestionSchema(count: number) {
   return jsonSchema<GeneratedMultipleChoiceResponse>({
     type: 'object',
@@ -151,6 +155,10 @@ export class GeminiProvider implements IAiProvider {
 
   async generateExplanation(options: GenerateExplanationOptions): Promise<string> {
     try {
+      if (!isGeminiConfigured()) {
+        throw new Error('Gemini provider is not configured');
+      }
+
       const { questionPrompt, correctAnswer, userAnswer, skillTags, context } = options;
 
       const systemPrompt = `You are a friendly, encouraging, and highly effective AI tutor.
@@ -194,6 +202,10 @@ Please explain why the student's answer is incorrect and clarify the concept.`;
   ): Promise<GeneratedPracticeQuestion[]> {
     try {
       const { topic, context, count, questionType, skillTags } = options;
+
+      if (!isGeminiConfigured()) {
+        throw new Error('Gemini provider is not configured');
+      }
 
       const systemPrompt = `You are an expert instructional designer and teacher.
 Your task is to generate exactly ${count} practice questions about the topic: "${topic}".
@@ -250,6 +262,10 @@ ${context || 'None'}
 
   async chatRoleplay(messages: ModelMessage[], systemPrompt: string): Promise<string> {
     try {
+      if (!isGeminiConfigured()) {
+        throw new Error('Gemini provider is not configured');
+      }
+
       const { text } = await generateText({
         model: google('gemini-1.5-flash'),
         system: systemPrompt,
@@ -268,6 +284,10 @@ ${context || 'None'}
     scenario: string,
   ): Promise<{ score: number; feedback: unknown }> {
     try {
+      if (!isGeminiConfigured()) {
+        throw new Error('Gemini provider is not configured');
+      }
+
       const systemPrompt = `You are an expert language evaluator.
 Review the following roleplay conversation.
 The scenario was: "${scenario}"

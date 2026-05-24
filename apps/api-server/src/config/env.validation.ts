@@ -64,6 +64,7 @@ export const envSchema = z
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
     PORT: z.coerce.number().min(1).max(65535).default(4000),
     APP_PUBLIC_URL: publicUrlSchema,
+    NEXT_PUBLIC_WEB_STUDENT_URL: publicUrlSchema,
     DATABASE_URL: z.string().min(1),
 
     // Auth
@@ -174,6 +175,14 @@ export const envSchema = z
           path: ['MAIL_ENABLED'],
           message:
             'SMTP credentials (host, port, user, pass) are required when MAIL_ENABLED is true',
+        });
+      }
+
+      if (!env.NEXT_PUBLIC_WEB_STUDENT_URL) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['NEXT_PUBLIC_WEB_STUDENT_URL'],
+          message: 'NEXT_PUBLIC_WEB_STUDENT_URL is required when MAIL_ENABLED is true',
         });
       }
     }

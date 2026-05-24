@@ -199,10 +199,12 @@ describe('CourseService', () => {
 
   it('should bulk enroll active students in one transaction', async () => {
     const upsertEnrollment = vi.fn(
-      (args: { where: { userId_courseId: { userId: string; courseId: string } } }) =>
+      (args: {
+        where: { tenantId_userId_courseId: { tenantId: string; userId: string; courseId: string } };
+      }) =>
         Promise.resolve({
-          id: `enrollment-${args.where.userId_courseId.userId}`,
-          userId: args.where.userId_courseId.userId,
+          id: `enrollment-${args.where.tenantId_userId_courseId.userId}`,
+          userId: args.where.tenantId_userId_courseId.userId,
         }),
     );
     const prisma = {

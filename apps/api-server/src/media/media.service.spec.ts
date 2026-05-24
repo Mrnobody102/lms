@@ -5,9 +5,18 @@ import { MediaService } from './media.service';
 function createService(mediaAsset: Partial<Record<string, unknown>> | null) {
   const prisma = {
     mediaAsset: {
-      findUnique: vi.fn().mockResolvedValue(mediaAsset),
+      findFirst: vi
+        .fn()
+        .mockImplementation(({ where }: { where: { id: string; tenantId: string } }) => {
+          if (!mediaAsset || mediaAsset.id !== where.id || mediaAsset.tenantId !== where.tenantId) {
+            return Promise.resolve(null);
+          }
+
+          return Promise.resolve(mediaAsset);
+        }),
+      findFirstOrThrow: vi.fn().mockResolvedValue(mediaAsset),
       create: vi.fn(),
-      update: vi.fn(),
+      updateMany: vi.fn(),
     },
   };
   const storage = {

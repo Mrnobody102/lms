@@ -1,4 +1,4 @@
-import { defaultApiClient } from '@repo/api-client';
+import api from '@/lib/api';
 
 export interface UserStats {
   currentStreak: number;
@@ -17,7 +17,7 @@ export interface UserStats {
 
 export const userStatsApi = {
   getStats: async (): Promise<UserStats> => {
-    const { data } = await defaultApiClient.get<UserStats>('/users/me/stats');
+    const { data } = await api.get<UserStats>('/users/me/stats');
     return data;
   },
 };

@@ -14,6 +14,7 @@ import {
   PlayCircle,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { CourseCertificatePanel } from '@/components/certificates/course-certificate-panel';
 import { useTranslations } from 'next-intl';
 import { StudentNav } from '@/components/layout/student-nav';
 import { useCourse } from '@/hooks/use-courses';
@@ -198,6 +199,8 @@ export default function CourseDetailPage() {
                 </Link>
               </div>
             </article>
+
+            <CourseCertificatePanel courseId={course.id} />
 
             <section className="space-y-4">
               <div>

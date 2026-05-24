@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Loader2, User, Mail, Phone, Save } from 'lucide-react';
 import { Button, Input, Label, ImageUpload } from '@repo/ui';
-import { defaultApiClient } from '@repo/api-client';
+import api from '@/lib/api';
 import { useAuthStore } from '../../auth/auth.store';
 import { useMediaUpload } from '../../../hooks/use-media-upload';
 
@@ -27,6 +27,10 @@ export function ProfileForm() {
     return result;
   };
 
+  const handleAvatarUploadError = (err: unknown) => {
+    setError(err instanceof Error ? err.message : t('settings.profile.avatarUploadError'));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -34,7 +38,7 @@ export function ProfileForm() {
     setSuccess(false);
 
     try {
-      const response = await defaultApiClient.put('/users/me', {
+      const response = await api.put('/users/me', {
         fullName,
         phoneNumber: phoneNumber || null,
         avatarUrl: avatarUrl || null,
@@ -126,7 +130,13 @@ export function ProfileForm() {
             value={avatarUrl}
             onValueChange={setAvatarUrl}
             onUpload={handleAvatarUpload}
+            onUploadError={handleAvatarUploadError}
             isUploading={isUploadingMedia}
+            uploadedImageAlt={t('settings.profile.avatarAlt')}
+            changeLabel={t('settings.profile.avatarChange')}
+            uploadingLabel={t('settings.profile.avatarUploading')}
+            emptyLabel={t('settings.profile.avatarEmpty')}
+            helperText={t('settings.profile.avatarHelper')}
           />
         </div>
       </div>

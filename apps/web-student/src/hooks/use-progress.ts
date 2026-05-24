@@ -18,6 +18,7 @@ export function useUpdateProgress() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['course-progress'] });
       queryClient.invalidateQueries({ queryKey: ['progress-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['certificate-status'] });
     },
   });
 }

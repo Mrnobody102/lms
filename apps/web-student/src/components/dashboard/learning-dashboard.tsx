@@ -22,6 +22,7 @@ import { useProgressSummary } from '../../hooks/use-progress';
 import { getCourseProgressHref } from '../../lib/course-progress-utils';
 import { NextBestItem } from '../../components/dashboard/next-best-item';
 import { SrsReviewCard } from '../../components/dashboard/srs-review-card';
+import { DailyQuestWidget } from '../../components/dashboard/daily-quest-widget';
 
 // Lazy load heavy dashboard widgets — these pull in large deps (recharts ~400KB, etc.)
 const ActivityCalendar = dynamic(
@@ -182,6 +183,7 @@ export default function LearningDashboard() {
         ) : (
           <div className="grid gap-8 lg:grid-cols-[1.7fr_1fr]">
             <div className="space-y-8">
+              <DailyQuestWidget />
               <NextBestItem />
               <SrsReviewCard />
               {featuredCourse && (

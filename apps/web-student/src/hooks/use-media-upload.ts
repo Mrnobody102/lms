@@ -1,8 +1,19 @@
 import { useState } from 'react';
-import { defaultApiClient } from '@repo/api-client';
+import api from '@/lib/api';
 
 export interface UploadOptions {
   onProgress?: (progress: number) => void;
+}
+
+interface PresignedUploadResponse {
+  assetId: string;
+  uploadUrl: string;
+  storageKey: string;
+}
+
+interface CompletedUploadResponse {
+  id: string;
+  url: string | null;
 }
 
 export function useMediaUpload() {
@@ -15,11 +26,14 @@ export function useMediaUpload() {
 
     try {
       // 1. Request presigned URL
-      const { data: presignedData } = await defaultApiClient.post('/media/presigned-url', {
-        filename: file.name,
-        mimeType: file.type,
-        sizeBytes: file.size,
-      });
+      const { data: presignedData } = await api.post<PresignedUploadResponse>(
+        '/media/presigned-url',
+        {
+          filename: file.name,
+          mimeType: file.type,
+          sizeBytes: file.size,
+        },
+      );
 
       const { uploadUrl, assetId } = presignedData;
 
@@ -50,14 +64,19 @@ export function useMediaUpload() {
       });
 
       // 3. Mark upload as complete
-      const { data: completeData } = await defaultApiClient.post(`/media/${assetId}/complete`);
+      const { data: completeData } = await api.post<CompletedUploadResponse>(
+        `/media/${assetId}/complete`,
+      );
+
+      if (!completeData.url) {
+        throw new Error('Upload completed without a public URL');
+      }
 
       return {
-        url: completeData.data?.url || completeData.url, // Depending on if TransformInterceptor wrapped it
+        url: completeData.url,
         assetId,
       };
     } catch (err: unknown) {
-      console.error('Media upload error:', err);
       setError(err instanceof Error ? err : new Error(String(err)));
       throw err;
     } finally {

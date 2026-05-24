@@ -32,6 +32,7 @@ import { CourseStats } from '@/features/courses/course-stats';
 import { CourseReportPanel } from '@/features/courses/course-report-panel';
 import { EnrollmentPanel } from '@/features/courses/enrollment-panel';
 import {
+  createEmptyMicroCardDraft,
   createEmptyQuizDraft,
   isLessonDraftReady,
   parseMicroCardContent,
@@ -861,8 +862,9 @@ function isPersistedLessonReady(lesson: Lesson) {
   }
 
   if (lesson.type === 'micro_card') {
-    const card = parseMicroCardContent(lesson.content);
-    return Boolean(card.front.trim() && card.back.trim());
+    return parseMicroCardContent(lesson.content).some(
+      (card) => card.front.trim() && card.back.trim(),
+    );
   }
 
   if (lesson.type === 'quiz') {
@@ -873,13 +875,7 @@ function isPersistedLessonReady(lesson: Lesson) {
       content: lesson.content ?? '',
       videoUrl: lesson.videoUrl ?? '',
       aiPrompt: lesson.aiPrompt ?? '',
-      microCard: {
-        front: '',
-        pinyin: '',
-        back: '',
-        example: '',
-        audioUrl: '',
-      },
+      microCards: [createEmptyMicroCardDraft()],
       quiz,
     });
   }

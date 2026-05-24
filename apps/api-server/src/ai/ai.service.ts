@@ -1,6 +1,7 @@
 import { Injectable, Logger, Inject, BadRequestException } from '@nestjs/common';
 import type { ModelMessage } from 'ai';
 import { PrismaService } from '../common/services/prisma.service';
+import { SkillMasteryService } from '../skill/skill-mastery.service';
 import { IAiProvider, AI_PROVIDER_TOKEN } from './interfaces/ai-provider.interface';
 
 @Injectable()
@@ -9,6 +10,7 @@ export class AiService {
 
   constructor(
     private prisma: PrismaService,
+    private skillMasteryService: SkillMasteryService,
     @Inject(AI_PROVIDER_TOKEN) private aiProvider: IAiProvider,
   ) {}
 
@@ -85,6 +87,35 @@ export class AiService {
   ): Promise<import('./interfaces/ai-provider.interface').GeneratedPracticeQuestion[]> {
     await this.consumeQuota(tenantId, userId);
     return this.aiProvider.generatePracticeQuestions(options);
+  }
+
+  async generateDailyQuest(
+    tenantId: string,
+    userId: string,
+  ): Promise<import('./interfaces/ai-provider.interface').GeneratedPracticeQuestion[]> {
+    await this.consumeQuota(tenantId, userId);
+
+    // 1. Get weakest skills (limit to 1 or 2 to keep the quest focused)
+    const weakestSkills = await this.skillMasteryService.getWeakestSkills(tenantId, userId, 2);
+
+    // 2. Format skill topics and tags
+    const skillNames = weakestSkills
+      .map((s) => s?.nameVi || s?.name)
+      .filter(Boolean)
+      .join(' và ');
+    const skillCodes = weakestSkills.map((s) => s?.code).filter(Boolean) as string[];
+
+    if (!skillNames) {
+      throw new BadRequestException('Không tìm thấy kỹ năng nào để tạo Daily Quest.');
+    }
+
+    // 3. Generate 3-5 questions via AI
+    return this.aiProvider.generatePracticeQuestions({
+      topic: `Bài tập rèn luyện kỹ năng: ${skillNames}`,
+      count: 3, // We keep it bite-sized (3 questions)
+      questionType: 'MULTIPLE_CHOICE', // For simplicity in MVP, we can randomly choose or stick to MC
+      skillTags: skillCodes,
+    });
   }
 
   async chatRoleplay(

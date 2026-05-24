@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { defaultApiClient } from '@repo/api-client';
+import api from '@/lib/api';
 
 export interface Level {
   id: string;
@@ -29,7 +29,7 @@ export function usePrograms() {
   return useQuery({
     queryKey: ['programs'],
     queryFn: async () => {
-      const response = await defaultApiClient.get('/programs');
+      const response = await api.get('/programs');
       return response.data as Program[];
     },
   });
@@ -39,7 +39,7 @@ export function useProgram(id: string) {
   return useQuery({
     queryKey: ['programs', id],
     queryFn: async () => {
-      const response = await defaultApiClient.get(`/programs/${id}`);
+      const response = await api.get(`/programs/${id}`);
       return response.data as Program;
     },
     enabled: !!id,
@@ -50,7 +50,7 @@ export function useCreateProgram() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<Program>) => {
-      const response = await defaultApiClient.post('/programs', data);
+      const response = await api.post('/programs', data);
       return response.data;
     },
     onSuccess: () => {
@@ -63,7 +63,7 @@ export function useUpdateProgram() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Program> }) => {
-      const response = await defaultApiClient.patch(`/programs/${id}`, data);
+      const response = await api.patch(`/programs/${id}`, data);
       return response.data;
     },
     onSuccess: (_, variables) => {
@@ -77,7 +77,7 @@ export function useDeleteProgram() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await defaultApiClient.delete(`/programs/${id}`);
+      const response = await api.delete(`/programs/${id}`);
       return response.data;
     },
     onSuccess: () => {
@@ -90,7 +90,7 @@ export function useCreateLevel() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ programId, data }: { programId: string; data: Partial<Level> }) => {
-      const response = await defaultApiClient.post(`/programs/${programId}/levels`, data);
+      const response = await api.post(`/programs/${programId}/levels`, data);
       return response.data;
     },
     onSuccess: (_, variables) => {
@@ -112,10 +112,7 @@ export function useUpdateLevel() {
       levelId: string;
       data: Partial<Level>;
     }) => {
-      const response = await defaultApiClient.patch(
-        `/programs/${programId}/levels/${levelId}`,
-        data,
-      );
+      const response = await api.patch(`/programs/${programId}/levels/${levelId}`, data);
       return response.data;
     },
     onSuccess: (_, variables) => {
@@ -129,7 +126,7 @@ export function useDeleteLevel() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ programId, levelId }: { programId: string; levelId: string }) => {
-      const response = await defaultApiClient.delete(`/programs/${programId}/levels/${levelId}`);
+      const response = await api.delete(`/programs/${programId}/levels/${levelId}`);
       return response.data;
     },
     onSuccess: (_, variables) => {

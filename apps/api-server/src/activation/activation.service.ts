@@ -135,7 +135,7 @@ export class ActivationService {
 
       // Update used count
       await tx.activationCode.update({
-        where: { id: activationCode.id },
+        where: { id_tenantId: { id: activationCode.id, tenantId } },
         data: { usedCount: { increment: 1 } },
       });
 
@@ -145,7 +145,8 @@ export class ActivationService {
       if (activationCode.courseId) {
         enrollment = await tx.courseEnrollment.upsert({
           where: {
-            userId_courseId: {
+            tenantId_userId_courseId: {
+              tenantId,
               userId,
               courseId: activationCode.courseId,
             },
@@ -181,7 +182,7 @@ export class ActivationService {
     }
 
     return this.prisma.activationCode.update({
-      where: { id: code.id },
+      where: { id_tenantId: { id: code.id, tenantId } },
       data: { deletedAt: new Date() },
     });
   }

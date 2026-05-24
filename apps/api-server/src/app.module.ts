@@ -33,11 +33,13 @@ import { MetricsModule } from './common/metrics/metrics.module';
 import { MailModule } from './mail/mail.module';
 import { AiModule } from './ai/ai.module';
 import { BullModule } from '@nestjs/bullmq';
+import { CertificateModule } from './certificate/certificate.module';
 import { StorageModule } from './storage/storage.module';
 import { MediaModule } from './media/media.module';
 import { JobsModule } from './jobs/jobs.module';
 
 import { CohortModule } from './cohort/cohort.module';
+import { DiscussionModule } from './discussion/discussion.module';
 import { RoleplayModule } from './roleplay/roleplay.module';
 import { NotificationModule } from './notification/notification.module';
 
@@ -92,6 +94,8 @@ import { NotificationModule } from './notification/notification.module';
     SkillModule,
     SrsModule,
     CohortModule,
+    DiscussionModule,
+    CertificateModule,
     RoleplayModule,
     MetricsModule,
     HealthModule,

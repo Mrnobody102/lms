@@ -487,8 +487,8 @@ export class AuthService {
     if (refreshToken) {
       try {
         const hash = await this.hashToken(refreshToken);
-        await this.prisma.refreshToken.delete({
-          where: { tokenHash: hash },
+        await this.prisma.refreshToken.deleteMany({
+          where: { tokenHash: hash, tenantId, userId },
         });
       } catch (e) {
         this.logger.warn('Failed to revoke refresh token during logout', e);
@@ -542,8 +542,8 @@ export class AuthService {
 
     const hash = await this.hashToken(refreshTokenStr);
 
-    const storedToken = await this.prisma.refreshToken.findUnique({
-      where: { tokenHash: hash },
+    const storedToken = await this.prisma.refreshToken.findFirst({
+      where: { tokenHash: hash, tenantId },
       include: {
         user: {
           select: {
@@ -591,8 +591,8 @@ export class AuthService {
     }
 
     // Revoke old token
-    await this.prisma.refreshToken.update({
-      where: { id: storedToken.id },
+    await this.prisma.refreshToken.updateMany({
+      where: { id: storedToken.id, tenantId },
       data: { revokedAt: new Date() },
     });
 
@@ -663,7 +663,8 @@ export class AuthService {
       },
     });
 
-    const appUrl = this.configService.get<string>('APP_PUBLIC_URL') || 'http://localhost:3000';
+    const appUrl =
+      this.configService.get<string>('NEXT_PUBLIC_WEB_STUDENT_URL') || 'http://localhost:3100';
     const locale = forgotPasswordDto.locale || 'vi';
     const resetUrl = `${appUrl}/${locale}/reset-password?token=${encodeURIComponent(resetTokenStr)}`;
 

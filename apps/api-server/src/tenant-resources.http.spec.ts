@@ -544,13 +544,18 @@ describe('Tenant resource HTTP flow', () => {
             where,
           }: {
             where: {
-              userId_lessonId: { userId: string; lessonId: string };
+              tenantId_userId_lessonId: {
+                tenantId: string;
+                userId: string;
+                lessonId: string;
+              };
             };
           }) => {
             const record = progressRecords.find(
               (entry) =>
-                entry.userId === where.userId_lessonId.userId &&
-                entry.lessonId === where.userId_lessonId.lessonId,
+                entry.tenantId === where.tenantId_userId_lessonId.tenantId &&
+                entry.userId === where.tenantId_userId_lessonId.userId &&
+                entry.lessonId === where.tenantId_userId_lessonId.lessonId,
             );
             return Promise.resolve(record ?? null);
           },
@@ -583,7 +588,13 @@ describe('Tenant resource HTTP flow', () => {
             update,
             create,
           }: {
-            where: { userId_lessonId: { userId: string; lessonId: string } };
+            where: {
+              tenantId_userId_lessonId: {
+                tenantId: string;
+                userId: string;
+                lessonId: string;
+              };
+            };
             update: { status: ProgressStatus };
             create: {
               userId: string;
@@ -594,8 +605,9 @@ describe('Tenant resource HTTP flow', () => {
           }) => {
             const existingIndex = progressRecords.findIndex(
               (entry) =>
-                entry.userId === where.userId_lessonId.userId &&
-                entry.lessonId === where.userId_lessonId.lessonId,
+                entry.tenantId === where.tenantId_userId_lessonId.tenantId &&
+                entry.userId === where.tenantId_userId_lessonId.userId &&
+                entry.lessonId === where.tenantId_userId_lessonId.lessonId,
             );
 
             if (existingIndex >= 0) {

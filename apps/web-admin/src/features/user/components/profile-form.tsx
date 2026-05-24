@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Loader2, User, Mail, Phone, Image as ImageIcon, Save } from 'lucide-react';
 import { Button, Input, Label } from '@repo/ui';
-import { defaultApiClient } from '@repo/api-client';
+import api from '@/lib/api';
 import { useAuthStore } from '../../auth/auth.store';
 
 export function ProfileForm() {
@@ -40,7 +40,7 @@ export function ProfileForm() {
     setSuccess(false);
 
     try {
-      const response = await defaultApiClient.put('/users/me', {
+      const response = await api.put('/users/me', {
         fullName,
         phoneNumber: phoneNumber || null,
         avatarUrl: avatarUrl || null,

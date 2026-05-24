@@ -41,10 +41,12 @@ export class NotificationService {
   }
 
   async markAllAsRead(tenantId: string, userId: string) {
-    await this.prisma.notification.updateMany({
+    const result = await this.prisma.notification.updateMany({
       where: { tenantId, userId, readAt: null },
       data: { readAt: new Date() },
     });
+
+    return { count: result.count };
   }
 
   async broadcast(tenantId: string, dto: BroadcastNotificationDto) {

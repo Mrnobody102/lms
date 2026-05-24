@@ -15,7 +15,7 @@ import {
   AlertCircle,
   Loader2,
 } from 'lucide-react';
-import { defaultApiClient } from '@repo/api-client';
+import api from '@/lib/api';
 import { Button, Badge, PaginationControls } from '@repo/ui';
 
 interface Session {
@@ -62,7 +62,7 @@ export function SessionManager() {
   const fetchSessions = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await defaultApiClient.get<SessionPage>('/user-sessions/me', {
+      const response = await api.get<SessionPage>('/user-sessions/me', {
         params: { page, limit: 5 },
       });
       if (response.data.data.length === 0 && response.data.meta.total > 0 && page > 1) {
@@ -86,7 +86,7 @@ export function SessionManager() {
     try {
       setRevokingId(id);
       setMessage(null);
-      await defaultApiClient.delete(`/user-sessions/${id}`);
+      await api.delete(`/user-sessions/${id}`);
       await fetchSessions();
       setMessage({ type: 'success', text: t('revokeSuccess') });
     } catch (_error) {

@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { Loader2, AlertCircle, Lock, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button, Input, Label } from '@repo/ui';
-import { defaultApiClient } from '@repo/api-client';
+import api from '@/lib/api';
 
 export function ResetPasswordForm() {
   const t = useTranslations('Admin');
@@ -40,7 +40,7 @@ export function ResetPasswordForm() {
     setError(null);
 
     try {
-      await defaultApiClient.post('/auth/reset-password', {
+      await api.post('/auth/reset-password', {
         token,
         newPassword: password,
       });

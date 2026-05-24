@@ -37,14 +37,15 @@ export class ProgressService {
 
     // Check existing status before upsert so we can detect a real COMPLETED transition.
     const existing = await this.prisma.userLessonProgress.findUnique({
-      where: { userId_lessonId: { userId, lessonId } },
+      where: { tenantId_userId_lessonId: { tenantId, userId, lessonId } },
       select: { status: true },
     });
     const wasAlreadyCompleted = existing?.status === ProgressStatus.COMPLETED;
 
     const progress = await this.prisma.userLessonProgress.upsert({
       where: {
-        userId_lessonId: {
+        tenantId_userId_lessonId: {
+          tenantId,
           userId,
           lessonId,
         },

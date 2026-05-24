@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { defaultApiClient } from '@repo/api-client';
+import api from '@/lib/api';
 
 export type RoleplaySessionStatus = 'IN_PROGRESS' | 'COMPLETED';
 export type MessageRole = 'USER' | 'AI' | 'SYSTEM';
@@ -35,7 +35,7 @@ export function useRoleplaySession(sessionId: string, enabled = true) {
   return useQuery<RoleplaySession>({
     queryKey: ['roleplay', sessionId],
     queryFn: async () => {
-      const { data } = await defaultApiClient.get(`/roleplay/sessions/${sessionId}`);
+      const { data } = await api.get(`/roleplay/sessions/${sessionId}`);
       return data;
     },
     enabled: !!sessionId && enabled,
@@ -45,7 +45,7 @@ export function useRoleplaySession(sessionId: string, enabled = true) {
 export function useCreateRoleplaySession() {
   return useMutation({
     mutationFn: async (params: CreateRoleplaySessionParams) => {
-      const { data } = await defaultApiClient.post<RoleplaySession>('/roleplay/sessions', params);
+      const { data } = await api.post<RoleplaySession>('/roleplay/sessions', params);
       return data;
     },
   });
@@ -56,10 +56,9 @@ export function useSendRoleplayMessage() {
 
   return useMutation({
     mutationFn: async ({ sessionId, content }: SendMessageParams) => {
-      const { data } = await defaultApiClient.post<RoleplaySession>(
-        `/roleplay/sessions/${sessionId}/messages`,
-        { content },
-      );
+      const { data } = await api.post<RoleplaySession>(`/roleplay/sessions/${sessionId}/messages`, {
+        content,
+      });
       return data;
     },
     onSuccess: (data) => {
@@ -73,9 +72,7 @@ export function useCompleteRoleplaySession() {
 
   return useMutation({
     mutationFn: async (sessionId: string) => {
-      const { data } = await defaultApiClient.post<RoleplaySession>(
-        `/roleplay/sessions/${sessionId}/complete`,
-      );
+      const { data } = await api.post<RoleplaySession>(`/roleplay/sessions/${sessionId}/complete`);
       return data;
     },
     onSuccess: (data) => {

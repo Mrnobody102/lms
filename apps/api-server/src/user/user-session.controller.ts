@@ -159,16 +159,16 @@ export class UserSessionController {
     @IpAddress() ipAddress: string,
     @UserAgent() userAgent: string,
   ) {
-    const session = await this.prisma.refreshToken.findUnique({
-      where: { id: sessionId },
+    const session = await this.prisma.refreshToken.findFirst({
+      where: { id: sessionId, userId: user.id, tenantId: user.tenantId },
     });
 
-    if (!session || session.userId !== user.id || session.tenantId !== user.tenantId) {
+    if (!session) {
       throw new UnauthorizedException('Session not found or unauthorized');
     }
 
-    await this.prisma.refreshToken.delete({
-      where: { id: sessionId },
+    await this.prisma.refreshToken.deleteMany({
+      where: { id: sessionId, userId: user.id, tenantId: user.tenantId },
     });
 
     await this.auditLog.log({

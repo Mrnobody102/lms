@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import { StudentNav } from '../../../components/layout/student-nav';
 import { useAuthStore } from '../../../features/auth/auth.store';
 import { Link } from '../../../navigation';
-import { defaultApiClient } from '@repo/api-client';
+import api from '@/lib/api';
 
 export default function ActivationPage() {
   const t = useTranslations('Student.activation');
@@ -26,7 +26,7 @@ export default function ActivationPage() {
     setSuccess(false);
 
     try {
-      await defaultApiClient.post('/activation/redeem', { code });
+      await api.post('/activation/redeem', { code });
       setSuccess(true);
       setCode('');
     } catch (err) {

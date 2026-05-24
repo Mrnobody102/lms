@@ -294,6 +294,7 @@ export class CohortService {
 
       const existingEnrollments = await tx.courseEnrollment.findMany({
         where: {
+          tenantId,
           userId: { in: userIds },
           courseId,
         },
@@ -325,6 +326,7 @@ export class CohortService {
       if (toUpdate.length > 0) {
         await tx.courseEnrollment.updateMany({
           where: {
+            tenantId,
             userId: { in: toUpdate },
             courseId,
           },

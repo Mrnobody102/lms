@@ -16,7 +16,10 @@ import { AIEvaluationInput } from '@/components/lessons/ai-evaluation-input';
 import { MatchingQuestion } from '@/components/lessons/matching-question';
 import { OrderingQuestion } from '@/components/lessons/ordering-question';
 import { AudioPromptPlayer } from '@/components/practice/audio-prompt-player';
+import { SocraticTutorPanel } from '@/components/practice/socratic-tutor-panel';
+import { DiscussionPanel } from '@/components/discussions/discussion-panel';
 import { isQuestionAnswered, parseSubmittedAnswer } from '@/lib/question-answer.util';
+import { Sparkles } from 'lucide-react';
 
 export default function PracticeAttemptPage() {
   const t = useTranslations('Student');
@@ -176,6 +179,10 @@ export default function PracticeAttemptPage() {
                 )}
               </div>
             </form>
+
+            <div className="mt-8">
+              <DiscussionPanel targetType="PRACTICE_EXERCISE_SET" exerciseSetId={exerciseSet.id} />
+            </div>
           </>
         )}
       </main>
@@ -201,6 +208,7 @@ function QuestionCard({
   formatFeedbackAnswer: (value: unknown) => string;
 }) {
   const t = useTranslations('Student');
+  const [showSocratic, setShowSocratic] = useState(false);
   const options = getOptions(question.options);
   const isAiQuestion = isAiQuestionType(question.type);
   const audioUrl = question.audioMediaAsset?.url ?? null;
@@ -320,6 +328,25 @@ function QuestionCard({
           )}
           {feedback.explanation && (
             <p className="mt-2 text-muted-foreground">{feedback.explanation}</p>
+          )}
+
+          {!feedback.isCorrect && !showSocratic && (
+            <button
+              type="button"
+              onClick={() => setShowSocratic(true)}
+              className="mt-4 flex items-center gap-2 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-full transition-colors w-fit"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              {t('practice.socraticHint')}
+            </button>
+          )}
+
+          {!feedback.isCorrect && showSocratic && (
+            <SocraticTutorPanel
+              questionPrompt={question.prompt}
+              studentAnswer={value}
+              correctAnswer={feedback.correctAnswer}
+            />
           )}
         </div>
       )}

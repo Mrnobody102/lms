@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Loader2, Lock, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { Button, Input, Label } from '@repo/ui';
-import { defaultApiClient } from '@repo/api-client';
+import api from '@/lib/api';
 import { useAuthStore } from '../../auth/auth.store';
 import { useRouter } from 'next/navigation';
 
@@ -35,7 +35,7 @@ export function ChangePasswordForm() {
     setSuccess(false);
 
     try {
-      await defaultApiClient.put('/users/change-password', {
+      await api.put('/users/change-password', {
         currentPassword,
         newPassword,
       });

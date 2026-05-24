@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Loader2, AlertCircle, Mail, CheckCircle2 } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Button, Input, Label } from '@repo/ui';
-import { defaultApiClient } from '@repo/api-client';
+import api from '@/lib/api';
 
 export function ForgotPasswordForm() {
   const t = useTranslations('Admin');
@@ -25,7 +25,7 @@ export function ForgotPasswordForm() {
     setError(null);
 
     try {
-      await defaultApiClient.post('/auth/forgot-password', { email, locale });
+      await api.post('/auth/forgot-password', { email, locale });
       setSuccess(true);
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string | string[] } } };

@@ -124,20 +124,21 @@ curl -X POST http://localhost:4000/api/auth/logout \
 
 ## Biến môi trường chính
 
-| Biến                    | Ý nghĩa                                                                          |
-| ----------------------- | -------------------------------------------------------------------------------- |
-| `DATABASE_URL`          | Kết nối PostgreSQL                                                               |
-| `JWT_SECRET`            | Secret để ký JWT                                                                 |
-| `PORT`                  | Port API server                                                                  |
-| `APP_PUBLIC_URL`        | Public API host cho log/runbook; local dev có thể bỏ trống                       |
-| `NODE_ENV`              | `development` hoặc `production`                                                  |
-| `CORS_ORIGINS`          | Exact frontend origins, phân tách bằng dấu phẩy; production bắt buộc             |
-| `REDIS_URL`             | URL `redis://` hoặc `rediss://`; production readiness bắt buộc                   |
-| `NEXT_PUBLIC_TENANT_ID` | Tenant hint cho frontend local/dev; production nên resolve theo domain/subdomain |
-| `AUTH_COOKIE_SAME_SITE` | Chính sách SameSite cho cookie auth (`lax`, `strict`, `none`)                    |
-| `AUTH_COOKIE_DOMAIN`    | Cookie domain khi deploy frontend/API trên subdomain chung                       |
-| `MCP_ENABLED`           | Bật MCP có chủ đích, mặc định nên là `false`                                     |
-| `MCP_TENANT_ID`         | Tenant UUID bắt buộc cho các MCP tool có đọc dữ liệu tenant                      |
+| Biến                          | Ý nghĩa                                                                          |
+| ----------------------------- | -------------------------------------------------------------------------------- |
+| `DATABASE_URL`                | Kết nối PostgreSQL                                                               |
+| `JWT_SECRET`                  | Secret để ký JWT                                                                 |
+| `PORT`                        | Port API server                                                                  |
+| `APP_PUBLIC_URL`              | Public API host cho log/runbook; local dev có thể bỏ trống                       |
+| `NEXT_PUBLIC_WEB_STUDENT_URL` | Public Web Student host dùng cho reset-password links                            |
+| `NODE_ENV`                    | `development` hoặc `production`                                                  |
+| `CORS_ORIGINS`                | Exact frontend origins, phân tách bằng dấu phẩy; production bắt buộc             |
+| `REDIS_URL`                   | URL `redis://` hoặc `rediss://`; production readiness bắt buộc                   |
+| `NEXT_PUBLIC_TENANT_ID`       | Tenant hint cho frontend local/dev; production nên resolve theo domain/subdomain |
+| `AUTH_COOKIE_SAME_SITE`       | Chính sách SameSite cho cookie auth (`lax`, `strict`, `none`)                    |
+| `AUTH_COOKIE_DOMAIN`          | Cookie domain khi deploy frontend/API trên subdomain chung                       |
+| `MCP_ENABLED`                 | Bật MCP có chủ đích, mặc định nên là `false`                                     |
+| `MCP_TENANT_ID`               | Tenant UUID bắt buộc cho các MCP tool có đọc dữ liệu tenant                      |
 
 ## Scripts thường dùng
 

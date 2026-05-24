@@ -49,22 +49,26 @@ export class MediaService {
   }
 
   async markUploadComplete(tenantId: string, assetId: string) {
-    const asset = await this.prisma.mediaAsset.findUnique({
-      where: { id: assetId },
+    const asset = await this.prisma.mediaAsset.findFirst({
+      where: { id: assetId, tenantId },
     });
 
-    if (!asset || asset.tenantId !== tenantId) {
+    if (!asset) {
       throw new NotFoundException('Media asset not found');
     }
 
     const publicUrl = this.storage.getPublicUrl(asset.storageKey);
 
-    const updatedAsset = await this.prisma.mediaAsset.update({
-      where: { id: assetId },
+    await this.prisma.mediaAsset.updateMany({
+      where: { id: assetId, tenantId },
       data: {
         status: 'READY',
         url: publicUrl,
       },
+    });
+
+    const updatedAsset = await this.prisma.mediaAsset.findFirstOrThrow({
+      where: { id: assetId, tenantId },
     });
 
     this.logger.log(`Media asset ${assetId} marked as READY.`);
@@ -72,8 +76,8 @@ export class MediaService {
   }
 
   async validateAudioAsset(tenantId: string, assetId: string): Promise<MediaAsset> {
-    const asset = await this.prisma.mediaAsset.findUnique({ where: { id: assetId } });
-    if (!asset || asset.tenantId !== tenantId) {
+    const asset = await this.prisma.mediaAsset.findFirst({ where: { id: assetId, tenantId } });
+    if (!asset) {
       throw new BadRequestException('Audio asset not found in this tenant');
     }
     if (asset.status !== 'READY') {

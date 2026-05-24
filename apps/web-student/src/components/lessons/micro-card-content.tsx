@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Volume2, RotateCw, Lightbulb } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { ChevronDown, ChevronUp, Lightbulb, RotateCw, Volume2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 interface MicroCardData {
@@ -18,137 +18,209 @@ interface MicroCardContentProps {
 
 export function MicroCardContent({ content }: MicroCardContentProps) {
   const t = useTranslations('Student');
-  const [isFlipped, setIsFlipped] = useState(false);
+  const cards = parseMicroCardContent(content);
+  const cardRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const [flippedCards, setFlippedCards] = useState<Record<number, boolean>>({});
+  const [activeIndex, setActiveIndex] = useState(0);
 
-  const data = parseMicroCardContent(content);
-
-  if (!data) {
+  if (cards.length === 0) {
     return (
-      <div className="p-12 rounded-[2rem] bg-card/30 border border-dashed flex flex-col items-center justify-center text-muted-foreground">
-        <Lightbulb className="w-12 h-12 mb-4 opacity-20" />
+      <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-card/30 p-12 text-muted-foreground">
+        <Lightbulb className="mb-4 h-12 w-12 opacity-20" />
         <p>{t('lesson.microCardInvalid')}</p>
       </div>
     );
   }
 
-  const playAudio = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (data?.audioUrl) {
-      const audio = new Audio(data.audioUrl);
-      audio.play().catch(console.error);
-    } else {
-      // Fallback to Web Speech API for TTS if no audioUrl
-      const utterance = new SpeechSynthesisUtterance(data?.front);
-      utterance.lang = 'zh-CN';
-      window.speechSynthesis.speak(utterance);
-    }
+  const scrollToCard = (index: number) => {
+    const nextIndex = Math.min(Math.max(index, 0), cards.length - 1);
+    setActiveIndex(nextIndex);
+    cardRefs.current[nextIndex]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
   return (
-    <div className="max-w-md mx-auto perspective-1000 py-10">
-      <div
-        onClick={() => setIsFlipped(!isFlipped)}
-        className={`relative w-full aspect-[3/4] transition-transform duration-700 transform-style-3d cursor-pointer ${
-          isFlipped ? 'rotate-y-180' : ''
-        }`}
-      >
-        {/* Front Side */}
-        <div className="absolute inset-0 backface-hidden bg-card border-4 border-primary/20 rounded-[3rem] shadow-2xl flex flex-col items-center justify-center p-10 text-center overflow-hidden group">
-          <div className="absolute top-8 right-8 text-primary/20 group-hover:text-primary/40 transition-colors">
-            <RotateCw className="w-6 h-6" />
-          </div>
-
-          {data.pinyin && (
-            <p className="text-xl text-primary font-bold mb-4 tracking-widest opacity-80">
-              {data.pinyin}
-            </p>
-          )}
-
-          <h3 className="text-7xl font-black mb-10 tracking-tighter bg-clip-text text-transparent bg-gradient-to-br from-foreground to-foreground/70">
-            {data.front}
-          </h3>
-
+    <section className="mx-auto w-full max-w-xl">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <p className="text-xs font-black uppercase text-muted-foreground">
+          {t('lesson.microCardCounter', { current: activeIndex + 1, total: cards.length })}
+        </p>
+        <div className="flex items-center gap-2">
           <button
-            onClick={playAudio}
-            className="p-4 bg-primary/10 hover:bg-primary/20 text-primary rounded-2xl transition-all active:scale-90"
-            title={t('lesson.microCardListen')}
+            type="button"
+            onClick={() => scrollToCard(activeIndex - 1)}
+            disabled={activeIndex === 0}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md border bg-card text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label={t('lesson.microCardPrevious')}
           >
-            <Volume2 className="w-8 h-8" />
+            <ChevronUp className="h-4 w-4" />
           </button>
-
-          <div className="mt-12 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 italic">
-            {t('lesson.microCardFlip')}
-          </div>
-        </div>
-
-        {/* Back Side */}
-        <div className="absolute inset-0 backface-hidden rotate-y-180 bg-primary rounded-[3rem] shadow-2xl flex flex-col items-center justify-center p-10 text-center text-primary-foreground overflow-hidden">
-          <div className="absolute top-8 right-8 text-white/20">
-            <RotateCw className="w-6 h-6" />
-          </div>
-
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-4 opacity-60">
-            {t('lesson.microCardMeaning')}
-          </p>
-          <h3 className="text-4xl font-black mb-8 leading-tight">{data.back}</h3>
-
-          {data.example && (
-            <div className="mt-4 p-6 bg-white/10 rounded-2xl border border-white/10 max-w-xs">
-              <p className="text-xs font-black uppercase tracking-widest mb-2 opacity-60">
-                {t('lesson.microCardExample')}
-              </p>
-              <p className="text-lg font-bold leading-relaxed">{data.example}</p>
-            </div>
-          )}
-
-          <div className="mt-12 text-[10px] font-black uppercase tracking-[0.2em] opacity-40 italic text-white">
-            {t('lesson.microCardFlipBack')}
-          </div>
+          <button
+            type="button"
+            onClick={() => scrollToCard(activeIndex + 1)}
+            disabled={activeIndex === cards.length - 1}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md border bg-card text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label={t('lesson.microCardNext')}
+          >
+            <ChevronDown className="h-4 w-4" />
+          </button>
         </div>
       </div>
 
-      <style jsx global>{`
-        .perspective-1000 {
-          perspective: 1000px;
-        }
-        .transform-style-3d {
-          transform-style: preserve-3d;
-        }
-        .backface-hidden {
-          backface-visibility: hidden;
-        }
-        .rotate-y-180 {
-          transform: rotateY(180deg);
-        }
-      `}</style>
-    </div>
+      <div className="max-h-[72vh] snap-y snap-mandatory space-y-5 overflow-y-auto pr-1">
+        {cards.map((card, index) => (
+          <div
+            key={`${card.front}-${index}`}
+            ref={(element) => {
+              cardRefs.current[index] = element;
+            }}
+            className="snap-center"
+            onMouseEnter={() => setActiveIndex(index)}
+            onFocus={() => setActiveIndex(index)}
+          >
+            <MicroCard
+              card={card}
+              flipped={Boolean(flippedCards[index])}
+              onFlip={() =>
+                setFlippedCards((current) => ({ ...current, [index]: !current[index] }))
+              }
+            />
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
-function parseMicroCardContent(content: string | null | undefined): MicroCardData | null {
+function MicroCard({
+  card,
+  flipped,
+  onFlip,
+}: {
+  card: MicroCardData;
+  flipped: boolean;
+  onFlip: () => void;
+}) {
+  const t = useTranslations('Student');
+
+  const playAudio = (event: React.SyntheticEvent) => {
+    event.stopPropagation();
+    if (card.audioUrl) {
+      const audio = new Audio(card.audioUrl);
+      audio.play().catch(() => undefined);
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(card.front);
+    utterance.lang = 'zh-CN';
+    window.speechSynthesis.speak(utterance);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={onFlip}
+      className="group relative flex min-h-[560px] w-full flex-col items-center justify-center overflow-hidden rounded-lg border bg-card p-8 text-center shadow-sm transition hover:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
+    >
+      <RotateCw className="absolute right-6 top-6 h-5 w-5 text-muted-foreground/40 transition group-hover:text-primary" />
+
+      {!flipped ? (
+        <>
+          {card.pinyin ? (
+            <p className="mb-5 text-lg font-bold text-primary">{card.pinyin}</p>
+          ) : null}
+          <h3 className="mb-10 max-w-full break-words text-6xl font-black leading-tight text-foreground">
+            {card.front}
+          </h3>
+          <span
+            role="button"
+            tabIndex={0}
+            onClick={playAudio}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') playAudio(event);
+            }}
+            className="inline-flex h-14 w-14 items-center justify-center rounded-md bg-primary/10 text-primary transition hover:bg-primary/20"
+            aria-label={t('lesson.microCardListen')}
+          >
+            <Volume2 className="h-7 w-7" />
+          </span>
+          <p className="mt-12 text-xs font-black uppercase text-muted-foreground">
+            {t('lesson.microCardFlip')}
+          </p>
+        </>
+      ) : (
+        <>
+          <p className="mb-4 text-xs font-black uppercase text-primary">
+            {t('lesson.microCardMeaning')}
+          </p>
+          <h3 className="max-w-full break-words text-4xl font-black leading-tight text-foreground">
+            {card.back}
+          </h3>
+          {card.example ? (
+            <div className="mt-8 max-w-sm rounded-lg border bg-muted/30 p-5 text-left">
+              <p className="mb-2 text-xs font-black uppercase text-muted-foreground">
+                {t('lesson.microCardExample')}
+              </p>
+              <p className="text-base font-semibold leading-relaxed">{card.example}</p>
+            </div>
+          ) : null}
+          <p className="mt-12 text-xs font-black uppercase text-muted-foreground">
+            {t('lesson.microCardFlipBack')}
+          </p>
+        </>
+      )}
+    </button>
+  );
+}
+
+function parseMicroCardContent(content: string | null | undefined): MicroCardData[] {
   if (!content) {
-    return null;
+    return [];
   }
 
   try {
-    const parsed = JSON.parse(content) as Record<string, unknown>;
-    const front = readRequiredString(parsed.front);
-    const back = readRequiredString(parsed.back);
-
-    if (!front || !back) {
-      return null;
+    const parsed = JSON.parse(content) as unknown;
+    if (Array.isArray(parsed)) {
+      return parsed.map(normalizeMicroCard).filter((card): card is MicroCardData => card !== null);
     }
 
-    return {
-      front,
-      back,
-      pinyin: readOptionalString(parsed.pinyin),
-      example: readOptionalString(parsed.example),
-      audioUrl: readOptionalString(parsed.audioUrl),
-    };
+    if (!parsed || typeof parsed !== 'object') {
+      return [];
+    }
+
+    const record = parsed as Record<string, unknown>;
+    if (Array.isArray(record.cards)) {
+      return record.cards
+        .map(normalizeMicroCard)
+        .filter((card): card is MicroCardData => card !== null);
+    }
+
+    const legacyCard = normalizeMicroCard(record);
+    return legacyCard ? [legacyCard] : [];
   } catch {
+    return [];
+  }
+}
+
+function normalizeMicroCard(value: unknown): MicroCardData | null {
+  if (!value || typeof value !== 'object') {
     return null;
   }
+
+  const record = value as Record<string, unknown>;
+  const front = readRequiredString(record.front);
+  const back = readRequiredString(record.back);
+
+  if (!front || !back) {
+    return null;
+  }
+
+  return {
+    front,
+    back,
+    pinyin: readOptionalString(record.pinyin),
+    example: readOptionalString(record.example),
+    audioUrl: readOptionalString(record.audioUrl),
+  };
 }
 
 function readRequiredString(value: unknown) {

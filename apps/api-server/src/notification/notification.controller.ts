@@ -26,8 +26,7 @@ export class NotificationController {
 
   @Patch('read-all')
   async markAllAsRead(@CurrentUser() user: { id: string; tenantId: string }) {
-    await this.notificationService.markAllAsRead(user.tenantId, user.id);
-    return { success: true };
+    return this.notificationService.markAllAsRead(user.tenantId, user.id);
   }
 
   @Patch(':id/read')

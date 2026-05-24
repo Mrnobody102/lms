@@ -333,7 +333,8 @@ export class CourseService {
 
     const enrollment = await this.prisma.courseEnrollment.upsert({
       where: {
-        userId_courseId: {
+        tenantId_userId_courseId: {
+          tenantId,
           userId,
           courseId,
         },
@@ -418,7 +419,8 @@ export class CourseService {
         uniqueUserIds.map((userId) =>
           tx.courseEnrollment.upsert({
             where: {
-              userId_courseId: {
+              tenantId_userId_courseId: {
+                tenantId,
                 userId,
                 courseId,
               },
@@ -487,7 +489,7 @@ export class CourseService {
     }
 
     const updated = await this.prisma.courseEnrollment.update({
-      where: { id: enrollment.id },
+      where: { id_tenantId: { id: enrollment.id, tenantId } },
       data: {
         status: EnrollmentStatus.REVOKED,
         unenrolledAt: new Date(),

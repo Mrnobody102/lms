@@ -138,7 +138,7 @@ export function AdminSidebar() {
               <LogOut className="w-4 h-4" />
             </button>
           </div>
-          <LanguageToggle menuAlign="right" menuPlacement="top" />
+          <LanguageToggle menuAlign="end" menuPlacement="top" />
         </div>
       </div>
     </>

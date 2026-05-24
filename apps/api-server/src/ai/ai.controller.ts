@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Param,
+  Body,
   UseGuards,
   Req,
   NotFoundException,
@@ -12,6 +13,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
 import { getScopedTenantId } from '../common/utils/tenant-request.util';
 import { PrismaService } from '../common/services/prisma.service';
+import { SocraticChatDto } from './dto/socratic-chat.dto';
+import { GenerateDailyQuestDto } from './dto/generate-daily-quest.dto';
 
 @Controller('ai')
 @UseGuards(JwtAuthGuard)
@@ -33,7 +36,8 @@ export class AiController {
     // 1. Verify attempt ownership and fetch data
     const answer = await this.prisma.practiceAnswer.findUnique({
       where: {
-        attemptId_questionId: {
+        tenantId_attemptId_questionId: {
+          tenantId,
           attemptId,
           questionId,
         },
@@ -48,7 +52,7 @@ export class AiController {
       },
     });
 
-    if (!answer || answer.tenantId !== tenantId) {
+    if (!answer) {
       throw new NotFoundException('Practice answer not found');
     }
 
@@ -79,7 +83,7 @@ export class AiController {
 
     // Optional: We can save this explanation in `aiFeedback` of `PracticeAnswer`
     await this.prisma.practiceAnswer.update({
-      where: { id: answer.id },
+      where: { id_tenantId: { id: answer.id, tenantId } },
       data: { aiFeedback: explanation },
     });
 
@@ -97,7 +101,8 @@ export class AiController {
 
     const answer = await this.prisma.examAnswer.findUnique({
       where: {
-        attemptId_questionId: {
+        tenantId_attemptId_questionId: {
+          tenantId,
           attemptId,
           questionId,
         },
@@ -108,7 +113,7 @@ export class AiController {
       },
     });
 
-    if (!answer || answer.tenantId !== tenantId) {
+    if (!answer) {
       throw new NotFoundException('Exam answer not found');
     }
 
@@ -138,10 +143,37 @@ export class AiController {
     );
 
     await this.prisma.examAnswer.update({
-      where: { id: answer.id },
+      where: { id_tenantId: { id: answer.id, tenantId } },
       data: { aiFeedback: explanation },
     });
 
     return { explanation };
+  }
+
+  @Post('socratic-chat')
+  async socraticChat(@Req() req: AuthenticatedRequest, @Body() dto: SocraticChatDto) {
+    const tenantId = getScopedTenantId(req);
+    const userId = req.user.id;
+
+    const systemPrompt = `You are a Socratic AI tutor. The user is trying to solve this question:
+Question: ${dto.questionPrompt}
+${dto.correctAnswer ? `Correct Answer: ${JSON.stringify(dto.correctAnswer)}` : ''}
+${dto.studentAnswer ? `Student's Answer: ${JSON.stringify(dto.studentAnswer)}` : ''}
+
+Your task is to guide the user to the correct answer without ever revealing it directly.
+Ask one guiding question at a time. Be concise, friendly, and encouraging.`;
+
+    const aiReply = await this.aiService.chatRoleplay(tenantId, userId, dto.messages, systemPrompt);
+
+    return { role: 'assistant', content: aiReply };
+  }
+
+  @Post('daily-quest')
+  async generateDailyQuest(@Req() req: AuthenticatedRequest, @Body() _dto: GenerateDailyQuestDto) {
+    const tenantId = getScopedTenantId(req);
+    const userId = req.user.id;
+
+    const questions = await this.aiService.generateDailyQuest(tenantId, userId);
+    return { questions };
   }
 }

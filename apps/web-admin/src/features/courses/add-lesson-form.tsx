@@ -51,7 +51,7 @@ export function AddLessonDialog({
   const [content, setContent] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
   const [aiPrompt, setAiPrompt] = useState('');
-  const [microCard, setMicroCard] = useState(createEmptyMicroCardDraft());
+  const [microCards, setMicroCards] = useState([createEmptyMicroCardDraft()]);
   const [quiz, setQuiz] = useState(createEmptyQuizDraft());
 
   useEffect(() => {
@@ -61,7 +61,7 @@ export function AddLessonDialog({
   }, [open, selectedUnitId, units]);
 
   const handleSubmit = async () => {
-    if (!isLessonDraftReady({ type, title, content, videoUrl, aiPrompt, microCard, quiz })) return;
+    if (!isLessonDraftReady({ type, title, content, videoUrl, aiPrompt, microCards, quiz })) return;
 
     const success = await onSubmit({
       title,
@@ -73,7 +73,7 @@ export function AddLessonDialog({
         type === 'text'
           ? content.trim()
           : type === 'micro_card'
-            ? serializeMicroCardContent(microCard)
+            ? serializeMicroCardContent(microCards)
             : undefined,
       quiz: type === 'quiz' ? serializeQuizContent(quiz) : undefined,
       videoUrl: type === 'video' ? videoUrl.trim() : undefined,
@@ -87,7 +87,7 @@ export function AddLessonDialog({
       setContent('');
       setVideoUrl('');
       setAiPrompt('');
-      setMicroCard(createEmptyMicroCardDraft());
+      setMicroCards([createEmptyMicroCardDraft()]);
       setQuiz(createEmptyQuizDraft());
       onOpenChange(false);
     }
@@ -102,7 +102,7 @@ export function AddLessonDialog({
       setContent('');
       setVideoUrl('');
       setAiPrompt('');
-      setMicroCard(createEmptyMicroCardDraft());
+      setMicroCards([createEmptyMicroCardDraft()]);
       setQuiz(createEmptyQuizDraft());
     }
     onOpenChange(isOpen);
@@ -172,8 +172,8 @@ export function AddLessonDialog({
             onVideoUrlChange={setVideoUrl}
             aiPrompt={aiPrompt}
             onAiPromptChange={setAiPrompt}
-            microCard={microCard}
-            onMicroCardChange={setMicroCard}
+            microCards={microCards}
+            onMicroCardsChange={setMicroCards}
             quiz={quiz}
             onQuizChange={setQuiz}
           />
@@ -198,7 +198,7 @@ export function AddLessonDialog({
             onClick={handleSubmit}
             disabled={
               saving ||
-              !isLessonDraftReady({ type, title, content, videoUrl, aiPrompt, microCard, quiz })
+              !isLessonDraftReady({ type, title, content, videoUrl, aiPrompt, microCards, quiz })
             }
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}

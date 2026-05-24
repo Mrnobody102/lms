@@ -87,6 +87,28 @@ export class SkillMasteryService {
     });
   }
 
+  async getWeakestSkills(tenantId: string, userId: string, limit = 2) {
+    const records = await this.prisma.skillMastery.findMany({
+      where: { tenantId, userId, skill: { isActive: true } },
+      include: {
+        skill: {
+          select: { code: true, name: true, nameVi: true },
+        },
+      },
+      orderBy: [{ mastery: 'asc' }, { skillCode: 'asc' }],
+      take: limit,
+    });
+
+    if (records.length > 0) return records.map((r) => r.skill);
+
+    // Fallback: If no mastery records exist, return some random active skills
+    return this.prisma.skill.findMany({
+      where: { tenantId, isActive: true },
+      select: { code: true, name: true, nameVi: true },
+      take: limit,
+    });
+  }
+
   async getStudentMasteryTrend(
     tenantId: string,
     userId: string,

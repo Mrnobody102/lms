@@ -967,8 +967,12 @@ function parseMicroCardSummary(content: string | null | undefined) {
 
   try {
     const parsed = JSON.parse(content) as Record<string, unknown>;
-    const front = typeof parsed.front === 'string' ? parsed.front.trim() : '';
-    const back = typeof parsed.back === 'string' ? parsed.back.trim() : '';
+    const firstCard =
+      Array.isArray(parsed.cards) && parsed.cards[0] && typeof parsed.cards[0] === 'object'
+        ? (parsed.cards[0] as Record<string, unknown>)
+        : parsed;
+    const front = typeof firstCard.front === 'string' ? firstCard.front.trim() : '';
+    const back = typeof firstCard.back === 'string' ? firstCard.back.trim() : '';
     return front && back ? `${front} -> ${back}` : null;
   } catch {
     return null;

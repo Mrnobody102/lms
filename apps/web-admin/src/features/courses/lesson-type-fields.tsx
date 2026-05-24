@@ -31,8 +31,8 @@ interface LessonTypeFieldsProps {
   onVideoUrlChange: (value: string) => void;
   aiPrompt: string;
   onAiPromptChange: (value: string) => void;
-  microCard: MicroCardDraft;
-  onMicroCardChange: (value: MicroCardDraft) => void;
+  microCards: MicroCardDraft[];
+  onMicroCardsChange: (value: MicroCardDraft[]) => void;
   quiz: QuizDraft;
   onQuizChange: (value: QuizDraft) => void;
 }
@@ -45,15 +45,28 @@ export function LessonTypeFields({
   onVideoUrlChange,
   aiPrompt,
   onAiPromptChange,
-  microCard,
-  onMicroCardChange,
+  microCards,
+  onMicroCardsChange,
   quiz,
   onQuizChange,
 }: LessonTypeFieldsProps) {
   const t = useTranslations('Admin');
 
-  const updateMicroCard = (field: keyof MicroCardDraft, value: string) => {
-    onMicroCardChange({ ...microCard, [field]: value });
+  const updateMicroCard = (index: number, field: keyof MicroCardDraft, value: string) => {
+    onMicroCardsChange(
+      microCards.map((card, currentIndex) =>
+        currentIndex === index ? { ...card, [field]: value } : card,
+      ),
+    );
+  };
+
+  const addMicroCard = () => {
+    onMicroCardsChange([...microCards, createEmptyMicroCardDraft()]);
+  };
+
+  const removeMicroCard = (index: number) => {
+    const nextCards = microCards.filter((_card, currentIndex) => currentIndex !== index);
+    onMicroCardsChange(nextCards.length > 0 ? nextCards : [createEmptyMicroCardDraft()]);
   };
 
   const updateQuizQuestion = (index: number, patch: Partial<QuizQuestionDraft>) => {
@@ -221,49 +234,75 @@ export function LessonTypeFields({
   if (type === 'micro_card') {
     return (
       <div className="space-y-3 rounded-lg border bg-muted/20 p-3">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label className="text-sm">{t('microCardFront')}</Label>
-            <Input
-              value={microCard.front}
-              onChange={(event) => updateMicroCard('front', event.target.value)}
-              placeholder={t('microCardFrontPlaceholder')}
-            />
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium">{t('microCardDeck')}</p>
+            <p className="text-xs text-muted-foreground">{t('microCardDeckDesc')}</p>
           </div>
-          <div className="space-y-1.5">
-            <Label className="text-sm">{t('microCardPinyin')}</Label>
-            <Input
-              value={microCard.pinyin}
-              onChange={(event) => updateMicroCard('pinyin', event.target.value)}
-              placeholder={t('microCardPinyinPlaceholder')}
-            />
+          <Button type="button" variant="outline" size="sm" onClick={addMicroCard}>
+            {t('microCardAdd')}
+          </Button>
+        </div>
+
+        {microCards.map((microCard, index) => (
+          <div key={index} className="space-y-3 rounded-lg border bg-background p-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-medium">{t('microCardLabel', { index: index + 1 })}</p>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => removeMicroCard(index)}
+                disabled={microCards.length === 1}
+              >
+                {t('remove')}
+              </Button>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label className="text-sm">{t('microCardFront')}</Label>
+                <Input
+                  value={microCard.front}
+                  onChange={(event) => updateMicroCard(index, 'front', event.target.value)}
+                  placeholder={t('microCardFrontPlaceholder')}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm">{t('microCardPinyin')}</Label>
+                <Input
+                  value={microCard.pinyin}
+                  onChange={(event) => updateMicroCard(index, 'pinyin', event.target.value)}
+                  placeholder={t('microCardPinyinPlaceholder')}
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm">{t('microCardBack')}</Label>
+              <Input
+                value={microCard.back}
+                onChange={(event) => updateMicroCard(index, 'back', event.target.value)}
+                placeholder={t('microCardBackPlaceholder')}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm">{t('microCardExample')}</Label>
+              <textarea
+                value={microCard.example}
+                onChange={(event) => updateMicroCard(index, 'example', event.target.value)}
+                placeholder={t('microCardExamplePlaceholder')}
+                className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm">{t('microCardAudioUrl')}</Label>
+              <Input
+                value={microCard.audioUrl}
+                onChange={(event) => updateMicroCard(index, 'audioUrl', event.target.value)}
+                placeholder={t('microCardAudioUrlPlaceholder')}
+              />
+            </div>
           </div>
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-sm">{t('microCardBack')}</Label>
-          <Input
-            value={microCard.back}
-            onChange={(event) => updateMicroCard('back', event.target.value)}
-            placeholder={t('microCardBackPlaceholder')}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-sm">{t('microCardExample')}</Label>
-          <textarea
-            value={microCard.example}
-            onChange={(event) => updateMicroCard('example', event.target.value)}
-            placeholder={t('microCardExamplePlaceholder')}
-            className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-sm">{t('microCardAudioUrl')}</Label>
-          <Input
-            value={microCard.audioUrl}
-            onChange={(event) => updateMicroCard('audioUrl', event.target.value)}
-            placeholder={t('microCardAudioUrlPlaceholder')}
-          />
-        </div>
+        ))}
       </div>
     );
   }
@@ -307,35 +346,36 @@ export function createEmptyQuizDraft(): QuizDraft {
   };
 }
 
-export function parseMicroCardContent(content: string | null | undefined): MicroCardDraft {
+export function parseMicroCardContent(content: string | null | undefined): MicroCardDraft[] {
   if (!content) {
-    return createEmptyMicroCardDraft();
+    return [createEmptyMicroCardDraft()];
   }
 
   try {
     const parsed = JSON.parse(content) as Record<string, unknown>;
-    return {
-      front: readString(parsed.front),
-      pinyin: readString(parsed.pinyin),
-      back: readString(parsed.back),
-      example: readString(parsed.example),
-      audioUrl: readString(parsed.audioUrl),
-    };
+    const cards = readMicroCardArray(parsed.cards);
+    if (cards.length > 0) {
+      return cards;
+    }
+
+    return [normalizeMicroCard(parsed)];
   } catch {
-    return createEmptyMicroCardDraft();
+    return [createEmptyMicroCardDraft()];
   }
 }
 
-export function serializeMicroCardContent(input: MicroCardDraft) {
-  const card = {
-    front: input.front.trim(),
-    back: input.back.trim(),
-    ...(input.pinyin.trim() ? { pinyin: input.pinyin.trim() } : {}),
-    ...(input.example.trim() ? { example: input.example.trim() } : {}),
-    ...(input.audioUrl.trim() ? { audioUrl: input.audioUrl.trim() } : {}),
-  };
+export function serializeMicroCardContent(input: MicroCardDraft[]) {
+  const cards = input
+    .map((card) => ({
+      front: card.front.trim(),
+      back: card.back.trim(),
+      ...(card.pinyin.trim() ? { pinyin: card.pinyin.trim() } : {}),
+      ...(card.example.trim() ? { example: card.example.trim() } : {}),
+      ...(card.audioUrl.trim() ? { audioUrl: card.audioUrl.trim() } : {}),
+    }))
+    .filter((card) => card.front && card.back);
 
-  return JSON.stringify(card);
+  return JSON.stringify({ cards });
 }
 
 export function parseQuizContent(content: unknown): QuizDraft {
@@ -373,7 +413,7 @@ export function isLessonDraftReady(input: {
   content: string;
   videoUrl: string;
   aiPrompt: string;
-  microCard: MicroCardDraft;
+  microCards: MicroCardDraft[];
   quiz: QuizDraft;
 }) {
   if (!input.title.trim()) {
@@ -393,7 +433,9 @@ export function isLessonDraftReady(input: {
   }
 
   if (input.type === 'micro_card') {
-    return input.microCard.front.trim().length > 0 && input.microCard.back.trim().length > 0;
+    return input.microCards.some(
+      (card) => card.front.trim().length > 0 && card.back.trim().length > 0,
+    );
   }
 
   if (input.type === 'quiz') {
@@ -412,6 +454,27 @@ export function isLessonDraftReady(input: {
 
 function readString(value: unknown) {
   return typeof value === 'string' ? value : '';
+}
+
+function readMicroCardArray(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((card) => (card && typeof card === 'object' ? normalizeMicroCard(card) : null))
+    .filter((card): card is MicroCardDraft => Boolean(card?.front && card.back));
+}
+
+function normalizeMicroCard(value: object): MicroCardDraft {
+  const record = value as Record<string, unknown>;
+  return {
+    front: readString(record.front),
+    pinyin: readString(record.pinyin),
+    back: readString(record.back),
+    example: readString(record.example),
+    audioUrl: readString(record.audioUrl),
+  };
 }
 
 function normalizeQuizQuestion(value: unknown): QuizQuestionDraft | null {

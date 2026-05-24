@@ -35,5 +35,9 @@ function shouldBypassResponseWrapping(context: ExecutionContext): boolean {
   }>();
   const requestPath = request.originalUrl ?? request.path ?? request.url ?? '';
 
-  return requestPath.startsWith('/api/health') || requestPath.startsWith('/health');
+  return (
+    requestPath.startsWith('/api/health') ||
+    requestPath.startsWith('/health') ||
+    (requestPath.startsWith('/api/certificates/verify/') && requestPath.endsWith('/image'))
+  );
 }

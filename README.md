@@ -99,9 +99,9 @@ Truy cập các ứng dụng:
 
 | App              | URL                              |
 | ---------------- | -------------------------------- |
-| Web Student      | `http://localhost:3000`          |
-| Web Admin        | `http://localhost:3001`          |
-| Super Portal     | `http://localhost:3002`          |
+| Web Student      | `http://localhost:3100`          |
+| Web Admin        | `http://localhost:3101`          |
+| Super Portal     | `http://localhost:3102`          |
 | API Server       | `http://localhost:4000`          |
 | Swagger API Docs | `http://localhost:4000/api/docs` |
 

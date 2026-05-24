@@ -9,12 +9,31 @@ export interface ImageUploadProps extends React.InputHTMLAttributes<HTMLInputEle
   value?: string;
   onUpload?: (file: File) => Promise<{ url: string }>;
   onValueChange?: (url: string) => void;
+  onUploadError?: (error: unknown) => void;
   isUploading?: boolean;
+  uploadedImageAlt?: string;
+  changeLabel?: string;
+  uploadingLabel?: string;
+  emptyLabel?: string;
+  helperText?: string;
 }
 
 export const ImageUpload = React.forwardRef<HTMLInputElement, ImageUploadProps>(
   (
-    { className, value, onUpload, onValueChange, isUploading: externalIsUploading, ...props },
+    {
+      className,
+      value,
+      onUpload,
+      onValueChange,
+      onUploadError,
+      isUploading: externalIsUploading,
+      uploadedImageAlt = 'Uploaded image',
+      changeLabel = 'Change',
+      uploadingLabel = 'Uploading...',
+      emptyLabel = 'Click or drag image to upload',
+      helperText = 'SVG, PNG, JPG or GIF (max. 5MB)',
+      ...props
+    },
     ref,
   ) => {
     const inputRef = React.useRef<HTMLInputElement>(null);
@@ -33,7 +52,7 @@ export const ImageUpload = React.forwardRef<HTMLInputElement, ImageUploadProps>(
             onValueChange(result.url);
           }
         } catch (error) {
-          console.error('Failed to upload image', error);
+          onUploadError?.(error);
         } finally {
           setInternalUploading(false);
           if (inputRef.current) {
@@ -76,7 +95,7 @@ export const ImageUpload = React.forwardRef<HTMLInputElement, ImageUploadProps>(
 
         {value ? (
           <div className="relative aspect-video w-full overflow-hidden rounded-lg border bg-muted flex items-center justify-center">
-            <img src={value} alt="Uploaded image" className="w-full h-full object-cover" />
+            <img src={value} alt={uploadedImageAlt} className="w-full h-full object-cover" />
             {isUploading && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
                 <Loader2 className="w-8 h-8 text-white animate-spin" />
@@ -92,7 +111,7 @@ export const ImageUpload = React.forwardRef<HTMLInputElement, ImageUploadProps>(
                   onClick={() => inputRef.current?.click()}
                 >
                   <UploadCloud className="w-4 h-4 mr-2" />
-                  Change
+                  {changeLabel}
                 </Button>
                 <Button
                   type="button"
@@ -122,11 +141,9 @@ export const ImageUpload = React.forwardRef<HTMLInputElement, ImageUploadProps>(
               <ImageIcon className="w-10 h-10 text-muted-foreground mb-3 opacity-50" />
             )}
             <div className="text-sm font-medium text-muted-foreground">
-              {isUploading ? 'Uploading...' : 'Click or drag image to upload'}
+              {isUploading ? uploadingLabel : emptyLabel}
             </div>
-            <div className="text-xs text-muted-foreground/70 mt-1">
-              SVG, PNG, JPG or GIF (max. 5MB)
-            </div>
+            <div className="text-xs text-muted-foreground/70 mt-1">{helperText}</div>
           </div>
         )}
       </div>

@@ -1,25 +1,28 @@
 'use client';
 
-import { useState } from 'react';
 import { useLocale } from 'next-intl';
 import { usePathname, useRouter } from 'next/navigation';
 import { Languages } from 'lucide-react';
 import { isLocale, locales, localeNames, type Locale } from '@repo/shared';
-import { cn } from './lib/utils';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from './dropdown-menu';
 
 interface LanguageToggleProps {
-  menuAlign?: 'left' | 'right';
+  menuAlign?: 'start' | 'center' | 'end';
   menuPlacement?: 'bottom' | 'top';
 }
 
 export function LanguageToggle({
-  menuAlign = 'right',
+  menuAlign = 'end',
   menuPlacement = 'bottom',
 }: LanguageToggleProps) {
   const locale = useLocale();
   const pathname = usePathname();
   const router = useRouter();
-  const [open, setOpen] = useState(false);
 
   const handleLanguageChange = (newLocale: Locale) => {
     if (newLocale === locale) return;
@@ -39,51 +42,37 @@ export function LanguageToggle({
     const newPath = pathParts.join('/') || '/';
     const suffix =
       typeof window === 'undefined' ? '' : `${window.location.search}${window.location.hash}`;
-    setOpen(false);
+
     router.replace(`${newPath}${suffix}`, { scroll: false });
   };
 
   return (
-    <div className="relative z-50" onMouseLeave={() => setOpen(false)}>
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-haspopup="menu"
-        onClick={() => setOpen((value) => !value)}
-        onFocus={() => setOpen(true)}
-        onMouseEnter={() => setOpen(true)}
-        className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all active:scale-95 border bg-card/50"
-      >
-        <Languages className="w-4 h-4" />
-        <span className="uppercase">{locale}</span>
-      </button>
-
-      <div
-        role="menu"
-        className={cn(
-          'absolute z-50 w-40 rounded-xl border bg-card p-1 shadow-xl transition-all duration-200',
-          open ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none',
-          menuAlign === 'left' ? 'left-0' : 'right-0',
-          menuPlacement === 'top' ? 'bottom-full mb-2' : 'mt-2',
-        )}
-      >
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all active:scale-95 border bg-card/50"
+        >
+          <Languages className="w-4 h-4" />
+          <span className="uppercase">{locale}</span>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align={menuAlign} side={menuPlacement} className="w-40 rounded-xl z-50">
         {locales.map((loc) => (
-          <button
+          <DropdownMenuItem
             key={loc}
-            type="button"
-            role="menuitem"
             onClick={() => handleLanguageChange(loc)}
-            className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-between ${
+            className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-between cursor-pointer ${
               locale === loc
-                ? 'bg-primary/10 text-primary'
-                : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+                ? 'bg-primary/10 text-primary focus:bg-primary/10 focus:text-primary'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             <span>{localeNames[loc]}</span>
             {locale === loc && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
-          </button>
+          </DropdownMenuItem>
         ))}
-      </div>
-    </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
