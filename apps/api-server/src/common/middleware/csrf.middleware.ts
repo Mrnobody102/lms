@@ -26,6 +26,12 @@ export class CsrfMiddleware implements NestMiddleware {
       return next();
     }
 
+    // If a custom header like x-tenant-id is present, it proves the request was made via XHR/fetch
+    // which is subject to CORS preflight, inherently protecting against CSRF attacks.
+    if (req.headers['x-tenant-id'] || req.headers['authorization']) {
+      return next();
+    }
+
     const cookies = req.cookies as Record<string, string | undefined> | undefined;
     const authCookie = cookies?.access_token;
     if (!authCookie) {

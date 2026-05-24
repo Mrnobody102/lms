@@ -53,7 +53,9 @@ export const notificationApi = {
 
 function buildNotificationStreamUrl() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, '');
-  return apiUrl ? `${apiUrl}/api/notifications/stream` : '/api/notifications/stream';
+  const baseUrl = apiUrl ? `${apiUrl}/api/notifications/stream` : '/api/notifications/stream';
+  const tenantId = process.env.NEXT_PUBLIC_TENANT_ID || 'trung-tam-demo';
+  return `${baseUrl}?tenantId=${encodeURIComponent(tenantId)}`;
 }
 
 function parseNotificationStreamEvent(value: string): NotificationStreamEvent | null {

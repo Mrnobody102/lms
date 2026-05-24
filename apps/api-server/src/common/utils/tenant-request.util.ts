@@ -14,6 +14,11 @@ interface TenantHintOptions {
 }
 
 export function extractTenantHints(req: Request, options: TenantHintOptions = {}): string[] {
+  const queryValue = req.query?.tenantId;
+  if (typeof queryValue === 'string' && queryValue.trim()) {
+    return [queryValue.trim()];
+  }
+
   const headerValue = req.headers['x-tenant-id'];
   const isProduction = (options.nodeEnv ?? process.env.NODE_ENV) === 'production';
   if (
