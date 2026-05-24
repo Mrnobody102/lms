@@ -22,7 +22,7 @@ export default function proxy(request: NextRequest) {
       [process.env.NEXT_PUBLIC_API_URL, process.env.NEXT_PUBLIC_WEB_STUDENT_URL],
       {
         includeLocalhost: process.env.NODE_ENV !== 'production',
-        allowUnsafeInline: process.env.NODE_ENV !== 'production',
+        allowUnsafeInline: true,
         allowUnsafeEval: process.env.NODE_ENV !== 'production',
       },
     ),
