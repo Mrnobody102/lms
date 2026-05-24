@@ -9,7 +9,7 @@
     "db:push": "dotenv -e ../../.env -- node scripts/guard-db-push.cjs && dotenv -e ../../.env -- prisma db push",
     "db:studio": "dotenv -e ../../.env -- prisma studio",
     "generate": "prisma generate",
-    "build": "tsc --outDir dist && prisma generate",
+    "build": "prisma generate && tsc --outDir dist",
     "typecheck": "tsc --noEmit",
     "db:migrate": "dotenv -e ../../.env -- prisma migrate dev",
     "db:deploy": "dotenv -e ../../.env -- prisma migrate deploy",
