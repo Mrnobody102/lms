@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -18,11 +19,19 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
 import { getScopedTenantId } from '../common/utils/tenant-request.util';
+import { AiQuestionGenerationService } from './ai-question-generation.service';
+import { AiGenerationJobQueryDto } from './dto/ai-generation-job-query.dto';
+import { CreateAiQuestionGenerationJobDto } from './dto/create-ai-question-generation-job.dto';
 import { PracticeAttemptQueryDto } from './dto/practice-attempt-query.dto';
 import { CreatePracticeQuestionDto } from './dto/create-practice-question.dto';
 import { CreatePracticeSetDto } from './dto/create-practice-set.dto';
 import { PracticeQueryDto } from './dto/practice-query.dto';
+import {
+  BulkReviewAiQuestionDraftDto,
+  RejectAiQuestionDraftDto,
+} from './dto/review-ai-question-draft.dto';
 import { SubmitPracticeAttemptDto } from './dto/submit-practice-attempt.dto';
+import { UpdateAiQuestionDraftDto } from './dto/update-ai-question-draft.dto';
 import { UpdatePracticeQuestionDto } from './dto/update-practice-question.dto';
 import { UpdatePracticeSetDto } from './dto/update-practice-set.dto';
 import { PracticeService } from './practice.service';
@@ -33,14 +42,127 @@ import { GeneratePracticeDto } from './dto/generate-practice.dto';
 @ApiTags('practice')
 @Controller('practice')
 export class PracticeController {
-  constructor(private readonly practiceService: PracticeService) {}
+  constructor(
+    private readonly practiceService: PracticeService,
+    private readonly aiQuestionGenerationService: AiQuestionGenerationService,
+  ) {}
 
   @Post('generate-ai')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
   @ApiOperation({ summary: 'Generate practice questions using AI' })
   generateAiQuestions(@Body() dto: GeneratePracticeDto, @Request() req: AuthenticatedRequest) {
-    return this.practiceService.generateAiQuestions(getScopedTenantId(req), req.user.id, dto);
+    return this.aiQuestionGenerationService.createJobAndGenerate(
+      getScopedTenantId(req),
+      req.user.id,
+      dto,
+    );
+  }
+
+  @Post('ai-generations')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
+  @ApiOperation({ summary: 'Create an AI question generation job' })
+  createAiGenerationJob(
+    @Body() dto: CreateAiQuestionGenerationJobDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.aiQuestionGenerationService.createJobAndGenerate(
+      getScopedTenantId(req),
+      req.user.id,
+      dto,
+    );
+  }
+
+  @Get('ai-generations')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
+  @ApiOperation({ summary: 'List AI question generation jobs' })
+  listAiGenerationJobs(
+    @Query() query: AiGenerationJobQueryDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.aiQuestionGenerationService.listJobs(getScopedTenantId(req), query);
+  }
+
+  @Get('ai-generations/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
+  @ApiOperation({ summary: 'Get an AI question generation job with drafts' })
+  getAiGenerationJob(@Param('id', ParseUUIDPipe) id: string, @Request() req: AuthenticatedRequest) {
+    return this.aiQuestionGenerationService.getJob(getScopedTenantId(req), id);
+  }
+
+  @Post('ai-drafts/bulk-approve')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
+  @ApiOperation({ summary: 'Bulk approve AI generated question drafts' })
+  bulkApproveAiDrafts(
+    @Body() dto: BulkReviewAiQuestionDraftDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.aiQuestionGenerationService.bulkApproveDrafts(
+      getScopedTenantId(req),
+      dto.ids,
+      req.user.id,
+    );
+  }
+
+  @Post('ai-drafts/bulk-reject')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
+  @ApiOperation({ summary: 'Bulk reject AI generated question drafts' })
+  bulkRejectAiDrafts(
+    @Body() dto: BulkReviewAiQuestionDraftDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    if (!dto.rejectionReason) {
+      throw new BadRequestException('Rejection reason is required');
+    }
+
+    return this.aiQuestionGenerationService.bulkRejectDrafts(
+      getScopedTenantId(req),
+      dto.ids,
+      req.user.id,
+      dto.rejectionReason,
+    );
+  }
+
+  @Patch('ai-drafts/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
+  @ApiOperation({ summary: 'Edit an AI generated question draft before review' })
+  updateAiDraft(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateAiQuestionDraftDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.aiQuestionGenerationService.updateDraft(getScopedTenantId(req), id, dto);
+  }
+
+  @Post('ai-drafts/:id/approve')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
+  @ApiOperation({ summary: 'Approve an AI generated question draft' })
+  approveAiDraft(@Param('id', ParseUUIDPipe) id: string, @Request() req: AuthenticatedRequest) {
+    return this.aiQuestionGenerationService.approveDraft(getScopedTenantId(req), id, req.user.id);
+  }
+
+  @Post('ai-drafts/:id/reject')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
+  @ApiOperation({ summary: 'Reject an AI generated question draft' })
+  rejectAiDraft(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: RejectAiQuestionDraftDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.aiQuestionGenerationService.rejectDraft(
+      getScopedTenantId(req),
+      id,
+      req.user.id,
+      dto.rejectionReason,
+    );
   }
 
   @Get('review-queue')

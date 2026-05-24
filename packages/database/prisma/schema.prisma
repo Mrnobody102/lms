@@ -93,91 +93,109 @@ enum QuestionReviewStatus {
   REJECTED
 }
 
+enum AiGenerationJobStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum AiDraftReviewStatus {
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+}
+
 model Tenant {
-  id                    String                 @id @default(uuid())
-  name                  String
-  slug                  String                 @unique // Ví dụ: "trung-tam-a"
-  domain                String?                @unique // Custom domain sau này
-  settings              Json // Lưu logo, màu sắc, config
-  users                 User[]
-  courses               Course[]
-  units                 CourseUnit[]
-  lessons               Lesson[]
-  enrollments           CourseEnrollment[]
-  activities            LearningActivity[]
-  questions             PracticeQuestion[]
-  exerciseSets          PracticeExerciseSet[]
-  practiceAttempts      PracticeAttempt[]
-  exams                 Exam[]
-  examAttempts          ExamAttempt[]
-  activationCodes       ActivationCode[]
-  redemptions           ActivationRedemption[]
-  programs              Program[]
-  levels                Level[]
-  skills                Skill[]
-  skillMasteries        SkillMastery[]
-  skillMasterySnapshots SkillMasterySnapshot[]
-  reviewCards           ReviewCard[]
-  reviewLogs            ReviewLog[]
-  aiUsageQuotas         AiUsageQuota[]
-  mediaAssets           MediaAsset[]
-  cohorts               Cohort[]
-  roleplaySessions      RoleplaySession[]
-  discussionThreads     DiscussionThread[]
-  discussionReplies     DiscussionReply[]
-  courseCertificates    CourseCertificate[]
-  isActive              Boolean                @default(true)
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @default(now()) @updatedAt
-  Notification          Notification[]
+  id                        String                     @id @default(uuid())
+  name                      String
+  slug                      String                     @unique // Ví dụ: "trung-tam-a"
+  domain                    String?                    @unique // Custom domain sau này
+  settings                  Json // Lưu logo, màu sắc, config
+  users                     User[]
+  courses                   Course[]
+  units                     CourseUnit[]
+  lessons                   Lesson[]
+  enrollments               CourseEnrollment[]
+  activities                LearningActivity[]
+  questions                 PracticeQuestion[]
+  aiQuestionGenerationJobs  AiQuestionGenerationJob[]
+  aiGeneratedQuestionDrafts AiGeneratedQuestionDraft[]
+  exerciseSets              PracticeExerciseSet[]
+  practiceAttempts          PracticeAttempt[]
+  exams                     Exam[]
+  examAttempts              ExamAttempt[]
+  activationCodes           ActivationCode[]
+  redemptions               ActivationRedemption[]
+  programs                  Program[]
+  levels                    Level[]
+  skills                    Skill[]
+  skillMasteries            SkillMastery[]
+  skillMasterySnapshots     SkillMasterySnapshot[]
+  reviewCards               ReviewCard[]
+  reviewLogs                ReviewLog[]
+  aiUsageQuotas             AiUsageQuota[]
+  mediaAssets               MediaAsset[]
+  cohorts                   Cohort[]
+  roleplaySessions          RoleplaySession[]
+  discussionThreads         DiscussionThread[]
+  discussionReplies         DiscussionReply[]
+  courseCertificates        CourseCertificate[]
+  isActive                  Boolean                    @default(true)
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @default(now()) @updatedAt
+  Notification              Notification[]
 
   @@index([isActive])
 }
 
 model User {
-  id                     String                 @id @default(uuid())
-  email                  String
-  password               String
-  googleSubject          String?
-  googleEmailVerified    Boolean                @default(false)
-  fullName               String
-  phoneNumber            String?
-  avatarUrl              String?
-  role                   Role                   @default(STUDENT)
-  isActive               Boolean                @default(true)
-  deletedAt              DateTime?
-  tokenVersion           Int                    @default(0)
-  passwordResetTokenHash String?
-  passwordResetExpiresAt DateTime?
-  failedLoginAttempts    Int                    @default(0)
-  lockoutUntil           DateTime?
-  tenantId               String
-  tenant                 Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  progress               UserLessonProgress[]
-  enrollments            CourseEnrollment[]
-  activities             LearningActivity[]
-  practiceAttempts       PracticeAttempt[]
-  examAttempts           ExamAttempt[]
-  refreshTokens          RefreshToken[]
-  auditLogs              AuditLog[]
-  redemptions            ActivationRedemption[]
-  skillMasteries         SkillMastery[]
-  skillMasterySnapshots  SkillMasterySnapshot[]
-  reviewCards            ReviewCard[]
-  reviewLogs             ReviewLog[]
-  aiUsageQuotas          AiUsageQuota[]
-  mediaAssets            MediaAsset[]
-  cohortMemberships      CohortMembership[]
-  roleplaySessions       RoleplaySession[]
-  discussionThreads      DiscussionThread[]
-  discussionReplies      DiscussionReply[]
-  courseCertificates     CourseCertificate[]
-  createdAt              DateTime               @default(now())
-  updatedAt              DateTime               @updatedAt
-  Notification           Notification[]
-  currentStreak          Int                    @default(0)
-  longestStreak          Int                    @default(0)
-  lastActiveDate         DateTime?
+  id                                String                     @id @default(uuid())
+  email                             String
+  password                          String
+  googleSubject                     String?
+  googleEmailVerified               Boolean                    @default(false)
+  fullName                          String
+  phoneNumber                       String?
+  avatarUrl                         String?
+  role                              Role                       @default(STUDENT)
+  isActive                          Boolean                    @default(true)
+  deletedAt                         DateTime?
+  tokenVersion                      Int                        @default(0)
+  passwordResetTokenHash            String?
+  passwordResetExpiresAt            DateTime?
+  failedLoginAttempts               Int                        @default(0)
+  lockoutUntil                      DateTime?
+  tenantId                          String
+  tenant                            Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  progress                          UserLessonProgress[]
+  enrollments                       CourseEnrollment[]
+  activities                        LearningActivity[]
+  practiceAttempts                  PracticeAttempt[]
+  examAttempts                      ExamAttempt[]
+  refreshTokens                     RefreshToken[]
+  auditLogs                         AuditLog[]
+  redemptions                       ActivationRedemption[]
+  skillMasteries                    SkillMastery[]
+  skillMasterySnapshots             SkillMasterySnapshot[]
+  reviewCards                       ReviewCard[]
+  reviewLogs                        ReviewLog[]
+  aiUsageQuotas                     AiUsageQuota[]
+  mediaAssets                       MediaAsset[]
+  requestedAiQuestionGenerationJobs AiQuestionGenerationJob[]  @relation("AiQuestionGenerationJobRequestedBy")
+  reviewedAiQuestionDrafts          AiGeneratedQuestionDraft[] @relation("AiGeneratedQuestionDraftReviewedBy")
+  cohortMemberships                 CohortMembership[]
+  roleplaySessions                  RoleplaySession[]
+  discussionThreads                 DiscussionThread[]
+  discussionReplies                 DiscussionReply[]
+  courseCertificates                CourseCertificate[]
+  createdAt                         DateTime                   @default(now())
+  updatedAt                         DateTime                   @updatedAt
+  Notification                      Notification[]
+  currentStreak                     Int                        @default(0)
+  longestStreak                     Int                        @default(0)
+  lastActiveDate                    DateTime?
 
   @@unique([tenantId, email])
   @@unique([tenantId, googleSubject])
@@ -222,32 +240,34 @@ model AuditLog {
 }
 
 model Course {
-  id                 String                @id @default(uuid())
-  title              String
-  slug               String? // SEO-friendly slug
-  description        String?
-  coverImageUrl      String? // URL to the course cover/thumbnail image
-  isActive           Boolean               @default(true)
-  deletedAt          DateTime?
-  tenantId           String
-  tenant             Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  levelId            String?
-  level              Level?                @relation(fields: [levelId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
-  units              CourseUnit[]
-  lessons            Lesson[]
-  enrollments        CourseEnrollment[]
-  activities         LearningActivity[]
-  questions          PracticeQuestion[]
-  exerciseSets       PracticeExerciseSet[]
-  practiceAttempts   PracticeAttempt[]
-  exams              Exam[]
-  examAttempts       ExamAttempt[]
-  courseCertificates CourseCertificate[]
-  totalDuration      Int                   @default(0)
-  aiSettings         Json?
-  createdAt          DateTime              @default(now())
-  updatedAt          DateTime              @updatedAt
-  activationCodes    ActivationCode[]
+  id                        String                     @id @default(uuid())
+  title                     String
+  slug                      String? // SEO-friendly slug
+  description               String?
+  coverImageUrl             String? // URL to the course cover/thumbnail image
+  isActive                  Boolean                    @default(true)
+  deletedAt                 DateTime?
+  tenantId                  String
+  tenant                    Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  levelId                   String?
+  level                     Level?                     @relation(fields: [levelId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
+  units                     CourseUnit[]
+  lessons                   Lesson[]
+  enrollments               CourseEnrollment[]
+  activities                LearningActivity[]
+  questions                 PracticeQuestion[]
+  aiQuestionGenerationJobs  AiQuestionGenerationJob[]
+  aiGeneratedQuestionDrafts AiGeneratedQuestionDraft[]
+  exerciseSets              PracticeExerciseSet[]
+  practiceAttempts          PracticeAttempt[]
+  exams                     Exam[]
+  examAttempts              ExamAttempt[]
+  courseCertificates        CourseCertificate[]
+  totalDuration             Int                        @default(0)
+  aiSettings                Json?
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
+  activationCodes           ActivationCode[]
 
   @@unique([tenantId, slug])
   @@unique([id, tenantId])
@@ -294,21 +314,23 @@ model Level {
 }
 
 model CourseUnit {
-  id           String                @id @default(uuid())
-  title        String
-  description  String?
-  order        Int                   @default(0)
-  deletedAt    DateTime?
-  tenantId     String
-  tenant       Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  courseId     String
-  course       Course                @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
-  lessons      Lesson[]
-  questions    PracticeQuestion[]
-  exerciseSets PracticeExerciseSet[]
-  exams        Exam[]
-  createdAt    DateTime              @default(now())
-  updatedAt    DateTime              @updatedAt
+  id                        String                     @id @default(uuid())
+  title                     String
+  description               String?
+  order                     Int                        @default(0)
+  deletedAt                 DateTime?
+  tenantId                  String
+  tenant                    Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  courseId                  String
+  course                    Course                     @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  lessons                   Lesson[]
+  questions                 PracticeQuestion[]
+  aiQuestionGenerationJobs  AiQuestionGenerationJob[]
+  aiGeneratedQuestionDrafts AiGeneratedQuestionDraft[]
+  exerciseSets              PracticeExerciseSet[]
+  exams                     Exam[]
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
 
   @@unique([id, tenantId])
   @@index([tenantId, courseId, deletedAt])
@@ -431,11 +453,80 @@ model PracticeQuestion {
   updatedAt         DateTime                      @updatedAt
   exerciseLinks     PracticeExerciseSetQuestion[]
   answers           PracticeAnswer[]
+  approvedAiDrafts  AiGeneratedQuestionDraft[]    @relation("AiDraftApprovedQuestion")
 
   @@unique([id, tenantId])
   @@index([tenantId, courseId, deletedAt])
   @@index([unitId])
   @@index([type])
+}
+
+model AiQuestionGenerationJob {
+  id             String                     @id @default(uuid())
+  tenantId       String
+  tenant         Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  requestedById  String
+  requestedBy    User                       @relation("AiQuestionGenerationJobRequestedBy", fields: [requestedById, tenantId], references: [id, tenantId], onDelete: Cascade)
+  courseId       String
+  course         Course                     @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  unitId         String?
+  unit           CourseUnit?                @relation(fields: [unitId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
+  topic          String
+  context        String?
+  questionType   PracticeQuestionType
+  requestedCount Int
+  skillTags      String[]
+  status         AiGenerationJobStatus      @default(QUEUED)
+  provider       String?
+  model          String?
+  promptVersion  String
+  promptHash     String?
+  sourceReason   String?
+  errorMessage   String?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime                   @default(now())
+  updatedAt      DateTime                   @updatedAt
+  drafts         AiGeneratedQuestionDraft[]
+
+  @@unique([id, tenantId])
+  @@index([tenantId, status, createdAt])
+  @@index([tenantId, courseId, createdAt])
+}
+
+model AiGeneratedQuestionDraft {
+  id                 String                  @id @default(uuid())
+  tenantId           String
+  tenant             Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  jobId              String
+  job                AiQuestionGenerationJob @relation(fields: [jobId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  courseId           String
+  course             Course                  @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  unitId             String?
+  unit               CourseUnit?             @relation(fields: [unitId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
+  type               PracticeQuestionType
+  prompt             String
+  options            Json?
+  correctAnswer      Json
+  explanation        String?
+  skillTags          String[]
+  difficulty         String?
+  rawProviderPayload Json?
+  validationIssues   Json?
+  reviewStatus       AiDraftReviewStatus     @default(PENDING_REVIEW)
+  reviewedById       String?
+  reviewedBy         User?                   @relation("AiGeneratedQuestionDraftReviewedBy", fields: [reviewedById, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
+  reviewedAt         DateTime?
+  rejectionReason    String?
+  approvedQuestionId String?
+  approvedQuestion   PracticeQuestion?       @relation("AiDraftApprovedQuestion", fields: [approvedQuestionId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+
+  @@unique([id, tenantId])
+  @@index([tenantId, reviewStatus, createdAt])
+  @@index([tenantId, jobId])
+  @@index([tenantId, courseId, unitId])
 }
 
 model PracticeExerciseSet {
