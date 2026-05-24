@@ -36,6 +36,9 @@ enum EnrollmentStatus {
 enum LearningActivityType {
   LESSON_OPENED
   LESSON_COMPLETED
+  MICRO_CARD_VIEWED
+  MICRO_CARD_FLIPPED
+  MICRO_CARD_COMPLETED
 }
 
 enum DiscussionTargetType {
@@ -107,6 +110,33 @@ enum AiDraftReviewStatus {
   REJECTED
 }
 
+enum RoleplayMode {
+  TEXT
+  AUDIO
+  MIXED
+}
+
+enum PronunciationAssessmentStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum RiskFlagType {
+  NO_ACTIVITY
+  FALLING_BEHIND
+  LOW_MASTERY
+  OVERDUE_SRS
+  DECLINING_SCORE
+}
+
+enum RiskSeverity {
+  LOW
+  MEDIUM
+  HIGH
+}
+
 model Tenant {
   id                        String                     @id @default(uuid())
   name                      String
@@ -139,6 +169,10 @@ model Tenant {
   mediaAssets               MediaAsset[]
   cohorts                   Cohort[]
   roleplaySessions          RoleplaySession[]
+  roleplayScenarios         RoleplayScenario[]
+  pronunciationAssessments  PronunciationAssessment[]
+  studentRiskSnapshots      StudentRiskSnapshot[]
+  reportingRiskRules        ReportingRiskRule[]
   discussionThreads         DiscussionThread[]
   discussionReplies         DiscussionReply[]
   courseCertificates        CourseCertificate[]
@@ -187,6 +221,7 @@ model User {
   reviewedAiQuestionDrafts          AiGeneratedQuestionDraft[] @relation("AiGeneratedQuestionDraftReviewedBy")
   cohortMemberships                 CohortMembership[]
   roleplaySessions                  RoleplaySession[]
+  studentRiskSnapshots              StudentRiskSnapshot[]
   discussionThreads                 DiscussionThread[]
   discussionReplies                 DiscussionReply[]
   courseCertificates                CourseCertificate[]
@@ -262,6 +297,7 @@ model Course {
   practiceAttempts          PracticeAttempt[]
   exams                     Exam[]
   examAttempts              ExamAttempt[]
+  roleplayScenarios         RoleplayScenario[]
   courseCertificates        CourseCertificate[]
   totalDuration             Int                        @default(0)
   aiSettings                Json?
@@ -329,6 +365,7 @@ model CourseUnit {
   aiGeneratedQuestionDrafts AiGeneratedQuestionDraft[]
   exerciseSets              PracticeExerciseSet[]
   exams                     Exam[]
+  roleplayScenarios         RoleplayScenario[]
   createdAt                 DateTime                   @default(now())
   updatedAt                 DateTime                   @updatedAt
 
@@ -928,22 +965,23 @@ model AiUsageQuota {
 }
 
 model MediaAsset {
-  id                String             @id @default(uuid())
-  tenantId          String
-  tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  userId            String
-  user              User               @relation(fields: [userId, tenantId], references: [id, tenantId], onDelete: Cascade)
-  filename          String
-  mimeType          String
-  sizeBytes         Int
-  storageKey        String             @unique
-  url               String?
-  status            MediaAssetStatus   @default(UPLOADING)
-  practiceQuestions PracticeQuestion[] @relation("PracticeQuestionAudio")
-  examQuestions     ExamQuestion[]     @relation("ExamQuestionAudio")
-  roleplayMessages  RoleplayMessage[]  @relation("RoleplayMessageAudio")
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  id                       String                    @id @default(uuid())
+  tenantId                 String
+  tenant                   Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId                   String
+  user                     User                      @relation(fields: [userId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  filename                 String
+  mimeType                 String
+  sizeBytes                Int
+  storageKey               String                    @unique
+  url                      String?
+  status                   MediaAssetStatus          @default(UPLOADING)
+  practiceQuestions        PracticeQuestion[]        @relation("PracticeQuestionAudio")
+  examQuestions            ExamQuestion[]            @relation("ExamQuestionAudio")
+  roleplayMessages         RoleplayMessage[]         @relation("RoleplayMessageAudio")
+  pronunciationAssessments PronunciationAssessment[]
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
 
   @@index([tenantId, status])
 }
@@ -978,6 +1016,42 @@ model CohortMembership {
   @@index([tenantId, userId])
 }
 
+model StudentRiskSnapshot {
+  id         String         @id @default(uuid())
+  tenantId   String
+  tenant     Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User           @relation(fields: [userId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  courseId   String?
+  cohortId   String?
+  severity   RiskSeverity
+  score      Int
+  flags      RiskFlagType[]
+  reasons    Json
+  computedAt DateTime
+  createdAt  DateTime       @default(now())
+
+  @@index([tenantId, computedAt])
+  @@index([tenantId, courseId, severity])
+  @@index([tenantId, cohortId, severity])
+  @@index([tenantId, userId, computedAt])
+}
+
+model ReportingRiskRule {
+  id        String       @id @default(uuid())
+  tenantId  String
+  tenant    Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  type      RiskFlagType
+  severity  RiskSeverity
+  config    Json
+  isEnabled Boolean      @default(true)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@unique([tenantId, type])
+  @@index([tenantId, isEnabled])
+}
+
 model SkillMasterySnapshot {
   id        String   @id @default(uuid())
   tenantId  String
@@ -994,39 +1068,103 @@ model SkillMasterySnapshot {
   @@index([tenantId, skillCode, date])
 }
 
+model RoleplayScenario {
+  id             String            @id @default(uuid())
+  tenantId       String
+  tenant         Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  courseId       String
+  course         Course            @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  unitId         String?
+  unit           CourseUnit?       @relation(fields: [unitId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
+  title          String
+  description    String?
+  targetLanguage String            @default("zh-CN")
+  level          String?
+  skillTags      String[]
+  mode           RoleplayMode      @default(TEXT)
+  systemPrompt   String
+  openingMessage String?
+  rubric         Json?
+  isPublished    Boolean           @default(false)
+  deletedAt      DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  sessions       RoleplaySession[]
+
+  @@unique([id, tenantId])
+  @@index([tenantId, courseId, isPublished, deletedAt])
+  @@index([tenantId, unitId])
+}
+
 model RoleplaySession {
-  id          String                @id @default(uuid())
-  tenantId    String
-  tenant      Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  userId      String
-  user        User                  @relation(fields: [userId, tenantId], references: [id, tenantId], onDelete: Cascade)
-  scenario    String
-  status      RoleplaySessionStatus @default(IN_PROGRESS)
-  score       Int?
-  feedback    Json?
-  startedAt   DateTime              @default(now())
-  completedAt DateTime?
-  createdAt   DateTime              @default(now())
-  updatedAt   DateTime              @updatedAt
-  messages    RoleplayMessage[]
+  id                       String                    @id @default(uuid())
+  tenantId                 String
+  tenant                   Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId                   String
+  user                     User                      @relation(fields: [userId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  scenario                 String
+  scenarioId               String?
+  scenarioRef              RoleplayScenario?         @relation(fields: [scenarioId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
+  mode                     RoleplayMode              @default(TEXT)
+  status                   RoleplaySessionStatus     @default(IN_PROGRESS)
+  score                    Int?
+  pronunciationScore       Int?
+  feedback                 Json?
+  startedAt                DateTime                  @default(now())
+  completedAt              DateTime?
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  messages                 RoleplayMessage[]
+  pronunciationAssessments PronunciationAssessment[]
 
   @@unique([id, tenantId])
   @@index([tenantId, userId, startedAt])
+  @@index([tenantId, scenarioId])
 }
 
 model RoleplayMessage {
-  id                String          @id @default(uuid())
-  tenantId          String
-  sessionId         String
-  session           RoleplaySession @relation(fields: [sessionId, tenantId], references: [id, tenantId], onDelete: Cascade)
-  role              MessageRole
-  content           String
-  audioMediaAssetId String?
-  audioMediaAsset   MediaAsset?     @relation("RoleplayMessageAudio", fields: [audioMediaAssetId], references: [id], onDelete: SetNull)
-  createdAt         DateTime        @default(now())
+  id                       String                    @id @default(uuid())
+  tenantId                 String
+  sessionId                String
+  session                  RoleplaySession           @relation(fields: [sessionId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  role                     MessageRole
+  content                  String
+  audioMediaAssetId        String?
+  audioMediaAsset          MediaAsset?               @relation("RoleplayMessageAudio", fields: [audioMediaAssetId], references: [id], onDelete: SetNull)
+  pronunciationAssessments PronunciationAssessment[]
+  createdAt                DateTime                  @default(now())
 
   @@unique([id, tenantId])
   @@index([sessionId, createdAt])
+}
+
+model PronunciationAssessment {
+  id                 String                        @id @default(uuid())
+  tenantId           String
+  tenant             Tenant                        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sessionId          String
+  session            RoleplaySession               @relation(fields: [sessionId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  messageId          String
+  message            RoleplayMessage               @relation(fields: [messageId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  mediaAssetId       String
+  mediaAsset         MediaAsset                    @relation(fields: [mediaAssetId], references: [id], onDelete: Cascade)
+  status             PronunciationAssessmentStatus @default(QUEUED)
+  transcript         String?
+  expectedText       String?
+  overallScore       Int?
+  fluencyScore       Int?
+  accuracyScore      Int?
+  completenessScore  Int?
+  wordScores         Json?
+  provider           String?
+  rawProviderPayload Json?
+  errorMessage       String?
+  createdAt          DateTime                      @default(now())
+  updatedAt          DateTime                      @updatedAt
+
+  @@unique([id, tenantId])
+  @@index([tenantId, sessionId])
+  @@index([tenantId, status, createdAt])
 }
 
 model Notification {

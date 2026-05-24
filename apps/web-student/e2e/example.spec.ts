@@ -67,7 +67,7 @@ async function installStudentApiMocks(page: Page) {
   const corsHeaders = {
     'access-control-allow-origin': 'http://127.0.0.1:3100',
     'access-control-allow-credentials': 'true',
-    'access-control-allow-methods': 'GET,POST,OPTIONS',
+    'access-control-allow-methods': 'GET,POST,PATCH,OPTIONS',
     'access-control-allow-headers': 'content-type,x-tenant-id,x-csrf-token',
   };
 
@@ -215,6 +215,13 @@ async function installStudentApiMocks(page: Page) {
       return json(200, course);
     }
 
+    if (path.endsWith('/api/notifications') && method === 'GET') {
+      return json(200, {
+        notifications: [],
+        unreadCount: 0,
+      });
+    }
+
     if (path.endsWith('/api/lessons/lesson-1') && method === 'GET') {
       return json(200, course.lessons[0]);
     }
@@ -289,6 +296,63 @@ async function installStudentApiMocks(page: Page) {
           activitySessions: activities.filter((item) => item.type === 'LESSON_OPENED').length,
           currentStreak: 0,
           completionPercentage: Math.round((completedLessons / course.lessons.length) * 100),
+        },
+      });
+    }
+
+    if (path.endsWith('/api/progress/performance') && method === 'GET') {
+      return json(200, {
+        accuracyByUnit: [],
+        accuracyBySkill: [],
+      });
+    }
+
+    if (path.endsWith('/api/srs/summary') && method === 'GET') {
+      return json(200, {
+        dueNow: 0,
+        dueToday: 0,
+        total: 0,
+      });
+    }
+
+    if (path.endsWith('/api/skills') && method === 'GET') {
+      return json(200, []);
+    }
+
+    if (path.endsWith('/api/skills/mastery') && method === 'GET') {
+      return json(200, []);
+    }
+
+    if (path.endsWith('/api/skills/mastery-trend') && method === 'GET') {
+      return json(200, {
+        days: 30,
+        skills: [],
+        trend: [],
+      });
+    }
+
+    if (path.endsWith('/api/certificates/course/course-1') && method === 'GET') {
+      return json(200, {
+        eligible: false,
+        certificate: null,
+        progress: {
+          course: { id: course.id, title: course.title },
+          totalLessons: course.lessons.length,
+          completedLessons: progress.length,
+          completionPercentage: Math.round((progress.length / course.lessons.length) * 100),
+          isComplete: progress.length === course.lessons.length,
+        },
+      });
+    }
+
+    if (path.endsWith('/api/discussions') && method === 'GET') {
+      return json(200, {
+        data: [],
+        meta: {
+          page: 1,
+          limit: 20,
+          total: 0,
+          totalPages: 0,
         },
       });
     }
@@ -418,10 +482,10 @@ test('student can register, land on courses, and logout', async ({ page }) => {
 
   await expect(page).toHaveURL(/\/en\/courses$/, { timeout: navigationTimeout });
   await expect(page.getByRole('heading', { name: 'All Courses' })).toBeVisible();
-  await expect(page.getByText('Student User')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Logout' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Logout' }).click();
-  await expect(page.getByRole('link', { name: 'Login' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Login', exact: true })).toBeVisible();
 });
 
 test('student can login, open a lesson, and mark it completed', async ({ page }) => {

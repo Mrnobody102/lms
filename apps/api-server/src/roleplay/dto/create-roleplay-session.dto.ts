@@ -1,9 +1,20 @@
-import { IsString, IsNotEmpty } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { RoleplayMode } from '@repo/database';
+import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class CreateRoleplaySessionDto {
-  @ApiProperty({ description: 'The scenario or prompt for the roleplay' })
+  @ApiPropertyOptional({ description: 'Published scenario ID for scenario-based roleplay' })
+  @IsOptional()
+  @IsUUID()
+  scenarioId?: string;
+
+  @ApiPropertyOptional({ description: 'Legacy free-text scenario prompt' })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  scenario: string;
+  scenario?: string;
+
+  @ApiPropertyOptional({ enum: RoleplayMode, default: RoleplayMode.TEXT })
+  @IsOptional()
+  @IsEnum(RoleplayMode)
+  mode?: RoleplayMode;
 }

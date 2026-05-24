@@ -1,20 +1,80 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react';
 import { parseMicroCardContent, type MicroCardItem } from '@repo/shared';
-import { ChevronDown, ChevronUp, Lightbulb, RotateCw, Volume2 } from 'lucide-react';
+import {
+  BookmarkPlus,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Lightbulb,
+  RotateCw,
+  Volume2,
+} from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useAddMicroCardToReview, useTrackMicroCardEvent } from './use-micro-card-events';
 
 interface MicroCardContentProps {
+  lessonId: string;
   content?: string | null;
+  onComplete?: () => void;
 }
 
-export function MicroCardContent({ content }: MicroCardContentProps) {
+export function MicroCardContent({ lessonId, content, onComplete }: MicroCardContentProps) {
   const t = useTranslations('Student');
-  const cards = content ? parseMicroCardContent(content).content.cards : [];
+  const cards = useMemo(
+    () => (content ? parseMicroCardContent(content).content.cards : []),
+    [content],
+  );
   const cardRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const viewedCardsRef = useRef<Set<string>>(new Set());
+  const flippedCardsRef = useRef<Set<string>>(new Set());
+  const completedRef = useRef(false);
   const [flippedCards, setFlippedCards] = useState<Record<number, boolean>>({});
+  const [completedCards, setCompletedCards] = useState<Set<string>>(new Set());
   const [activeIndex, setActiveIndex] = useState(0);
+  const trackEvent = useTrackMicroCardEvent(lessonId);
+  const addToReview = useAddMicroCardToReview(lessonId);
+  const trackEventRef = useRef(trackEvent.mutate);
+
+  useEffect(() => {
+    trackEventRef.current = trackEvent.mutate;
+  }, [trackEvent.mutate]);
+
+  useEffect(() => {
+    if (cards.length === 0 || !lessonId) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting || entry.intersectionRatio < 0.6) {
+            return;
+          }
+
+          const index = Number((entry.target as HTMLElement).dataset.index);
+          if (!Number.isInteger(index)) {
+            return;
+          }
+
+          setActiveIndex(index);
+          const key = getCardKey(cards[index], index);
+          if (!viewedCardsRef.current.has(key)) {
+            viewedCardsRef.current.add(key);
+            trackEventRef.current({ cardKey: key, eventType: 'MICRO_CARD_VIEWED' });
+          }
+        });
+      },
+      { threshold: [0.6] },
+    );
+
+    cardRefs.current.forEach((element) => {
+      if (element) observer.observe(element);
+    });
+
+    return () => observer.disconnect();
+  }, [cards, lessonId]);
 
   if (cards.length === 0) {
     return (
@@ -66,19 +126,43 @@ export function MicroCardContent({ content }: MicroCardContentProps) {
             ref={(element) => {
               cardRefs.current[index] = element;
             }}
+            data-index={index}
             className="snap-center"
-            onMouseEnter={() => setActiveIndex(index)}
             onFocus={() => setActiveIndex(index)}
           >
             <MicroCard
               card={card}
               flipped={Boolean(flippedCards[index])}
-              onFlip={() =>
-                setFlippedCards((current) => ({ ...current, [index]: !current[index] }))
-              }
+              completed={completedCards.has(getCardKey(card, index))}
+              onFlip={() => {
+                const key = getCardKey(card, index);
+                setFlippedCards((current) => ({ ...current, [index]: !current[index] }));
+                if (!flippedCardsRef.current.has(key)) {
+                  flippedCardsRef.current.add(key);
+                  trackEvent.mutate({ cardKey: key, eventType: 'MICRO_CARD_FLIPPED' });
+                  setCompletedCards((current) => {
+                    const next = new Set(current);
+                    next.add(key);
+                    if (next.size === cards.length && !completedRef.current) {
+                      completedRef.current = true;
+                      trackEvent.mutate({ cardKey: key, eventType: 'MICRO_CARD_COMPLETED' });
+                      onComplete?.();
+                    }
+                    return next;
+                  });
+                }
+              }}
+              onAddToReview={() => addToReview.mutate(getCardKey(card, index))}
+              addingToReview={addToReview.isPending}
             />
           </div>
         ))}
+      </div>
+      <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted">
+        <div
+          className="h-full bg-primary transition-all"
+          style={{ width: `${Math.round((completedCards.size / cards.length) * 100)}%` }}
+        />
       </div>
     </section>
   );
@@ -87,15 +171,21 @@ export function MicroCardContent({ content }: MicroCardContentProps) {
 function MicroCard({
   card,
   flipped,
+  completed,
   onFlip,
+  onAddToReview,
+  addingToReview,
 }: {
   card: MicroCardItem;
   flipped: boolean;
+  completed: boolean;
   onFlip: () => void;
+  onAddToReview: () => void;
+  addingToReview: boolean;
 }) {
   const t = useTranslations('Student');
 
-  const playAudio = (event: React.SyntheticEvent) => {
+  const playAudio = (event: SyntheticEvent) => {
     event.stopPropagation();
     if (card.audioUrl) {
       const audio = new Audio(card.audioUrl);
@@ -109,12 +199,34 @@ function MicroCard({
   };
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onFlip}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onFlip();
+        }
+      }}
       className="group relative flex min-h-[560px] w-full flex-col items-center justify-center overflow-hidden rounded-lg border bg-card p-8 text-center shadow-sm transition hover:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
     >
       <RotateCw className="absolute right-6 top-6 h-5 w-5 text-muted-foreground/40 transition group-hover:text-primary" />
+      {completed ? (
+        <CheckCircle2 className="absolute left-6 top-6 h-5 w-5 text-emerald-500" />
+      ) : null}
+      <button
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation();
+          onAddToReview();
+        }}
+        className="absolute bottom-6 right-6 inline-flex h-10 w-10 items-center justify-center rounded-md border bg-background text-muted-foreground transition hover:text-primary"
+        aria-label={t('lesson.microCardAddToReview')}
+        disabled={addingToReview}
+      >
+        <BookmarkPlus className="h-5 w-5" />
+      </button>
 
       {!flipped ? (
         <>
@@ -124,18 +236,14 @@ function MicroCard({
           <h3 className="mb-10 max-w-full break-words text-6xl font-black leading-tight text-foreground">
             {card.front}
           </h3>
-          <span
-            role="button"
-            tabIndex={0}
+          <button
+            type="button"
             onClick={playAudio}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') playAudio(event);
-            }}
             className="inline-flex h-14 w-14 items-center justify-center rounded-md bg-primary/10 text-primary transition hover:bg-primary/20"
             aria-label={t('lesson.microCardListen')}
           >
             <Volume2 className="h-7 w-7" />
-          </span>
+          </button>
           <p className="mt-12 text-xs font-black uppercase text-muted-foreground">
             {t('lesson.microCardFlip')}
           </p>
@@ -161,6 +269,10 @@ function MicroCard({
           </p>
         </>
       )}
-    </button>
+    </div>
   );
+}
+
+function getCardKey(card: MicroCardItem | undefined, index: number) {
+  return card?.id || String(index);
 }

@@ -53,7 +53,13 @@ export function LessonContent({ lesson, onComplete }: LessonContentProps) {
       case 'quiz':
         return <QuizContent quiz={lesson.quiz} />;
       case 'micro_card':
-        return <MicroCardContent content={lesson.content ?? undefined} />;
+        return (
+          <MicroCardContent
+            lessonId={lesson.id}
+            content={lesson.content ?? undefined}
+            onComplete={onComplete}
+          />
+        );
       case 'simulation':
         return <SimulationContent aiPrompt={lesson.aiPrompt ?? undefined} />;
       default:

@@ -9,6 +9,8 @@ import {
   useSendMessage,
   useCompleteRoleplaySession,
 } from '../api/use-roleplay';
+import { AudioRecorder } from './audio-recorder';
+import { PronunciationScorePanel } from './pronunciation-score-panel';
 
 export function ChatInterface({ sessionId }: { sessionId: string }) {
   const t = useTranslations('Student');
@@ -58,6 +60,9 @@ export function ChatInterface({ sessionId }: { sessionId: string }) {
         <div>
           <h2 className="font-semibold text-lg">{t('roleplay.sessionTitle')}</h2>
           <p className="text-sm text-muted-foreground">{session.scenario}</p>
+          <p className="mt-1 text-xs font-semibold uppercase text-primary">
+            {t(`roleplay.mode.${session.mode}`)}
+          </p>
         </div>
         {!isCompleted && (
           <Button variant="outline" size="sm" onClick={handleComplete} disabled={isCompleting}>
@@ -86,9 +91,17 @@ export function ChatInterface({ sessionId }: { sessionId: string }) {
             <p>
               <strong>{t('roleplay.feedbackVocabulary')}:</strong> {session.feedback.vocabulary}
             </p>
+            {session.pronunciationScore !== null && session.pronunciationScore !== undefined && (
+              <p>
+                <strong>{t('roleplay.pronunciation')}:</strong>{' '}
+                {t('roleplay.pronunciationScore', { score: session.pronunciationScore })}
+              </p>
+            )}
           </div>
         </div>
       )}
+
+      <PronunciationScorePanel assessments={session.pronunciationAssessments ?? []} />
 
       {/* Messages */}
       <div className="flex-1 p-4 overflow-y-auto" ref={scrollRef}>
@@ -151,21 +164,26 @@ export function ChatInterface({ sessionId }: { sessionId: string }) {
 
       {/* Input Area */}
       {!isCompleted && (
-        <form
-          onSubmit={handleSend}
-          className="p-4 border-t bg-background flex space-x-2 items-center"
-        >
-          <Input
-            value={input}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
-            placeholder={t('roleplay.messagePlaceholder')}
-            disabled={isSending || isCompleting}
-            className="flex-1"
-          />
-          <Button type="submit" disabled={!input.trim() || isSending || isCompleting} size="icon">
-            <Send className="w-4 h-4" />
-          </Button>
-        </form>
+        <>
+          <form
+            onSubmit={handleSend}
+            className="flex items-center space-x-2 border-t bg-background p-4"
+          >
+            <Input
+              value={input}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
+              placeholder={t('roleplay.messagePlaceholder')}
+              disabled={isSending || isCompleting}
+              className="flex-1"
+            />
+            <Button type="submit" disabled={!input.trim() || isSending || isCompleting} size="icon">
+              <Send className="w-4 h-4" />
+            </Button>
+          </form>
+          {session.mode !== 'TEXT' ? (
+            <AudioRecorder sessionId={sessionId} disabled={isSending || isCompleting} />
+          ) : null}
+        </>
       )}
     </div>
   );

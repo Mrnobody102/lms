@@ -1,6 +1,6 @@
 # Tài liệu API LMS Platform
 
-Cập nhật lần cuối: 2026-05-23
+Cập nhật lần cuối: 2026-05-24
 
 ## Tổng quan
 
@@ -154,6 +154,17 @@ interface PaginatedData<T> {
 - `skill` là optional CSV uppercase skill code. Backend lọc bằng logic "match any" (`hasSome`).
 - Student request yêu cầu auth và chỉ trả nội dung trong tenant/enrollment hợp lệ.
 
+#### AI-generated practice review flow
+
+- `POST /api/practice/ai-generations` tạo generation job/drafts cho admin/instructor.
+- `GET /api/practice/ai-generations` và `GET /api/practice/ai-generations/:id` trả job metadata, provider/model/prompt metadata và drafts.
+- `PATCH /api/practice/ai-drafts/:id` cho phép edit draft trước khi duyệt.
+- `POST /api/practice/ai-drafts/:id/approve` tạo `PracticeQuestion` approved.
+- `POST /api/practice/ai-drafts/:id/reject` lưu rejection reason.
+- `POST /api/practice/ai-drafts/bulk-approve` và `/bulk-reject` hỗ trợ review nhiều draft.
+
+Student-facing practice chỉ đọc `PracticeQuestion` đã approved; draft pending/rejected không xuất hiện trong exercise set.
+
 ### 5. SRS / Vocabulary
 
 #### Custom vocabulary cards
@@ -165,7 +176,69 @@ interface PaginatedData<T> {
 
 Các route này dùng `ReviewCardSource.CUSTOM`, tenant-scoped theo user hiện tại và được dùng bởi student `/vocabulary`.
 
-### 6. Super Portal Tenant Management
+#### Micro-card activity and SRS promotion
+
+- `POST /api/lessons/:id/micro-card-events`
+  - Role: `STUDENT`
+  - Body: `{ "cardKey": "card-1", "eventType": "MICRO_CARD_FLIPPED", "durationMs": 1200 }`
+  - `eventType` chỉ nhận `MICRO_CARD_VIEWED`, `MICRO_CARD_FLIPPED`, `MICRO_CARD_COMPLETED`.
+  - Dùng `LearningAccessService.lessonWhere` để đảm bảo tenant/enrollment.
+- `POST /api/lessons/:id/micro-cards/:cardKey/add-to-review`
+  - Role: `STUDENT`
+  - Upsert custom SRS card từ nội dung micro-card.
+
+### 6. Roleplay
+
+#### Admin scenario management
+
+- `POST /api/roleplay/scenarios`
+- `GET /api/roleplay/scenarios`
+- `GET /api/roleplay/scenarios/:id`
+- `PATCH /api/roleplay/scenarios/:id`
+- `DELETE /api/roleplay/scenarios/:id`
+- `POST /api/roleplay/scenarios/:id/publish`
+- `POST /api/roleplay/scenarios/:id/unpublish`
+
+Scenario bắt buộc thuộc tenant/course hợp lệ; `unitId` nếu có phải thuộc cùng course/tenant. Mode hợp lệ: `TEXT`, `AUDIO`, `MIXED`.
+
+#### Student session flow
+
+- `GET /api/roleplay/scenarios/available?courseId=&unitId=&mode=`
+  - Trả published scenarios mà student có quyền học.
+- `POST /api/roleplay/sessions`
+  - Body scenario-based: `{ "scenarioId": "...", "mode": "TEXT" }`
+  - Legacy body vẫn hỗ trợ: `{ "scenario": "free text", "mode": "TEXT" }`
+- `GET /api/roleplay/sessions?page=1&limit=10`
+- `GET /api/roleplay/sessions/:id`
+- `POST /api/roleplay/sessions/:id/messages`
+- `POST /api/roleplay/sessions/:id/messages/audio`
+  - Body: `{ "mediaAssetId": "...", "expectedText": "optional", "content": "optional" }`
+  - Reject nếu session mode là `TEXT`.
+  - Validate media asset audio/ready/tenant trước khi tạo message.
+  - Tạo `PronunciationAssessment` trạng thái `QUEUED` và enqueue BullMQ job `pronunciation-assessment`.
+- `GET /api/roleplay/sessions/:id/pronunciation`
+- `POST /api/roleplay/sessions/:id/complete`
+
+Provider pronunciation mặc định chỉ deterministic trong test; ngoài test trả failure rõ ràng nếu chưa cấu hình provider production.
+
+### 7. Admin Reports
+
+Base path: `/api/admin/reports`
+
+- `GET /programs`, `/programs/:programId`, `/levels/:levelId`, `/courses/:courseId/units`, `/courses/:courseId/students`, `/skills`
+  - Rollup và drill-down hiện có, hỗ trợ `cohortId` ở các route report chính.
+- `GET /activity-trend?days=30&cohortIds=a,b`
+- `GET /mastery-trend?days=30&cohortIds=a,b`
+- `GET /risk-flags?courseId=&cohortId=&severity=&flag=&page=&limit=`
+  - Trả risk rows gồm `severity`, `score`, `flags`, `reasons`, `computedAt`.
+  - Risk rule defaults hiện hỗ trợ `NO_ACTIVITY`, `FALLING_BEHIND`, `LOW_MASTERY`, `OVERDUE_SRS`, `DECLINING_SCORE`.
+  - Tenant có thể override/disable rule qua `ReportingRiskRule`.
+- `POST /risk-flags/recompute`
+  - Recompute và lưu `StudentRiskSnapshot` cho filter hiện tại.
+- `GET /cohort-comparison?courseId=&cohortIds=&startDate=&endDate=`
+  - Trả completion, activity sessions, practice/exam accuracy, mastery, overdue SRS, rank và delta completion.
+
+### 8. Super Portal Tenant Management
 
 `GET /api/admin/tenants?includeInactive=true`
 

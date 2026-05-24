@@ -9,7 +9,7 @@ import { AuthGuard } from '@/components/layout/auth-guard';
 import { Alert, AlertDescription } from '@/components/ui';
 import { useProgramsReport } from '@/hooks/use-reports';
 import { Link } from '@/navigation';
-import { AlertCircle, ChevronRight, Layers } from 'lucide-react';
+import { AlertCircle, ChevronRight, GitCompareArrows, Layers, ShieldAlert } from 'lucide-react';
 import { AccuracyCell, ProgressBarCell, ReportTable } from '@/components/reports/report-table';
 import { SkillAccuracyPanel } from '@/components/reports/skill-accuracy-panel';
 import { ActivityTrendPanel } from '@/components/reports/activity-trend-panel';
@@ -53,6 +53,20 @@ export default function ReportsHomePage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <AdminHeader title={t('reports.title')} description={t('reports.titleDesc')} />
               <div className="flex flex-wrap items-center gap-3">
+                <Link
+                  href="/reports/risk"
+                  className="inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium text-muted-foreground transition hover:text-foreground"
+                >
+                  <ShieldAlert className="h-4 w-4" />
+                  {t('reports.riskReportLink')}
+                </Link>
+                <Link
+                  href="/reports/cohorts"
+                  className="inline-flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium text-muted-foreground transition hover:text-foreground"
+                >
+                  <GitCompareArrows className="h-4 w-4" />
+                  {t('reports.cohortCompareLink')}
+                </Link>
                 <label className="flex items-center gap-2">
                   <span className="text-sm font-medium">{t('cohorts.filterLabel')}</span>
                   <select

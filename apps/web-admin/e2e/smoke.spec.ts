@@ -212,7 +212,7 @@ test('admin can login and view dashboard overview', async ({ page }) => {
   await page.goto('/en/login');
   await page.locator('input[type="email"]').fill('admin@example.com');
   await page.locator('input[type="password"]').fill('Admin@123');
-  await page.getByRole('button', { name: 'Login' }).click();
+  await page.getByRole('button', { name: 'Login', exact: true }).click();
 
   await expect(page).toHaveURL(/\/en$/, { timeout: 60000 });
   await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 60000 });
@@ -229,7 +229,7 @@ test('admin can open course editor without i18n or lesson-table layout regressio
   await page.goto('/en/login');
   await page.locator('input[type="email"]').fill('admin@example.com');
   await page.locator('input[type="password"]').fill('Admin@123');
-  await page.getByRole('button', { name: 'Login' }).click();
+  await page.getByRole('button', { name: 'Login', exact: true }).click();
   await expect(page).toHaveURL(/\/en$/, { timeout: 60000 });
 
   await page.goto('/en/courses/course-1/edit');

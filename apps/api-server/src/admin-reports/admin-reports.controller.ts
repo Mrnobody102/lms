@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   ParseUUIDPipe,
+  Post,
   Query,
   Request,
   Res,
@@ -19,6 +20,10 @@ import { AuthenticatedRequest } from '../common/interfaces/authenticated-request
 import { getScopedTenantId } from '../common/utils/tenant-request.util';
 import { AdminReportsService } from './admin-reports.service';
 import { buildCsv } from './admin-reports.csv';
+import { CohortComparisonService } from './cohort-comparison.service';
+import { CohortComparisonQueryDto } from './dto/cohort-comparison-query.dto';
+import { RiskReportQueryDto } from './dto/risk-report-query.dto';
+import { RiskFlagService } from './risk-flag.service';
 
 @ApiTags('Admin - Reports')
 @ApiBearerAuth()
@@ -26,7 +31,32 @@ import { buildCsv } from './admin-reports.csv';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN, Role.SUPER_ADMIN)
 export class AdminReportsController {
-  constructor(private readonly reportsService: AdminReportsService) {}
+  constructor(
+    private readonly reportsService: AdminReportsService,
+    private readonly riskFlags: RiskFlagService,
+    private readonly cohortComparison: CohortComparisonService,
+  ) {}
+
+  @Get('risk-flags')
+  @ApiOperation({ summary: 'Risk flag snapshot for learners across courses/cohorts' })
+  getRiskFlags(@Request() req: AuthenticatedRequest, @Query() query: RiskReportQueryDto) {
+    return this.riskFlags.listRiskFlags(getScopedTenantId(req), query);
+  }
+
+  @Post('risk-flags/recompute')
+  @ApiOperation({ summary: 'Recompute and store current risk snapshots' })
+  recomputeRiskFlags(@Request() req: AuthenticatedRequest, @Query() query: RiskReportQueryDto) {
+    return this.riskFlags.recomputeRiskSnapshots(getScopedTenantId(req), query);
+  }
+
+  @Get('cohort-comparison')
+  @ApiOperation({ summary: 'Compare cohorts by completion, activity, accuracy, mastery, and SRS' })
+  getCohortComparison(
+    @Request() req: AuthenticatedRequest,
+    @Query() query: CohortComparisonQueryDto,
+  ) {
+    return this.cohortComparison.getComparison(getScopedTenantId(req), query);
+  }
 
   @Get('programs')
   @ApiOperation({ summary: 'Programs rollup with completion + accuracy metrics' })

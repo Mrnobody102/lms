@@ -12,6 +12,7 @@ import { PrismaService } from '../common/services/prisma.service';
 const MIN_EASE_FACTOR = 1.3;
 const FAILED_INTERVAL_MINUTES = 10;
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+const MAX_CUSTOM_CARDS = 500;
 
 export interface AnswerEvent {
   sourceType: ReviewCardSource;
@@ -376,7 +377,60 @@ export class SrsService {
     userId: string,
     data: CustomCardInput,
   ): Promise<ReviewCard> {
-    const MAX_CUSTOM_CARDS = 500;
+    await this.ensureCustomCardLimit(tenantId, userId);
+
+    return this.prisma.reviewCard.create({
+      data: {
+        tenantId,
+        userId,
+        sourceType: ReviewCardSource.CUSTOM,
+        sourceId: randomUUID(),
+        skillCodes: data.skillCodes || [],
+        dueAt: new Date(),
+        customContent: this.toCustomCardJson(data.customContent),
+      },
+    });
+  }
+
+  async upsertCustomCardFromSource(
+    tenantId: string,
+    userId: string,
+    sourceId: string,
+    data: CustomCardInput,
+  ): Promise<ReviewCard> {
+    const where = {
+      tenantId_userId_sourceType_sourceId: {
+        tenantId,
+        userId,
+        sourceType: ReviewCardSource.CUSTOM,
+        sourceId,
+      },
+    };
+    const existing = await this.prisma.reviewCard.findUnique({ where });
+    if (!existing) {
+      await this.ensureCustomCardLimit(tenantId, userId);
+    }
+
+    return this.prisma.reviewCard.upsert({
+      where,
+      update: {
+        customContent: this.toCustomCardJson(data.customContent),
+        skillCodes: data.skillCodes || [],
+        isSuspended: false,
+      },
+      create: {
+        tenantId,
+        userId,
+        sourceType: ReviewCardSource.CUSTOM,
+        sourceId,
+        skillCodes: data.skillCodes || [],
+        dueAt: new Date(),
+        customContent: this.toCustomCardJson(data.customContent),
+      },
+    });
+  }
+
+  private async ensureCustomCardLimit(tenantId: string, userId: string) {
     const currentCount = await this.prisma.reviewCard.count({
       where: {
         tenantId,
@@ -390,18 +444,6 @@ export class SrsService {
         `You have reached the maximum limit of ${MAX_CUSTOM_CARDS} custom cards.`,
       );
     }
-
-    return this.prisma.reviewCard.create({
-      data: {
-        tenantId,
-        userId,
-        sourceType: ReviewCardSource.CUSTOM,
-        sourceId: randomUUID(),
-        skillCodes: data.skillCodes || [],
-        dueAt: new Date(),
-        customContent: this.toCustomCardJson(data.customContent),
-      },
-    });
   }
 
   async getCustomCards(tenantId: string, userId: string): Promise<ReviewCard[]> {

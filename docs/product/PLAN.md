@@ -1,6 +1,6 @@
 # Kế Hoạch Triển Khai LMS Platform
 
-Cập nhật lần cuối: 2026-05-23 (Auth guard hardening, practice multi-skill filter, vocabulary/SRS route, tenant management polish)
+Cập nhật lần cuối: 2026-05-24 (AI practice review, roleplay scenarios/audio, micro-card hardening, Reporting V2)
 
 ## Định hướng sản phẩm
 
@@ -52,14 +52,14 @@ Chưa có hoặc mới ở mức sơ khai:
 - Dashboard học tập đã có continue learning, streak, activity calendar, performance report, daily review, "next best item" và mastery trend.
 - Practice backend, admin UI và student attempt UI MVP đã có. Question types đã có multiple choice, fill blank, matching, ordering; listening audio prompt đã có bằng audio overlay trên question hiện có.
 - Exam/test backend MVP, admin template UI và student exam UI đã có với cùng bộ question types và listening audio prompt.
-- Reporting theo enrollment/progress, activity calendar, practice/exam accuracy, drill-down Program → Level → Course → Unit/Skills, time-series trends và cohort drill-down đã có.
+- Reporting theo enrollment/progress, activity calendar, practice/exam accuracy, drill-down Program → Level → Course → Unit/Skills, time-series trends, cohort drill-down, risk flags và cohort comparison đã có.
 - Activation/license code đã hoàn thành MVP.
 - Program/Level hierarchy đã có (Batch A): schema, API, admin UI, hierarchical reporting.
 - Skill mastery model: đã có MVP (`Skill`, `SkillMastery`, EWMA).
 - Spaced repetition system: đã có MVP (`ReviewCard`, daily review, SM-2 scheduling).
-- AI in-context tutor đã có MVP; AI conversation roleplay chưa có.
+- AI in-context tutor, AI-generated practice review queue, và AI conversation roleplay scenario/audio MVP đã có.
 - Media storage/background jobs cho audio/video: đã có hạ tầng core và đã dùng cho listening audio prompt.
-- Audit log cho hành động enrollment/cohort nhạy cảm đã có; còn thiếu report V2 polish như risk flags và compare cohort.
+- Audit log cho hành động enrollment/cohort nhạy cảm đã có; Reporting V2 đã có risk flags và cohort comparison, còn thiếu export/filter nâng cao nếu cần.
 
 ## Nguyên tắc roadmap
 
@@ -173,9 +173,16 @@ Mô hình hiện tại:
 - `CourseUnit`: unit/chapter trong course.
 - `Lesson`.
 
+Đã làm thêm:
+
+- `micro_card` content dùng shared parser/validator, hỗ trợ legacy single-card và multi-card JSON.
+- Student micro-card player có IntersectionObserver tracking, flip/completion progress và nút lưu từng card vào SRS.
+- API `POST /lessons/:id/micro-card-events` ghi granular learning activity và có thể hoàn thành lesson.
+- API `POST /lessons/:id/micro-cards/:cardKey/add-to-review` tạo/update custom SRS card theo tenant/user.
+
 Còn cần:
 
-- Microlearning lesson type (`micro_card`) cho định dạng vuốt dọc 1–3 phút (xem [interactive-learning-plan.md](interactive-learning-plan.md) Phase 3).
+- Normalized micro-card table chỉ cần làm nếu product cần analytics/authoring ở cấp từng card.
 
 ### P4. Practice Engine
 
@@ -237,7 +244,7 @@ Còn cần:
 
 Mục tiêu: phục vụ menu "Báo cáo" cho student và admin.
 
-Trạng thái: đã có nền cơ bản, drill-down Program/Level/Unit/Skill cho admin, cohort drill-down và trend window cho activity/mastery.
+Trạng thái: đã có nền cơ bản, drill-down Program/Level/Unit/Skill cho admin, cohort drill-down, trend window cho activity/mastery, risk flags và cohort comparison.
 
 Student reports:
 
@@ -256,11 +263,13 @@ Admin reports:
 - CSV export cho course-students, course-units, skills snapshot.
 - Cohort filter xuyên suốt rollup/detail/trend/CSV và preserve qua drill-down URL.
 - Time-series activity/mastery trend có window 7/30/90 ngày.
+- Reporting V2 risk flags có `StudentRiskSnapshot`, `ReportingRiskRule`, filters course/cohort/severity/flag và manual recompute.
+- Cohort comparison trả completion, activity, practice/exam accuracy, mastery, overdue SRS, rank và delta completion.
 
 Còn cần:
 
 - Student report V2 polish: so sánh giữa các khóa và giải thích "điểm yếu cần luyện".
-- Admin report V2 polish: compare cohort, risk flags và export/filter nâng cao theo range thời gian.
+- Admin export nâng cao cho risk/cohort comparison nếu product yêu cầu.
 - Cursor pagination/virtualization cho log hoặc time-series chi tiết nếu mở màn hình dữ liệu lớn.
 
 ### P7. Activation Và Licensing
@@ -295,28 +304,28 @@ Phạm vi:
 - Adapter Pattern cho AI Providers (hỗ trợ `@google/genai` và các AI SDK khác).
 - API `/ai/explain/...` kết nối LLM.
 
-#### P8b. AI-Generated Practice (giá trị trung bình)
+#### P8b. AI-Generated Practice (giá trị trung bình) - **HOÀN THÀNH MVP**
 
 Mục tiêu: tự sinh thêm câu hỏi cho skill/unit yếu, admin duyệt trước khi học viên nhận.
 
-Phạm vi:
+Đã làm:
 
-- Trigger từ skill mastery report (P9).
-- AI sinh question kèm correctAnswer + explanation dùng schema sẵn có.
-- Admin review queue trước khi push vào question bank.
+- AI generation job/draft model có prompt metadata, provider/model, validation issues và review trail.
+- Admin review workspace `/practice/ai-review` để xem job, chỉnh draft, approve/reject/bulk review.
+- Approved draft mới tạo `PracticeQuestion`; student không thấy pending/rejected draft.
+- Existing `/practice/generate-ai` được đưa về workflow job/draft để giữ compatibility ngắn hạn.
 
-#### P8c. AI Conversation Roleplay (giá trị tình huống)
+#### P8c. AI Conversation Roleplay (giá trị tình huống) - **HOÀN THÀNH MVP**
 
 Mục tiêu: phục vụ menu "AI Convo" theo định nghĩa cũ.
 
-Phạm vi:
+Đã làm:
 
-- Conversation scenarios theo course (ví dụ HSK: mặc cả ở chợ, hỏi đường).
-- AI session/messages.
-- Usage quota.
-- Safety/system prompts theo tenant.
-- Optional feedback/scoring.
-- Audio chấm phát âm (`AI_EVALUATED_AUDIO`) — cần media pipeline P10.
+- `RoleplayScenario` theo tenant/course/unit, publish workflow, mode `TEXT`/`AUDIO`/`MIXED`, admin UI `/roleplay/scenarios`.
+- Student roleplay dashboard đọc published scenarios theo quyền học thay vì hardcoded scenario.
+- `RoleplaySession` hỗ trợ scenario-based sessions, legacy free text, conversation score và pronunciation score.
+- Audio turn endpoint validate `MediaAsset`, tạo `RoleplayMessage` và `PronunciationAssessment`.
+- BullMQ `pronunciation-assessment` processor và provider abstraction đã có; production provider cụ thể vẫn là bước cấu hình/triển khai riêng.
 
 ### P9. Spaced Repetition System (SRS) Và Skill Mastery
 
@@ -352,6 +361,7 @@ Cơ sở khoa học:
 - API: `GET /api/srs/queue`, `POST /api/srs/review/:cardId`, `GET /api/srs/summary`.
 - Mở rộng `ProgressService.getSummary` bao gồm `srsDue`.
 - Web Student UI: component `SrsReviewCard` (Daily review), `NextBestItem` (Priority recommendation), page `/review` (session ôn tập card-by-card).
+- Micro-card lessons có action "Add to review" để upsert custom SRS card theo từng card.
 
 Còn cần (SRS Core):
 
@@ -367,7 +377,7 @@ Phạm vi:
 
 - Object storage abstraction (S3-compatible).
 - Upload signed URL cho admin và student.
-- Background job queue cho AI evaluation, audio transcoding, email/notification.
+- Background job queue cho AI evaluation, audio transcoding, pronunciation assessment, email/notification.
 - Audit trail cho media upload nhạy cảm qua `MediaAsset`.
 - Listening audio prompt cho practice/exam question.
 
@@ -384,8 +394,10 @@ Thứ tự ưu tiên dựa trên giá trị giáo dục, dependencies và hiện
 5. **Media upload pipeline** (P10) ✅ DONE: Hạ tầng lưu trữ S3 Storage client và background job queue (BullMQ + Redis) hoàn thành.
 6. **Listening audio prompt** (P4/P5 close-out) ✅ DONE: Practice/exam questions có audio attachment, admin upload, student player và SRS playback.
 7. **Time-series reporting + cohort drill-down** (P6 close-out) ✅ DONE: cohort filter xuyên rollup/detail/trend/CSV, trend window 7/30/90 ngày.
-8. **Student/Admin report V2 polish**: compare course/cohort, risk flags, CTA luyện theo điểm yếu.
-9. **AI-Generated Practice** (P8b) → **AI Conversation Roleplay** (P8c). ← **NEXT**
+8. **Student/Admin report V2 polish** ✅ DONE: risk flags, risk snapshots/rules và cohort comparison UI/API.
+9. **AI-Generated Practice** (P8b) ✅ DONE: job/draft/review workflow và admin review workspace.
+10. **AI Conversation Roleplay** (P8c) ✅ DONE MVP: course scenarios, student scenario flow, audio message endpoint và pronunciation queue/provider abstraction.
+11. **Next**: production pronunciation provider selection/config, Reporting V2 export polish, và adaptive sequencing từ risk/mastery/SRS signals.
 
 ## Definition Of Done Cấp Dự Án
 

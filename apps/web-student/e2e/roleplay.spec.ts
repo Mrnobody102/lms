@@ -11,9 +11,27 @@ const studentUser = {
 const mockSession = {
   id: 'session-1',
   scenario: 'You are a hotel receptionist checking me in.',
+  scenarioId: 'scenario-1',
+  mode: 'TEXT',
   status: 'IN_PROGRESS',
   messages: [],
+  pronunciationAssessments: [],
   startedAt: new Date().toISOString(),
+};
+
+const mockScenario = {
+  id: 'scenario-1',
+  courseId: 'course-1',
+  unitId: 'unit-1',
+  title: 'Hotel check-in',
+  description: 'Practice checking into a hotel.',
+  targetLanguage: 'zh-CN',
+  level: 'HSK 1',
+  skillTags: ['speaking'],
+  mode: 'MIXED',
+  openingMessage: 'Welcome to the hotel.',
+  course: { id: 'course-1', title: 'HSK 1 Basics' },
+  unit: { id: 'unit-1', title: 'Travel' },
 };
 
 async function installRoleplayApiMocks(page: Page) {
@@ -50,16 +68,54 @@ async function installRoleplayApiMocks(page: Page) {
       return json(200, { user: studentUser });
     }
 
+    if (path.endsWith('/api/notifications') && method === 'GET') {
+      return json(200, {
+        notifications: [],
+        unreadCount: 0,
+      });
+    }
+
+    if (path.endsWith('/api/courses') && method === 'GET') {
+      return json(200, []);
+    }
+
+    if (path.endsWith('/api/progress/summary') && method === 'GET') {
+      return json(200, {
+        activeCourse: null,
+        courses: [],
+        activityCalendar: [],
+        totals: {
+          courses: 0,
+          lessons: 0,
+          completedLessons: 0,
+          activitySessions: 0,
+          currentStreak: 0,
+          completionPercentage: 0,
+        },
+        srsDue: {
+          dueNow: 0,
+          dueToday: 0,
+          total: 0,
+        },
+      });
+    }
+
     if (path.endsWith('/api/roleplay/sessions') && method === 'GET') {
-      return json(200, [mockSession]);
+      return json(200, { data: [mockSession], total: 1 });
+    }
+
+    if (path.endsWith('/api/roleplay/scenarios/available') && method === 'GET') {
+      return json(200, { data: [mockScenario] });
     }
 
     if (path.endsWith('/api/roleplay/sessions') && method === 'POST') {
-      const body = request.postDataJSON() as { scenario: string };
+      const body = request.postDataJSON() as { mode: string; scenarioId: string };
       return json(201, {
         ...mockSession,
         id: 'session-2',
-        scenario: body?.scenario,
+        mode: body.mode,
+        scenarioId: body.scenarioId,
+        scenario: 'Hotel check-in',
       });
     }
 
@@ -71,6 +127,7 @@ async function installRoleplayApiMocks(page: Page) {
     ) {
       return json(200, {
         ...mockSession,
+        id: path.endsWith('/session-2') ? 'session-2' : mockSession.id,
         messages: [
           {
             id: 'msg-1',
@@ -148,12 +205,11 @@ test('student can view roleplay dashboard and interact with chat', async ({ page
   await page.goto('/en/roleplay');
   await expect(page.getByRole('heading', { name: 'Conversation Practice' })).toBeVisible();
 
-  // See existing session
+  await expect(page.getByText('Hotel check-in')).toBeVisible();
   await expect(page.getByText('You are a hotel receptionist checking me in.')).toBeVisible();
 
-  // Start new session
-  await page.getByRole('button', { name: 'New Session' }).click();
-  await page.getByText('You are a recruiter interviewing me').click();
+  await page.getByRole('button', { name: 'Text' }).click();
+  await page.getByRole('button', { name: 'Start scenario' }).click();
 
   // Wait to navigate to chat
   await expect(page).toHaveURL(/\/en\/roleplay\/session-2/, { timeout: 10000 });

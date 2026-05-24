@@ -17,6 +17,7 @@ import {
   Sparkles,
   Bell,
   Menu,
+  Mic2,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useAuthStore } from '@/features/auth/auth.store';
@@ -38,6 +39,7 @@ export function AdminSidebar() {
     { name: t('programs'), icon: Layers, href: '/programs' },
     { name: t('courses'), icon: BookOpen, href: '/courses' },
     { name: t('practice'), icon: Dumbbell, href: '/practice' },
+    { name: t('roleplayScenariosNav'), icon: Mic2, href: '/roleplay/scenarios' },
     { name: t('exams'), icon: FileCheck2, href: '/exams' },
     { name: t('skills.navLabel'), icon: Sparkles, href: '/skills' },
     { name: t('reports.navLabel'), icon: BarChart3, href: '/reports' },

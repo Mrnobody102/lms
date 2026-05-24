@@ -23,6 +23,7 @@ import { CreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
 import { LessonQueryDto } from './dto/lesson-query.dto';
 import { ReorderLessonsDto } from './dto/reorder-lessons.dto';
+import { TrackMicroCardEventDto } from './dto/track-micro-card-event.dto';
 
 @ApiBearerAuth()
 @ApiTags('lessons')
@@ -60,6 +61,30 @@ export class LessonController {
   @ApiOperation({ summary: 'Lấy chi tiết một bài học' })
   findOne(@Param('id', ParseUUIDPipe) id: string, @Request() req: AuthenticatedRequest) {
     return this.lessonService.findOne(id, getScopedTenantId(req), req.user);
+  }
+
+  @Post(':id/micro-card-events')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.STUDENT)
+  @ApiOperation({ summary: 'Track a micro-card interaction event' })
+  trackMicroCardEvent(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: TrackMicroCardEventDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.lessonService.trackMicroCardEvent(id, getScopedTenantId(req), req.user, dto);
+  }
+
+  @Post(':id/micro-cards/:cardKey/add-to-review')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.STUDENT)
+  @ApiOperation({ summary: 'Add a micro-card to the current learner SRS review queue' })
+  addMicroCardToReview(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('cardKey') cardKey: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.lessonService.addMicroCardToReview(id, getScopedTenantId(req), req.user, cardKey);
   }
 
   @Patch('reorder')

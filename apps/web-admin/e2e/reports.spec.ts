@@ -49,7 +49,7 @@ async function installAdminReportsApiMocks(page: Page) {
       ]);
     }
 
-    if (path.endsWith('/api/reports/programs') && method === 'GET') {
+    if (path.endsWith('/api/admin/reports/programs') && method === 'GET') {
       return json(200, {
         programs: [
           {
@@ -58,6 +58,7 @@ async function installAdminReportsApiMocks(page: Page) {
             levelCount: 2,
             courseCount: 5,
             enrollmentCount: 100,
+            lessonCount: 24,
             completionRate: 50,
             practiceAccuracy: 80,
             examAccuracy: 75,
@@ -69,6 +70,7 @@ async function installAdminReportsApiMocks(page: Page) {
           levelCount: 0,
           courseCount: 2,
           enrollmentCount: 20,
+          lessonCount: 8,
           completionRate: 30,
           practiceAccuracy: 60,
           examAccuracy: 55,
@@ -76,42 +78,45 @@ async function installAdminReportsApiMocks(page: Page) {
       });
     }
 
-    if (path.endsWith('/api/reports/trend') && method === 'GET') {
+    if (path.endsWith('/api/admin/reports/mastery-trend') && method === 'GET') {
       return json(200, {
-        trend: [
-          { date: 'Mon', listening: 40, speaking: 50 },
-          { date: 'Tue', listening: 45, speaking: 55 },
-          { date: 'Wed', listening: 50, speaking: 60 },
-          { date: 'Thu', listening: 60, speaking: 70 },
-          { date: 'Fri', listening: 70, speaking: 80 },
-          { date: 'Sat', listening: 75, speaking: 85 },
-          { date: 'Sun', listening: 80, speaking: 90 },
+        series: [
+          {
+            cohortId: 'all',
+            cohortName: 'All learners',
+            trend: [
+              { date: '2026-05-22', listening: 72, speaking: 68 },
+              { date: '2026-05-23', listening: 75, speaking: 70 },
+            ],
+          },
         ],
       });
     }
 
-    if (path.endsWith('/api/reports/activity') && method === 'GET') {
+    if (path.endsWith('/api/admin/reports/activity-trend') && method === 'GET') {
       return json(200, {
-        activeUsers: 150,
-        completedLessons: 450,
-        practiceAttempts: 320,
-        activityTrend: [
-          { date: 'Mon', count: 10 },
-          { date: 'Tue', count: 20 },
-          { date: 'Wed', count: 50 },
-          { date: 'Thu', count: 30 },
-          { date: 'Fri', count: 40 },
-          { date: 'Sat', count: 60 },
-          { date: 'Sun', count: 90 },
+        series: [
+          {
+            cohortId: 'all',
+            cohortName: 'All learners',
+            trend: [
+              { date: '2026-05-22', opened: 12, completed: 8 },
+              { date: '2026-05-23', opened: 18, completed: 11 },
+            ],
+          },
         ],
       });
     }
 
-    if (path.endsWith('/api/reports/skills') && method === 'GET') {
-      return json(200, [
-        { skillCode: 'listening', skillName: 'Listening', accuracy: 80, attemptCount: 100 },
-        { skillCode: 'speaking', skillName: 'Speaking', accuracy: 90, attemptCount: 80 },
-      ]);
+    if (path.endsWith('/api/admin/reports/skills') && method === 'GET') {
+      return json(200, {
+        accuracyByUnit: [],
+        accuracyBySkill: [
+          { skill: 'listening', accuracy: 80, totalQuestions: 100 },
+          { skill: 'speaking', accuracy: 90, totalQuestions: 80 },
+        ],
+        filters: {},
+      });
     }
 
     return route.continue();
@@ -123,23 +128,22 @@ test('admin can view reports dashboard and see time-series charts', async ({ pag
 
   // Login
   await page.goto('/en/login');
-  await page.locator('form[data-hydrated="true"]').waitFor();
   await page.locator('input[type="email"]').fill('admin@example.com');
   await page.locator('input[type="password"]').fill('Admin@123');
-  await page.getByRole('button', { name: 'Login Now' }).click();
+  await page.getByRole('button', { name: 'Login', exact: true }).click();
 
   // Navigate to Reports
   await page.goto('/en/reports');
 
   // Verify Dashboard elements
-  await expect(page.getByRole('heading', { name: 'Program Performance' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Reports' })).toBeVisible();
 
   // Verify Time-Series Reporting (Feature 2 / Batch 3)
-  await expect(page.getByRole('heading', { name: 'Skill Mastery Trend' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Learning Activity Trend' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Skill mastery trend' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Learning activity' })).toBeVisible();
 
   // Verify Cohort Filter
-  const cohortSelect = page.locator('select');
+  const cohortSelect = page.locator('select').first();
   await cohortSelect.waitFor();
   await expect(cohortSelect).toBeVisible();
   await cohortSelect.selectOption({ label: 'Cohort Alpha' });

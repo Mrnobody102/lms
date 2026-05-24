@@ -137,7 +137,7 @@ test('admin can review and bulk approve AI-generated practice drafts', async ({ 
   await expect(page.getByRole('heading', { name: 'AI Review Workspace' })).toBeVisible({
     timeout: 60000,
   });
-  await expect(page.getByText('Greetings')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Greetings' })).toBeVisible();
   await expect(page.getByText('Choose the correct greeting.')).toBeVisible();
 
   await page.getByLabel('Select item').check();
