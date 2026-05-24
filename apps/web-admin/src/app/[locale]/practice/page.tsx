@@ -43,8 +43,12 @@ import {
   useBulkApprovePracticeQuestions,
   useBulkRejectPracticeQuestions,
 } from '@/hooks/use-practice';
-import type { PracticeExerciseSet, PracticeQuestion } from '@/lib/practice-api';
-import { PracticeQuestionType } from '@/lib/practice-api';
+import type {
+  PracticeExerciseSet,
+  PracticeQuestion,
+  PracticeQuestionType,
+} from '@/lib/practice-api';
+import { Link } from '@/navigation';
 import {
   AlertCircle,
   BookOpen,
@@ -591,6 +595,15 @@ export default function AdminPracticePage() {
         <main className="flex-1 md:ml-64 p-6 lg:p-8">
           <div className="max-w-6xl mx-auto">
             <AdminHeader title={t('practice')} description={t('practiceManagementDesc')} />
+
+            <div className="mb-4 flex justify-end">
+              <Button asChild variant="outline" size="sm" className="gap-2">
+                <Link href="/practice/ai-review">
+                  <Sparkles className="h-4 w-4" />
+                  {t('aiReviewOpen')}
+                </Link>
+              </Button>
+            </div>
 
             {message && (
               <div

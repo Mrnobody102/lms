@@ -26,6 +26,70 @@ export interface PracticeQuestion {
   createdAt: string;
 }
 
+export type AiGenerationJobStatus = 'QUEUED' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+export type AiDraftReviewStatus = 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED';
+
+export interface AiGeneratedQuestionDraft {
+  id: string;
+  tenantId: string;
+  jobId: string;
+  courseId: string;
+  unitId?: string | null;
+  type: PracticeQuestionType;
+  prompt: string;
+  options?: unknown;
+  correctAnswer: unknown;
+  explanation?: string | null;
+  skillTags: string[];
+  difficulty?: string | null;
+  validationIssues?: unknown;
+  reviewStatus: AiDraftReviewStatus;
+  reviewedAt?: string | null;
+  rejectionReason?: string | null;
+  approvedQuestionId?: string | null;
+  createdAt: string;
+}
+
+export interface AiQuestionGenerationJob {
+  id: string;
+  courseId: string;
+  unitId?: string | null;
+  topic: string;
+  context?: string | null;
+  questionType: PracticeQuestionType;
+  requestedCount: number;
+  skillTags: string[];
+  status: AiGenerationJobStatus;
+  promptVersion: string;
+  sourceReason?: string | null;
+  errorMessage?: string | null;
+  createdAt: string;
+  completedAt?: string | null;
+  course?: { id: string; title: string };
+  unit?: { id: string; title: string } | null;
+  drafts?: AiGeneratedQuestionDraft[];
+  _count?: { drafts: number };
+}
+
+export interface PaginatedAiGenerationJobs {
+  data: AiQuestionGenerationJob[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface AiBulkApproveResult {
+  approved: number;
+  failed: number;
+}
+
+export interface AiBulkRejectResult {
+  rejected: number;
+}
+
 export interface PracticeExerciseSet {
   id: string;
   courseId: string;
@@ -138,9 +202,79 @@ export const practiceApi = {
     questionType: PracticeQuestionType;
     skillTags?: string[];
   }) {
+    return api.post('/practice/generate-ai', data).then((r) => r.data as AiQuestionGenerationJob);
+  },
+
+  createAiGeneration(data: {
+    courseId: string;
+    unitId?: string;
+    topic: string;
+    context?: string;
+    count: number;
+    questionType: PracticeQuestionType;
+    skillTags?: string[];
+    sourceReason?: string;
+  }) {
     return api
-      .post('/practice/generate-ai', data)
-      .then((r) => r.data as { generated: number; questions: PracticeQuestion[] });
+      .post('/practice/ai-generations', data)
+      .then((r) => r.data as AiQuestionGenerationJob);
+  },
+
+  getAiGenerations(params?: {
+    status?: AiGenerationJobStatus;
+    courseId?: string;
+    unitId?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    return api
+      .get('/practice/ai-generations', { params })
+      .then((r) => r.data as PaginatedAiGenerationJobs);
+  },
+
+  getAiGeneration(id: string) {
+    return api.get(`/practice/ai-generations/${id}`).then((r) => r.data as AiQuestionGenerationJob);
+  },
+
+  updateAiDraft(
+    id: string,
+    data: {
+      type?: PracticeQuestionType;
+      prompt?: string;
+      options?: unknown;
+      correctAnswer?: unknown;
+      explanation?: string | null;
+      skillTags?: string[];
+      difficulty?: string | null;
+    },
+  ) {
+    return api
+      .patch(`/practice/ai-drafts/${id}`, data)
+      .then((r) => r.data as AiGeneratedQuestionDraft);
+  },
+
+  approveAiDraft(id: string) {
+    return api
+      .post(`/practice/ai-drafts/${id}/approve`)
+      .then((r) => r.data as AiGeneratedQuestionDraft);
+  },
+
+  rejectAiDraft(id: string, rejectionReason: string) {
+    return api
+      .post(`/practice/ai-drafts/${id}/reject`, { rejectionReason })
+      .then((r) => r.data as AiGeneratedQuestionDraft);
+  },
+
+  bulkApproveAiDrafts(ids: string[]) {
+    return api
+      .post('/practice/ai-drafts/bulk-approve', { ids })
+      .then((r) => r.data as AiBulkApproveResult);
+  },
+
+  bulkRejectAiDrafts(ids: string[], rejectionReason: string) {
+    return api
+      .post('/practice/ai-drafts/bulk-reject', { ids, rejectionReason })
+      .then((r) => r.data as AiBulkRejectResult);
   },
 
   getReviewQueue(params?: { courseId?: string; unitId?: string }) {

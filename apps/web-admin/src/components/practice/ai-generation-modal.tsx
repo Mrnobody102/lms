@@ -14,7 +14,7 @@ import {
   Label,
 } from '@/components/ui';
 import { useGeneratePracticeQuestions } from '@/hooks/use-practice';
-import { PracticeQuestionType } from '@/lib/practice-api';
+import type { PracticeQuestionType } from '@/lib/practice-api';
 import { Loader2, Sparkles } from 'lucide-react';
 
 interface AiGenerationModalProps {
@@ -65,7 +65,7 @@ export function AiGenerationModal({
     }
 
     if (!courseId) {
-      onError('Course must be selected first');
+      onError(t('aiCourseRequired'));
       return;
     }
 
@@ -84,7 +84,7 @@ export function AiGenerationModal({
       },
       {
         onSuccess: () => {
-          onSuccess(t('aiGenerateSuccess'));
+          onSuccess(t('aiReviewJobCreated'));
           onGenerated();
           onOpenChange(false);
           resetDraft();

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { practiceApi, PracticeQuestionType } from '@/lib/practice-api';
+import type { AiGenerationJobStatus, PracticeQuestionType } from '@/lib/practice-api';
+import { practiceApi } from '@/lib/practice-api';
 
 export function usePracticeQuestions(params?: { courseId?: string; unitId?: string }) {
   return useQuery({
@@ -153,7 +154,120 @@ export function useGeneratePracticeQuestions() {
       skillTags?: string[];
     }) => practiceApi.generateAiQuestions(data),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['practice-ai-generations'] });
       queryClient.invalidateQueries({ queryKey: ['practice-review-queue'] });
+    },
+  });
+}
+
+export function useAiGenerations(params?: {
+  status?: AiGenerationJobStatus;
+  courseId?: string;
+  unitId?: string;
+  page?: number;
+  limit?: number;
+}) {
+  return useQuery({
+    queryKey: ['practice-ai-generations', params],
+    queryFn: () => practiceApi.getAiGenerations(params),
+    enabled: Boolean(params?.courseId),
+    staleTime: 30 * 1000,
+  });
+}
+
+export function useAiGeneration(id: string) {
+  return useQuery({
+    queryKey: ['practice-ai-generation', id],
+    queryFn: () => practiceApi.getAiGeneration(id),
+    enabled: Boolean(id),
+    staleTime: 15 * 1000,
+  });
+}
+
+export function useCreateAiGeneration() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: {
+      courseId: string;
+      unitId?: string;
+      topic: string;
+      context?: string;
+      count: number;
+      questionType: PracticeQuestionType;
+      skillTags?: string[];
+      sourceReason?: string;
+    }) => practiceApi.createAiGeneration(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['practice-ai-generations'] });
+    },
+  });
+}
+
+export function useUpdateAiDraft() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: {
+      id: string;
+      payload: {
+        type?: PracticeQuestionType;
+        prompt?: string;
+        options?: unknown;
+        correctAnswer?: unknown;
+        explanation?: string | null;
+        skillTags?: string[];
+        difficulty?: string | null;
+      };
+    }) => practiceApi.updateAiDraft(data.id, data.payload),
+    onSuccess: () => {
+      invalidateAiDraftQueries(queryClient);
+    },
+  });
+}
+
+export function useApproveAiDraft() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => practiceApi.approveAiDraft(id),
+    onSuccess: () => {
+      invalidateAiDraftQueries(queryClient);
+    },
+  });
+}
+
+export function useRejectAiDraft() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: { id: string; rejectionReason: string }) =>
+      practiceApi.rejectAiDraft(data.id, data.rejectionReason),
+    onSuccess: () => {
+      invalidateAiDraftQueries(queryClient);
+    },
+  });
+}
+
+export function useBulkApproveAiDrafts() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (ids: string[]) => practiceApi.bulkApproveAiDrafts(ids),
+    onSuccess: () => {
+      invalidateAiDraftQueries(queryClient);
+    },
+  });
+}
+
+export function useBulkRejectAiDrafts() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: { ids: string[]; rejectionReason: string }) =>
+      practiceApi.bulkRejectAiDrafts(data.ids, data.rejectionReason),
+    onSuccess: () => {
+      invalidateAiDraftQueries(queryClient);
     },
   });
 }
@@ -211,4 +325,11 @@ export function useBulkRejectPracticeQuestions() {
       queryClient.invalidateQueries({ queryKey: ['practice-review-queue'] });
     },
   });
+}
+
+function invalidateAiDraftQueries(queryClient: ReturnType<typeof useQueryClient>) {
+  queryClient.invalidateQueries({ queryKey: ['practice-ai-generations'] });
+  queryClient.invalidateQueries({ queryKey: ['practice-ai-generation'] });
+  queryClient.invalidateQueries({ queryKey: ['practice-questions'] });
+  queryClient.invalidateQueries({ queryKey: ['practice-review-queue'] });
 }
