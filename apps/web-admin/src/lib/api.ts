@@ -5,7 +5,7 @@ export default createApiClient({
   tenantId: process.env.NEXT_PUBLIC_TENANT_ID || 'trung-tam-demo',
   supportedLocales: locales,
   defaultLocale,
-  sendTenantHeaderInProduction: process.env.NODE_ENV !== 'production',
+  sendTenantHeaderInProduction: true,
   onUnauthorized: () => {
     const returnUrl = `${window.location.pathname}${window.location.search}`;
     const locale = window.location.pathname.split('/')[1];
