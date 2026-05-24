@@ -900,6 +900,10 @@
     "coverImageUrlDesc": "Enter cover image URL for the course (16:9)",
     "publishCourse": "Publish",
     "unpublishCourse": "Unpublish",
+    "marketplace": {
+      "providerNav": "Provided Resources",
+      "exploreNav": "Marketplace"
+    },
     "notifications": {
       "title": "Notifications",
       "subtitle": "Broadcast announcements to all students.",

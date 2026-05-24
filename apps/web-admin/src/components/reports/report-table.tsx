@@ -36,7 +36,7 @@ export function ReportTable<T>({
 
   return (
     <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
-      <table className="w-full text-sm">
+      <table className="w-full min-w-[600px] text-sm">
         <thead className="bg-muted/30 border-b">
           <tr>
             {columns.map((col, idx) => (

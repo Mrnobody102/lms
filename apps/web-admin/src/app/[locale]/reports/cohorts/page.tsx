@@ -158,8 +158,8 @@ export default function CohortComparisonPage() {
                     ))}
                   </div>
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead className="border-b bg-muted/40 text-left text-xs uppercase text-muted-foreground">
+                    <table className="w-full min-w-[700px] text-sm">
+                      <thead className="border-b bg-muted/20 text-left text-xs uppercase text-muted-foreground">
                         <tr>
                           <th className="px-4 py-3">{t('reports.cohortColumn')}</th>
                           <th className="px-4 py-3">{t('reports.rank')}</th>

@@ -900,6 +900,10 @@
     "coverImageUrlDesc": "Nhập URL ảnh bìa cho khóa học (16:9)",
     "publishCourse": "Xuất bản",
     "unpublishCourse": "Hủy xuất bản",
+    "marketplace": {
+      "providerNav": "Kho Dữ Liệu Cho Thuê",
+      "exploreNav": "Thị Trường Khóa Học"
+    },
     "notifications": {
       "title": "Thông báo",
       "subtitle": "Gửi thông báo đến toàn bộ học viên.",

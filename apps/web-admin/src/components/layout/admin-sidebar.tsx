@@ -18,6 +18,8 @@ import {
   Bell,
   Menu,
   Mic2,
+  Store,
+  PackageSearch,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useAuthStore } from '@/features/auth/auth.store';
@@ -43,6 +45,8 @@ export function AdminSidebar() {
     { name: t('exams'), icon: FileCheck2, href: '/exams' },
     { name: t('skills.navLabel'), icon: Sparkles, href: '/skills' },
     { name: t('reports.navLabel'), icon: BarChart3, href: '/reports' },
+    { name: t('marketplace.providerNav'), icon: Store, href: '/marketplace/provider' },
+    { name: t('marketplace.exploreNav'), icon: PackageSearch, href: '/marketplace/explore' },
     { name: t('notifications.title'), icon: Bell, href: '/notifications' },
     { name: t('finance'), icon: DollarSign, href: '/finance' },
     { name: t('schedule'), icon: Calendar, href: '/schedule' },
@@ -157,7 +161,11 @@ export function AdminSidebar() {
                 <Menu className="h-5 w-5" />
               </button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[280px] p-0 flex flex-col">
+            <SheetContent
+              side="left"
+              className="w-[280px] p-0 flex flex-col"
+              aria-describedby={undefined}
+            >
               <SheetTitle className="sr-only">Menu</SheetTitle>
               {sidebarContent}
             </SheetContent>

@@ -171,6 +171,7 @@ export function StudentNav({ showLinks = false }: StudentNavProps) {
                 <SheetContent
                   side="left"
                   className="flex w-[280px] flex-col gap-4 p-6 sm:w-[350px]"
+                  aria-describedby={undefined}
                 >
                   <SheetTitle className="text-left font-bold tracking-tight">
                     {t('nav.menu')}
