@@ -3,17 +3,15 @@
 import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { LoginForm } from '@/features/auth/components/login-form';
-import { useRouter } from '@/navigation';
 
 export default function AdminLoginPage() {
   const t = useTranslations('Admin');
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   // Redirect to dashboard after successful login
   const handleLoginSuccess = () => {
     const returnUrl = searchParams.get('returnUrl') || searchParams.get('next');
-    router.replace(getSafeReturnUrl(returnUrl) ?? '/');
+    window.location.assign(getSafeReturnUrl(returnUrl) ?? '/');
   };
 
   return (
