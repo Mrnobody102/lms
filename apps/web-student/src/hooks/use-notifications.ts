@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { notificationApi } from '../lib/notification-api';
 
@@ -7,12 +8,28 @@ export const notificationKeys = {
 };
 
 export function useNotifications(skip = 0, take = 20, enabled = true) {
+  useNotificationStream(enabled);
+
   return useQuery({
     queryKey: notificationKeys.list(skip, take),
     queryFn: () => notificationApi.getNotifications(skip, take),
     enabled,
-    refetchInterval: 30000, // Poll every 30 seconds
+    refetchInterval: enabled ? 30000 : false,
   });
+}
+
+export function useNotificationStream(enabled = true) {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!enabled) {
+      return undefined;
+    }
+
+    return notificationApi.subscribeToStream(() => {
+      void queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+    });
+  }, [enabled, queryClient]);
 }
 
 export function useMarkNotificationAsRead() {

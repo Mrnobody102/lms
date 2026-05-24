@@ -1,10 +1,53 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Notification } from '@repo/database';
+import { Observable, Subject } from 'rxjs';
 import { PrismaService } from '../common/services/prisma.service';
 import { BroadcastNotificationDto } from './dto/broadcast.dto';
 
+export type NotificationStreamEvent =
+  | {
+      kind: 'notifications.snapshot';
+      unreadCount: number;
+    }
+  | {
+      kind: 'notification.created';
+      notification: Notification;
+      unreadCount: number;
+    }
+  | {
+      kind: 'notifications.refresh';
+      unreadCount?: number;
+    };
+
 @Injectable()
 export class NotificationService {
+  private readonly streams = new Map<string, Set<Subject<NotificationStreamEvent>>>();
+
   constructor(private readonly prisma: PrismaService) {}
+
+  streamUserNotifications(tenantId: string, userId: string): Observable<NotificationStreamEvent> {
+    return new Observable<NotificationStreamEvent>((subscriber) => {
+      const subject = new Subject<NotificationStreamEvent>();
+      const key = this.streamKey(tenantId, userId);
+      const subjects = this.streams.get(key) ?? new Set<Subject<NotificationStreamEvent>>();
+      subjects.add(subject);
+      this.streams.set(key, subjects);
+
+      const subscription = subject.subscribe(subscriber);
+      void this.getUnreadCount(tenantId, userId).then((unreadCount) => {
+        subscriber.next({ kind: 'notifications.snapshot', unreadCount });
+      });
+
+      return () => {
+        subscription.unsubscribe();
+        subject.complete();
+        subjects.delete(subject);
+        if (subjects.size === 0) {
+          this.streams.delete(key);
+        }
+      };
+    });
+  }
 
   async getUserNotifications(tenantId: string, userId: string, skip = 0, take = 20) {
     const notifications = await this.prisma.notification.findMany({
@@ -34,10 +77,15 @@ export class NotificationService {
       return notification;
     }
 
-    return this.prisma.notification.update({
+    const updated = await this.prisma.notification.update({
       where: { id_tenantId: { id, tenantId } },
       data: { readAt: new Date() },
     });
+    await this.publish(tenantId, userId, {
+      kind: 'notifications.refresh',
+      unreadCount: await this.getUnreadCount(tenantId, userId),
+    });
+    return updated;
   }
 
   async markAllAsRead(tenantId: string, userId: string) {
@@ -46,6 +94,7 @@ export class NotificationService {
       data: { readAt: new Date() },
     });
 
+    await this.publish(tenantId, userId, { kind: 'notifications.refresh', unreadCount: 0 });
     return { count: result.count };
   }
 
@@ -72,6 +121,10 @@ export class NotificationService {
       })),
     });
 
+    for (const user of users) {
+      await this.publish(tenantId, user.id, { kind: 'notifications.refresh' });
+    }
+
     return { count };
   }
 
@@ -84,7 +137,7 @@ export class NotificationService {
     type = 'INFO',
     actionUrl?: string,
   ) {
-    return this.prisma.notification.create({
+    const notification = await this.prisma.notification.create({
       data: {
         tenantId,
         userId,
@@ -94,5 +147,32 @@ export class NotificationService {
         actionUrl,
       },
     });
+    await this.publish(tenantId, userId, {
+      kind: 'notification.created',
+      notification,
+      unreadCount: await this.getUnreadCount(tenantId, userId),
+    });
+    return notification;
+  }
+
+  private async getUnreadCount(tenantId: string, userId: string) {
+    return this.prisma.notification.count({
+      where: { tenantId, userId, readAt: null },
+    });
+  }
+
+  private async publish(tenantId: string, userId: string, event: NotificationStreamEvent) {
+    const subjects = this.streams.get(this.streamKey(tenantId, userId));
+    if (!subjects || subjects.size === 0) {
+      return;
+    }
+
+    for (const subject of subjects) {
+      subject.next(event);
+    }
+  }
+
+  private streamKey(tenantId: string, userId: string) {
+    return `${tenantId}:${userId}`;
   }
 }

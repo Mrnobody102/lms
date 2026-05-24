@@ -27,6 +27,8 @@ interface RiskRow {
   cohortIds: string[];
   severity: RiskSeverity;
   score: number;
+  churnProbability: number;
+  predictedChurnLabel: 'LOW' | 'MEDIUM' | 'HIGH';
   flags: RiskFlagType[];
   reasons: RiskReason[];
   computedAt: Date;
@@ -42,6 +44,17 @@ interface ScoreTrend {
   recentAccuracy: number;
   previousAccuracy: number;
   drop: number;
+}
+
+interface ChurnSignals {
+  inactiveDays: number;
+  completion: number;
+  practiceAccuracy: number;
+  examAccuracy: number;
+  overdueCount: number;
+  currentStreak: number;
+  attemptCadenceDays?: number;
+  scoreTrend?: ScoreTrend;
 }
 
 interface ScoreAttemptRow {
@@ -97,7 +110,7 @@ export class RiskFlagService {
     const filtered = rows.filter((row) => {
       if (query.severity && row.severity !== query.severity) return false;
       if (query.flag && !row.flags.includes(query.flag)) return false;
-      return row.flags.length > 0;
+      return row.flags.length > 0 || row.churnProbability >= 40;
     });
     const total = filtered.length;
     const data = filtered.slice((page - 1) * limit, page * limit);
@@ -122,7 +135,7 @@ export class RiskFlagService {
         courseId: query.courseId,
         cohortId: query.cohortId,
       })
-    ).filter((row) => row.flags.length > 0);
+    ).filter((row) => row.flags.length > 0 || row.churnProbability >= 40);
 
     await this.prisma.$transaction(async (tx) => {
       await tx.studentRiskSnapshot.deleteMany({
@@ -142,6 +155,8 @@ export class RiskFlagService {
             cohortId: query.cohortId,
             severity: row.severity,
             score: row.score,
+            churnProbability: row.churnProbability,
+            predictedChurnLabel: row.predictedChurnLabel,
             flags: row.flags,
             reasons: row.reasons as unknown as Prisma.InputJsonValue,
             computedAt: row.computedAt,
@@ -179,6 +194,8 @@ export class RiskFlagService {
           select: {
             fullName: true,
             email: true,
+            currentStreak: true,
+            lastActiveDate: true,
             cohortMemberships: { where: { tenantId }, select: { cohortId: true } },
           },
         },
@@ -321,6 +338,11 @@ export class RiskFlagService {
         examByUserCourse.get(key)?.total,
       );
       const overdueCount = overdueByUser.get(enrollment.userId) ?? 0;
+      const enrolledDays = this.diffDays(computedAt, enrollment.enrolledAt);
+      const inactiveDays = lastActivityAt
+        ? this.diffDays(computedAt, lastActivityAt)
+        : enrolledDays;
+      const scoreTrend = decliningScoresByUserCourse.get(key);
       const { flags, reasons, score } = this.evaluateRisk({
         enrolledAt: enrollment.enrolledAt,
         completion,
@@ -328,9 +350,24 @@ export class RiskFlagService {
         practiceAccuracy,
         examAccuracy,
         overdueCount,
-        scoreTrend: decliningScoresByUserCourse.get(key),
+        scoreTrend,
         now: computedAt,
         rules: riskRules,
+      });
+      const churn = this.predictChurn({
+        inactiveDays,
+        completion,
+        practiceAccuracy,
+        examAccuracy,
+        overdueCount,
+        currentStreak: enrollment.user.currentStreak ?? 0,
+        attemptCadenceDays: this.attemptCadenceDays(
+          [...practiceAttempts, ...examAttempts].filter(
+            (attempt) =>
+              attempt.userId === enrollment.userId && attempt.courseId === enrollment.courseId,
+          ),
+        ),
+        scoreTrend,
       });
 
       return {
@@ -340,8 +377,10 @@ export class RiskFlagService {
         courseId: enrollment.courseId,
         courseTitle: enrollment.course.title,
         cohortIds: enrollment.user.cohortMemberships.map((membership) => membership.cohortId),
-        severity: this.severityForScore(score),
+        severity: this.severityForScore(Math.max(score, churn.probability)),
         score,
+        churnProbability: churn.probability,
+        predictedChurnLabel: churn.label,
         flags,
         reasons,
         computedAt,
@@ -529,6 +568,63 @@ export class RiskFlagService {
     }
 
     return trends;
+  }
+
+  private predictChurn(signals: ChurnSignals) {
+    const accuracyValues = [signals.practiceAccuracy, signals.examAccuracy].filter(
+      (value) => value > 0,
+    );
+    const averageAccuracy =
+      accuracyValues.length === 0
+        ? 0
+        : Math.round(accuracyValues.reduce((sum, value) => sum + value, 0) / accuracyValues.length);
+
+    let probability = 10;
+    if (signals.inactiveDays >= 21) probability += 35;
+    else if (signals.inactiveDays >= 14) probability += 25;
+    else if (signals.inactiveDays >= 7) probability += 15;
+
+    if (signals.completion < 20) probability += 15;
+    else if (signals.completion < 50) probability += 8;
+
+    if (averageAccuracy > 0 && averageAccuracy < 50) probability += 18;
+    else if (averageAccuracy > 0 && averageAccuracy < 70) probability += 10;
+
+    if (signals.overdueCount >= 20) probability += 10;
+    else if (signals.overdueCount >= 10) probability += 6;
+
+    if (signals.scoreTrend && signals.scoreTrend.drop >= 20) probability += 12;
+    else if (signals.scoreTrend && signals.scoreTrend.drop >= 10) probability += 6;
+
+    if (signals.currentStreak <= 0) probability += 5;
+    if (signals.attemptCadenceDays !== undefined && signals.attemptCadenceDays > 10) {
+      probability += 8;
+    }
+
+    const normalized = Math.min(Math.max(probability, 0), 95);
+    return {
+      probability: normalized,
+      label: this.churnLabel(normalized),
+    };
+  }
+
+  private attemptCadenceDays(attempts: ScoreAttemptRow[]) {
+    const dates = attempts
+      .map((attempt) => attempt.createdAt)
+      .sort((left, right) => left.getTime() - right.getTime());
+    if (dates.length < 2) {
+      return undefined;
+    }
+
+    const deltas = dates.slice(1).map((date, index) => this.diffDays(date, dates[index]));
+    const average = deltas.reduce((sum, delta) => sum + delta, 0) / deltas.length;
+    return Math.round(average);
+  }
+
+  private churnLabel(probability: number): 'LOW' | 'MEDIUM' | 'HIGH' {
+    if (probability >= 70) return 'HIGH';
+    if (probability >= 40) return 'MEDIUM';
+    return 'LOW';
   }
 
   private async ensureCourse(tenantId: string, courseId?: string) {

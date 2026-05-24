@@ -3,20 +3,53 @@
 import { useEffect, useRef } from 'react';
 import { PlayCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import api from '../../lib/api';
 
 interface VideoPlayerProps {
+  lessonId: string;
   videoUrl?: string;
   title: string;
   onComplete?: () => void;
 }
 
-export function VideoPlayer({ videoUrl, title, onComplete }: VideoPlayerProps) {
+export function VideoPlayer({ lessonId, videoUrl, title, onComplete }: VideoPlayerProps) {
   const t = useTranslations('Student');
   const hasTriggeredComplete = useRef(false);
+  const lastReportedSecond = useRef(0);
 
   useEffect(() => {
     hasTriggeredComplete.current = false;
+    lastReportedSecond.current = 0;
   }, [videoUrl]);
+
+  const trackVideoEvent = (payload: {
+    eventType: 'PLAY' | 'PAUSE' | 'SEEK' | 'WATCH_SEGMENT' | 'COMPLETED' | 'ABANDONED';
+    positionSeconds: number;
+    durationSeconds?: number;
+    segmentStartSeconds?: number;
+    segmentEndSeconds?: number;
+    playbackRate?: number;
+  }) => {
+    void api.post(`/lessons/${lessonId}/video-engagement-events`, payload).catch(() => undefined);
+  };
+
+  const trackWatchSegment = (video: HTMLVideoElement, force = false) => {
+    const currentSecond = Math.floor(video.currentTime);
+    const previousSecond = lastReportedSecond.current;
+    if (currentSecond <= previousSecond || (!force && currentSecond - previousSecond < 10)) {
+      return;
+    }
+
+    trackVideoEvent({
+      eventType: 'WATCH_SEGMENT',
+      positionSeconds: currentSecond,
+      durationSeconds: Math.floor(video.duration || 0),
+      segmentStartSeconds: previousSecond,
+      segmentEndSeconds: currentSecond,
+      playbackRate: video.playbackRate,
+    });
+    lastReportedSecond.current = currentSecond;
+  };
 
   if (!videoUrl) {
     return (
@@ -86,8 +119,49 @@ export function VideoPlayer({ videoUrl, title, onComplete }: VideoPlayerProps) {
           src={safeSrc}
           controls
           className="absolute inset-0 w-full h-full object-cover"
+          onPlay={(e) => {
+            const video = e.currentTarget;
+            lastReportedSecond.current = Math.floor(video.currentTime);
+            trackVideoEvent({
+              eventType: 'PLAY',
+              positionSeconds: Math.floor(video.currentTime),
+              durationSeconds: Math.floor(video.duration || 0),
+              playbackRate: video.playbackRate,
+            });
+          }}
+          onPause={(e) => {
+            const video = e.currentTarget;
+            trackWatchSegment(video, true);
+            trackVideoEvent({
+              eventType: 'PAUSE',
+              positionSeconds: Math.floor(video.currentTime),
+              durationSeconds: Math.floor(video.duration || 0),
+              playbackRate: video.playbackRate,
+            });
+          }}
+          onSeeked={(e) => {
+            const video = e.currentTarget;
+            lastReportedSecond.current = Math.floor(video.currentTime);
+            trackVideoEvent({
+              eventType: 'SEEK',
+              positionSeconds: Math.floor(video.currentTime),
+              durationSeconds: Math.floor(video.duration || 0),
+              playbackRate: video.playbackRate,
+            });
+          }}
+          onEnded={(e) => {
+            const video = e.currentTarget;
+            trackWatchSegment(video, true);
+            trackVideoEvent({
+              eventType: 'COMPLETED',
+              positionSeconds: Math.floor(video.currentTime),
+              durationSeconds: Math.floor(video.duration || 0),
+              playbackRate: video.playbackRate,
+            });
+          }}
           onTimeUpdate={(e) => {
             const video = e.currentTarget;
+            trackWatchSegment(video);
             if (onComplete && !hasTriggeredComplete.current && video.duration > 0) {
               const progress = video.currentTime / video.duration;
               if (progress >= 0.85) {

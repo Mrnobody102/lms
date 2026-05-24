@@ -1,4 +1,15 @@
-import { Controller, Get, Param, Patch, Query, UseGuards, UseInterceptors } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  MessageEvent,
+  Param,
+  Patch,
+  Query,
+  Sse,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
+import { map, Observable } from 'rxjs';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { TransformInterceptor } from '../common/interceptors/transform.interceptor';
@@ -10,6 +21,15 @@ import { NotificationService } from './notification.service';
 @UseInterceptors(TransformInterceptor)
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
+
+  @Sse('stream')
+  streamNotifications(
+    @CurrentUser() user: { id: string; tenantId: string },
+  ): Observable<MessageEvent> {
+    return this.notificationService
+      .streamUserNotifications(user.tenantId, user.id)
+      .pipe(map((event) => ({ data: event })));
+  }
 
   @Get()
   async getNotifications(

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Server, PlusCircle, Calendar } from 'lucide-react';
 import { useAuthStore } from '@/features/auth/auth.store';
-import { TenantStats } from '@/features/tenants/components/tenant-stats';
+import { SystemTelemetryDashboard } from '@/features/system/components/system-telemetry-dashboard';
 import { TenantFormModal } from '@/features/tenants/components/tenant-form-modal';
 import { TenantList } from '@/features/tenants/components/tenant-list';
 import { Header } from '@/components/layout/header';
@@ -53,7 +53,7 @@ export default function SuperAdminHome() {
           </button>
         </div>
 
-        <TenantStats totalActiveTenants={tenants.filter((tenant) => tenant.isActive).length} />
+        <SystemTelemetryDashboard />
         <TenantList tenants={tenants} loading={isLoading} />
       </div>
 

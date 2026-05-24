@@ -9,12 +9,37 @@
     "footer": {
       "rights": "© 2026 LMS Platform. All rights reserved."
     },
+    "systemTelemetry": "System Telemetry",
     "stats": {
       "totalTenants": "Total Active Tenants",
       "active": "Active",
       "databaseQueries": "Database queries / sec",
       "serverHealth": "Server health",
-      "allSystemsOperational": "All systems operational"
+      "allSystemsOperational": "All systems operational",
+      "users": "Total Users",
+      "courses": "Total Courses",
+      "enrollments": "Total Enrollments",
+      "activities": "Learning Activities",
+      "activeValue": "{count} active",
+      "totalCreated": "Total created",
+      "activeEnrollments": "Active enrollments",
+      "trackedEvents": "Tracked events"
+    },
+    "system": {
+      "cpuLoad": "CPU load",
+      "cpuCores": "{count} cores",
+      "memory": "Memory",
+      "heap": "Heap {used} / {total} MB",
+      "prismaConnections": "Prisma connections",
+      "databasePool": "Database pool",
+      "apiLatency": "API latency",
+      "requests": "{count} requests",
+      "tenantTraffic": "Tenant traffic",
+      "errorsAndLatency": "{errors} errors, max {latency} ms",
+      "noTenantTraffic": "No tenant traffic recorded yet.",
+      "alerts": "Alerts",
+      "noAlerts": "No active alerts.",
+      "unknown": "Unknown"
     },
     "tenants": {
       "list": "Tenant List",

@@ -137,49 +137,96 @@ enum RiskSeverity {
   HIGH
 }
 
+enum MarketplaceResourceType {
+  COURSE
+  MEDIA_ASSET
+}
+
+enum MarketplacePricingModel {
+  FREE
+  MONTHLY
+  ONE_TIME
+}
+
+enum ResourceSubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+}
+
+enum MarketplaceUsageEventType {
+  SUBSCRIPTION_STARTED
+  COURSE_PACKAGE_VIEWED
+  MEDIA_SIGNED_URL
+  MEDIA_STREAM_SECONDS
+}
+
+enum VideoEngagementEventType {
+  PLAY
+  PAUSE
+  SEEK
+  WATCH_SEGMENT
+  COMPLETED
+  ABANDONED
+}
+
+enum AdaptiveLearningPathItemStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+}
+
 model Tenant {
-  id                        String                     @id @default(uuid())
-  name                      String
-  slug                      String                     @unique // Ví dụ: "trung-tam-a"
-  domain                    String?                    @unique // Custom domain sau này
-  settings                  Json // Lưu logo, màu sắc, config
-  users                     User[]
-  courses                   Course[]
-  units                     CourseUnit[]
-  lessons                   Lesson[]
-  enrollments               CourseEnrollment[]
-  activities                LearningActivity[]
-  questions                 PracticeQuestion[]
-  aiQuestionGenerationJobs  AiQuestionGenerationJob[]
-  aiGeneratedQuestionDrafts AiGeneratedQuestionDraft[]
-  exerciseSets              PracticeExerciseSet[]
-  practiceAttempts          PracticeAttempt[]
-  exams                     Exam[]
-  examAttempts              ExamAttempt[]
-  activationCodes           ActivationCode[]
-  redemptions               ActivationRedemption[]
-  programs                  Program[]
-  levels                    Level[]
-  skills                    Skill[]
-  skillMasteries            SkillMastery[]
-  skillMasterySnapshots     SkillMasterySnapshot[]
-  reviewCards               ReviewCard[]
-  reviewLogs                ReviewLog[]
-  aiUsageQuotas             AiUsageQuota[]
-  mediaAssets               MediaAsset[]
-  cohorts                   Cohort[]
-  roleplaySessions          RoleplaySession[]
-  roleplayScenarios         RoleplayScenario[]
-  pronunciationAssessments  PronunciationAssessment[]
-  studentRiskSnapshots      StudentRiskSnapshot[]
-  reportingRiskRules        ReportingRiskRule[]
-  discussionThreads         DiscussionThread[]
-  discussionReplies         DiscussionReply[]
-  courseCertificates        CourseCertificate[]
-  isActive                  Boolean                    @default(true)
-  createdAt                 DateTime                   @default(now())
-  updatedAt                 DateTime                   @default(now()) @updatedAt
-  Notification              Notification[]
+  id                               String                     @id @default(uuid())
+  name                             String
+  slug                             String                     @unique // Ví dụ: "trung-tam-a"
+  domain                           String?                    @unique // Custom domain sau này
+  settings                         Json // Lưu logo, màu sắc, config
+  users                            User[]
+  courses                          Course[]
+  units                            CourseUnit[]
+  lessons                          Lesson[]
+  enrollments                      CourseEnrollment[]
+  activities                       LearningActivity[]
+  questions                        PracticeQuestion[]
+  aiQuestionGenerationJobs         AiQuestionGenerationJob[]
+  aiGeneratedQuestionDrafts        AiGeneratedQuestionDraft[]
+  exerciseSets                     PracticeExerciseSet[]
+  practiceAttempts                 PracticeAttempt[]
+  exams                            Exam[]
+  examAttempts                     ExamAttempt[]
+  activationCodes                  ActivationCode[]
+  redemptions                      ActivationRedemption[]
+  programs                         Program[]
+  levels                           Level[]
+  skills                           Skill[]
+  skillMasteries                   SkillMastery[]
+  skillMasterySnapshots            SkillMasterySnapshot[]
+  reviewCards                      ReviewCard[]
+  reviewLogs                       ReviewLog[]
+  aiUsageQuotas                    AiUsageQuota[]
+  mediaAssets                      MediaAsset[]
+  cohorts                          Cohort[]
+  roleplaySessions                 RoleplaySession[]
+  roleplayScenarios                RoleplayScenario[]
+  pronunciationAssessments         PronunciationAssessment[]
+  studentRiskSnapshots             StudentRiskSnapshot[]
+  reportingRiskRules               ReportingRiskRule[]
+  discussionThreads                DiscussionThread[]
+  discussionReplies                DiscussionReply[]
+  courseCertificates               CourseCertificate[]
+  marketplaceItems                 MarketplaceItem[]          @relation("MarketplaceItemOwnerTenant")
+  marketplaceSubscriptions         ResourceSubscription[]     @relation("MarketplaceSubscriberTenant")
+  marketplaceProvidedSubscriptions ResourceSubscription[]     @relation("MarketplaceProviderTenant")
+  marketplaceUsageAsProvider       MarketplaceUsageEvent[]    @relation("MarketplaceUsageProviderTenant")
+  marketplaceUsageAsSubscriber     MarketplaceUsageEvent[]    @relation("MarketplaceUsageSubscriberTenant")
+  videoEngagementEvents            VideoEngagementEvent[]
+  adaptiveLearningPathItems        AdaptiveLearningPathItem[]
+  isActive                         Boolean                    @default(true)
+  createdAt                        DateTime                   @default(now())
+  updatedAt                        DateTime                   @default(now()) @updatedAt
+  Notification                     Notification[]
 
   @@index([isActive])
 }
@@ -225,6 +272,8 @@ model User {
   discussionThreads                 DiscussionThread[]
   discussionReplies                 DiscussionReply[]
   courseCertificates                CourseCertificate[]
+  videoEngagementEvents             VideoEngagementEvent[]
+  adaptiveLearningPathItems         AdaptiveLearningPathItem[]
   createdAt                         DateTime                   @default(now())
   updatedAt                         DateTime                   @updatedAt
   Notification                      Notification[]
@@ -299,6 +348,7 @@ model Course {
   examAttempts              ExamAttempt[]
   roleplayScenarios         RoleplayScenario[]
   courseCertificates        CourseCertificate[]
+  adaptiveLearningPathItems AdaptiveLearningPathItem[]
   totalDuration             Int                        @default(0)
   aiSettings                Json?
   createdAt                 DateTime                   @default(now())
@@ -1017,19 +1067,21 @@ model CohortMembership {
 }
 
 model StudentRiskSnapshot {
-  id         String         @id @default(uuid())
-  tenantId   String
-  tenant     Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  userId     String
-  user       User           @relation(fields: [userId, tenantId], references: [id, tenantId], onDelete: Cascade)
-  courseId   String?
-  cohortId   String?
-  severity   RiskSeverity
-  score      Int
-  flags      RiskFlagType[]
-  reasons    Json
-  computedAt DateTime
-  createdAt  DateTime       @default(now())
+  id                  String         @id @default(uuid())
+  tenantId            String
+  tenant              Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId              String
+  user                User           @relation(fields: [userId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  courseId            String?
+  cohortId            String?
+  severity            RiskSeverity
+  score               Int
+  churnProbability    Int            @default(0)
+  predictedChurnLabel String?
+  flags               RiskFlagType[]
+  reasons             Json
+  computedAt          DateTime
+  createdAt           DateTime       @default(now())
 
   @@index([tenantId, computedAt])
   @@index([tenantId, courseId, severity])
@@ -1050,6 +1102,127 @@ model ReportingRiskRule {
 
   @@unique([tenantId, type])
   @@index([tenantId, isEnabled])
+}
+
+model MarketplaceItem {
+  id              String                  @id @default(uuid())
+  ownerTenantId   String
+  ownerTenant     Tenant                  @relation("MarketplaceItemOwnerTenant", fields: [ownerTenantId], references: [id], onDelete: Cascade)
+  resourceType    MarketplaceResourceType
+  resourceId      String
+  title           String
+  description     String?
+  pricingModel    MarketplacePricingModel @default(FREE)
+  priceCents      Int                     @default(0)
+  currency        String                  @default("USD")
+  revenueShareBps Int                     @default(7000)
+  isPublished     Boolean                 @default(false)
+  publishedAt     DateTime?
+  metadata        Json?
+  subscriptions   ResourceSubscription[]
+  usageEvents     MarketplaceUsageEvent[]
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+
+  @@index([ownerTenantId, resourceType, isPublished])
+  @@index([resourceType, resourceId])
+  @@index([isPublished, publishedAt])
+}
+
+model ResourceSubscription {
+  id                 String                     @id @default(uuid())
+  marketplaceItemId  String
+  marketplaceItem    MarketplaceItem            @relation(fields: [marketplaceItemId], references: [id], onDelete: Cascade)
+  providerTenantId   String
+  providerTenant     Tenant                     @relation("MarketplaceProviderTenant", fields: [providerTenantId], references: [id], onDelete: Cascade)
+  subscriberTenantId String
+  subscriberTenant   Tenant                     @relation("MarketplaceSubscriberTenant", fields: [subscriberTenantId], references: [id], onDelete: Cascade)
+  status             ResourceSubscriptionStatus @default(ACTIVE)
+  startsAt           DateTime                   @default(now())
+  endsAt             DateTime?
+  purchasedAt        DateTime                   @default(now())
+  priceCents         Int                        @default(0)
+  currency           String                     @default("USD")
+  metadata           Json?
+  createdAt          DateTime                   @default(now())
+  updatedAt          DateTime                   @updatedAt
+
+  @@unique([marketplaceItemId, subscriberTenantId])
+  @@index([providerTenantId, status])
+  @@index([subscriberTenantId, status])
+  @@index([endsAt])
+}
+
+model MarketplaceUsageEvent {
+  id                 String                    @id @default(uuid())
+  marketplaceItemId  String
+  marketplaceItem    MarketplaceItem           @relation(fields: [marketplaceItemId], references: [id], onDelete: Cascade)
+  providerTenantId   String
+  providerTenant     Tenant                    @relation("MarketplaceUsageProviderTenant", fields: [providerTenantId], references: [id], onDelete: Cascade)
+  subscriberTenantId String
+  subscriberTenant   Tenant                    @relation("MarketplaceUsageSubscriberTenant", fields: [subscriberTenantId], references: [id], onDelete: Cascade)
+  userId             String?
+  resourceType       MarketplaceResourceType
+  resourceId         String
+  eventType          MarketplaceUsageEventType
+  quantity           Int                       @default(1)
+  seconds            Int?
+  revenueShareCents  Int                       @default(0)
+  occurredAt         DateTime                  @default(now())
+  createdAt          DateTime                  @default(now())
+
+  @@index([marketplaceItemId, occurredAt])
+  @@index([providerTenantId, occurredAt])
+  @@index([subscriberTenantId, occurredAt])
+  @@index([eventType, occurredAt])
+}
+
+model VideoEngagementEvent {
+  id                  String                   @id @default(uuid())
+  tenantId            String
+  tenant              Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId              String
+  user                User                     @relation(fields: [userId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  sourceTenantId      String
+  courseId            String?
+  lessonId            String?
+  mediaAssetId        String?
+  eventType           VideoEngagementEventType
+  positionSeconds     Int
+  durationSeconds     Int?
+  segmentStartSeconds Int?
+  segmentEndSeconds   Int?
+  playbackRate        Float?
+  metadata            Json?
+  occurredAt          DateTime                 @default(now())
+  createdAt           DateTime                 @default(now())
+
+  @@index([tenantId, userId, occurredAt])
+  @@index([sourceTenantId, lessonId, occurredAt])
+  @@index([sourceTenantId, mediaAssetId, occurredAt])
+  @@index([eventType, occurredAt])
+}
+
+model AdaptiveLearningPathItem {
+  id              String                         @id @default(uuid())
+  tenantId        String
+  tenant          Tenant                         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User                           @relation(fields: [userId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  courseId        String
+  course          Course                         @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  sourceSkillCode String
+  sourceAttemptId String?
+  questionIds     String[]
+  status          AdaptiveLearningPathItemStatus @default(PENDING)
+  priority        Int                            @default(0)
+  reason          Json
+  createdAt       DateTime                       @default(now())
+  updatedAt       DateTime                       @updatedAt
+
+  @@index([tenantId, userId, status, priority])
+  @@index([tenantId, courseId, sourceSkillCode])
+  @@index([sourceAttemptId])
 }
 
 model SkillMasterySnapshot {

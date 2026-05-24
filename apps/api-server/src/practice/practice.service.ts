@@ -1,5 +1,12 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  Optional,
+} from '@nestjs/common';
 import { PracticeQuestionType, Prisma, ReviewCardSource, Role } from '@repo/database';
+import { AdaptiveLearningService } from '../adaptive-learning/adaptive-learning.service';
 import { LearningAccessService } from '../common/services/learning-access.service';
 import { PrismaService } from '../common/services/prisma.service';
 import {
@@ -33,6 +40,8 @@ interface AttemptAnswerForStats {
 
 @Injectable()
 export class PracticeService {
+  private readonly logger = new Logger(PracticeService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly learningAccess: LearningAccessService,
@@ -41,6 +50,7 @@ export class PracticeService {
     private readonly media: MediaService,
     private readonly aiService: AiService,
     private readonly aiEvaluation: AiEvaluationService = new AiEvaluationService(),
+    @Optional() private readonly adaptiveLearning?: AdaptiveLearningService,
   ) {}
 
   async createQuestion(
@@ -738,6 +748,29 @@ export class PracticeService {
           isCorrect: result.isCorrect,
         })),
     );
+
+    if (this.adaptiveLearning) {
+      try {
+        await this.adaptiveLearning.createRecommendationsFromPracticeAttempt({
+          tenantId,
+          userId: user.id,
+          courseId: exerciseSet.courseId,
+          attemptId: attempt.id,
+          results: results.map((result) => ({
+            questionId: result.questionId,
+            isCorrect: result.isCorrect,
+            skillTags:
+              questions.find((question) => question.id === result.questionId)?.skillTags ?? [],
+          })),
+        });
+      } catch (error) {
+        this.logger.warn(
+          `Adaptive learning path generation failed for attempt ${attempt.id}: ${
+            error instanceof Error ? error.message : 'unknown error'
+          }`,
+        );
+      }
+    }
 
     return {
       attempt,

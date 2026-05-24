@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
 
 export type RequestMetricGroup =
+  | 'adaptive-learning'
   | 'admin'
   | 'auth'
   | 'courses'
   | 'lessons'
+  | 'marketplace'
+  | 'media'
+  | 'notifications'
   | 'progress'
   | 'users'
   | 'other';
@@ -14,6 +18,7 @@ interface RequestMetricBucket {
   totalDurationMs: number;
   maxDurationMs: number;
   statusCounts: Record<string, number>;
+  lastSeenAt?: string;
 }
 
 export interface RequestMetricsSnapshot {
@@ -37,6 +42,15 @@ export interface RequestMetricsSnapshot {
       statusCounts: Record<string, number>;
     }
   >;
+  tenantTraffic: Array<{
+    tenantId: string;
+    count: number;
+    errorCount: number;
+    averageDurationMs: number;
+    maxDurationMs: number;
+    statusCounts: Record<string, number>;
+    lastSeenAt?: string;
+  }>;
 }
 
 const PROMETHEUS_CONTENT_TYPE = 'text/plain; version=0.0.4; charset=utf-8';
@@ -44,6 +58,7 @@ const PROMETHEUS_CONTENT_TYPE = 'text/plain; version=0.0.4; charset=utf-8';
 @Injectable()
 export class MetricsService {
   private readonly buckets = new Map<string, RequestMetricBucket>();
+  private readonly tenantBuckets = new Map<string, RequestMetricBucket>();
   private readonly readinessChecks = {
     ok: 0,
     unhealthy: 0,
@@ -56,23 +71,42 @@ export class MetricsService {
     path: string;
     statusCode: number;
     durationMs: number;
+    tenantId?: string;
   }): void {
     const group = this.getRequestGroup(input.path);
     const statusClass = `${Math.floor(input.statusCode / 100)}xx`;
     const key = `${group}:${input.method.toUpperCase()}`;
-    const bucket = this.buckets.get(key) ?? {
+    const bucket = this.buckets.get(key) ?? this.createBucket();
+
+    this.applyRequestToBucket(bucket, statusClass, input.durationMs);
+    this.buckets.set(key, bucket);
+
+    if (input.tenantId) {
+      const tenantBucket = this.tenantBuckets.get(input.tenantId) ?? this.createBucket();
+      this.applyRequestToBucket(tenantBucket, statusClass, input.durationMs);
+      this.tenantBuckets.set(input.tenantId, tenantBucket);
+    }
+  }
+
+  private createBucket(): RequestMetricBucket {
+    return {
       count: 0,
       totalDurationMs: 0,
       maxDurationMs: 0,
       statusCounts: {},
     };
+  }
 
+  private applyRequestToBucket(
+    bucket: RequestMetricBucket,
+    statusClass: string,
+    durationMs: number,
+  ) {
     bucket.count += 1;
-    bucket.totalDurationMs += input.durationMs;
-    bucket.maxDurationMs = Math.max(bucket.maxDurationMs, input.durationMs);
+    bucket.totalDurationMs += durationMs;
+    bucket.maxDurationMs = Math.max(bucket.maxDurationMs, durationMs);
     bucket.statusCounts[statusClass] = (bucket.statusCounts[statusClass] ?? 0) + 1;
-
-    this.buckets.set(key, bucket);
+    bucket.lastSeenAt = new Date().toISOString();
   }
 
   recordReadiness(input: {
@@ -131,6 +165,25 @@ export class MetricsService {
         ),
       },
       groups,
+      tenantTraffic: Array.from(this.tenantBuckets.entries())
+        .map(([tenantId, bucket]) => {
+          const errorCount = Object.entries(bucket.statusCounts).reduce(
+            (sum, [statusClass, count]) =>
+              statusClass === '4xx' || statusClass === '5xx' ? sum + count : sum,
+            0,
+          );
+          return {
+            tenantId,
+            count: bucket.count,
+            errorCount,
+            averageDurationMs: Math.round(bucket.totalDurationMs / bucket.count),
+            maxDurationMs: bucket.maxDurationMs,
+            statusCounts: { ...bucket.statusCounts },
+            lastSeenAt: bucket.lastSeenAt,
+          };
+        })
+        .sort((left, right) => right.count - left.count)
+        .slice(0, 20),
     };
   }
 
@@ -208,11 +261,24 @@ export class MetricsService {
       );
     }
 
+    lines.push(
+      '# HELP lms_tenant_http_requests_total Total HTTP requests observed by tenant.',
+      '# TYPE lms_tenant_http_requests_total counter',
+    );
+    for (const tenant of snapshot.tenantTraffic) {
+      for (const [statusClass, count] of Object.entries(tenant.statusCounts)) {
+        lines.push(
+          `lms_tenant_http_requests_total{tenant_id="${this.escapeLabel(tenant.tenantId)}",status_class="${this.escapeLabel(statusClass)}"} ${count}`,
+        );
+      }
+    }
+
     return `${lines.join('\n')}\n`;
   }
 
   reset(): void {
     this.buckets.clear();
+    this.tenantBuckets.clear();
     this.readinessChecks.ok = 0;
     this.readinessChecks.unhealthy = 0;
     this.readinessChecks.maxDurationMs = 0;
@@ -225,9 +291,13 @@ export class MetricsService {
 
     switch (firstSegment) {
       case 'admin':
+      case 'adaptive-learning':
       case 'auth':
       case 'courses':
       case 'lessons':
+      case 'marketplace':
+      case 'media':
+      case 'notifications':
       case 'progress':
       case 'users':
         return firstSegment;

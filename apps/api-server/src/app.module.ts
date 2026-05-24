@@ -16,6 +16,7 @@ import { envSchema } from './config/env.validation';
 import { PrismaModule } from './common/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
+import { AdaptiveLearningModule } from './adaptive-learning/adaptive-learning.module';
 import { AdminModule } from './admin/admin.module';
 import { AdminReportsModule } from './admin-reports/admin-reports.module';
 import { McpModule } from './mcp/mcp.module';
@@ -24,6 +25,7 @@ import { CourseModule } from './course/course.module';
 import { ProgressModule } from './progress/progress.module';
 import { PracticeModule } from './practice/practice.module';
 import { ExamModule } from './exam/exam.module';
+import { EngagementModule } from './engagement/engagement.module';
 import { HealthModule } from './common/health/health.module';
 import { ActivationModule } from './activation/activation.module';
 import { ProgramModule } from './program/program.module';
@@ -37,6 +39,7 @@ import { CertificateModule } from './certificate/certificate.module';
 import { StorageModule } from './storage/storage.module';
 import { MediaModule } from './media/media.module';
 import { JobsModule } from './jobs/jobs.module';
+import { MarketplaceModule } from './marketplace/marketplace.module';
 
 import { CohortModule } from './cohort/cohort.module';
 import { DiscussionModule } from './discussion/discussion.module';
@@ -81,6 +84,7 @@ import { NotificationModule } from './notification/notification.module';
     PrismaModule,
     AuthModule,
     UserModule,
+    AdaptiveLearningModule,
     AdminModule,
     AdminReportsModule,
     McpModule,
@@ -89,6 +93,7 @@ import { NotificationModule } from './notification/notification.module';
     ProgressModule,
     PracticeModule,
     ExamModule,
+    EngagementModule,
     ActivationModule,
     ProgramModule,
     SkillModule,
@@ -117,6 +122,7 @@ import { NotificationModule } from './notification/notification.module';
     }),
     StorageModule,
     MediaModule,
+    MarketplaceModule,
     JobsModule,
     NotificationModule,
   ],

@@ -9,12 +9,37 @@
     "footer": {
       "rights": "© 2026 LMS Platform. Bảo lưu mọi quyền."
     },
+    "systemTelemetry": "Giám sát hệ thống tổng thể",
     "stats": {
       "totalTenants": "Tổng số đối tác",
       "active": "Đang hoạt động",
       "databaseQueries": "Truy vấn cơ sở dữ liệu / giây",
       "serverHealth": "Tình trạng máy chủ",
-      "allSystemsOperational": "Mọi hệ thống đang hoạt động ổn định"
+      "allSystemsOperational": "Mọi hệ thống đang hoạt động ổn định",
+      "users": "Tổng số học viên",
+      "courses": "Tổng khóa học",
+      "enrollments": "Tổng lượt đăng ký",
+      "activities": "Hoạt động học tập",
+      "activeValue": "{count} đang hoạt động",
+      "totalCreated": "Tổng đã tạo",
+      "activeEnrollments": "Đăng ký đang hoạt động",
+      "trackedEvents": "Sự kiện đã ghi nhận"
+    },
+    "system": {
+      "cpuLoad": "Tải CPU",
+      "cpuCores": "{count} nhân",
+      "memory": "Bộ nhớ",
+      "heap": "Heap {used} / {total} MB",
+      "prismaConnections": "Kết nối Prisma",
+      "databasePool": "Pool cơ sở dữ liệu",
+      "apiLatency": "Độ trễ API",
+      "requests": "{count} request",
+      "tenantTraffic": "Lưu lượng tenant",
+      "errorsAndLatency": "{errors} lỗi, tối đa {latency} ms",
+      "noTenantTraffic": "Chưa ghi nhận lưu lượng tenant.",
+      "alerts": "Cảnh báo",
+      "noAlerts": "Không có cảnh báo đang hoạt động.",
+      "unknown": "Không rõ"
     },
     "tenants": {
       "list": "Danh sách Đối tác",

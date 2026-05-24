@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AdaptiveLearningModule } from '../adaptive-learning/adaptive-learning.module';
 import { AiModule } from '../ai/ai.module';
 import { MediaModule } from '../media/media.module';
 import { SkillModule } from '../skill/skill.module';
@@ -9,7 +10,7 @@ import { PracticeController } from './practice.controller';
 import { PracticeService } from './practice.service';
 
 @Module({
-  imports: [AiModule, MediaModule, SkillModule, SrsModule],
+  imports: [AdaptiveLearningModule, AiModule, MediaModule, SkillModule, SrsModule],
   controllers: [PracticeController],
   providers: [AiEvaluationService, AiQuestionGenerationService, PracticeService],
 })

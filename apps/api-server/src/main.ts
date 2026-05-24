@@ -123,7 +123,7 @@ async function bootstrap() {
   }
 
   const port = process.env.PORT || 4000;
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
   const publicUrl = process.env.APP_PUBLIC_URL ?? `http://localhost:${port}`;
   logger.info(`Application is running on: ${publicUrl}/api`, {
     context: 'Bootstrap',

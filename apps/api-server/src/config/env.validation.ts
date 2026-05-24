@@ -126,6 +126,14 @@ export const envSchema = z
     S3_ACCESS_KEY: z.string().optional(),
     S3_SECRET_KEY: z.string().optional(),
     S3_PUBLIC_URL: z.string().url().optional(),
+
+    // System alerts
+    SLACK_ALERT_WEBHOOK_URL: z.string().url().optional(),
+    TELEGRAM_ALERT_BOT_TOKEN: z.string().optional(),
+    TELEGRAM_ALERT_CHAT_ID: z.string().optional(),
+    SYSTEM_ALERT_MEMORY_MB: z.coerce.number().min(128).optional(),
+    SYSTEM_ALERT_LATENCY_MS: z.coerce.number().min(100).optional(),
+    SYSTEM_ALERT_TENANT_REQUESTS: z.coerce.number().min(10).optional(),
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV === 'production' && !env.REDIS_URL) {

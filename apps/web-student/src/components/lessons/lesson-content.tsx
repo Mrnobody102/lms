@@ -43,6 +43,7 @@ export function LessonContent({ lesson, onComplete }: LessonContentProps) {
       case 'video':
         return (
           <VideoPlayer
+            lessonId={lesson.id}
             videoUrl={lesson.videoUrl ?? undefined}
             title={lesson.title}
             onComplete={onComplete}

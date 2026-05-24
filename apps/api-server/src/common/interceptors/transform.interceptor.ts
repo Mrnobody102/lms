@@ -38,6 +38,8 @@ function shouldBypassResponseWrapping(context: ExecutionContext): boolean {
   return (
     requestPath.startsWith('/api/health') ||
     requestPath.startsWith('/health') ||
+    requestPath.startsWith('/api/notifications/stream') ||
+    requestPath.startsWith('/notifications/stream') ||
     (requestPath.startsWith('/api/certificates/verify/') && requestPath.endsWith('/image'))
   );
 }

@@ -7,10 +7,8 @@
     "strictPropertyInitialization": false,
     "paths": {
       "@repo/database": ["../packages/database/.prisma/client"],
-      "@repo/database/*": ["../packages/database/.prisma/client/*"],
-      "@repo/shared": ["../../../packages/shared/src/index.ts"],
-      "@repo/shared/*": ["../../../packages/shared/src/*"]
+      "@repo/database/*": ["../packages/database/.prisma/client/*"]
     }
   },
-  "include": ["src/**/*", ".eslintrc.js"]
+  "include": ["src/**/*"]
 }
