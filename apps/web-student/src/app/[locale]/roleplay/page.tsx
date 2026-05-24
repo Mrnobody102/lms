@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { StudentNav } from '@/components/layout/student-nav';
 import { AuthRequiredPanel } from '@/components/auth/auth-required-panel';
 import { Link, useRouter } from '@/navigation';
-import { Bot, MessageSquare, Plus, ArrowRight, PlayCircle } from 'lucide-react';
+import { ArrowRight, Bot, MessageSquare, PlayCircle, Plus } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle } from '@repo/ui';
 import { useAuthStore } from '@/features/auth/auth.store';
 import {
@@ -12,14 +13,11 @@ import {
   useGetRoleplaySessions,
 } from '@/features/roleplay/api/use-roleplay';
 
-const PREDEFINED_SCENARIOS = [
-  'You are a hotel receptionist checking me in. I lost my booking reference.',
-  'You are a recruiter interviewing me for a Software Engineer position.',
-  'You are a barista at a busy coffee shop. I am ordering a complicated drink.',
-  'We are old friends catching up after 5 years at a cafe.',
-];
+const PREDEFINED_SCENARIOS = ['hotel', 'interview', 'coffee', 'friends'] as const;
+type PredefinedScenarioKey = (typeof PREDEFINED_SCENARIOS)[number];
 
 export default function RoleplayDashboard() {
+  const t = useTranslations('Student');
   const router = useRouter();
   const { isAuthenticated, isInitialized } = useAuthStore();
   const [page, setPage] = useState(1);
@@ -56,22 +54,24 @@ export default function RoleplayDashboard() {
               <div>
                 <div className="flex items-center gap-2 text-primary mb-2">
                   <Bot className="w-5 h-5" />
-                  <p className="text-sm font-semibold uppercase tracking-wider">AI Roleplay</p>
+                  <p className="text-sm font-semibold uppercase tracking-wider">
+                    {t('roleplay.badge')}
+                  </p>
                 </div>
-                <h1 className="text-3xl font-bold tracking-tight">Conversation Practice</h1>
+                <h1 className="text-3xl font-bold tracking-tight">{t('roleplay.title')}</h1>
                 <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-                  Practice your conversational skills with our AI in various scenarios.
+                  {t('roleplay.description')}
                 </p>
               </div>
               <Button onClick={() => setIsDialogOpen(true)} className="gap-2">
                 <Plus className="w-4 h-4" />
-                New Session
+                {t('roleplay.newSession')}
               </Button>
             </header>
 
             {!isInitialized || isLoading ? (
               <div className="flex justify-center py-20">
-                <span className="animate-pulse">Loading sessions...</span>
+                <span className="animate-pulse">{t('roleplay.loadingSessions')}</span>
               </div>
             ) : (
               <>
@@ -88,7 +88,7 @@ export default function RoleplayDashboard() {
                         <span
                           className={`text-xs font-semibold px-2.5 py-1 rounded-full ${session.status === 'COMPLETED' ? 'bg-secondary text-secondary-foreground' : 'bg-primary/10 text-primary'}`}
                         >
-                          {session.status}
+                          {t(`roleplay.status.${session.status}`)}
                         </span>
                       </div>
                       <p className="text-sm line-clamp-3 mb-4 flex-1 text-card-foreground/90 font-medium">
@@ -96,14 +96,16 @@ export default function RoleplayDashboard() {
                       </p>
                       {session.score !== null && session.score !== undefined && (
                         <p className="text-sm font-bold text-primary mb-4">
-                          Score: {session.score}/100
+                          {t('roleplay.score', { score: session.score })}
                         </p>
                       )}
                       <Link
                         href={`/roleplay/${session.id}`}
                         className="inline-flex items-center text-sm font-semibold text-primary hover:text-primary/80 group"
                       >
-                        {session.status === 'COMPLETED' ? 'View Feedback' : 'Resume Conversation'}
+                        {session.status === 'COMPLETED'
+                          ? t('roleplay.viewFeedback')
+                          : t('roleplay.resumeConversation')}
                         <ArrowRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" />
                       </Link>
                     </div>
@@ -112,12 +114,10 @@ export default function RoleplayDashboard() {
                   {sessions.length === 0 && (
                     <div className="col-span-full py-12 text-center border rounded-xl border-dashed">
                       <Bot className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-                      <h3 className="text-lg font-semibold mb-2">No roleplay sessions yet</h3>
-                      <p className="text-muted-foreground mb-4">
-                        Start a new conversation to practice your skills.
-                      </p>
+                      <h3 className="text-lg font-semibold mb-2">{t('roleplay.emptyTitle')}</h3>
+                      <p className="text-muted-foreground mb-4">{t('roleplay.emptyDescription')}</p>
                       <Button onClick={() => setIsDialogOpen(true)} variant="outline">
-                        Start Practicing
+                        {t('roleplay.startPracticing')}
                       </Button>
                     </div>
                   )}
@@ -130,17 +130,17 @@ export default function RoleplayDashboard() {
                       disabled={page === 1}
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
                     >
-                      Previous
+                      {t('roleplay.previous')}
                     </Button>
                     <span className="text-sm text-muted-foreground">
-                      Page {page} of {totalPages}
+                      {t('roleplay.pageCount', { page, totalPages })}
                     </span>
                     <Button
                       variant="outline"
                       disabled={page === totalPages}
                       onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     >
-                      Next
+                      {t('roleplay.next')}
                     </Button>
                   </div>
                 )}
@@ -150,30 +150,31 @@ export default function RoleplayDashboard() {
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                  <DialogTitle>Start a New Roleplay</DialogTitle>
+                  <DialogTitle>{t('roleplay.dialogTitle')}</DialogTitle>
                 </DialogHeader>
                 <div className="py-4 space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    Select a predefined scenario or create your own:
-                  </p>
+                  <p className="text-sm text-muted-foreground">{t('roleplay.dialogDescription')}</p>
                   <div className="grid gap-2">
-                    {PREDEFINED_SCENARIOS.map((s, i) => (
-                      <button
-                        key={i}
-                        onClick={() => handleCreate(s)}
-                        disabled={isPending}
-                        className="text-left px-4 py-3 border rounded-lg text-sm hover:border-primary hover:bg-primary/5 transition-colors group flex justify-between items-center"
-                      >
-                        <span className="line-clamp-1">{s}</span>
-                        <PlayCircle className="w-4 h-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-2" />
-                      </button>
-                    ))}
+                    {PREDEFINED_SCENARIOS.map((scenarioKey: PredefinedScenarioKey) => {
+                      const scenario = t(`roleplay.scenarios.${scenarioKey}`);
+                      return (
+                        <button
+                          key={scenarioKey}
+                          onClick={() => handleCreate(scenario)}
+                          disabled={isPending}
+                          className="text-left px-4 py-3 border rounded-lg text-sm hover:border-primary hover:bg-primary/5 transition-colors group flex justify-between items-center"
+                        >
+                          <span className="line-clamp-1">{scenario}</span>
+                          <PlayCircle className="w-4 h-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-2" />
+                        </button>
+                      );
+                    })}
                   </div>
 
                   <div className="pt-4 border-t">
-                    <p className="text-sm font-medium mb-2">Custom Scenario</p>
+                    <p className="text-sm font-medium mb-2">{t('roleplay.customScenario')}</p>
                     <textarea
-                      placeholder="e.g. You are a police officer taking my statement about a minor car accident..."
+                      placeholder={t('roleplay.customScenarioPlaceholder')}
                       value={customScenario}
                       onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
                         setCustomScenario(e.target.value)
@@ -185,7 +186,7 @@ export default function RoleplayDashboard() {
                       disabled={!customScenario.trim() || isPending}
                       className="w-full"
                     >
-                      {isPending ? 'Starting...' : 'Start Custom Roleplay'}
+                      {isPending ? t('roleplay.starting') : t('roleplay.startCustom')}
                     </Button>
                   </div>
                 </div>

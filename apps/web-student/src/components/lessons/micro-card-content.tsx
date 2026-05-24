@@ -1,16 +1,9 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { parseMicroCardContent, type MicroCardItem } from '@repo/shared';
 import { ChevronDown, ChevronUp, Lightbulb, RotateCw, Volume2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-
-interface MicroCardData {
-  front: string;
-  pinyin?: string;
-  back: string;
-  example?: string;
-  audioUrl?: string;
-}
 
 interface MicroCardContentProps {
   content?: string | null;
@@ -18,7 +11,7 @@ interface MicroCardContentProps {
 
 export function MicroCardContent({ content }: MicroCardContentProps) {
   const t = useTranslations('Student');
-  const cards = parseMicroCardContent(content);
+  const cards = content ? parseMicroCardContent(content).content.cards : [];
   const cardRefs = useRef<Array<HTMLDivElement | null>>([]);
   const [flippedCards, setFlippedCards] = useState<Record<number, boolean>>({});
   const [activeIndex, setActiveIndex] = useState(0);
@@ -96,7 +89,7 @@ function MicroCard({
   flipped,
   onFlip,
 }: {
-  card: MicroCardData;
+  card: MicroCardItem;
   flipped: boolean;
   onFlip: () => void;
 }) {
@@ -170,63 +163,4 @@ function MicroCard({
       )}
     </button>
   );
-}
-
-function parseMicroCardContent(content: string | null | undefined): MicroCardData[] {
-  if (!content) {
-    return [];
-  }
-
-  try {
-    const parsed = JSON.parse(content) as unknown;
-    if (Array.isArray(parsed)) {
-      return parsed.map(normalizeMicroCard).filter((card): card is MicroCardData => card !== null);
-    }
-
-    if (!parsed || typeof parsed !== 'object') {
-      return [];
-    }
-
-    const record = parsed as Record<string, unknown>;
-    if (Array.isArray(record.cards)) {
-      return record.cards
-        .map(normalizeMicroCard)
-        .filter((card): card is MicroCardData => card !== null);
-    }
-
-    const legacyCard = normalizeMicroCard(record);
-    return legacyCard ? [legacyCard] : [];
-  } catch {
-    return [];
-  }
-}
-
-function normalizeMicroCard(value: unknown): MicroCardData | null {
-  if (!value || typeof value !== 'object') {
-    return null;
-  }
-
-  const record = value as Record<string, unknown>;
-  const front = readRequiredString(record.front);
-  const back = readRequiredString(record.back);
-
-  if (!front || !back) {
-    return null;
-  }
-
-  return {
-    front,
-    back,
-    pinyin: readOptionalString(record.pinyin),
-    example: readOptionalString(record.example),
-    audioUrl: readOptionalString(record.audioUrl),
-  };
-}
-
-function readRequiredString(value: unknown) {
-  return typeof value === 'string' && value.trim() ? value.trim() : null;
-}
-
-function readOptionalString(value: unknown) {
-  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
 }

@@ -7,6 +7,7 @@ import { PrismaService } from '../common/services/prisma.service';
 type EnrollmentLearnerStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
 
 const DEFAULT_COURSE_UNIT_TITLE = 'General';
+const MAX_BULK_ENROLLMENT_SIZE = 100;
 
 interface BulkEnrollmentResult {
   courseId: string;
@@ -374,6 +375,7 @@ export class CourseService {
     userIds: string[],
     audit?: EnrollmentAuditContext,
   ): Promise<BulkEnrollmentResult> {
+    this.assertBulkEnrollmentSize(userIds);
     await this.findOne(courseId, tenantId);
 
     const uniqueUserIds = this.uniqueIds(userIds);
@@ -517,6 +519,7 @@ export class CourseService {
     userIds: string[],
     audit?: EnrollmentAuditContext,
   ): Promise<BulkEnrollmentResult> {
+    this.assertBulkEnrollmentSize(userIds);
     await this.findOne(courseId, tenantId);
 
     const uniqueUserIds = this.uniqueIds(userIds);
@@ -836,6 +839,18 @@ export class CourseService {
 
   private uniqueIds(ids: string[]) {
     return [...new Set(ids)];
+  }
+
+  private assertBulkEnrollmentSize(userIds: string[]) {
+    if (userIds.length <= MAX_BULK_ENROLLMENT_SIZE) {
+      return;
+    }
+
+    throw new BadRequestException({
+      message: `Bulk enrollment is limited to ${MAX_BULK_ENROLLMENT_SIZE} students per request`,
+      maxItems: MAX_BULK_ENROLLMENT_SIZE,
+      requestedCount: userIds.length,
+    });
   }
 
   private buildBulkEnrollmentResult(

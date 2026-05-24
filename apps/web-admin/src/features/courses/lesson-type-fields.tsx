@@ -1,6 +1,11 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import {
+  parseMicroCardContent as parseSharedMicroCardContent,
+  serializeMicroCardContent as serializeSharedMicroCardContent,
+  type MicroCardItem,
+} from '@repo/shared';
 import { Button, Input, Label } from '@/components/ui';
 import { LessonType } from '@/lib/course-api';
 import { RichTextEditor } from '@/components/authoring/rich-text-editor';
@@ -351,31 +356,12 @@ export function parseMicroCardContent(content: string | null | undefined): Micro
     return [createEmptyMicroCardDraft()];
   }
 
-  try {
-    const parsed = JSON.parse(content) as Record<string, unknown>;
-    const cards = readMicroCardArray(parsed.cards);
-    if (cards.length > 0) {
-      return cards;
-    }
-
-    return [normalizeMicroCard(parsed)];
-  } catch {
-    return [createEmptyMicroCardDraft()];
-  }
+  const cards = parseSharedMicroCardContent(content).content.cards.map(toMicroCardDraft);
+  return cards.length > 0 ? cards : [createEmptyMicroCardDraft()];
 }
 
 export function serializeMicroCardContent(input: MicroCardDraft[]) {
-  const cards = input
-    .map((card) => ({
-      front: card.front.trim(),
-      back: card.back.trim(),
-      ...(card.pinyin.trim() ? { pinyin: card.pinyin.trim() } : {}),
-      ...(card.example.trim() ? { example: card.example.trim() } : {}),
-      ...(card.audioUrl.trim() ? { audioUrl: card.audioUrl.trim() } : {}),
-    }))
-    .filter((card) => card.front && card.back);
-
-  return JSON.stringify({ cards });
+  return serializeSharedMicroCardContent(input);
 }
 
 export function parseQuizContent(content: unknown): QuizDraft {
@@ -456,24 +442,13 @@ function readString(value: unknown) {
   return typeof value === 'string' ? value : '';
 }
 
-function readMicroCardArray(value: unknown) {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value
-    .map((card) => (card && typeof card === 'object' ? normalizeMicroCard(card) : null))
-    .filter((card): card is MicroCardDraft => Boolean(card?.front && card.back));
-}
-
-function normalizeMicroCard(value: object): MicroCardDraft {
-  const record = value as Record<string, unknown>;
+function toMicroCardDraft(value: MicroCardItem): MicroCardDraft {
   return {
-    front: readString(record.front),
-    pinyin: readString(record.pinyin),
-    back: readString(record.back),
-    example: readString(record.example),
-    audioUrl: readString(record.audioUrl),
+    front: value.front,
+    pinyin: value.pinyin ?? '',
+    back: value.back,
+    example: value.example ?? '',
+    audioUrl: value.audioUrl ?? '',
   };
 }
 

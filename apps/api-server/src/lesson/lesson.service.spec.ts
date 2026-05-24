@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { Prisma } from '@repo/database';
+import { BadRequestException } from '@nestjs/common';
+import { Prisma, LessonType } from '@repo/database';
 import { LessonService } from './lesson.service';
 
 describe('LessonService', () => {
@@ -17,6 +18,8 @@ describe('LessonService', () => {
           id: 'lesson-1',
           courseId: 'course-1',
           tenantId: 'tenant-1',
+          type: LessonType.text,
+          content: 'Lesson content',
         }),
         update: vi.fn().mockResolvedValue({ id: 'lesson-1' }),
       },
@@ -62,6 +65,38 @@ describe('LessonService', () => {
       expect.objectContaining({
         data: expect.objectContaining({
           quiz: Prisma.DbNull,
+        }),
+      }),
+    );
+  });
+
+  it('should reject invalid micro-card content when creating lessons', async () => {
+    const { service } = createService();
+
+    await expect(
+      service.create({
+        title: 'Flashcards',
+        type: LessonType.micro_card,
+        courseId: 'course-1',
+        tenantId: 'tenant-1',
+        content: JSON.stringify({ cards: [{ front: 'missing back' }] }),
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('should accept valid legacy micro-card content when updating lessons', async () => {
+    const { prisma, service } = createService();
+
+    await service.update('lesson-1', 'tenant-1', {
+      type: LessonType.micro_card,
+      content: JSON.stringify({ front: '你', back: 'you' }),
+    });
+
+    expect(prisma.lesson.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          type: LessonType.micro_card,
+          content: JSON.stringify({ front: '你', back: 'you' }),
         }),
       }),
     );

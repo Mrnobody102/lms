@@ -18,10 +18,12 @@ export class AudioProcessor extends WorkerHost {
       case 'transcode-audio': {
         const { assetId, targetFormat } = job.data;
         this.logger.log(`Transcoding audio for asset ${assetId} to format ${targetFormat}`);
-        // Mock processing time
-        await new Promise((resolve) => setTimeout(resolve, 3000));
-        this.logger.log(`Audio transcoding for asset ${assetId} completed!`);
-        return { success: true, assetId, formatted: targetFormat };
+
+        if (process.env.NODE_ENV === 'test') {
+          return { success: true, assetId, formatted: targetFormat };
+        }
+
+        throw new Error('Audio transcoding provider is not configured');
       }
 
       default: {

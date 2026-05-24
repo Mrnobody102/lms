@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../common/services/prisma.service';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, LessonType, Role } from '@repo/database';
+import { parseMicroCardContent } from '@repo/shared';
 import { LearningAccessService } from '../common/services/learning-access.service';
+import { PrismaService } from '../common/services/prisma.service';
 
 @Injectable()
 export class LessonService {
@@ -12,7 +13,7 @@ export class LessonService {
 
   async create(data: {
     title: string;
-    type?: string;
+    type?: LessonType;
     content?: string;
     videoUrl?: string;
     duration?: number;
@@ -32,11 +33,13 @@ export class LessonService {
       throw new NotFoundException(`Course with ID ${data.courseId} not found in this tenant`);
 
     const unitId = await this.resolveLessonUnit(data.courseId, data.tenantId, data.unitId);
+    const type = data.type ?? LessonType.text;
+    this.validateMicroCardContent(type, data.content);
 
     return this.prisma.lesson.create({
       data: {
         title: data.title,
-        type: (data.type as LessonType) || 'text',
+        type,
         content: data.content,
         videoUrl: data.videoUrl,
         duration: data.duration ?? 10,
@@ -109,6 +112,9 @@ export class LessonService {
       data.unitId === undefined
         ? undefined
         : await this.resolveLessonUnit(lesson.courseId, tenantId, data.unitId);
+    const nextType = data.type ?? lesson.type;
+    const nextContent = data.content === undefined ? lesson.content : data.content;
+    this.validateMicroCardContent(nextType, nextContent);
 
     const updateData: Prisma.LessonUncheckedUpdateInput = {
       ...data,
@@ -197,5 +203,21 @@ export class LessonService {
     }
 
     return value === null ? Prisma.DbNull : (value as Prisma.InputJsonValue);
+  }
+
+  private validateMicroCardContent(type: LessonType, content: string | null | undefined) {
+    if (type !== LessonType.micro_card) {
+      return;
+    }
+
+    const result = parseMicroCardContent(content ?? '');
+    if (result.content.cards.length > 0 && result.errors.length === 0) {
+      return;
+    }
+
+    throw new BadRequestException({
+      message: 'Invalid micro-card lesson content',
+      errors: result.errors,
+    });
   }
 }

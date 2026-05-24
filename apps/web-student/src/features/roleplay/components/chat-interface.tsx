@@ -2,7 +2,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Button, Input } from '@repo/ui';
-import { Send, CheckCircle2, User, Bot } from 'lucide-react';
+import { Bot, CheckCircle2, Send, User } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import {
   useGetRoleplaySession,
   useSendMessage,
@@ -10,6 +11,7 @@ import {
 } from '../api/use-roleplay';
 
 export function ChatInterface({ sessionId }: { sessionId: string }) {
+  const t = useTranslations('Student');
   const [input, setInput] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -29,10 +31,10 @@ export function ChatInterface({ sessionId }: { sessionId: string }) {
   if (isLoading)
     return (
       <div className="flex justify-center items-center h-64">
-        <span className="animate-pulse">Loading conversation...</span>
+        <span className="animate-pulse">{t('roleplay.loadingConversation')}</span>
       </div>
     );
-  if (isError || !session) return <div>Failed to load session</div>;
+  if (isError || !session) return <div>{t('roleplay.sessionLoadError')}</div>;
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +44,7 @@ export function ChatInterface({ sessionId }: { sessionId: string }) {
   };
 
   const handleComplete = () => {
-    if (confirm('Are you sure you want to end the conversation and get feedback?')) {
+    if (confirm(t('roleplay.confirmComplete'))) {
       completeSession(sessionId);
     }
   };
@@ -54,12 +56,12 @@ export function ChatInterface({ sessionId }: { sessionId: string }) {
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b bg-muted/30">
         <div>
-          <h2 className="font-semibold text-lg">Roleplay Session</h2>
+          <h2 className="font-semibold text-lg">{t('roleplay.sessionTitle')}</h2>
           <p className="text-sm text-muted-foreground">{session.scenario}</p>
         </div>
         {!isCompleted && (
           <Button variant="outline" size="sm" onClick={handleComplete} disabled={isCompleting}>
-            {isCompleting ? 'Evaluating...' : 'End Conversation'}
+            {isCompleting ? t('roleplay.evaluating') : t('roleplay.endConversation')}
             {!isCompleting && <CheckCircle2 className="w-4 h-4 ml-2" />}
           </Button>
         )}
@@ -69,20 +71,20 @@ export function ChatInterface({ sessionId }: { sessionId: string }) {
       {isCompleted && session.feedback && (
         <div className="p-4 bg-primary/5 border-b">
           <div className="flex items-center space-x-2 mb-2">
-            <h3 className="font-bold text-lg text-primary">Final Evaluation</h3>
+            <h3 className="font-bold text-lg text-primary">{t('roleplay.finalEvaluation')}</h3>
             <span className="bg-primary text-primary-foreground px-2 py-0.5 rounded-full text-sm font-semibold">
-              Score: {session.score}/100
+              {t('roleplay.score', { score: session.score ?? 0 })}
             </span>
           </div>
           <div className="grid gap-2 text-sm">
             <p>
-              <strong>Overall:</strong> {session.feedback.overall}
+              <strong>{t('roleplay.feedbackOverall')}:</strong> {session.feedback.overall}
             </p>
             <p>
-              <strong>Grammar:</strong> {session.feedback.grammar}
+              <strong>{t('roleplay.feedbackGrammar')}:</strong> {session.feedback.grammar}
             </p>
             <p>
-              <strong>Vocabulary:</strong> {session.feedback.vocabulary}
+              <strong>{t('roleplay.feedbackVocabulary')}:</strong> {session.feedback.vocabulary}
             </p>
           </div>
         </div>
@@ -156,7 +158,7 @@ export function ChatInterface({ sessionId }: { sessionId: string }) {
           <Input
             value={input}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
-            placeholder="Type your message..."
+            placeholder={t('roleplay.messagePlaceholder')}
             disabled={isSending || isCompleting}
             className="flex-1"
           />

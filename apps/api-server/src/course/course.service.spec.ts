@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { BadRequestException } from '@nestjs/common';
 import { EnrollmentStatus, ProgressStatus, Role } from '@repo/database';
 import { AuditAction, AuditStatus } from '../common/services/audit-log.service';
 import { CourseService } from './course.service';
@@ -277,6 +278,21 @@ describe('CourseService', () => {
     );
   });
 
+  it('should reject bulk enroll batches above the service limit', async () => {
+    const prisma = {
+      course: {
+        findFirst: vi.fn(),
+      },
+    };
+    const service = new CourseService(prisma as never, {} as never, createAuditLogStub() as never);
+    const userIds = Array.from({ length: 101 }, (_, index) => `user-${index + 1}`);
+
+    await expect(
+      service.bulkEnrollStudents('course-1', 'tenant-1', userIds),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(prisma.course.findFirst).not.toHaveBeenCalled();
+  });
+
   it('should bulk unenroll only active enrollments and report skipped students', async () => {
     const prisma = {
       course: {
@@ -359,6 +375,21 @@ describe('CourseService', () => {
         }),
       }),
     );
+  });
+
+  it('should reject bulk unenroll batches above the service limit', async () => {
+    const prisma = {
+      course: {
+        findFirst: vi.fn(),
+      },
+    };
+    const service = new CourseService(prisma as never, {} as never, createAuditLogStub() as never);
+    const userIds = Array.from({ length: 101 }, (_, index) => `user-${index + 1}`);
+
+    await expect(
+      service.bulkUnenrollStudents('course-1', 'tenant-1', userIds),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(prisma.course.findFirst).not.toHaveBeenCalled();
   });
 
   it('should reorder units using bulk transactions', async () => {
