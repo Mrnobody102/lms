@@ -260,9 +260,9 @@ describe('Auth HTTP flow', () => {
     app = module.createNestApplication();
     app.use(cookieParser());
 
-    const tenantMiddleware = new TenantMiddleware(prisma as any);
+    const tenantMiddleware = new TenantMiddleware(prisma as never);
     app.use((req: Request, res: Response, next: NextFunction) => {
-      void tenantMiddleware.use(req as any, res as any, next).catch(next);
+      void tenantMiddleware.use(req, res, next).catch(next);
     });
 
     await app.init();

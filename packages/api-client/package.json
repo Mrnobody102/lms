@@ -9,15 +9,17 @@
     "build": "tsc",
     "dev": "tsc -w",
     "typecheck": "tsc --noEmit",
-    "lint": "node -e \"process.exit(0)\""
+    "lint": "eslint \"src/**/*.ts\""
   },
   "dependencies": {
+    "@repo/shared": "workspace:*",
     "axios": "^1.15.2"
   },
   "peerDependencies": {
     "axios": "^1.15.2"
   },
   "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "typescript": "5.9.3"
   }

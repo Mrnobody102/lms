@@ -401,11 +401,14 @@ describe('CourseService', () => {
         findMany: vi.fn().mockResolvedValue([{ id: 'unit-1' }, { id: 'unit-2' }]),
         update: vi.fn().mockResolvedValue({ id: 'unit-1', order: 0 }),
       },
-      $transaction: vi.fn(async (arg: any) => {
+      $transaction: vi.fn(async (arg: unknown) => {
         if (Array.isArray(arg)) {
           return Promise.all(arg);
         }
-        return arg(prisma);
+        if (typeof arg === 'function') {
+          return (arg as (client: typeof prisma) => unknown)(prisma);
+        }
+        return arg;
       }),
     };
     const learningAccess = {

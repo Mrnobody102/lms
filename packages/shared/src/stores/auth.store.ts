@@ -1,6 +1,5 @@
 import { create } from 'zustand';
-
-const AUTH_UNAUTHORIZED_EVENT = 'lms:auth:unauthorized';
+import { AUTH_UNAUTHORIZED_EVENT, LEGACY_AUTH_STORAGE_KEYS } from '../constants/auth';
 
 export interface AuthUser {
   id: string;
@@ -83,9 +82,9 @@ export function createAuthStore(options: CreateAuthStoreOptions) {
       return;
     }
 
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('tenantId');
+    localStorage.removeItem(LEGACY_AUTH_STORAGE_KEYS.token);
+    localStorage.removeItem(LEGACY_AUTH_STORAGE_KEYS.user);
+    localStorage.removeItem(LEGACY_AUTH_STORAGE_KEYS.tenantId);
   };
 
   const persistAuthUser = (user: AuthUser | null) => {
@@ -93,15 +92,15 @@ export function createAuthStore(options: CreateAuthStoreOptions) {
       return;
     }
 
-    localStorage.removeItem('token');
-    localStorage.removeItem('tenantId');
+    localStorage.removeItem(LEGACY_AUTH_STORAGE_KEYS.token);
+    localStorage.removeItem(LEGACY_AUTH_STORAGE_KEYS.tenantId);
 
     if (persistUser && user) {
-      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem(LEGACY_AUTH_STORAGE_KEYS.user, JSON.stringify(user));
       return;
     }
 
-    localStorage.removeItem('user');
+    localStorage.removeItem(LEGACY_AUTH_STORAGE_KEYS.user);
   };
 
   return create<AuthState>((set) => {
@@ -146,9 +145,9 @@ export function createAuthStore(options: CreateAuthStoreOptions) {
       setTenantId: (tenantId: string | null) => {
         if (typeof window !== 'undefined') {
           if (tenantId) {
-            localStorage.setItem('tenantId', tenantId);
+            localStorage.setItem(LEGACY_AUTH_STORAGE_KEYS.tenantId, tenantId);
           } else {
-            localStorage.removeItem('tenantId');
+            localStorage.removeItem(LEGACY_AUTH_STORAGE_KEYS.tenantId);
           }
         }
       },
@@ -258,7 +257,7 @@ export function createAuthStore(options: CreateAuthStoreOptions) {
       register: async (fullName, email, password) => {
         set({ loading: true, error: null });
         try {
-          const response = await api.post<{ user: AuthUser }>(
+          await api.post<{ user: AuthUser }>(
             '/auth/register',
             {
               fullName,
@@ -269,13 +268,9 @@ export function createAuthStore(options: CreateAuthStoreOptions) {
               skipUnauthorizedRedirect: true,
             },
           );
-          const { user } = response.data;
-
-          persistAuthUser(user);
-
           set({
-            user,
-            isAuthenticated: true,
+            user: null,
+            isAuthenticated: false,
             isInitialized: true,
             loading: false,
           });

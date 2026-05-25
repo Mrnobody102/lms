@@ -85,8 +85,7 @@ export const ImageUpload = React.forwardRef<HTMLInputElement, ImageUploadProps>(
             } else if (ref) {
               (ref as React.MutableRefObject<HTMLInputElement | null>).current = node;
             }
-            // @ts-expect-error - internal ref
-            inputRef.current = node;
+            (inputRef as React.MutableRefObject<HTMLInputElement | null>).current = node;
           }}
           onChange={handleFileChange}
           disabled={isUploading || props.disabled}

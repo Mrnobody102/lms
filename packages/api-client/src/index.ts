@@ -1,9 +1,13 @@
 import axios, { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import {
+  AUTH_UNAUTHORIZED_EVENT,
+  CSRF_COOKIE_NAME,
+  CSRF_HEADER_NAME,
+  LEGACY_AUTH_STORAGE_KEYS,
+  TENANT_ID_HEADER,
+} from '@repo/shared';
 
 const TIMEOUT_MS = 15000;
-const CSRF_COOKIE_NAME = 'csrf_token';
-const CSRF_HEADER_NAME = 'x-csrf-token';
-const AUTH_UNAUTHORIZED_EVENT = 'lms:auth:unauthorized';
 
 declare module 'axios' {
   interface AxiosRequestConfig {
@@ -84,9 +88,9 @@ function resolveTenantHint(tenantId: ApiClientConfig['tenantId']): string | unde
 }
 
 function clearLegacyAuthState(): void {
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
-  localStorage.removeItem('tenantId');
+  localStorage.removeItem(LEGACY_AUTH_STORAGE_KEYS.token);
+  localStorage.removeItem(LEGACY_AUTH_STORAGE_KEYS.user);
+  localStorage.removeItem(LEGACY_AUTH_STORAGE_KEYS.tenantId);
 }
 
 function dispatchUnauthorizedEvent(): void {
@@ -141,7 +145,7 @@ export function createApiClient(config: ApiClientConfig = {}): AxiosInstance {
   api.interceptors.request.use((requestConfig: InternalAxiosRequestConfig) => {
     const tenantHint = resolveTenantHint(tenantId);
     if (tenantHint && shouldSendTenantHeader(sendTenantHeaderInProduction)) {
-      requestConfig.headers['x-tenant-id'] = tenantHint;
+      requestConfig.headers[TENANT_ID_HEADER] = tenantHint;
     }
 
     const csrfToken = readCookie(CSRF_COOKIE_NAME);

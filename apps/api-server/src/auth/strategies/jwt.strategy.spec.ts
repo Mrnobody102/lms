@@ -20,8 +20,8 @@ describe('JwtStrategy', () => {
     strategy = new JwtStrategy(
       {
         get: vi.fn().mockReturnValue('jwt-secret'),
-      } as any,
-      prisma as any,
+      } as never,
+      prisma as never,
     );
   });
 

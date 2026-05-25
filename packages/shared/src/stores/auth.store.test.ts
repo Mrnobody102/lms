@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AUTH_UNAUTHORIZED_EVENT } from '../constants/auth';
 import { createAuthStore, type AuthUser } from './auth.store';
-
-const AUTH_UNAUTHORIZED_EVENT = 'lms:auth:unauthorized';
 
 class MemoryStorage implements Storage {
   private storage = new Map<string, string>();
@@ -209,7 +208,7 @@ describe('createAuthStore', () => {
     expect(localStorage.getItem('user')).toBe(JSON.stringify(authUser));
   });
 
-  it('registers successfully without enabling the global 401 redirect', async () => {
+  it('registers successfully without authenticating the browser session', async () => {
     const api = createApiMock();
     vi.mocked(api.post).mockResolvedValue({
       data: {
@@ -237,9 +236,10 @@ describe('createAuthStore', () => {
         skipUnauthorizedRedirect: true,
       },
     );
-    expect(store.getState().isAuthenticated).toBe(true);
-    expect(store.getState().user).toEqual(authUser);
+    expect(store.getState().isAuthenticated).toBe(false);
+    expect(store.getState().user).toBeNull();
     expect(localStorage.getItem('token')).toBeNull();
+    expect(localStorage.getItem('user')).toBeNull();
   });
 
   it('clears client auth state on logout after calling the backend endpoint', async () => {

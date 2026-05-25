@@ -8,7 +8,7 @@ describe('RequestMetricsMiddleware', () => {
     const metricsService = {
       recordRequest: vi.fn(),
     };
-    const middleware = new RequestMetricsMiddleware(metricsService as any);
+    const middleware = new RequestMetricsMiddleware(metricsService as never);
     const req = {
       method: 'PATCH',
       originalUrl: '/api/lessons/lesson-1?answer=secret',

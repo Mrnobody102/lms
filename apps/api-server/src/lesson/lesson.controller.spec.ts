@@ -40,11 +40,11 @@ describe('LessonController', () => {
     const dto = { title: 'Test', courseId: 'course-1' };
 
     await controller.create(
-      dto as any,
+      dto as never,
       {
         tenantId: 'tenant-1',
         user: { tenantId: 'tenant-1', role: 'ADMIN' },
-      } as any,
+      } as never,
     );
 
     expect(service.create).toHaveBeenCalled();
@@ -53,11 +53,11 @@ describe('LessonController', () => {
   it('should call findAll', async () => {
     await controller.findAll(
       'course-1',
-      {} as any,
+      {} as never,
       {
         tenantId: 'tenant-1',
         user: { tenantId: 'tenant-1', role: 'ADMIN' },
-      } as any,
+      } as never,
     );
 
     expect(service.findAll).toHaveBeenCalled();

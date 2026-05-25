@@ -7,7 +7,7 @@ describe('HttpExceptionFilter', () => {
     const logger = {
       error: vi.fn(),
     };
-    const filter = new HttpExceptionFilter(logger as any);
+    const filter = new HttpExceptionFilter(logger as never);
     const json = vi.fn();
     const status = vi.fn().mockReturnValue({ json });
     const response = {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { BASIC_EMAIL_PATTERN, PASSWORD_COMPLEXITY_REGEX } from '@repo/shared';
 import { useAuthStore } from '../auth.store';
 import { Loader2, AlertCircle, Eye, EyeOff, User, Mail, Lock } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -13,12 +14,14 @@ interface RegisterFormProps {
 export function RegisterForm({ onSuccess }: RegisterFormProps) {
   const t = useTranslations('Student');
   const { register, loading, error, clearError } = useAuthStore();
-  const displayError = error ? t('auth.registerError') : null;
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [clientError, setClientError] = useState<string | null>(null);
+
+  const displayError = clientError ?? translateRegisterError(error, t);
 
   useEffect(() => {
     setIsHydrated(true);
@@ -27,14 +30,38 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!register) return;
-    const success = await register(fullName, email, password);
+
+    const normalizedFullName = fullName.trim();
+    const normalizedEmail = email.trim();
+
+    if (!normalizedFullName) {
+      setClientError(t('auth.nameRequired'));
+      return;
+    }
+
+    if (!normalizedEmail) {
+      setClientError(t('auth.emailRequired'));
+      return;
+    }
+
+    if (!BASIC_EMAIL_PATTERN.test(normalizedEmail)) {
+      setClientError(t('auth.invalidEmail'));
+      return;
+    }
+
+    if (!PASSWORD_COMPLEXITY_REGEX.test(password)) {
+      setClientError(t('auth.passwordInvalid'));
+      return;
+    }
+
+    const success = await register(normalizedFullName, normalizedEmail, password);
     if (success && onSuccess) {
       onSuccess();
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} data-hydrated={isHydrated} className="space-y-6">
+    <form onSubmit={handleSubmit} data-hydrated={isHydrated} className="space-y-6" noValidate>
       {displayError && (
         <div className="flex items-center gap-2.5 p-3 bg-destructive/10 border border-destructive/20 rounded-xl text-destructive font-medium text-sm">
           <AlertCircle className="w-4 h-4 shrink-0" />
@@ -53,9 +80,11 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
             value={fullName}
             onChange={(e) => {
               setFullName(e.target.value);
+              setClientError(null);
               if (error) clearError();
             }}
             placeholder={t('auth.namePlaceholder')}
+            autoComplete="name"
             className="pl-10"
           />
         </div>
@@ -72,9 +101,11 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
             value={email}
             onChange={(e) => {
               setEmail(e.target.value);
+              setClientError(null);
               if (error) clearError();
             }}
             placeholder={t('auth.emailPlaceholder')}
+            autoComplete="email"
             className="pl-10"
           />
         </div>
@@ -89,12 +120,16 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
             type={showPassword ? 'text' : 'password'}
             required
             minLength={8}
+            maxLength={128}
+            title={t('auth.passwordRequirement')}
             value={password}
             onChange={(e) => {
               setPassword(e.target.value);
+              setClientError(null);
               if (error) clearError();
             }}
-            placeholder={t('auth.passwordPlaceholder')}
+            placeholder={t('auth.registerPasswordPlaceholder')}
+            autoComplete="new-password"
             className="pl-10 pr-12"
           />
           <button
@@ -106,6 +141,9 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          {t('auth.passwordRequirement')}
+        </p>
       </div>
 
       {/* Submit */}
@@ -125,4 +163,36 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
       </p>
     </form>
   );
+}
+
+function translateRegisterError(
+  error: string | null,
+  t: ReturnType<typeof useTranslations<'Student'>>,
+): string | null {
+  if (!error) return null;
+
+  const normalized = error.toLowerCase();
+
+  if (
+    normalized.includes('uppercase') ||
+    normalized.includes('lowercase') ||
+    normalized.includes('special character') ||
+    normalized.includes('at least 8')
+  ) {
+    return t('auth.passwordInvalid');
+  }
+
+  if (normalized.includes('email already registered')) {
+    return t('auth.emailAlreadyRegistered');
+  }
+
+  if (normalized.includes('invalid email')) {
+    return t('auth.invalidEmail');
+  }
+
+  if (normalized.includes('tenant')) {
+    return t('auth.tenantRequired');
+  }
+
+  return error || t('auth.registerError');
 }

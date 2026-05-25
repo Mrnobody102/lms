@@ -1,8 +1,8 @@
 import { createApiClient } from '@repo/api-client';
-import { defaultLocale, locales } from '@repo/shared';
+import { DEFAULT_DEMO_TENANT_ID, defaultLocale, locales } from '@repo/shared';
 
 export default createApiClient({
-  tenantId: process.env.NEXT_PUBLIC_TENANT_ID || 'trung-tam-demo',
+  tenantId: process.env.NEXT_PUBLIC_TENANT_ID || DEFAULT_DEMO_TENANT_ID,
   supportedLocales: locales,
   defaultLocale,
   sendTenantHeaderInProduction: true,

@@ -1,4 +1,4 @@
-import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import { ExecutionContext, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { Role } from '@repo/database';
 import { describe, expect, it } from 'vitest';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -13,7 +13,7 @@ describe('JwtAuthGuard', () => {
           tenantId: 'tenant-1',
         }),
       }),
-    } as any;
+    } as unknown as ExecutionContext;
 
     expect(() => guard.handleRequest(null, null, null, context)).toThrow(UnauthorizedException);
   });
@@ -25,7 +25,7 @@ describe('JwtAuthGuard', () => {
           tenantId: 'tenant-2',
         }),
       }),
-    } as any;
+    } as unknown as ExecutionContext;
 
     expect(() =>
       guard.handleRequest(null, { tenantId: 'tenant-1', role: Role.ADMIN }, null, context),
@@ -39,7 +39,7 @@ describe('JwtAuthGuard', () => {
           tenantId: 'tenant-2',
         }),
       }),
-    } as any;
+    } as unknown as ExecutionContext;
 
     const result = guard.handleRequest(
       null,
@@ -61,7 +61,7 @@ describe('JwtAuthGuard', () => {
           tenantId: 'tenant-1',
         }),
       }),
-    } as any;
+    } as unknown as ExecutionContext;
 
     const result = guard.handleRequest(
       null,

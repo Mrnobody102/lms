@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
+import { REQUEST_ID_HEADER } from '@repo/shared';
 
-export const REQUEST_ID_HEADER = 'x-request-id';
+export { REQUEST_ID_HEADER };
 
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9._:-]{1,128}$/;
 

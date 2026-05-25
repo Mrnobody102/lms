@@ -1,3 +1,4 @@
+import type { ExecutionContext } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { McpController } from './mcp.controller';
@@ -20,8 +21,14 @@ vi.mock('@modelcontextprotocol/sdk/server/sse.js', () => ({
 
 describe('McpController', () => {
   let controller: McpController;
-  let mcpService: any;
-  let configService: any;
+  let mcpService: {
+    server: {
+      connect: ReturnType<typeof vi.fn>;
+    };
+  };
+  let configService: {
+    get: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(async () => {
     mcpService = {
@@ -79,13 +86,15 @@ describe('McpController', () => {
 
 describe('McpAuthGuard', () => {
   let guard: McpAuthGuard;
-  let configService: any;
+  let configService: {
+    get: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
     configService = {
       get: vi.fn(),
     };
-    guard = new McpAuthGuard(configService);
+    guard = new McpAuthGuard(configService as never);
   });
 
   it('should allow access with correct API Key in header', () => {
@@ -97,7 +106,7 @@ describe('McpAuthGuard', () => {
           query: {},
         }),
       }),
-    } as unknown as any;
+    } as unknown as ExecutionContext;
 
     expect(guard.canActivate(mockContext)).toBe(true);
   });
@@ -111,7 +120,7 @@ describe('McpAuthGuard', () => {
           query: {},
         }),
       }),
-    } as unknown as any;
+    } as unknown as ExecutionContext;
 
     expect(() => guard.canActivate(mockContext)).toThrow('Invalid MCP API Key');
   });
@@ -129,7 +138,7 @@ describe('McpAuthGuard', () => {
           query: { apiKey: 'valid-key' },
         }),
       }),
-    } as unknown as any;
+    } as unknown as ExecutionContext;
 
     expect(guard.canActivate(mockContext)).toBe(true);
   });

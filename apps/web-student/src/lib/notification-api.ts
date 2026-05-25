@@ -1,4 +1,5 @@
 import api from './api';
+import { DEFAULT_DEMO_TENANT_ID } from '@repo/shared';
 
 export interface Notification {
   id: string;
@@ -54,7 +55,7 @@ export const notificationApi = {
 function buildNotificationStreamUrl() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, '');
   const baseUrl = apiUrl ? `${apiUrl}/api/notifications/stream` : '/api/notifications/stream';
-  const tenantId = process.env.NEXT_PUBLIC_TENANT_ID || 'trung-tam-demo';
+  const tenantId = process.env.NEXT_PUBLIC_TENANT_ID || DEFAULT_DEMO_TENANT_ID;
   return `${baseUrl}?tenantId=${encodeURIComponent(tenantId)}`;
 }
 

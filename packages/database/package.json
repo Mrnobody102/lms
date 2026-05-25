@@ -17,9 +17,10 @@
     "db:resolve": "dotenv -e ../../.env -- prisma migrate resolve",
     "db:reset": "dotenv -e ../../.env -- prisma migrate reset",
     "seed": "dotenv -e ../../.env -- prisma db seed",
-    "lint": "node -e \"process.exit(0)\""
+    "lint": "eslint \"src/**/*.ts\" \"prisma/*.ts\""
   },
   "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/bcrypt": "^6.0.0",
     "@types/node": "^25.0.9",

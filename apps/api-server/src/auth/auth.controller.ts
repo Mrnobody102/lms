@@ -26,12 +26,8 @@ export class AuthController {
   @ApiResponse({ status: 201, description: 'User registered successfully' })
   @ApiResponse({ status: 400, description: 'Bad request - validation error' })
   @ApiResponse({ status: 409, description: 'Conflict - email already exists' })
-  async register(
-    @Body() registerDto: RegisterDto,
-    @Req() req: TenantAwareRequest,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    return this.authService.register(registerDto, req.tenantId, res);
+  async register(@Body() registerDto: RegisterDto, @Req() req: TenantAwareRequest) {
+    return this.authService.register(registerDto, req.tenantId);
   }
 
   @Post('login')

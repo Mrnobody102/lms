@@ -7,7 +7,7 @@ export function RegisterPageClient() {
   const router = useRouter();
 
   const handleRegisterSuccess = () => {
-    router.replace('/courses');
+    router.replace('/login?registered=1');
   };
 
   return <RegisterForm onSuccess={handleRegisterSuccess} />;

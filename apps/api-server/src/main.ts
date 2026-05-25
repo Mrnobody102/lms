@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { CSRF_HEADER_NAME, TENANT_ID_HEADER } from '@repo/shared';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
@@ -90,10 +91,10 @@ async function bootstrap() {
     allowedHeaders: [
       'Content-Type',
       'Authorization',
-      'x-tenant-id',
+      TENANT_ID_HEADER,
       'Cookie',
       'x-api-key',
-      'x-csrf-token',
+      CSRF_HEADER_NAME,
     ],
     exposedHeaders: ['set-cookie'],
   });

@@ -411,7 +411,10 @@ describe('PracticeService', () => {
         where: expect.objectContaining({
           tenantId: 'tenant-1',
           isPublished: true,
-          course: { tenantId: 'tenant-1', userId: 'user-1' },
+          OR: expect.arrayContaining([
+            { courseId: null },
+            { course: { tenantId: 'tenant-1', userId: 'user-1' } },
+          ]),
           questions: {
             some: {
               question: {

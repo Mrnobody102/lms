@@ -113,7 +113,7 @@ export default [
   {
     files: ['**/*.{spec,test}.{ts,tsx}', '**/e2e/**/*.ts'],
     rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-explicit-any': 'error',
     },
   },
 ];

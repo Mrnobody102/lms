@@ -17,7 +17,7 @@ describe('RequestLoggingMiddleware', () => {
       warn: vi.fn(),
       error: vi.fn(),
     };
-    const middleware = new RequestLoggingMiddleware(logger as any);
+    const middleware = new RequestLoggingMiddleware(logger as never);
     const req = {
       headers: {
         'x-request-id': 'req_123',
@@ -55,7 +55,7 @@ describe('RequestLoggingMiddleware', () => {
       warn: vi.fn(),
       error: vi.fn(),
     };
-    const middleware = new RequestLoggingMiddleware(logger as any);
+    const middleware = new RequestLoggingMiddleware(logger as never);
     const req = {
       headers: {
         'x-request-id': '../bad header',

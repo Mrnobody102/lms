@@ -1,4 +1,5 @@
 import { BadRequestException, ConflictException } from '@nestjs/common';
+import { CSRF_COOKIE_NAME } from '@repo/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as bcrypt from 'bcrypt';
 import type { Response } from 'express';
@@ -76,11 +77,11 @@ describe('AuthService', () => {
     };
 
     service = new AuthService(
-      prisma as any,
-      jwtService as any,
-      configService as any,
-      mailService as any,
-      auditLog as any,
+      prisma as never,
+      jwtService as never,
+      configService as never,
+      mailService as never,
+      auditLog as never,
     );
   });
 
@@ -94,7 +95,6 @@ describe('AuthService', () => {
             fullName: 'Student User',
           },
           undefined,
-          response,
         ),
       ).rejects.toBeInstanceOf(BadRequestException);
     });
@@ -111,12 +111,11 @@ describe('AuthService', () => {
             fullName: 'Student User',
           },
           'tenant-1',
-          response,
         ),
       ).rejects.toBeInstanceOf(ConflictException);
     });
 
-    it('should normalize email before creating the user and sign a token', async () => {
+    it('should normalize email before creating the user without starting a session', async () => {
       prisma.tenant.findFirst.mockResolvedValue({ id: 'tenant-1', isActive: true });
       prisma.user.findFirst.mockResolvedValue(null);
       prisma.user.create.mockResolvedValue({
@@ -140,7 +139,6 @@ describe('AuthService', () => {
           fullName: 'Student User',
         },
         'tenant-1',
-        response,
       );
 
       expect(prisma.user.create).toHaveBeenCalledWith(
@@ -152,33 +150,9 @@ describe('AuthService', () => {
           }),
         }),
       );
-      expect(jwtService.sign).toHaveBeenCalledWith({
-        sub: 'user-1',
-        email: 'student@example.com',
-        role: 'STUDENT',
-        tenantId: 'tenant-1',
-        tokenVersion: 0,
-      });
-      expect(response.cookie).toHaveBeenCalledWith(
-        'access_token',
-        'signed-jwt-token',
-        expect.objectContaining({
-          httpOnly: true,
-          maxAge: 7 * 24 * 60 * 60 * 1000,
-          sameSite: 'lax',
-          path: '/',
-        }),
-      );
-      expect(response.cookie).toHaveBeenCalledWith(
-        'csrf_token',
-        expect.any(String),
-        expect.objectContaining({
-          httpOnly: false,
-          maxAge: 7 * 24 * 60 * 60 * 1000,
-          sameSite: 'lax',
-          path: '/',
-        }),
-      );
+      expect(jwtService.sign).not.toHaveBeenCalled();
+      expect(response.cookie).not.toHaveBeenCalled();
+      expect(prisma.refreshToken.create).not.toHaveBeenCalled();
       expect(result).toEqual({
         user: expect.objectContaining({
           id: 'user-1',
@@ -202,7 +176,6 @@ describe('AuthService', () => {
             fullName: 'Student User',
           },
           'tenant-1',
-          response,
         ),
       ).rejects.toBeInstanceOf(ConflictException);
     });
@@ -370,7 +343,7 @@ describe('AuthService', () => {
         }),
       );
       expect(response.cookie).toHaveBeenCalledWith(
-        'csrf_token',
+        CSRF_COOKIE_NAME,
         expect.any(String),
         expect.objectContaining({
           httpOnly: false,
@@ -509,7 +482,7 @@ describe('AuthService', () => {
         }),
       );
       expect(response.clearCookie).toHaveBeenCalledWith(
-        'csrf_token',
+        CSRF_COOKIE_NAME,
         expect.objectContaining({
           httpOnly: false,
           sameSite: 'lax',

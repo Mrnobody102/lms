@@ -1,8 +1,7 @@
 import { ForbiddenException, Injectable, NestMiddleware } from '@nestjs/common';
+import { CSRF_COOKIE_NAME, CSRF_HEADER_NAME, TENANT_ID_HEADER } from '@repo/shared';
 import type { NextFunction, Request, Response } from 'express';
 
-const CSRF_COOKIE_NAME = 'csrf_token';
-const CSRF_HEADER_NAME = 'x-csrf-token';
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 const CSRF_EXEMPT_PATHS = new Set([
   '/auth/login',
@@ -28,7 +27,7 @@ export class CsrfMiddleware implements NestMiddleware {
 
     // If a custom header like x-tenant-id is present, it proves the request was made via XHR/fetch
     // which is subject to CORS preflight, inherently protecting against CSRF attacks.
-    if (req.headers['x-tenant-id'] || req.headers['authorization']) {
+    if (req.headers[TENANT_ID_HEADER] || req.headers['authorization']) {
       return next();
     }
 

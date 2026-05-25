@@ -5,8 +5,8 @@ import { useTranslations } from 'next-intl';
 import { Loader2, Lock, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { Button, Input, Label } from '@repo/ui';
 import api from '@/lib/api';
+import { useRouter } from '../../../navigation';
 import { useAuthStore } from '../../auth/auth.store';
-import { useRouter } from 'next/navigation';
 
 export function ChangePasswordForm() {
   const t = useTranslations('Student');

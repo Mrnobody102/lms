@@ -63,7 +63,7 @@ export class AuthService {
     private readonly auditLog: AuditLogService,
   ) {}
 
-  async register(registerDto: RegisterDto, tenantId: string | undefined, res: Response) {
+  async register(registerDto: RegisterDto, tenantId: string | undefined) {
     if (!tenantId) {
       throw new BadRequestException('Tenant context is required');
     }
@@ -120,11 +120,6 @@ export class AuthService {
       });
 
       this.logger.log(`User registered: id=${createdUser.id}, role=${createdUser.role}`);
-
-      const token = this.generateToken(createdUser);
-      this.setAuthCookie(res, token);
-      this.setCsrfCookie(res);
-      await this.setRefreshCookie(res, createdUser.id, tenantId);
 
       const { tokenVersion: _tokenVersion, ...user } = createdUser;
 

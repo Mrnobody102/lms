@@ -1,4 +1,5 @@
 export const DURATION_PATTERN = /^\d+(ms|s|m|h|d)$/;
+const DURATION_CAPTURE_PATTERN = /^(\d+)(ms|s|m|h|d)$/;
 
 const DURATION_UNIT_TO_MS = {
   ms: 1,
@@ -9,7 +10,7 @@ const DURATION_UNIT_TO_MS = {
 } as const;
 
 export function parseDurationToMs(value: string): number {
-  const match = value.match(/^(\d+)(ms|s|m|h|d)$/);
+  const match = value.match(DURATION_CAPTURE_PATTERN);
 
   if (!match) {
     throw new Error(`Invalid duration format: ${value}`);
