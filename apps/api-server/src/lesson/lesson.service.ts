@@ -19,7 +19,8 @@ export class LessonService {
     content?: string;
     videoUrl?: string;
     duration?: number;
-    quiz?: Prisma.JsonValue;
+    practiceExerciseSetId?: string | null;
+    examId?: string | null;
     aiPrompt?: string;
     order?: number;
     unitId?: string | null;
@@ -37,6 +38,13 @@ export class LessonService {
     const unitId = await this.resolveLessonUnit(data.courseId, data.tenantId, data.unitId);
     const type = data.type ?? LessonType.text;
     this.validateMicroCardContent(type, data.content);
+    const linkedResources = await this.resolveLinkedResources({
+      tenantId: data.tenantId,
+      courseId: data.courseId,
+      type,
+      practiceExerciseSetId: data.practiceExerciseSetId,
+      examId: data.examId,
+    });
 
     return this.prisma.lesson.create({
       data: {
@@ -45,7 +53,8 @@ export class LessonService {
         content: data.content,
         videoUrl: data.videoUrl,
         duration: data.duration ?? 10,
-        quiz: this.toNullableJsonInput(data.quiz),
+        practiceExerciseSetId: linkedResources.practiceExerciseSetId,
+        examId: linkedResources.examId,
         aiPrompt: data.aiPrompt,
         order: data.order ?? 0,
         courseId: data.courseId,
@@ -103,7 +112,8 @@ export class LessonService {
       content?: string | null;
       videoUrl?: string | null;
       duration?: number;
-      quiz?: Prisma.JsonValue | null;
+      practiceExerciseSetId?: string | null;
+      examId?: string | null;
       aiPrompt?: string | null;
       order?: number;
       unitId?: string | null;
@@ -117,11 +127,22 @@ export class LessonService {
     const nextType = data.type ?? lesson.type;
     const nextContent = data.content === undefined ? lesson.content : data.content;
     this.validateMicroCardContent(nextType, nextContent);
+    const linkedResources = await this.resolveLinkedResources({
+      tenantId,
+      courseId: lesson.courseId,
+      type: nextType,
+      practiceExerciseSetId:
+        data.practiceExerciseSetId === undefined
+          ? lesson.practiceExerciseSetId
+          : data.practiceExerciseSetId,
+      examId: data.examId === undefined ? lesson.examId : data.examId,
+    });
 
     const updateData: Prisma.LessonUncheckedUpdateInput = {
       ...data,
       unitId,
-      quiz: this.toNullableJsonInput(data.quiz),
+      practiceExerciseSetId: linkedResources.practiceExerciseSetId,
+      examId: linkedResources.examId,
     };
 
     return this.prisma.lesson.update({
@@ -202,7 +223,7 @@ export class LessonService {
       customContent: {
         front: card.front,
         back: card.back,
-        pinyin: card.pinyin,
+        phonetics: card.phonetics,
         example: card.example,
       },
     });
@@ -267,14 +288,6 @@ export class LessonService {
     return defaultUnit?.id ?? null;
   }
 
-  private toNullableJsonInput(value: Prisma.JsonValue | null | undefined) {
-    if (value === undefined) {
-      return undefined;
-    }
-
-    return value === null ? Prisma.DbNull : (value as Prisma.InputJsonValue);
-  }
-
   private validateMicroCardContent(type: LessonType, content: string | null | undefined) {
     if (type !== LessonType.micro_card) {
       return;
@@ -289,6 +302,74 @@ export class LessonService {
       message: 'Invalid micro-card lesson content',
       errors: result.errors,
     });
+  }
+
+  private async resolveLinkedResources(input: {
+    tenantId: string;
+    courseId: string;
+    type: LessonType;
+    practiceExerciseSetId?: string | null;
+    examId?: string | null;
+  }) {
+    if (input.type === LessonType.quiz) {
+      throw new BadRequestException('Legacy quiz lessons are no longer supported');
+    }
+
+    if (input.type === LessonType.practice) {
+      if (!input.practiceExerciseSetId) {
+        throw new BadRequestException('practiceExerciseSetId is required for practice lessons');
+      }
+
+      const exerciseSet = await this.prisma.practiceExerciseSet.findFirst({
+        where: {
+          id: input.practiceExerciseSetId,
+          tenantId: input.tenantId,
+          deletedAt: null,
+        },
+        select: { id: true, courseId: true },
+      });
+
+      if (!exerciseSet) {
+        throw new NotFoundException(
+          `Practice exercise set with ID ${input.practiceExerciseSetId} not found`,
+        );
+      }
+
+      if (exerciseSet.courseId && exerciseSet.courseId !== input.courseId) {
+        throw new BadRequestException(
+          'Practice exercise set must be standalone or belong to this course',
+        );
+      }
+
+      return { practiceExerciseSetId: exerciseSet.id, examId: null };
+    }
+
+    if (input.type === LessonType.exam) {
+      if (!input.examId) {
+        throw new BadRequestException('examId is required for exam lessons');
+      }
+
+      const exam = await this.prisma.exam.findFirst({
+        where: {
+          id: input.examId,
+          tenantId: input.tenantId,
+          deletedAt: null,
+        },
+        select: { id: true, courseId: true },
+      });
+
+      if (!exam) {
+        throw new NotFoundException(`Exam with ID ${input.examId} not found`);
+      }
+
+      if (exam.courseId && exam.courseId !== input.courseId) {
+        throw new BadRequestException('Exam must be standalone or belong to this course');
+      }
+
+      return { practiceExerciseSetId: null, examId: exam.id };
+    }
+
+    return { practiceExerciseSetId: null, examId: null };
   }
 
   private async getMicroCardLessonAndCard(

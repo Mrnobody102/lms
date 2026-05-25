@@ -8,7 +8,6 @@ import {
   IsEnum,
   IsUrl,
   Min,
-  IsObject,
 } from 'class-validator';
 import { LessonType } from '@repo/database';
 
@@ -47,7 +46,9 @@ export class CreateLessonDto {
   unitId?: string;
 
   @ApiPropertyOptional({ example: 'video', description: 'Lesson type' })
-  @IsEnum(LessonType, { message: 'Type must be one of: video, text, quiz, simulation, micro_card' })
+  @IsEnum(LessonType, {
+    message: 'Type must be one of: video, text, quiz, simulation, micro_card, practice, exam',
+  })
   @IsOptional()
   type?: LessonType;
 
@@ -57,10 +58,15 @@ export class CreateLessonDto {
   @Min(0)
   duration?: number;
 
-  @ApiPropertyOptional({ description: 'Quiz data' })
+  @ApiPropertyOptional({ example: 'uuid-of-practice', description: 'Practice Exercise Set ID' })
+  @IsUUID()
   @IsOptional()
-  @IsObject()
-  quiz?: object;
+  practiceExerciseSetId?: string;
+
+  @ApiPropertyOptional({ example: 'uuid-of-exam', description: 'Exam ID' })
+  @IsUUID()
+  @IsOptional()
+  examId?: string;
 
   @ApiPropertyOptional({ description: 'AI prompt for simulation or micro-card lessons' })
   @IsString()

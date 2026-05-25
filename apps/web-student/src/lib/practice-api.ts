@@ -21,7 +21,7 @@ export interface PracticeQuestion {
 
 export interface PracticeExerciseSetSummary {
   id: string;
-  courseId: string;
+  courseId?: string | null;
   unitId?: string | null;
   title: string;
   description?: string | null;

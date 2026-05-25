@@ -306,19 +306,19 @@ export class RiskFlagService {
 
     const practiceByUserCourse = new Map(
       practice.map((row) => [
-        this.userCourseKey(row.userId, row.courseId),
+        this.userCourseKey(row.userId, row.courseId!),
         { score: row._sum.score ?? 0, total: row._sum.totalPoints ?? 0 },
       ]),
     );
     const examByUserCourse = new Map(
       exams.map((row) => [
-        this.userCourseKey(row.userId, row.courseId),
+        this.userCourseKey(row.userId, row.courseId!),
         { score: row._sum.score ?? 0, total: row._sum.totalPoints ?? 0 },
       ]),
     );
     const overdueByUser = new Map(overdueSrs.map((row) => [row.userId, row._count.id]));
     const decliningScoresByUserCourse = this.buildDecliningScoreMap(
-      [...practiceAttempts, ...examAttempts],
+      [...practiceAttempts, ...examAttempts] as ScoreAttemptRow[],
       computedAt,
       trendWindowDays,
     );
@@ -362,7 +362,7 @@ export class RiskFlagService {
         overdueCount,
         currentStreak: enrollment.user.currentStreak ?? 0,
         attemptCadenceDays: this.attemptCadenceDays(
-          [...practiceAttempts, ...examAttempts].filter(
+          ([...practiceAttempts, ...examAttempts] as ScoreAttemptRow[]).filter(
             (attempt) =>
               attempt.userId === enrollment.userId && attempt.courseId === enrollment.courseId,
           ),

@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { CourseUnit, Lesson, LessonType } from '@/lib/course-api';
+import { useExams } from '@/hooks/use-exams';
+import { usePracticeExerciseSets } from '@/hooks/use-practice';
 import {
   Button,
   Input,
@@ -15,15 +17,14 @@ import {
 } from '@/components/ui';
 import { Loader2, Plus } from 'lucide-react';
 import {
-  createEmptyQuizDraft,
-  LessonTypeFields,
   createEmptyMicroCardDraft,
   isLessonDraftReady,
-  serializeQuizContent,
   serializeMicroCardContent,
+  LessonTypeFields,
 } from './lesson-type-fields';
 
 interface AddLessonDialogProps {
+  courseId: string;
   existingLessonsCount: number;
   units?: CourseUnit[];
   selectedUnitId?: string | null;
@@ -34,6 +35,7 @@ interface AddLessonDialogProps {
 }
 
 export function AddLessonDialog({
+  courseId,
   existingLessonsCount,
   units = [],
   selectedUnitId,
@@ -52,7 +54,14 @@ export function AddLessonDialog({
   const [videoUrl, setVideoUrl] = useState('');
   const [aiPrompt, setAiPrompt] = useState('');
   const [microCards, setMicroCards] = useState([createEmptyMicroCardDraft()]);
-  const [quiz, setQuiz] = useState(createEmptyQuizDraft());
+  const [practiceExerciseSetId, setPracticeExerciseSetId] = useState('');
+  const [examId, setExamId] = useState('');
+  const { data: practiceExerciseSets = [] } = usePracticeExerciseSets();
+  const { data: exams = [] } = useExams();
+  const attachablePracticeExerciseSets = practiceExerciseSets.filter(
+    (set) => !set.courseId || set.courseId === courseId,
+  );
+  const attachableExams = exams.filter((exam) => !exam.courseId || exam.courseId === courseId);
 
   useEffect(() => {
     if (open) {
@@ -61,7 +70,20 @@ export function AddLessonDialog({
   }, [open, selectedUnitId, units]);
 
   const handleSubmit = async () => {
-    if (!isLessonDraftReady({ type, title, content, videoUrl, aiPrompt, microCards, quiz })) return;
+    if (
+      !isLessonDraftReady({
+        type,
+        title,
+        content,
+        videoUrl,
+        aiPrompt,
+        microCards,
+        practiceExerciseSetId,
+        examId,
+      })
+    ) {
+      return;
+    }
 
     const success = await onSubmit({
       title,
@@ -75,7 +97,8 @@ export function AddLessonDialog({
           : type === 'micro_card'
             ? serializeMicroCardContent(microCards)
             : undefined,
-      quiz: type === 'quiz' ? serializeQuizContent(quiz) : undefined,
+      practiceExerciseSetId: type === 'practice' ? practiceExerciseSetId : undefined,
+      examId: type === 'exam' ? examId : undefined,
       videoUrl: type === 'video' ? videoUrl.trim() : undefined,
       aiPrompt: type === 'simulation' ? aiPrompt.trim() : undefined,
     });
@@ -88,7 +111,8 @@ export function AddLessonDialog({
       setVideoUrl('');
       setAiPrompt('');
       setMicroCards([createEmptyMicroCardDraft()]);
-      setQuiz(createEmptyQuizDraft());
+      setPracticeExerciseSetId('');
+      setExamId('');
       onOpenChange(false);
     }
   };
@@ -103,7 +127,8 @@ export function AddLessonDialog({
       setVideoUrl('');
       setAiPrompt('');
       setMicroCards([createEmptyMicroCardDraft()]);
-      setQuiz(createEmptyQuizDraft());
+      setPracticeExerciseSetId('');
+      setExamId('');
     }
     onOpenChange(isOpen);
   };
@@ -174,8 +199,12 @@ export function AddLessonDialog({
             onAiPromptChange={setAiPrompt}
             microCards={microCards}
             onMicroCardsChange={setMicroCards}
-            quiz={quiz}
-            onQuizChange={setQuiz}
+            practiceExerciseSetId={practiceExerciseSetId}
+            onPracticeExerciseSetIdChange={setPracticeExerciseSetId}
+            practiceExerciseSets={attachablePracticeExerciseSets}
+            examId={examId}
+            onExamIdChange={setExamId}
+            exams={attachableExams}
           />
 
           <div className="space-y-1.5">
@@ -198,7 +227,16 @@ export function AddLessonDialog({
             onClick={handleSubmit}
             disabled={
               saving ||
-              !isLessonDraftReady({ type, title, content, videoUrl, aiPrompt, microCards, quiz })
+              !isLessonDraftReady({
+                type,
+                title,
+                content,
+                videoUrl,
+                aiPrompt,
+                microCards,
+                practiceExerciseSetId,
+                examId,
+              })
             }
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
@@ -213,7 +251,8 @@ export function AddLessonDialog({
 const lessonTypeOptions = [
   { value: 'video', labelKey: 'lessonTypeVideo' },
   { value: 'text', labelKey: 'lessonTypeText' },
-  { value: 'quiz', labelKey: 'lessonTypeQuiz' },
+  { value: 'practice', labelKey: 'lessonTypePractice' },
+  { value: 'exam', labelKey: 'lessonTypeExam' },
   { value: 'simulation', labelKey: 'lessonTypeSimulation' },
   { value: 'micro_card', labelKey: 'lessonTypeMicroCard' },
 ] as const satisfies ReadonlyArray<{
@@ -221,7 +260,8 @@ const lessonTypeOptions = [
   labelKey:
     | 'lessonTypeVideo'
     | 'lessonTypeText'
-    | 'lessonTypeQuiz'
+    | 'lessonTypePractice'
+    | 'lessonTypeExam'
     | 'lessonTypeSimulation'
     | 'lessonTypeMicroCard';
 }>;

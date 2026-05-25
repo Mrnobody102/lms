@@ -915,6 +915,7 @@ export class AdminReportsService {
       });
     }
     for (const row of practice) {
+      if (!row.courseId) continue;
       const bucket = byCourse.get(row.courseId);
       if (!bucket) continue;
       bucket.practiceScore = row._sum.score ?? 0;
@@ -922,6 +923,7 @@ export class AdminReportsService {
       bucket.practiceAttempts = row._count.id;
     }
     for (const row of exam) {
+      if (!row.courseId) continue;
       const bucket = byCourse.get(row.courseId);
       if (!bucket) continue;
       bucket.examScore = row._sum.score ?? 0;

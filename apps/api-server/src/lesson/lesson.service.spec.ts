@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { BadRequestException } from '@nestjs/common';
-import { LearningActivityType, LessonType, Prisma, ProgressStatus, Role } from '@repo/database';
+import { LearningActivityType, LessonType, ProgressStatus, Role } from '@repo/database';
 import { LessonService } from './lesson.service';
 
 describe('LessonService', () => {
@@ -17,11 +17,19 @@ describe('LessonService', () => {
         findFirst: vi.fn().mockResolvedValue({
           id: 'lesson-1',
           courseId: 'course-1',
+          practiceExerciseSetId: null,
+          examId: null,
           tenantId: 'tenant-1',
           type: LessonType.text,
           content: 'Lesson content',
         }),
         update: vi.fn().mockResolvedValue({ id: 'lesson-1' }),
+      },
+      practiceExerciseSet: {
+        findFirst: vi.fn(),
+      },
+      exam: {
+        findFirst: vi.fn(),
       },
       learningActivity: {
         create: vi.fn().mockResolvedValue({ id: 'activity-1' }),
@@ -45,7 +53,7 @@ describe('LessonService', () => {
     };
   };
 
-  it('should preserve zero duration and explicit quiz payloads when creating lessons', async () => {
+  it('should preserve zero duration when creating lessons', async () => {
     const { prisma, service } = createService();
 
     await service.create({
@@ -53,28 +61,12 @@ describe('LessonService', () => {
       courseId: 'course-1',
       tenantId: 'tenant-1',
       duration: 0,
-      quiz: { questions: [] },
     });
 
     expect(prisma.lesson.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           duration: 0,
-          quiz: { questions: [] },
-        }),
-      }),
-    );
-  });
-
-  it('should clear quiz JSON when update receives null', async () => {
-    const { prisma, service } = createService();
-
-    await service.update('lesson-1', 'tenant-1', { quiz: null });
-
-    expect(prisma.lesson.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          quiz: Prisma.DbNull,
         }),
       }),
     );
@@ -110,6 +102,48 @@ describe('LessonService', () => {
         }),
       }),
     );
+  });
+
+  it('should attach a standalone practice exercise set to a practice lesson', async () => {
+    const { prisma, service } = createService();
+    prisma.practiceExerciseSet.findFirst = vi
+      .fn()
+      .mockResolvedValue({ id: 'set-1', courseId: null });
+
+    await service.create({
+      title: 'Practice',
+      type: LessonType.practice,
+      courseId: 'course-1',
+      tenantId: 'tenant-1',
+      practiceExerciseSetId: 'set-1',
+    });
+
+    expect(prisma.lesson.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          type: LessonType.practice,
+          practiceExerciseSetId: 'set-1',
+          examId: null,
+        }),
+      }),
+    );
+  });
+
+  it('should reject a practice exercise set from another course', async () => {
+    const { prisma, service } = createService();
+    prisma.practiceExerciseSet.findFirst = vi
+      .fn()
+      .mockResolvedValue({ id: 'set-1', courseId: 'course-2' });
+
+    await expect(
+      service.create({
+        title: 'Practice',
+        type: LessonType.practice,
+        courseId: 'course-1',
+        tenantId: 'tenant-1',
+        practiceExerciseSetId: 'set-1',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('should track micro-card completion and complete lesson progress', async () => {
@@ -187,7 +221,7 @@ describe('LessonService', () => {
           back: 'good',
           example: '你好',
           front: '好',
-          pinyin: 'hao3',
+          phonetics: 'hao3',
         },
         skillCodes: [],
       },

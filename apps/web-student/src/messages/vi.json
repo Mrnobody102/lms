@@ -314,8 +314,8 @@
         "frontPlaceholder": "Nhập từ vựng, ví dụ: 学习",
         "back": "Mặt sau (Giải thích)",
         "backPlaceholder": "Nhập giải thích, ví dụ: Học tập",
-        "pinyin": "Pinyin",
-        "pinyinPlaceholder": "Ví dụ: xuéxí",
+        "phonetics": "Phiên âm / Phonetics",
+        "phoneticsPlaceholder": "Ví dụ: /stadi/ hoặc xuéxí",
         "example": "Ví dụ",
         "examplePlaceholder": "Nhập câu ví dụ",
         "skillCode": "Kỹ năng (ví dụ: VOCAB_1)",
@@ -415,7 +415,9 @@
       "simulationLive": "Phiên trực tiếp",
       "simulationScenarioPrompt": "Kịch bản",
       "simulationInputPlaceholder": "Nhập tin nhắn của bạn...",
-      "simulationSend": "Gửi"
+      "simulationSend": "Gửi",
+      "openPractice": "Mở bài luyện tập",
+      "openExam": "Mở đề thi"
     },
     "discussion": {
       "title": "Thảo luận",

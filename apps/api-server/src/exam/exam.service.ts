@@ -154,7 +154,7 @@ export class ExamService {
     const nextUnitId =
       data.unitId === undefined
         ? undefined
-        : await this.resolveUnit(exam.courseId, tenantId, data.unitId);
+        : await this.resolveUnit(tenantId, exam.courseId, data.unitId);
 
     const topLevelData: Prisma.ExamUncheckedUpdateInput = {
       title: data.title,
@@ -259,7 +259,14 @@ export class ExamService {
 
     if (user.role === Role.STUDENT) {
       where.isPublished = true;
-      where.course = this.learningAccess.courseWhere(tenantId, user, query.courseId);
+      if (query.courseId) {
+        where.course = this.learningAccess.courseWhere(tenantId, user, query.courseId);
+      } else {
+        where.OR = [
+          { courseId: null },
+          { course: this.learningAccess.courseWhere(tenantId, user) },
+        ];
+      }
     }
 
     return this.prisma.exam.findMany({
@@ -288,7 +295,9 @@ export class ExamService {
       throw new NotFoundException(`Exam with ID ${id} not found`);
     }
 
-    await this.learningAccess.ensureCourseAccess(exam.courseId, tenantId, user);
+    if (exam.courseId) {
+      await this.learningAccess.ensureCourseAccess(exam.courseId, tenantId, user);
+    }
     return user.role === Role.STUDENT ? this.hideAnswers(exam) : exam;
   }
 
@@ -305,7 +314,14 @@ export class ExamService {
 
     if (user.role === Role.STUDENT) {
       where.userId = user.id;
-      where.course = this.learningAccess.courseWhere(tenantId, user, query.courseId);
+      if (query.courseId) {
+        where.course = this.learningAccess.courseWhere(tenantId, user, query.courseId);
+      } else {
+        where.OR = [
+          { courseId: null },
+          { course: this.learningAccess.courseWhere(tenantId, user) },
+        ];
+      }
     }
 
     const attempts = await this.prisma.examAttempt.findMany({
@@ -331,7 +347,9 @@ export class ExamService {
         ? attempts
         : await Promise.all(
             attempts.map(async (attempt) => {
-              await this.learningAccess.ensureCourseAccess(attempt.courseId, tenantId, user);
+              if (attempt.courseId) {
+                await this.learningAccess.ensureCourseAccess(attempt.courseId, tenantId, user);
+              }
               return attempt;
             }),
           );
@@ -358,7 +376,9 @@ export class ExamService {
       throw new NotFoundException(`Exam with ID ${examId} not found`);
     }
 
-    await this.learningAccess.ensureCourseAccess(exam.courseId, tenantId, user);
+    if (exam.courseId) {
+      await this.learningAccess.ensureCourseAccess(exam.courseId, tenantId, user);
+    }
 
     const totalPoints = this.getQuestions(exam).reduce((sum, question) => sum + question.points, 0);
     if (totalPoints === 0) {
@@ -427,7 +447,9 @@ export class ExamService {
       throw new BadRequestException('Exam attempt time has expired');
     }
 
-    await this.learningAccess.ensureCourseAccess(attempt.courseId, tenantId, user);
+    if (attempt.courseId) {
+      await this.learningAccess.ensureCourseAccess(attempt.courseId, tenantId, user);
+    }
 
     const questions = this.getQuestions(attempt.exam);
     const unknownQuestion = answers.find(
@@ -558,7 +580,9 @@ export class ExamService {
       throw new NotFoundException(`Exam attempt with ID ${attemptId} not found`);
     }
 
-    await this.learningAccess.ensureCourseAccess(attempt.courseId, tenantId, user);
+    if (attempt.courseId) {
+      await this.learningAccess.ensureCourseAccess(attempt.courseId, tenantId, user);
+    }
     const attemptWithTiming = {
       ...attempt,
       deadlineAt: this.getAttemptDeadline(attempt, attempt.exam.durationMinutes),
@@ -572,7 +596,8 @@ export class ExamService {
     return attemptWithTiming;
   }
 
-  private async ensureCourse(tenantId: string, courseId: string) {
+  private async ensureCourse(tenantId: string, courseId?: string | null) {
+    if (!courseId) return;
     const course = await this.prisma.course.findFirst({
       where: this.learningAccess.courseWhere(tenantId, undefined, courseId, {
         includeInactive: true,
@@ -585,7 +610,7 @@ export class ExamService {
     }
   }
 
-  private async ensureUnit(tenantId: string, courseId: string, unitId?: string) {
+  private async ensureUnit(tenantId: string, courseId?: string | null, unitId?: string | null) {
     if (!unitId) {
       return;
     }
@@ -594,7 +619,7 @@ export class ExamService {
       where: {
         id: unitId,
         tenantId,
-        courseId,
+        ...(courseId ? { courseId } : {}),
         deletedAt: null,
       },
       select: { id: true },
@@ -605,7 +630,7 @@ export class ExamService {
     }
   }
 
-  private async resolveUnit(courseId: string, tenantId: string, unitId?: string | null) {
+  private async resolveUnit(tenantId: string, courseId?: string | null, unitId?: string | null) {
     if (unitId === null) {
       return null;
     }
@@ -618,7 +643,7 @@ export class ExamService {
       where: {
         id: unitId,
         tenantId,
-        courseId,
+        ...(courseId ? { courseId } : {}),
         deletedAt: null,
       },
       select: { id: true },

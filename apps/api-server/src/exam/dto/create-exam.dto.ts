@@ -96,9 +96,10 @@ export class CreateExamSectionDto {
 }
 
 export class CreateExamDto {
-  @ApiProperty({ description: 'Course ID that owns this exam' })
+  @ApiPropertyOptional({ description: 'Course ID that owns this exam' })
   @IsUUID()
-  courseId: string;
+  @IsOptional()
+  courseId?: string;
 
   @ApiPropertyOptional({ description: 'Optional course unit ID' })
   @IsUUID()

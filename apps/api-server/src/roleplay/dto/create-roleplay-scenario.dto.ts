@@ -23,9 +23,10 @@ export class CreateRoleplayScenarioDto {
   @MaxLength(1000)
   description?: string;
 
-  @ApiProperty({ example: 'course-uuid' })
+  @ApiPropertyOptional({ example: 'course-uuid' })
   @IsUUID()
-  courseId: string;
+  @IsOptional()
+  courseId?: string;
 
   @ApiPropertyOptional({ example: 'unit-uuid' })
   @IsOptional()

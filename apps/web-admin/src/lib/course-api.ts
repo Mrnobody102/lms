@@ -1,6 +1,13 @@
 import api from './api';
 
-export type LessonType = 'video' | 'text' | 'quiz' | 'simulation' | 'micro_card';
+export type LessonType =
+  | 'video'
+  | 'text'
+  | 'quiz'
+  | 'simulation'
+  | 'micro_card'
+  | 'practice'
+  | 'exam';
 
 export interface CourseAiSettings {
   enabled: boolean;
@@ -18,7 +25,8 @@ export interface Lesson {
   order: number;
   courseId: string;
   unitId?: string | null;
-  quiz?: unknown;
+  practiceExerciseSetId?: string | null;
+  examId?: string | null;
 }
 
 export interface CourseUnit {

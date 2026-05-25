@@ -21,6 +21,8 @@ enum LessonType {
   quiz
   simulation
   micro_card
+  practice
+  exam
 }
 
 enum ProgressStatus {
@@ -139,6 +141,8 @@ enum RiskSeverity {
 
 enum MarketplaceResourceType {
   COURSE
+  EXAM
+  PRACTICE_EXERCISE_SET
   MEDIA_ASSET
 }
 
@@ -425,27 +429,30 @@ model CourseUnit {
 }
 
 model Lesson {
-  id          String               @id @default(uuid())
-  title       String
-  type        LessonType           @default(text)
-  content     String? // Nội dung bài học (HTML/Markdown)
-  videoUrl    String? // Link video bài giảng
-  duration    Int                  @default(10) // Thời lượng dự kiến (phút)
-  quiz        Json? // Nội dung quiz (nếu type là quiz)
-  aiPrompt    String?
-  order       Int                  @default(0) // Thứ tự bài học trong khóa học
-  deletedAt   DateTime?
-  tenantId    String
-  tenant      Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  courseId    String
-  course      Course               @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
-  unitId      String?
-  unit        CourseUnit?          @relation(fields: [unitId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
-  progress    UserLessonProgress[]
-  activities  LearningActivity[]
-  discussions DiscussionThread[]
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
+  id                    String               @id @default(uuid())
+  title                 String
+  type                  LessonType           @default(text)
+  content               String? // Nội dung bài học (HTML/Markdown)
+  videoUrl              String? // Link video bài giảng
+  duration              Int                  @default(10) // Thời lượng dự kiến (phút)
+  aiPrompt              String?
+  order                 Int                  @default(0) // Thứ tự bài học trong khóa học
+  deletedAt             DateTime?
+  tenantId              String
+  tenant                Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  courseId              String
+  course                Course               @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  unitId                String?
+  unit                  CourseUnit?          @relation(fields: [unitId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
+  practiceExerciseSetId String?
+  practiceExerciseSet   PracticeExerciseSet? @relation(fields: [practiceExerciseSetId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
+  examId                String?
+  exam                  Exam?                @relation(fields: [examId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
+  progress              UserLessonProgress[]
+  activities            LearningActivity[]
+  discussions           DiscussionThread[]
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
 
   @@unique([id, tenantId])
   @@index([courseId])
@@ -520,8 +527,8 @@ model PracticeQuestion {
   id                String                        @id @default(uuid())
   tenantId          String
   tenant            Tenant                        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  courseId          String
-  course            Course                        @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  courseId          String?
+  course            Course?                       @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
   unitId            String?
   unit              CourseUnit?                   @relation(fields: [unitId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
   type              PracticeQuestionType          @default(MULTIPLE_CHOICE)
@@ -554,8 +561,8 @@ model AiQuestionGenerationJob {
   tenant         Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   requestedById  String
   requestedBy    User                       @relation("AiQuestionGenerationJobRequestedBy", fields: [requestedById, tenantId], references: [id, tenantId], onDelete: Cascade)
-  courseId       String
-  course         Course                     @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  courseId       String?
+  course         Course?                    @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
   unitId         String?
   unit           CourseUnit?                @relation(fields: [unitId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
   topic          String
@@ -587,8 +594,8 @@ model AiGeneratedQuestionDraft {
   tenant             Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   jobId              String
   job                AiQuestionGenerationJob @relation(fields: [jobId, tenantId], references: [id, tenantId], onDelete: Cascade)
-  courseId           String
-  course             Course                  @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  courseId           String?
+  course             Course?                 @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
   unitId             String?
   unit               CourseUnit?             @relation(fields: [unitId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
   type               PracticeQuestionType
@@ -620,8 +627,8 @@ model PracticeExerciseSet {
   id          String                        @id @default(uuid())
   tenantId    String
   tenant      Tenant                        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  courseId    String
-  course      Course                        @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  courseId    String?
+  course      Course?                       @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
   unitId      String?
   unit        CourseUnit?                   @relation(fields: [unitId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
   title       String
@@ -633,6 +640,7 @@ model PracticeExerciseSet {
   questions   PracticeExerciseSetQuestion[]
   attempts    PracticeAttempt[]
   discussions DiscussionThread[]
+  lessons     Lesson[]
 
   @@unique([id, tenantId])
   @@index([tenantId, courseId, isPublished, deletedAt])
@@ -702,8 +710,8 @@ model PracticeAttempt {
   tenant        Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   userId        String
   user          User                  @relation(fields: [userId, tenantId], references: [id, tenantId], onDelete: Cascade)
-  courseId      String
-  course        Course                @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  courseId      String?
+  course        Course?               @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
   exerciseSetId String
   exerciseSet   PracticeExerciseSet   @relation(fields: [exerciseSetId, tenantId], references: [id, tenantId], onDelete: Cascade)
   status        PracticeAttemptStatus @default(SUBMITTED)
@@ -762,8 +770,8 @@ model Exam {
   id              String        @id @default(uuid())
   tenantId        String
   tenant          Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  courseId        String
-  course          Course        @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  courseId        String?
+  course          Course?       @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
   unitId          String?
   unit            CourseUnit?   @relation(fields: [unitId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
   title           String
@@ -776,6 +784,7 @@ model Exam {
   updatedAt       DateTime      @updatedAt
   sections        ExamSection[]
   attempts        ExamAttempt[]
+  lessons         Lesson[]
 
   @@unique([id, tenantId])
   @@index([tenantId, courseId, isPublished, deletedAt])
@@ -826,8 +835,8 @@ model ExamAttempt {
   tenant      Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   userId      String
   user        User              @relation(fields: [userId, tenantId], references: [id, tenantId], onDelete: Cascade)
-  courseId    String
-  course      Course            @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  courseId    String?
+  course      Course?           @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
   examId      String
   exam        Exam              @relation(fields: [examId, tenantId], references: [id, tenantId], onDelete: Cascade)
   status      ExamAttemptStatus @default(STARTED)
@@ -1245,8 +1254,8 @@ model RoleplayScenario {
   id             String            @id @default(uuid())
   tenantId       String
   tenant         Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  courseId       String
-  course         Course            @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  courseId       String?
+  course         Course?           @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
   unitId         String?
   unit           CourseUnit?       @relation(fields: [unitId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
   title          String

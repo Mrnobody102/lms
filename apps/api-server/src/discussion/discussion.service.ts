@@ -184,7 +184,9 @@ export class DiscussionService {
       throw new NotFoundException(`Practice exercise set with ID ${input.exerciseSetId} not found`);
     }
 
-    await this.learningAccess.ensureCourseAccess(exerciseSet.courseId, tenantId, user);
+    if (exerciseSet.courseId) {
+      await this.learningAccess.ensureCourseAccess(exerciseSet.courseId, tenantId, user);
+    }
 
     return { lessonId: undefined, exerciseSetId: exerciseSet.id };
   }

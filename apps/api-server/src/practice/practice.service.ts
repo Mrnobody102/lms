@@ -56,7 +56,7 @@ export class PracticeService {
   async createQuestion(
     tenantId: string,
     data: {
-      courseId: string;
+      courseId?: string;
       unitId?: string;
       type: PracticeQuestionType;
       prompt: string;
@@ -99,11 +99,7 @@ export class PracticeService {
     });
   }
 
-  async generateAiQuestions(
-    tenantId: string,
-    userId: string,
-    dto: GeneratePracticeDto & { courseId: string; unitId?: string },
-  ) {
+  async generateAiQuestions(tenantId: string, userId: string, dto: GeneratePracticeDto) {
     await this.ensureCourse(tenantId, dto.courseId);
     if (dto.unitId) {
       await this.ensureUnit(tenantId, dto.courseId, dto.unitId);
@@ -333,7 +329,7 @@ export class PracticeService {
   async createExerciseSet(
     tenantId: string,
     data: {
-      courseId: string;
+      courseId?: string;
       unitId?: string;
       title: string;
       description?: string;
@@ -474,7 +470,14 @@ export class PracticeService {
 
     if (user.role === Role.STUDENT) {
       where.isPublished = true;
-      where.course = this.learningAccess.courseWhere(tenantId, user, query.courseId);
+      if (query.courseId) {
+        where.course = this.learningAccess.courseWhere(tenantId, user, query.courseId);
+      } else {
+        where.OR = [
+          { courseId: null },
+          { course: this.learningAccess.courseWhere(tenantId, user) },
+        ];
+      }
     }
 
     if (query.skill) {
@@ -517,7 +520,9 @@ export class PracticeService {
       throw new NotFoundException(`Practice exercise set with ID ${id} not found`);
     }
 
-    await this.learningAccess.ensureCourseAccess(exerciseSet.courseId, tenantId, user);
+    if (exerciseSet.courseId) {
+      await this.learningAccess.ensureCourseAccess(exerciseSet.courseId, tenantId, user);
+    }
     return user.role === Role.STUDENT ? this.hideAnswers(exerciseSet) : exerciseSet;
   }
 
@@ -534,7 +539,14 @@ export class PracticeService {
 
     if (user.role === Role.STUDENT) {
       where.userId = user.id;
-      where.course = this.learningAccess.courseWhere(tenantId, user, query.courseId);
+      if (query.courseId) {
+        where.course = this.learningAccess.courseWhere(tenantId, user, query.courseId);
+      } else {
+        where.OR = [
+          { courseId: null },
+          { course: this.learningAccess.courseWhere(tenantId, user) },
+        ];
+      }
     }
 
     const attempts = await this.prisma.practiceAttempt.findMany({
@@ -567,7 +579,9 @@ export class PracticeService {
 
     return Promise.all(
       attemptSummaries.map(async (attempt) => {
-        await this.learningAccess.ensureCourseAccess(attempt.courseId, tenantId, user);
+        if (attempt.courseId) {
+          await this.learningAccess.ensureCourseAccess(attempt.courseId, tenantId, user);
+        }
         return attempt;
       }),
     );
@@ -617,7 +631,9 @@ export class PracticeService {
       throw new NotFoundException(`Practice attempt with ID ${attemptId} not found`);
     }
 
-    await this.learningAccess.ensureCourseAccess(attempt.courseId, tenantId, user);
+    if (attempt.courseId) {
+      await this.learningAccess.ensureCourseAccess(attempt.courseId, tenantId, user);
+    }
     return {
       ...attempt,
       stats: this.buildAttemptStats(attempt.answers),
@@ -644,7 +660,9 @@ export class PracticeService {
       throw new NotFoundException(`Practice exercise set with ID ${exerciseSetId} not found`);
     }
 
-    await this.learningAccess.ensureCourseAccess(exerciseSet.courseId, tenantId, user);
+    if (exerciseSet.courseId) {
+      await this.learningAccess.ensureCourseAccess(exerciseSet.courseId, tenantId, user);
+    }
 
     const questions = exerciseSet.questions.map((link) => link.question);
     if (questions.length === 0) {
@@ -749,7 +767,7 @@ export class PracticeService {
         })),
     );
 
-    if (this.adaptiveLearning) {
+    if (this.adaptiveLearning && exerciseSet.courseId) {
       try {
         await this.adaptiveLearning.createRecommendationsFromPracticeAttempt({
           tenantId,
@@ -783,7 +801,11 @@ export class PracticeService {
     };
   }
 
-  private async ensureCourse(tenantId: string, courseId: string) {
+  private async ensureCourse(tenantId: string, courseId?: string | null) {
+    if (!courseId) {
+      return;
+    }
+
     const course = await this.prisma.course.findFirst({
       where: this.learningAccess.courseWhere(tenantId, undefined, courseId, {
         includeInactive: true,
@@ -796,9 +818,13 @@ export class PracticeService {
     }
   }
 
-  private async ensureUnit(tenantId: string, courseId: string, unitId?: string) {
+  private async ensureUnit(tenantId: string, courseId?: string | null, unitId?: string | null) {
     if (!unitId) {
       return;
+    }
+
+    if (!courseId) {
+      throw new BadRequestException('unitId requires courseId');
     }
 
     const unit = await this.prisma.courseUnit.findFirst({
@@ -816,13 +842,17 @@ export class PracticeService {
     }
   }
 
-  private async resolveUnit(courseId: string, tenantId: string, unitId?: string | null) {
+  private async resolveUnit(courseId: string | null, tenantId: string, unitId?: string | null) {
     if (unitId === null) {
       return null;
     }
 
     if (!unitId) {
       return undefined;
+    }
+
+    if (!courseId) {
+      throw new BadRequestException('unitId requires courseId');
     }
 
     const unit = await this.prisma.courseUnit.findFirst({
@@ -842,20 +872,26 @@ export class PracticeService {
     return unit.id;
   }
 
-  private async findValidQuestions(tenantId: string, courseId: string, questionIds: string[]) {
+  private async findValidQuestions(
+    tenantId: string,
+    courseId: string | null | undefined,
+    questionIds: string[],
+  ) {
     const uniqueQuestionIds = [...new Set(questionIds)];
     const questions = await this.prisma.practiceQuestion.findMany({
       where: {
         id: { in: uniqueQuestionIds },
         tenantId,
-        courseId,
+        courseId: courseId ?? null,
         deletedAt: null,
       },
       select: { id: true },
     });
 
     if (questions.length !== uniqueQuestionIds.length) {
-      throw new BadRequestException('One or more questions do not belong to this course');
+      throw new BadRequestException(
+        'One or more questions do not belong to this exercise set scope',
+      );
     }
 
     return uniqueQuestionIds.map((id) => questions.find((question) => question.id === id)!);

@@ -52,6 +52,7 @@ export interface DueSummary {
 export interface CustomCardContent {
   front: string;
   back?: string;
+  phonetics?: string;
   pinyin?: string;
   example?: string;
 }
@@ -521,7 +522,8 @@ export class SrsService {
     };
 
     if (content.back) json.back = content.back;
-    if (content.pinyin) json.pinyin = content.pinyin;
+    const phonetics = content.phonetics ?? content.pinyin;
+    if (phonetics) json.phonetics = phonetics;
     if (content.example) json.example = content.example;
 
     return json;

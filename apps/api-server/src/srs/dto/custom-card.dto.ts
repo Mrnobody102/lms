@@ -20,10 +20,10 @@ export class CustomCardContentDto {
   @IsString()
   back?: string;
 
-  @ApiProperty({ description: 'Pinyin or pronunciation', required: false })
+  @ApiProperty({ description: 'Phonetics or pronunciation', required: false })
   @IsOptional()
   @IsString()
-  pinyin?: string;
+  phonetics?: string;
 
   @ApiProperty({ description: 'Example sentence', required: false })
   @IsOptional()

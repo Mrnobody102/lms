@@ -230,8 +230,8 @@ function MicroCard({
 
       {!flipped ? (
         <>
-          {card.pinyin ? (
-            <p className="mb-5 text-lg font-bold text-primary">{card.pinyin}</p>
+          {card.phonetics ? (
+            <p className="mb-5 text-lg font-bold text-primary">{card.phonetics}</p>
           ) : null}
           <h3 className="mb-10 max-w-full break-words text-6xl font-black leading-tight text-foreground">
             {card.front}

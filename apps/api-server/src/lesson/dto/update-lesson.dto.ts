@@ -7,7 +7,6 @@ import {
   IsEnum,
   IsUrl,
   Min,
-  IsObject,
   IsUUID,
   ValidateIf,
 } from 'class-validator';
@@ -45,7 +44,9 @@ export class UpdateLessonDto {
   unitId?: string | null;
 
   @ApiPropertyOptional({ description: 'Lesson type' })
-  @IsEnum(LessonType, { message: 'Type must be one of: video, text, quiz, simulation, micro_card' })
+  @IsEnum(LessonType, {
+    message: 'Type must be one of: video, text, quiz, simulation, micro_card, practice, exam',
+  })
   @IsOptional()
   type?: LessonType;
 
@@ -55,10 +56,15 @@ export class UpdateLessonDto {
   @Min(0)
   duration?: number;
 
-  @ApiPropertyOptional({ description: 'Quiz data' })
-  @ValidateIf((_object, value) => value !== undefined && value !== null)
-  @IsObject()
-  quiz?: object | null;
+  @ApiPropertyOptional({ description: 'Practice Exercise Set ID' })
+  @IsUUID()
+  @IsOptional()
+  practiceExerciseSetId?: string | null;
+
+  @ApiPropertyOptional({ description: 'Exam ID' })
+  @IsUUID()
+  @IsOptional()
+  examId?: string | null;
 
   @ApiPropertyOptional({ description: 'AI prompt for simulation or micro-card lessons' })
   @ValidateIf((_object, value) => value !== undefined && value !== null)

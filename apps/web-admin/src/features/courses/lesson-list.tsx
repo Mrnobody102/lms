@@ -9,6 +9,8 @@ import {
   HelpCircle,
   Bot,
   LayoutGrid,
+  Dumbbell,
+  FileCheck2,
   Plus,
   Pencil,
   Trash2,
@@ -67,6 +69,16 @@ function getTypeConfig(t: ReturnType<typeof useTranslations>) {
       icon: LayoutGrid,
       label: t('lessonTypeMicroCard'),
       color: 'bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-300',
+    },
+    practice: {
+      icon: Dumbbell,
+      label: t('lessonTypePractice'),
+      color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300',
+    },
+    exam: {
+      icon: FileCheck2,
+      label: t('lessonTypeExam'),
+      color: 'bg-rose-100 text-rose-700 dark:bg-rose-900 dark:text-rose-300',
     },
   } as const;
 }
@@ -294,6 +306,8 @@ export function LessonList({
           <option value="quiz">{t('lessonTypeQuiz')}</option>
           <option value="simulation">{t('lessonTypeSimulation')}</option>
           <option value="micro_card">{t('lessonTypeMicroCard')}</option>
+          <option value="practice">{t('lessonTypePractice')}</option>
+          <option value="exam">{t('lessonTypeExam')}</option>
         </select>
         <select
           value={lessonStatusFilter}
@@ -954,9 +968,12 @@ function getLessonSummary(lesson: Lesson, t: ReturnType<typeof useTranslations>)
     return card ?? t('lessonMissingContent');
   }
 
-  if (lesson.type === 'quiz') {
-    const count = getQuizQuestionCount(lesson.quiz);
-    return t('lessonQuizSummary', { count });
+  if (lesson.type === 'practice') {
+    return lesson.practiceExerciseSetId || t('lessonMissingContent');
+  }
+
+  if (lesson.type === 'exam') {
+    return lesson.examId || t('lessonMissingContent');
   }
 
   return null;
@@ -979,13 +996,6 @@ function parseMicroCardSummary(content: string | null | undefined) {
   }
 }
 
-function getQuizQuestionCount(quiz: unknown) {
-  if (!quiz || typeof quiz !== 'object') return 0;
-
-  const record = quiz as Record<string, unknown>;
-  return Array.isArray(record.questions) ? record.questions.length : 0;
-}
-
 function getLessonStatus(lesson: Lesson): 'ready' | 'draft' {
   if (lesson.duration <= 0) return 'draft';
 
@@ -1005,8 +1015,12 @@ function getLessonStatus(lesson: Lesson): 'ready' | 'draft' {
     return parseMicroCardSummary(lesson.content) ? 'ready' : 'draft';
   }
 
-  if (lesson.type === 'quiz') {
-    return getQuizQuestionCount(lesson.quiz) > 0 ? 'ready' : 'draft';
+  if (lesson.type === 'practice') {
+    return lesson.practiceExerciseSetId?.trim() ? 'ready' : 'draft';
+  }
+
+  if (lesson.type === 'exam') {
+    return lesson.examId?.trim() ? 'ready' : 'draft';
   }
 
   return 'draft';

@@ -31,7 +31,7 @@ export interface ExamSection {
 
 export interface ExamSummary {
   id: string;
-  courseId: string;
+  courseId?: string | null;
   unitId?: string | null;
   title: string;
   description?: string | null;
@@ -57,7 +57,7 @@ export const examApi = {
   },
 
   createExam(data: {
-    courseId: string;
+    courseId?: string;
     unitId?: string;
     title: string;
     description?: string;

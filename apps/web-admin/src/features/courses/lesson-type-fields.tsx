@@ -12,7 +12,7 @@ import { RichTextEditor } from '@/components/authoring/rich-text-editor';
 
 export interface MicroCardDraft {
   front: string;
-  pinyin: string;
+  phonetics: string;
   back: string;
   example: string;
   audioUrl: string;
@@ -38,8 +38,17 @@ interface LessonTypeFieldsProps {
   onAiPromptChange: (value: string) => void;
   microCards: MicroCardDraft[];
   onMicroCardsChange: (value: MicroCardDraft[]) => void;
-  quiz: QuizDraft;
-  onQuizChange: (value: QuizDraft) => void;
+  practiceExerciseSetId: string;
+  onPracticeExerciseSetIdChange: (value: string) => void;
+  practiceExerciseSets?: ResourceOption[];
+  examId: string;
+  onExamIdChange: (value: string) => void;
+  exams?: ResourceOption[];
+}
+
+interface ResourceOption {
+  id: string;
+  title: string;
 }
 
 export function LessonTypeFields({
@@ -52,8 +61,12 @@ export function LessonTypeFields({
   onAiPromptChange,
   microCards,
   onMicroCardsChange,
-  quiz,
-  onQuizChange,
+  practiceExerciseSetId,
+  onPracticeExerciseSetIdChange,
+  practiceExerciseSets = [],
+  examId,
+  onExamIdChange,
+  exams = [],
 }: LessonTypeFieldsProps) {
   const t = useTranslations('Admin');
 
@@ -72,33 +85,6 @@ export function LessonTypeFields({
   const removeMicroCard = (index: number) => {
     const nextCards = microCards.filter((_card, currentIndex) => currentIndex !== index);
     onMicroCardsChange(nextCards.length > 0 ? nextCards : [createEmptyMicroCardDraft()]);
-  };
-
-  const updateQuizQuestion = (index: number, patch: Partial<QuizQuestionDraft>) => {
-    onQuizChange({
-      questions: quiz.questions.map((question, currentIndex) =>
-        currentIndex === index ? { ...question, ...patch } : question,
-      ),
-    });
-  };
-
-  const addQuizQuestion = () => {
-    onQuizChange({
-      questions: [
-        ...quiz.questions,
-        {
-          question: '',
-          options: ['', ''],
-          correctAnswer: 0,
-        },
-      ],
-    });
-  };
-
-  const removeQuizQuestion = (index: number) => {
-    onQuizChange({
-      questions: quiz.questions.filter((_question, currentIndex) => currentIndex !== index),
-    });
   };
 
   if (type === 'video') {
@@ -128,110 +114,44 @@ export function LessonTypeFields({
     );
   }
 
-  if (type === 'quiz') {
+  if (type === 'practice') {
     return (
-      <div className="space-y-3 rounded-lg border bg-muted/20 p-3">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-medium">{t('quizQuestions')}</p>
-            <p className="text-xs text-muted-foreground">{t('quizQuestionsDesc')}</p>
-          </div>
-          <Button type="button" variant="outline" size="sm" onClick={addQuizQuestion}>
-            {t('quizAddQuestion')}
-          </Button>
-        </div>
-
-        <div className="space-y-3">
-          {quiz.questions.map((question, index) => (
-            <div key={index} className="space-y-3 rounded-lg border bg-background p-3">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-medium">
-                  {t('quizQuestionLabel', { index: index + 1 })}
-                </p>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeQuizQuestion(index)}
-                  disabled={quiz.questions.length === 1}
-                >
-                  {t('remove')}
-                </Button>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-sm">{t('questionPrompt')}</Label>
-                <textarea
-                  value={question.question}
-                  onChange={(event) => updateQuizQuestion(index, { question: event.target.value })}
-                  placeholder={t('questionPromptPlaceholder')}
-                  className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm">{t('answerOptions')}</Label>
-                {question.options.map((option, optionIndex) => (
-                  <div key={optionIndex} className="flex items-center gap-2">
-                    <Input
-                      value={option}
-                      onChange={(event) => {
-                        const options = [...question.options];
-                        options[optionIndex] = event.target.value;
-                        updateQuizQuestion(index, { options });
-                      }}
-                      placeholder={t('quizOptionPlaceholder', { index: optionIndex + 1 })}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const options = question.options.filter(
-                          (_value, currentIndex) => currentIndex !== optionIndex,
-                        );
-                        updateQuizQuestion(index, {
-                          options: options.length >= 2 ? options : ['', ''],
-                          correctAnswer: Math.min(
-                            question.correctAnswer,
-                            Math.max(options.length - 1, 0),
-                          ),
-                        });
-                      }}
-                      className="rounded-md border px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted"
-                      disabled={question.options.length <= 2}
-                    >
-                      {t('remove')}
-                    </button>
-                  </div>
-                ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => updateQuizQuestion(index, { options: [...question.options, ''] })}
-                >
-                  {t('quizAddOption')}
-                </Button>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-sm">{t('correctAnswer')}</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  max={Math.max(question.options.length - 1, 0)}
-                  value={question.correctAnswer}
-                  onChange={(event) =>
-                    updateQuizQuestion(index, {
-                      correctAnswer: Number(event.target.value) || 0,
-                    })
-                  }
-                  placeholder={t('correctAnswerIndexPlaceholder')}
-                  className="w-32"
-                />
-              </div>
-            </div>
+      <div className="space-y-1.5">
+        <Label className="text-sm">{t('practiceExerciseSet')}</Label>
+        <select
+          value={practiceExerciseSetId}
+          onChange={(event) => onPracticeExerciseSetIdChange(event.target.value)}
+          className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+        >
+          <option value="">{t('practiceExerciseSetPlaceholder')}</option>
+          {practiceExerciseSets.map((set) => (
+            <option key={set.id} value={set.id}>
+              {set.title}
+            </option>
           ))}
-        </div>
+        </select>
+        <p className="text-xs text-muted-foreground">{t('practiceExerciseSetHelp')}</p>
+      </div>
+    );
+  }
+
+  if (type === 'exam') {
+    return (
+      <div className="space-y-1.5">
+        <Label className="text-sm">{t('exam')}</Label>
+        <select
+          value={examId}
+          onChange={(event) => onExamIdChange(event.target.value)}
+          className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+        >
+          <option value="">{t('examPlaceholder')}</option>
+          {exams.map((exam) => (
+            <option key={exam.id} value={exam.id}>
+              {exam.title}
+            </option>
+          ))}
+        </select>
+        <p className="text-xs text-muted-foreground">{t('examHelp')}</p>
       </div>
     );
   }
@@ -273,11 +193,11 @@ export function LessonTypeFields({
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-sm">{t('microCardPinyin')}</Label>
+                <Label className="text-sm">{t('microCardPhonetics')}</Label>
                 <Input
-                  value={microCard.pinyin}
-                  onChange={(event) => updateMicroCard(index, 'pinyin', event.target.value)}
-                  placeholder={t('microCardPinyinPlaceholder')}
+                  value={microCard.phonetics}
+                  onChange={(event) => updateMicroCard(index, 'phonetics', event.target.value)}
+                  placeholder={t('microCardPhoneticsPlaceholder')}
                 />
               </div>
             </div>
@@ -332,64 +252,10 @@ export function LessonTypeFields({
 export function createEmptyMicroCardDraft(): MicroCardDraft {
   return {
     front: '',
-    pinyin: '',
+    phonetics: '',
     back: '',
     example: '',
     audioUrl: '',
-  };
-}
-
-export function createEmptyQuizDraft(): QuizDraft {
-  return {
-    questions: [
-      {
-        question: '',
-        options: ['', ''],
-        correctAnswer: 0,
-      },
-    ],
-  };
-}
-
-export function parseMicroCardContent(content: string | null | undefined): MicroCardDraft[] {
-  if (!content) {
-    return [createEmptyMicroCardDraft()];
-  }
-
-  const cards = parseSharedMicroCardContent(content).content.cards.map(toMicroCardDraft);
-  return cards.length > 0 ? cards : [createEmptyMicroCardDraft()];
-}
-
-export function serializeMicroCardContent(input: MicroCardDraft[]) {
-  return serializeSharedMicroCardContent(input);
-}
-
-export function parseQuizContent(content: unknown): QuizDraft {
-  if (!content || typeof content !== 'object') {
-    return createEmptyQuizDraft();
-  }
-
-  const record = content as Record<string, unknown>;
-  const questions = Array.isArray(record.questions)
-    ? record.questions
-        .map((question) => normalizeQuizQuestion(question))
-        .filter((question): question is QuizQuestionDraft => question !== null)
-    : [];
-
-  return {
-    questions: questions.length > 0 ? questions : createEmptyQuizDraft().questions,
-  };
-}
-
-export function serializeQuizContent(input: QuizDraft) {
-  return {
-    questions: input.questions
-      .map((question) => ({
-        question: question.question.trim(),
-        options: question.options.map((option) => option.trim()).filter(Boolean),
-        correctAnswer: Number.isFinite(question.correctAnswer) ? question.correctAnswer : 0,
-      }))
-      .filter((question) => question.question && question.options.length >= 2),
   };
 }
 
@@ -399,8 +265,9 @@ export function isLessonDraftReady(input: {
   content: string;
   videoUrl: string;
   aiPrompt: string;
+  practiceExerciseSetId: string;
+  examId: string;
   microCards: MicroCardDraft[];
-  quiz: QuizDraft;
 }) {
   if (!input.title.trim()) {
     return false;
@@ -424,51 +291,36 @@ export function isLessonDraftReady(input: {
     );
   }
 
-  if (input.type === 'quiz') {
-    return (
-      input.quiz.questions.length > 0 &&
-      input.quiz.questions.every(
-        (question) =>
-          question.question.trim().length > 0 &&
-          question.options.filter((option) => option.trim().length > 0).length >= 2,
-      )
-    );
+  if (input.type === 'practice') {
+    return input.practiceExerciseSetId.trim().length > 0;
+  }
+
+  if (input.type === 'exam') {
+    return input.examId.trim().length > 0;
   }
 
   return true;
 }
 
-function readString(value: unknown) {
-  return typeof value === 'string' ? value : '';
+export function parseMicroCardContent(content: string | null | undefined): MicroCardDraft[] {
+  if (!content) {
+    return [createEmptyMicroCardDraft()];
+  }
+
+  const cards = parseSharedMicroCardContent(content).content.cards.map(toMicroCardDraft);
+  return cards.length > 0 ? cards : [createEmptyMicroCardDraft()];
+}
+
+export function serializeMicroCardContent(input: MicroCardDraft[]) {
+  return serializeSharedMicroCardContent(input);
 }
 
 function toMicroCardDraft(value: MicroCardItem): MicroCardDraft {
   return {
     front: value.front,
-    pinyin: value.pinyin ?? '',
+    phonetics: value.phonetics ?? '',
     back: value.back,
     example: value.example ?? '',
     audioUrl: value.audioUrl ?? '',
-  };
-}
-
-function normalizeQuizQuestion(value: unknown): QuizQuestionDraft | null {
-  if (!value || typeof value !== 'object') {
-    return null;
-  }
-
-  const record = value as Record<string, unknown>;
-  const options = Array.isArray(record.options)
-    ? record.options.map((option) => readString(option)).filter(Boolean)
-    : [];
-  if (options.length < 2) {
-    return null;
-  }
-
-  const correctAnswer = Number(record.correctAnswer);
-  return {
-    question: readString(record.question),
-    options,
-    correctAnswer: Number.isFinite(correctAnswer) ? correctAnswer : 0,
   };
 }

@@ -29,7 +29,7 @@ export interface ExamSection {
 
 export interface ExamSummary {
   id: string;
-  courseId: string;
+  courseId?: string | null;
   unitId?: string | null;
   title: string;
   description?: string | null;

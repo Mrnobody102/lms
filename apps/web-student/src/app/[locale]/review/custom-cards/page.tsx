@@ -28,7 +28,7 @@ export default function CustomCardsPage() {
   const [formData, setFormData] = useState({
     front: '',
     back: '',
-    pinyin: '',
+    phonetics: '',
     example: '',
     skillCode: '',
   });
@@ -36,7 +36,7 @@ export default function CustomCardsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   const resetForm = () => {
-    setFormData({ front: '', back: '', pinyin: '', example: '', skillCode: '' });
+    setFormData({ front: '', back: '', phonetics: '', example: '', skillCode: '' });
     setEditingCardId(null);
     setIsFormOpen(false);
   };
@@ -46,7 +46,7 @@ export default function CustomCardsPage() {
     setFormData({
       front: customContent?.front || '',
       back: customContent?.back || '',
-      pinyin: customContent?.pinyin || '',
+      phonetics: customContent?.phonetics || '',
       example: customContent?.example || '',
       skillCode: card.skillCodes?.[0] || '',
     });
@@ -66,7 +66,7 @@ export default function CustomCardsPage() {
       customContent: {
         front: formData.front,
         back: formData.back,
-        pinyin: formData.pinyin,
+        phonetics: formData.phonetics,
         example: formData.example,
       },
       skillCodes: formData.skillCode ? [formData.skillCode] : [],
@@ -152,13 +152,13 @@ export default function CustomCardsPage() {
                       />
                     </div>
                     <div>
-                      <label className="mb-1 block text-sm font-medium">{t('pinyin')}</label>
+                      <label className="mb-1 block text-sm font-medium">{t('phonetics')}</label>
                       <input
                         type="text"
-                        value={formData.pinyin}
-                        onChange={(e) => setFormData({ ...formData, pinyin: e.target.value })}
+                        value={formData.phonetics}
+                        onChange={(e) => setFormData({ ...formData, phonetics: e.target.value })}
                         className="w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                        placeholder={t('pinyinPlaceholder')}
+                        placeholder={t('phoneticsPlaceholder')}
                       />
                     </div>
                     <div>
@@ -223,9 +223,9 @@ export default function CustomCardsPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline gap-3 mb-1">
                           <h3 className="truncate text-lg font-bold">{content?.front}</h3>
-                          {content?.pinyin && (
+                          {content?.phonetics && (
                             <span className="text-sm font-medium text-primary">
-                              {content.pinyin}
+                              {content.phonetics}
                             </span>
                           )}
                           {card.skillCodes?.length > 0 && (

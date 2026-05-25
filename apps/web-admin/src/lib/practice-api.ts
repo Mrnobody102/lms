@@ -10,7 +10,7 @@ export type PracticeQuestionType =
 
 export interface PracticeQuestion {
   id: string;
-  courseId: string;
+  courseId?: string | null;
   unitId?: string | null;
   type: PracticeQuestionType;
   prompt: string;
@@ -33,7 +33,7 @@ export interface AiGeneratedQuestionDraft {
   id: string;
   tenantId: string;
   jobId: string;
-  courseId: string;
+  courseId?: string | null;
   unitId?: string | null;
   type: PracticeQuestionType;
   prompt: string;
@@ -52,7 +52,7 @@ export interface AiGeneratedQuestionDraft {
 
 export interface AiQuestionGenerationJob {
   id: string;
-  courseId: string;
+  courseId?: string | null;
   unitId?: string | null;
   topic: string;
   context?: string | null;
@@ -92,7 +92,7 @@ export interface AiBulkRejectResult {
 
 export interface PracticeExerciseSet {
   id: string;
-  courseId: string;
+  courseId?: string | null;
   unitId?: string | null;
   title: string;
   description?: string | null;
@@ -116,7 +116,7 @@ export const practiceApi = {
   },
 
   createQuestion(data: {
-    courseId: string;
+    courseId?: string;
     unitId?: string;
     type: PracticeQuestionType;
     prompt: string;
@@ -158,7 +158,7 @@ export const practiceApi = {
   },
 
   createExerciseSet(data: {
-    courseId: string;
+    courseId?: string;
     unitId?: string;
     title: string;
     description?: string;
@@ -194,7 +194,7 @@ export const practiceApi = {
   },
 
   generateAiQuestions(data: {
-    courseId: string;
+    courseId?: string;
     unitId?: string;
     topic: string;
     context?: string;
@@ -206,7 +206,7 @@ export const practiceApi = {
   },
 
   createAiGeneration(data: {
-    courseId: string;
+    courseId?: string;
     unitId?: string;
     topic: string;
     context?: string;

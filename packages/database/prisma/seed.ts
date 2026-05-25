@@ -486,6 +486,7 @@ async function main() {
     defaultUnit: deterministicUuid(`demo:${course.id}:default-unit`),
     practiceQuestion: deterministicUuid(`demo:${course.id}:practice-question:hello-mc`),
     practiceSet: deterministicUuid(`demo:${course.id}:practice-set:intro`),
+    practiceLesson: deterministicUuid(`demo:${course.id}:lesson:practice:intro`),
     practiceSetMixed: deterministicUuid(`demo:${course.id}:practice-set:mixed-types`),
     exam: deterministicUuid(`demo:${course.id}:exam:intro`),
     examMixed: deterministicUuid(`demo:${course.id}:exam:mixed-types`),
@@ -537,24 +538,6 @@ async function main() {
           tenantId: tenant.id,
           courseId: course.id,
         },
-        {
-          title: 'Bài 3: Bài tập ôn tập',
-          type: LessonType.quiz,
-          duration: 5,
-          order: 3,
-          unitId: defaultUnit.id,
-          tenantId: tenant.id,
-          courseId: course.id,
-          quiz: {
-            questions: [
-              {
-                question: "Từ 'Xin chào' trong tiếng Trung là gì?",
-                options: ['Zàijiàn', 'Nǐ hǎo', 'Xièxie', 'Bú kèqì'],
-                correctAnswer: 1,
-              },
-            ],
-          },
-        },
       ],
     });
   }
@@ -585,6 +568,31 @@ async function main() {
   });
 
   await replacePracticeSetQuestions(tenant.id, practiceSet.id, [practiceQuestion.id]);
+
+  await prisma.lesson.upsert({
+    where: { id: demoIds.practiceLesson },
+    update: {
+      title: 'Bài 3: Bài tập ôn tập',
+      type: LessonType.practice,
+      duration: 5,
+      order: 3,
+      unitId: defaultUnit.id,
+      practiceExerciseSetId: practiceSet.id,
+      examId: null,
+      deletedAt: null,
+    },
+    create: {
+      id: demoIds.practiceLesson,
+      title: 'Bài 3: Bài tập ôn tập',
+      type: LessonType.practice,
+      duration: 5,
+      order: 3,
+      unitId: defaultUnit.id,
+      tenantId: tenant.id,
+      courseId: course.id,
+      practiceExerciseSetId: practiceSet.id,
+    },
+  });
 
   const practiceSetMixed = await prisma.practiceExerciseSet.upsert({
     where: { id: demoIds.practiceSetMixed },

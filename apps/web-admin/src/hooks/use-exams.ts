@@ -5,7 +5,6 @@ export function useExams(params?: { courseId?: string; unitId?: string }) {
   return useQuery({
     queryKey: ['exams', params],
     queryFn: () => examApi.getExams(params),
-    enabled: Boolean(params?.courseId),
     staleTime: 60 * 1000,
   });
 }
@@ -24,7 +23,7 @@ export function useCreateExam() {
 
   return useMutation({
     mutationFn: (data: {
-      courseId: string;
+      courseId?: string;
       unitId?: string;
       title: string;
       description?: string;

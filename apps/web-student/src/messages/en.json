@@ -314,8 +314,8 @@
         "frontPlaceholder": "Enter vocabulary, e.g., 学习",
         "back": "Back (Explanation)",
         "backPlaceholder": "Enter explanation, e.g., To study",
-        "pinyin": "Pinyin",
-        "pinyinPlaceholder": "e.g., xuéxí",
+        "phonetics": "Phonetics / pronunciation",
+        "phoneticsPlaceholder": "e.g., /stadi/ or xuéxí",
         "example": "Example",
         "examplePlaceholder": "Enter example sentence",
         "skillCode": "Skill (e.g., VOCAB_1)",
@@ -415,7 +415,9 @@
       "simulationLive": "Live Session",
       "simulationScenarioPrompt": "Scenario Prompt",
       "simulationInputPlaceholder": "Type your message...",
-      "simulationSend": "Send"
+      "simulationSend": "Send",
+      "openPractice": "Open practice",
+      "openExam": "Open exam"
     },
     "discussion": {
       "title": "Discussion",

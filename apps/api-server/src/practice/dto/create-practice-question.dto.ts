@@ -16,9 +16,10 @@ import {
 import { ANSWER_LIMITS } from '../../common/utils/answer-validation.util';
 
 export class CreatePracticeQuestionDto {
-  @ApiProperty({ description: 'Course ID that owns this question' })
+  @ApiPropertyOptional({ description: 'Course ID that owns this question' })
   @IsUUID()
-  courseId: string;
+  @IsOptional()
+  courseId?: string;
 
   @ApiPropertyOptional({ description: 'Optional course unit ID' })
   @IsUUID()

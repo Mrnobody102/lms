@@ -32,9 +32,9 @@ describe('Shared Package', () => {
   it('serializes only complete micro-cards', () => {
     expect(
       serializeMicroCardContent([
-        { front: ' 你 ', back: ' you ', pinyin: ' ni3 ' },
+        { front: ' 你 ', back: ' you ', phonetics: ' ni3 ' },
         { front: '', back: 'missing front' },
       ]),
-    ).toBe(JSON.stringify({ cards: [{ front: '你', back: 'you', pinyin: 'ni3' }] }));
+    ).toBe(JSON.stringify({ cards: [{ front: '你', back: 'you', phonetics: 'ni3' }] }));
   });
 });

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, Role, RoleplayMode } from '@repo/database';
 import { LearningAccessService } from '../common/services/learning-access.service';
 import { PrismaService } from '../common/services/prisma.service';
@@ -144,6 +144,12 @@ export class RoleplayScenarioService {
     user: { id: string; role: Role },
     query: RoleplayScenarioQueryDto,
   ) {
+    const courseAccessWhere = query.courseId
+      ? { course: this.learningAccess.courseWhere(tenantId, user, query.courseId) }
+      : {
+          OR: [{ courseId: null }, { course: this.learningAccess.courseWhere(tenantId, user) }],
+        };
+
     const scenarios = await this.prisma.roleplayScenario.findMany({
       where: {
         tenantId,
@@ -151,7 +157,7 @@ export class RoleplayScenarioService {
         isPublished: true,
         unitId: query.unitId,
         mode: query.mode,
-        course: this.learningAccess.courseWhere(tenantId, user, query.courseId),
+        ...courseAccessWhere,
       },
       include: {
         course: { select: { id: true, title: true } },
@@ -170,7 +176,7 @@ export class RoleplayScenarioService {
         tenantId,
         deletedAt: null,
         isPublished: true,
-        course: this.learningAccess.courseWhere(tenantId, user),
+        OR: [{ courseId: null }, { course: this.learningAccess.courseWhere(tenantId, user) }],
       },
     });
 
@@ -181,7 +187,11 @@ export class RoleplayScenarioService {
     return scenario;
   }
 
-  private async ensureCourse(tenantId: string, courseId: string) {
+  private async ensureCourse(tenantId: string, courseId?: string | null) {
+    if (!courseId) {
+      return;
+    }
+
     const course = await this.prisma.course.findFirst({
       where: { id: courseId, tenantId, deletedAt: null },
       select: { id: true },
@@ -192,9 +202,13 @@ export class RoleplayScenarioService {
     }
   }
 
-  private async ensureUnit(tenantId: string, courseId: string, unitId?: string | null) {
+  private async ensureUnit(tenantId: string, courseId?: string | null, unitId?: string | null) {
     if (!unitId) {
       return;
+    }
+
+    if (!courseId) {
+      throw new BadRequestException('unitId requires courseId');
     }
 
     const unit = await this.prisma.courseUnit.findFirst({

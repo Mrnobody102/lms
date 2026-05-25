@@ -308,7 +308,11 @@ export class AiQuestionGenerationService {
     };
   }
 
-  private async ensureCourse(tenantId: string, courseId: string) {
+  private async ensureCourse(tenantId: string, courseId?: string | null) {
+    if (!courseId) {
+      return;
+    }
+
     const course = await this.prisma.course.findFirst({
       where: { id: courseId, tenantId, deletedAt: null },
       select: { id: true },
@@ -319,9 +323,13 @@ export class AiQuestionGenerationService {
     }
   }
 
-  private async ensureUnit(tenantId: string, courseId: string, unitId?: string) {
+  private async ensureUnit(tenantId: string, courseId?: string | null, unitId?: string | null) {
     if (!unitId) {
       return;
+    }
+
+    if (!courseId) {
+      throw new BadRequestException('unitId requires courseId');
     }
 
     const unit = await this.prisma.courseUnit.findFirst({

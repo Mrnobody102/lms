@@ -16,10 +16,10 @@ import {
 import { ANSWER_LIMITS } from '../../common/utils/answer-validation.util';
 
 export class CreateAiQuestionGenerationJobDto {
-  @ApiProperty({ description: 'Course to associate generated drafts with' })
+  @ApiPropertyOptional({ description: 'Course to associate generated drafts with' })
   @IsUUID()
-  @IsNotEmpty()
-  courseId: string;
+  @IsOptional()
+  courseId?: string;
 
   @ApiPropertyOptional({ description: 'Unit within the course' })
   @IsUUID()

@@ -33,10 +33,8 @@ import { CourseReportPanel } from '@/features/courses/course-report-panel';
 import { EnrollmentPanel } from '@/features/courses/enrollment-panel';
 import {
   createEmptyMicroCardDraft,
-  createEmptyQuizDraft,
   isLessonDraftReady,
   parseMicroCardContent,
-  parseQuizContent,
 } from '@/features/courses/lesson-type-fields';
 import {
   CourseUnit,
@@ -200,7 +198,8 @@ export default function CourseEditorPage() {
           content: lesson.content ?? null,
           videoUrl: lesson.videoUrl ?? null,
           aiPrompt: lesson.aiPrompt ?? null,
-          quiz: lesson.quiz ?? null,
+          practiceExerciseSetId: lesson.practiceExerciseSetId ?? null,
+          examId: lesson.examId ?? null,
         },
       });
       showMsg('success', 'lessonDuplicated');
@@ -394,7 +393,8 @@ export default function CourseEditorPage() {
                 content: lesson.content ?? null,
                 videoUrl: lesson.videoUrl ?? null,
                 aiPrompt: lesson.aiPrompt ?? null,
-                quiz: lesson.quiz ?? null,
+                practiceExerciseSetId: lesson.practiceExerciseSetId ?? null,
+                examId: lesson.examId ?? null,
               },
             }),
           ),
@@ -817,6 +817,7 @@ export default function CourseEditorPage() {
         </main>
 
         <AddLessonDialog
+          courseId={courseId}
           existingLessonsCount={lessons.length}
           units={units}
           selectedUnitId={selectedUnitId}
@@ -826,6 +827,7 @@ export default function CourseEditorPage() {
           saving={createLesson.isPending}
         />
         <EditLessonDialog
+          courseId={courseId}
           lesson={editingLesson}
           units={units}
           onSubmit={handleUpdateLesson}
@@ -867,18 +869,14 @@ function isPersistedLessonReady(lesson: Lesson) {
     );
   }
 
-  if (lesson.type === 'quiz') {
-    const quiz = parseQuizContent(lesson.quiz ?? createEmptyQuizDraft());
-    return isLessonDraftReady({
-      type: 'quiz',
-      title: lesson.title,
-      content: lesson.content ?? '',
-      videoUrl: lesson.videoUrl ?? '',
-      aiPrompt: lesson.aiPrompt ?? '',
-      microCards: [createEmptyMicroCardDraft()],
-      quiz,
-    });
-  }
-
-  return true;
+  return isLessonDraftReady({
+    type: lesson.type,
+    title: lesson.title,
+    content: lesson.content ?? '',
+    videoUrl: lesson.videoUrl ?? '',
+    aiPrompt: lesson.aiPrompt ?? '',
+    practiceExerciseSetId: lesson.practiceExerciseSetId ?? '',
+    examId: lesson.examId ?? '',
+    microCards: [createEmptyMicroCardDraft()],
+  });
 }

@@ -34,7 +34,7 @@ export interface DueSummary {
 export interface CustomCardContent {
   front: string;
   back?: string;
-  pinyin?: string;
+  phonetics?: string;
   example?: string;
 }
 

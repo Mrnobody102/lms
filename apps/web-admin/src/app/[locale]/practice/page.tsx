@@ -210,7 +210,7 @@ export default function AdminPracticePage() {
   useEffect(() => {
     if (!editingExerciseSetId || !editingExerciseSet) return;
 
-    setCourseId(editingExerciseSet.courseId);
+    setCourseId(editingExerciseSet.courseId ?? '');
     setUnitId(editingExerciseSet.unitId ?? '');
     setSetTitle(editingExerciseSet.title);
     setSetDescription(editingExerciseSet.description ?? '');

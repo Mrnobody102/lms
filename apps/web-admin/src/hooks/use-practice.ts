@@ -6,7 +6,6 @@ export function usePracticeQuestions(params?: { courseId?: string; unitId?: stri
   return useQuery({
     queryKey: ['practice-questions', params],
     queryFn: () => practiceApi.getQuestions(params),
-    enabled: Boolean(params?.courseId),
     staleTime: 60 * 1000,
   });
 }
@@ -16,7 +15,7 @@ export function useCreatePracticeQuestion() {
 
   return useMutation({
     mutationFn: (data: {
-      courseId: string;
+      courseId?: string;
       unitId?: string;
       type: PracticeQuestionType;
       prompt: string;
@@ -75,7 +74,6 @@ export function usePracticeExerciseSets(params?: { courseId?: string; unitId?: s
   return useQuery({
     queryKey: ['practice-exercise-sets', params],
     queryFn: () => practiceApi.getExerciseSets(params),
-    enabled: Boolean(params?.courseId),
     staleTime: 60 * 1000,
   });
 }
@@ -85,7 +83,7 @@ export function useCreatePracticeExerciseSet() {
 
   return useMutation({
     mutationFn: (data: {
-      courseId: string;
+      courseId?: string;
       unitId?: string;
       title: string;
       description?: string;
@@ -145,7 +143,7 @@ export function useGeneratePracticeQuestions() {
 
   return useMutation({
     mutationFn: (data: {
-      courseId: string;
+      courseId?: string;
       unitId?: string;
       topic: string;
       context?: string;
@@ -170,7 +168,6 @@ export function useAiGenerations(params?: {
   return useQuery({
     queryKey: ['practice-ai-generations', params],
     queryFn: () => practiceApi.getAiGenerations(params),
-    enabled: Boolean(params?.courseId),
     staleTime: 30 * 1000,
   });
 }
@@ -189,7 +186,7 @@ export function useCreateAiGeneration() {
 
   return useMutation({
     mutationFn: (data: {
-      courseId: string;
+      courseId?: string;
       unitId?: string;
       topic: string;
       context?: string;
@@ -276,7 +273,6 @@ export function useReviewQueue(params?: { courseId?: string; unitId?: string }) 
   return useQuery({
     queryKey: ['practice-review-queue', params],
     queryFn: () => practiceApi.getReviewQueue(params),
-    enabled: Boolean(params?.courseId),
     staleTime: 60 * 1000,
   });
 }

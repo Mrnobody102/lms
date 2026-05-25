@@ -1,7 +1,7 @@
 export interface MicroCardItem {
   id?: string;
   front: string;
-  pinyin?: string;
+  phonetics?: string;
   back: string;
   example?: string;
   audioUrl?: string;
@@ -57,7 +57,7 @@ export function serializeMicroCardContent(cards: MicroCardItem[]): string {
         ...(card.id?.trim() ? { id: card.id.trim() } : {}),
         front: card.front.trim(),
         back: card.back.trim(),
-        ...(card.pinyin?.trim() ? { pinyin: card.pinyin.trim() } : {}),
+        ...(card.phonetics?.trim() ? { phonetics: card.phonetics.trim() } : {}),
         ...(card.example?.trim() ? { example: card.example.trim() } : {}),
         ...(card.audioUrl?.trim() ? { audioUrl: card.audioUrl.trim() } : {}),
       }))
@@ -116,7 +116,7 @@ function normalizeMicroCard(input: unknown): MicroCardItem | null {
     front,
     back,
     id: readOptionalString(record.id),
-    pinyin: readOptionalString(record.pinyin),
+    phonetics: readOptionalString(record.phonetics) ?? readOptionalString(record.pinyin),
     example: readOptionalString(record.example),
     audioUrl: readOptionalString(record.audioUrl),
   };

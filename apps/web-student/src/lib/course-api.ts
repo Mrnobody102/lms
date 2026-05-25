@@ -3,7 +3,7 @@ import api from './api';
 export interface Lesson {
   id: string;
   title: string;
-  type: 'video' | 'text' | 'quiz' | 'simulation' | 'micro_card';
+  type: 'video' | 'text' | 'quiz' | 'simulation' | 'micro_card' | 'practice' | 'exam';
   content?: string | null;
   aiPrompt?: string | null;
   videoUrl?: string | null;
@@ -11,13 +11,8 @@ export interface Lesson {
   order: number;
   courseId: string;
   unitId?: string | null;
-  quiz?: {
-    questions: {
-      question: string;
-      options: string[];
-      correctAnswer: number;
-    }[];
-  };
+  practiceExerciseSetId?: string | null;
+  examId?: string | null;
 }
 
 export interface CourseUnit {

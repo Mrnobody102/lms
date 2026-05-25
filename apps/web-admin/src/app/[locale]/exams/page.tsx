@@ -1368,7 +1368,7 @@ function hydrateDraftFromExam(
     duplicateTitle: (value: string) => string;
   },
 ) {
-  actions.setCourseId(exam.courseId);
+  actions.setCourseId(exam.courseId ?? '');
   actions.setUnitId(exam.unitId ?? '');
   actions.setTitle(duplicate ? actions.duplicateTitle(exam.title) : exam.title);
   actions.setDescription(exam.description ?? '');

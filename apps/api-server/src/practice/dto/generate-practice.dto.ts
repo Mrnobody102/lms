@@ -13,10 +13,10 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PracticeQuestionType } from '@repo/database';
 
 export class GeneratePracticeDto {
-  @ApiProperty({ description: 'Course to associate generated questions with' })
+  @ApiPropertyOptional({ description: 'Course to associate generated questions with' })
   @IsUUID()
-  @IsNotEmpty()
-  courseId: string;
+  @IsOptional()
+  courseId?: string;
 
   @ApiPropertyOptional({ description: 'Unit within the course (optional)' })
   @IsUUID()
