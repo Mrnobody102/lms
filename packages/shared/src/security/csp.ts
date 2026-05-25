@@ -16,8 +16,8 @@ export function buildContentSecurityPolicy(
     allowUnsafeInline?: boolean;
   } = {},
 ) {
-  const allowedConnectSources = new Set(["'self'"]);
-  const scriptSources = ["'self'"];
+  const allowedConnectSources = new Set(["'self'", 'https://accounts.google.com']);
+  const scriptSources = ["'self'", 'https://accounts.google.com'];
 
   if (options.allowUnsafeInline) {
     scriptSources.push("'unsafe-inline'");
@@ -69,6 +69,7 @@ export function buildContentSecurityPolicy(
     "base-uri 'self'",
     "object-src 'none'",
     "frame-ancestors 'self'",
+    "frame-src 'self' https://accounts.google.com",
     "form-action 'self'",
     `script-src ${scriptSources.join(' ')}`,
     "style-src 'self' 'unsafe-inline'",
