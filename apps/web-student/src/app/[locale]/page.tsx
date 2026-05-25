@@ -86,9 +86,9 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               {
-                title: t('features.items.hsk.title'),
+                title: t('features.items.roadmap.title'),
                 icon: Trophy,
-                desc: t('features.items.hsk.desc'),
+                desc: t('features.items.roadmap.desc'),
               },
               {
                 title: t('features.items.library.title'),

@@ -85,11 +85,11 @@ describe('McpService', () => {
     const response = await callToolHandler?.({
       params: {
         name: 'course_search',
-        arguments: { keyword: 'HSK' },
+        arguments: { keyword: 'IELTS' },
       },
     });
 
-    expect(toolHandler).toHaveBeenCalledWith({ keyword: 'HSK' });
+    expect(toolHandler).toHaveBeenCalledWith({ keyword: 'IELTS' });
     expect(response).toEqual({
       content: [{ type: 'text', text: JSON.stringify({ ok: true }) }],
     });

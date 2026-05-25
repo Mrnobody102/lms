@@ -79,7 +79,7 @@
       "createTitle": "Thêm Trung Tâm Mới",
       "editTitle": "Chỉnh Sửa Trung Tâm",
       "nameLabel": "Tên Trung Tâm *",
-      "namePlaceholder": "Ví dụ: Trung tâm Tiếng Trung ABC",
+      "namePlaceholder": "Ví dụ: Trung tâm Ngoại ngữ ABC",
       "slugLabel": "Slug (Đường dẫn) *",
       "slugPlaceholder": "ví dụ: abc-center",
       "slugHint": "Dùng cho URL: abc-center.lms.com",

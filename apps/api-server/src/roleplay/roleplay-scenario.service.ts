@@ -24,7 +24,7 @@ export class RoleplayScenarioService {
         unitId: dto.unitId,
         title: dto.title,
         description: dto.description,
-        targetLanguage: dto.targetLanguage ?? 'zh-CN',
+        targetLanguage: dto.targetLanguage ?? 'en-US',
         level: dto.level,
         skillTags: dto.skillTags ?? [],
         mode: dto.mode ?? RoleplayMode.TEXT,

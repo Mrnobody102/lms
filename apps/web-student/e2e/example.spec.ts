@@ -12,7 +12,7 @@ const studentUser = {
 
 const course = {
   id: 'course-1',
-  title: 'HSK 1 Basics',
+  title: 'IELTS Foundations',
   totalDuration: 30,
   lessons: [
     {
@@ -520,7 +520,7 @@ test('student can view the learning dashboard summary', async ({ page }) => {
   await page.goto('/en');
 
   await expect(page.getByRole('heading', { name: 'Continue your course' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'HSK 1 Basics' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'IELTS Foundations' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Resume lesson' })).toBeVisible();
   await expect(page.getByText('0 sessions')).toBeVisible();
 });

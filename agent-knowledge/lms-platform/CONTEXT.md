@@ -6,7 +6,7 @@ Tài liệu này cung cấp ngữ cảnh nghiệp vụ (Business Context) cho AI
 
 LMS Platform là một hệ thống Multi-tenant dành cho các trung tâm đào tạo.
 
-- **Mục tiêu**: Xây dựng nền tảng học tập lai (Hybrid Learning) kết hợp giữa phương pháp truyền thống (Video, Quiz, Flashcards) và sức mạnh AI (Simulation, AI Feedback) để tối ưu hiệu quả đào tạo, khởi đầu với trung tâm Tiếng Trung.
+- **Mục tiêu**: Xây dựng nền tảng học tập lai (Hybrid Learning) kết hợp giữa phương pháp truyền thống (Video, Quiz, Flashcards) và sức mạnh AI (Simulation, AI Feedback) để tối ưu hiệu quả đào tạo cho trung tâm ngôn ngữ, luyện thi và kỹ năng.
 - **Đối tượng**: Super Admin, Admin (Chủ trung tâm), Instructor, Student.
 
 ## 2. Cấu trúc Monorepo

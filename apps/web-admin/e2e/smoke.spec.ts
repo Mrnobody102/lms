@@ -10,7 +10,7 @@ const adminUser = {
 
 const editableCourse = {
   id: 'course-1',
-  title: 'HSK 1 Basics',
+  title: 'IELTS Foundations',
   description: 'Intro course',
   levelId: null,
   aiSettings: {
@@ -29,7 +29,7 @@ const editableCourse = {
   lessons: [
     {
       id: 'lesson-1',
-      title: 'Lesson 1: Pinyin intro',
+      title: 'Lesson 1: Skills intro',
       type: 'video',
       content: '',
       videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
@@ -133,7 +133,7 @@ async function installAdminApiMocks(page: Page) {
             fullName: 'Learner One',
             isActive: true,
             createdAt: '2026-04-21T12:00:00.000Z',
-            latestCourseTitle: 'HSK 1 Basics',
+            latestCourseTitle: 'IELTS Foundations',
           },
         ],
       });
@@ -177,14 +177,14 @@ async function installAdminApiMocks(page: Page) {
       return json(200, [
         {
           id: 'program-1',
-          title: 'HSK',
-          slug: 'hsk',
-          description: 'HSK program',
+          title: 'IELTS',
+          slug: 'ielts',
+          description: 'IELTS program',
           isActive: true,
           levels: [
             {
               id: 'level-1',
-              title: 'HSK 1',
+              title: 'IELTS Foundations',
               description: null,
               order: 1,
               isActive: true,
@@ -217,7 +217,7 @@ test('admin can login and view dashboard overview', async ({ page }) => {
   await expect(page).toHaveURL(/\/en$/, { timeout: 60000 });
   await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 60000 });
   await expect(page.getByText('Learner One')).toBeVisible();
-  await expect(page.getByText('HSK 1 Basics')).toBeVisible();
+  await expect(page.getByText('IELTS Foundations')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Learning reports' })).toBeVisible();
 });
 
@@ -234,14 +234,14 @@ test('admin can open course editor without i18n or lesson-table layout regressio
 
   await page.goto('/en/courses/course-1/edit');
 
-  await expect(page.locator('input[value="HSK 1 Basics"]')).toBeVisible({ timeout: 60000 });
+  await expect(page.locator('input[value="IELTS Foundations"]')).toBeVisible({ timeout: 60000 });
   await expect(page.getByRole('button', { name: 'Curriculum' })).toBeVisible();
   await expect(page.getByText('Pronunciation')).toBeVisible();
-  await expect(page.getByText('Lesson 1: Pinyin intro')).toBeVisible();
+  await expect(page.getByText('Lesson 1: Skills intro')).toBeVisible();
   await expect(page.getByText('Lesson 2: Greetings')).toBeVisible();
   await expect(page.getByText(/MISSING_MESSAGE|FORMATTING_ERROR|Could not resolve/)).toHaveCount(0);
 
-  const titleBox = await page.getByText('Lesson 1: Pinyin intro').boundingBox();
+  const titleBox = await page.getByText('Lesson 1: Skills intro').boundingBox();
   const durationBox = await page.getByText('12m').boundingBox();
   const editorBox = await page.locator('main').boundingBox();
 

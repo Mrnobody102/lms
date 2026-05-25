@@ -136,7 +136,7 @@ Luồng nội dung học tập hiện tại mang tính tuyến tính: `Course ->
 
 ## Mô Hình Học Tập Lai (Hybrid AI-Enhanced Learning)
 
-Kiến trúc hệ thống được thiết kế để kết hợp hài hòa giữa phương pháp học truyền thống và sức mạnh của AI, đặc biệt tối ưu cho đào tạo ngôn ngữ (Tiếng Trung) nhưng vẫn giữ tính đa ngành:
+Kiến trúc hệ thống được thiết kế để kết hợp hài hòa giữa phương pháp học truyền thống và sức mạnh của AI, tối ưu cho đào tạo ngôn ngữ, luyện thi và kỹ năng nhưng vẫn giữ tính đa ngành:
 
 - **Traditional Core (Tĩnh)**: Duy trì các cột trụ vững chắc như Video bài giảng, Flashcards (`micro_card`), Trắc nghiệm (`quiz`) và Đề thi chuẩn hóa (`exam`).
 - **AI-Enhanced Layers (Động)**:

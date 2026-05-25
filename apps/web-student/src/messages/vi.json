@@ -151,11 +151,11 @@
     },
     "themeToggle": "Đổi giao diện",
     "hero": {
-      "badge": "Học tiếng Trung chuẩn HSK",
+      "badge": "Học theo lộ trình đa lĩnh vực",
       "title": "Chinh Phục",
-      "titleAlt": "Tiếng Trung",
+      "titleAlt": "Kỹ Năng Mới",
       "titleEnd": "Dễ Dàng.",
-      "desc": "Nền tảng học trực tuyến toàn diện với lộ trình HSK 1-6. Luyện phát âm AI, Flashcard thông minh, và Video bài giảng chất lượng cao.",
+      "desc": "Nền tảng học trực tuyến toàn diện với lộ trình có cấu trúc, luyện tập bằng AI, flashcard thông minh và video bài giảng chất lượng cao.",
       "trial": "Học Thử Miễn Phí",
       "roadmap": "Xem Lộ Trình",
       "watchVideo": "Xem Video Giới Thiệu"
@@ -311,11 +311,11 @@
         "description": "Quản lý thẻ từ vựng hoặc ngữ pháp do bạn tự tạo.",
         "addCard": "Thêm thẻ mới",
         "front": "Mặt trước (Từ vựng/Câu hỏi)",
-        "frontPlaceholder": "Nhập từ vựng, ví dụ: 学习",
+        "frontPlaceholder": "Nhập từ vựng hoặc câu hỏi, ví dụ: collaborate",
         "back": "Mặt sau (Giải thích)",
         "backPlaceholder": "Nhập giải thích, ví dụ: Học tập",
         "phonetics": "Phiên âm / Phonetics",
-        "phoneticsPlaceholder": "Ví dụ: /stadi/ hoặc xuéxí",
+        "phoneticsPlaceholder": "Ví dụ: /kəˈlæbəreɪt/",
         "example": "Ví dụ",
         "examplePlaceholder": "Nhập câu ví dụ",
         "skillCode": "Kỹ năng (ví dụ: VOCAB_1)",
@@ -339,9 +339,9 @@
       "whyUs": "Tại sao chọn chúng tôi?",
       "whyUsDesc": "Phương pháp học hiện đại kết hợp công nghệ AI giúp bạn nhớ từ vựng lâu hơn 300% so với cách học truyền thống.",
       "items": {
-        "hsk": {
-          "title": "Lộ Trình HSK Chuẩn",
-          "desc": "Bài học được thiết kế bám sát giáo trình HSK mới nhất từ HSK 1 đến HSK 6."
+        "roadmap": {
+          "title": "Lộ trình học có cấu trúc",
+          "desc": "Bài học có thể theo lộ trình ngôn ngữ, luyện thi, kỹ năng nghề nghiệp hoặc chương trình riêng của trung tâm."
         },
         "library": {
           "title": "Thư Viện Khổng Lồ",
@@ -372,11 +372,11 @@
       "goals": "Mục tiêu bài học",
       "requirements": "Yêu cầu đạt được",
       "ungrouped": "Bài học chưa xếp unit",
-      "sampleDesc": "Trong bài học này, chúng ta sẽ bắt đầu những bước đầu tiên trên hành trình chinh phục tiếng Trung. Bạn sẽ được học cách phát âm các vận mẫu, thanh mẫu cơ bản và cách chào hỏi người khác một cách lịch sự nhất.",
+      "sampleDesc": "Trong bài học này, bạn sẽ nắm nền tảng của kỹ năng mục tiêu, luyện tập các khái niệm chính và áp dụng vào tình huống thực tế.",
       "goalItems": [
-        "Nắm vững bảng chữ cái Pinyin cơ bản",
-        "Biết cách chào hỏi xã giao",
-        "Tự giới thiệu tên của mình"
+        "Hiểu các khái niệm cốt lõi",
+        "Luyện tập qua ví dụ có hướng dẫn",
+        "Áp dụng kỹ năng vào một nhiệm vụ thực tế"
       ],
       "reqItems": [
         "Hoàn thành video bài giảng",
@@ -464,7 +464,7 @@
     },
     "auth": {
       "loginTitle": "Chào mừng trở lại!",
-      "loginDesc": "Tiếp tục chinh phục tiếng Trung cùng chúng tôi.",
+      "loginDesc": "Tiếp tục hành trình học tập cùng chúng tôi.",
       "registerTitle": "Bắt đầu hành trình",
       "registerDesc": "Học tập cùng cộng đồng 10.000+ học viên sôi động.",
       "email": "Email",
@@ -573,7 +573,7 @@
     },
     "courses": {
       "title": "Tất cả khóa học",
-      "subtitle": "Bắt đầu hành trình chinh phục tiếng Trung của bạn ngay hôm nay.",
+      "subtitle": "Bắt đầu hành trình học tập của bạn ngay hôm nay.",
       "searchPlaceholder": "Tìm khóa học",
       "availableCourses": "Khóa khả dụng",
       "availableCoursesValue": "{count, plural, =0 {Chưa có khóa học} one {# khóa học} other {# khóa học}}",

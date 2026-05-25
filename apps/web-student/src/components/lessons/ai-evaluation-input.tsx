@@ -71,7 +71,7 @@ export function AIEvaluationInput({
     }
 
     const recognition = new Recognition();
-    recognition.lang = 'zh-CN';
+    recognition.lang = navigator.language || 'en-US';
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
     recognition.onresult = (event) => {

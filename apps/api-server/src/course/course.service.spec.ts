@@ -14,7 +14,7 @@ describe('CourseService', () => {
       course: {
         findFirst: vi.fn().mockResolvedValue({
           id: 'course-1',
-          title: 'HSK 1 Basics',
+          title: 'IELTS Foundations',
         }),
       },
       courseUnit: {
@@ -88,7 +88,7 @@ describe('CourseService', () => {
       course: {
         findFirst: vi.fn().mockResolvedValue({
           id: 'course-1',
-          title: 'HSK 1 Basics',
+          title: 'IELTS Foundations',
           lessons: [{ id: 'lesson-1' }, { id: 'lesson-2' }],
           enrollments: [
             {
@@ -166,7 +166,7 @@ describe('CourseService', () => {
 
     expect(result.course).toEqual({
       id: 'course-1',
-      title: 'HSK 1 Basics',
+      title: 'IELTS Foundations',
     });
     expect(result.totals).toEqual(
       expect.objectContaining({
@@ -212,7 +212,7 @@ describe('CourseService', () => {
       course: {
         findFirst: vi.fn().mockResolvedValue({
           id: 'course-1',
-          title: 'HSK 1 Basics',
+          title: 'IELTS Foundations',
         }),
       },
       user: {
@@ -298,7 +298,7 @@ describe('CourseService', () => {
       course: {
         findFirst: vi.fn().mockResolvedValue({
           id: 'course-1',
-          title: 'HSK 1 Basics',
+          title: 'IELTS Foundations',
         }),
       },
       courseEnrollment: {

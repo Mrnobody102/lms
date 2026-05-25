@@ -29,7 +29,7 @@ describe('McpCoreSkillsService', () => {
   it('should reject tenant-scoped data access when MCP_TENANT_ID is missing', async () => {
     configService.get.mockReturnValue(undefined);
 
-    await expect(service.searchCourses({ keyword: 'HSK' })).resolves.toEqual({
+    await expect(service.searchCourses({ keyword: 'IELTS' })).resolves.toEqual({
       error: 'MCP_TENANT_ID is required for tenant-scoped data tools.',
     });
     expect(prismaService.course.findMany).not.toHaveBeenCalled();
@@ -40,16 +40,18 @@ describe('McpCoreSkillsService', () => {
     prismaService.tenant.findFirst.mockResolvedValue({
       id: '550e8400-e29b-41d4-a716-446655440000',
     });
-    prismaService.course.findMany.mockResolvedValue([{ id: 'course-1', title: 'HSK 1' }]);
+    prismaService.course.findMany.mockResolvedValue([
+      { id: 'course-1', title: 'IELTS Foundations' },
+    ]);
 
-    await expect(service.searchCourses({ keyword: 'HSK' })).resolves.toEqual([
-      { id: 'course-1', title: 'HSK 1' },
+    await expect(service.searchCourses({ keyword: 'IELTS' })).resolves.toEqual([
+      { id: 'course-1', title: 'IELTS Foundations' },
     ]);
     expect(prismaService.course.findMany).toHaveBeenCalledWith({
       where: {
         tenantId: '550e8400-e29b-41d4-a716-446655440000',
         title: {
-          contains: 'HSK',
+          contains: 'IELTS',
           mode: 'insensitive',
         },
         deletedAt: null,

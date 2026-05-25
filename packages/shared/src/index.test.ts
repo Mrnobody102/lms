@@ -12,14 +12,15 @@ describe('Shared Package', () => {
   });
 
   it('parses legacy and multi-card micro-card content', () => {
-    expect(parseMicroCardContent({ front: '你', back: 'you' }).content.cards).toEqual([
-      { front: '你', back: 'you' },
-    ]);
+    expect(
+      parseMicroCardContent({ front: 'collaborate', back: 'work together' }).content.cards,
+    ).toEqual([{ front: 'collaborate', back: 'work together' }]);
 
     expect(
-      parseMicroCardContent(JSON.stringify({ cards: [{ front: '好', back: 'good' }] })).content
-        .cards,
-    ).toEqual([{ front: '好', back: 'good' }]);
+      parseMicroCardContent(
+        JSON.stringify({ cards: [{ front: 'analyze', back: 'examine carefully' }] }),
+      ).content.cards,
+    ).toEqual([{ front: 'analyze', back: 'examine carefully' }]);
   });
 
   it('reports invalid micro-card entries', () => {
@@ -32,9 +33,13 @@ describe('Shared Package', () => {
   it('serializes only complete micro-cards', () => {
     expect(
       serializeMicroCardContent([
-        { front: ' 你 ', back: ' you ', phonetics: ' ni3 ' },
+        { front: ' collaborate ', back: ' work together ', phonetics: ' /kəˈlæbəreɪt/ ' },
         { front: '', back: 'missing front' },
       ]),
-    ).toBe(JSON.stringify({ cards: [{ front: '你', back: 'you', phonetics: 'ni3' }] }));
+    ).toBe(
+      JSON.stringify({
+        cards: [{ front: 'collaborate', back: 'work together', phonetics: '/kəˈlæbəreɪt/' }],
+      }),
+    );
   });
 });

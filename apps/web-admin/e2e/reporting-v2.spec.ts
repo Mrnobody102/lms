@@ -9,7 +9,7 @@ const adminUser = {
 };
 
 const coursesResponse = {
-  data: [{ id: 'course-1', title: 'HSK 1 Basics' }],
+  data: [{ id: 'course-1', title: 'IELTS Foundations' }],
   meta: { page: 1, limit: 100, total: 1, totalPages: 1 },
 };
 
@@ -66,7 +66,7 @@ async function installReportingV2Mocks(page: Page) {
             fullName: 'Linh Tran',
             email: 'linh@example.com',
             courseId: 'course-1',
-            courseTitle: 'HSK 1 Basics',
+            courseTitle: 'IELTS Foundations',
             cohortIds: ['cohort-1'],
             severity: 'HIGH',
             score: 75,

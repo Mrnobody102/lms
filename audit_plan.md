@@ -7,7 +7,7 @@ Audit the LMS codebase for real bugs, business-logic gaps, security regressions,
 - Standalone practice exercises, exams, AI generation jobs, and roleplay scenarios can exist without a course.
 - Course learning paths can embed practice/exam nodes through `Lesson`.
 - Legacy `Lesson.quiz` JSON is removed from the main learning flow.
-- Micro-card/SRS pronunciation data uses `phonetics` instead of hardcoded `pinyin`, while preserving legacy compatibility.
+- Micro-card/SRS pronunciation data uses `phonetics` instead of a language-specific pronunciation field, while preserving legacy compatibility.
 
 ## Audit Principles
 
@@ -28,7 +28,7 @@ Review:
 - Indexes and query patterns for standalone resources.
 - Marketplace resource types for course, exam, practice set, and media asset.
 - Seed data compatibility after removing `Lesson.quiz`.
-- Any remaining hardcoded legacy fields such as `quiz` JSON or write-path `pinyin`.
+- Any remaining hardcoded legacy fields such as `quiz` JSON or a language-specific pronunciation write path.
 
 Output:
 
@@ -44,7 +44,7 @@ Review modules:
 - `practice`: standalone/course-bound question and set creation, student visibility, attempt submission, answer scoring, SRS, skill mastery, adaptive learning.
 - `exam`: standalone/course-bound exam creation, start/submit attempts, result visibility, SRS, skill mastery.
 - `roleplay`: standalone/course-bound scenario creation and student access.
-- `srs`: custom cards, legacy `pinyin` read compatibility, `phonetics` write path.
+- `srs`: custom cards, legacy pronunciation read compatibility, `phonetics` write path.
 - `discussion`: practice discussions for standalone resources.
 - `reports` and `risk flags`: course reports must not miscount standalone attempts.
 - `progress` and `certificates`: course completion must remain course-bound and not accidentally include standalone resources.
@@ -101,7 +101,7 @@ Review flows:
 - Standalone exam listing, start, submit, result, and attempt review.
 - SRS review queue for custom, practice, and exam cards.
 - Custom card create/edit using `phonetics`.
-- Legacy micro-card content with `pinyin` still rendering as phonetics.
+- Legacy micro-card pronunciation content still rendering as phonetics.
 - Navigation between course-bound and standalone resources.
 
 Output:
@@ -162,7 +162,7 @@ Add or recommend tests:
 - Student cannot access unpublished standalone practice/exam.
 - Student can list published standalone practice/exam without `courseId`.
 - Course lesson can embed practice/exam node.
-- Legacy micro-card `pinyin` parses into `phonetics`.
+- Legacy micro-card pronunciation data parses into `phonetics`.
 - SRS custom cards write `phonetics`.
 - Reports exclude standalone attempts from course metrics.
 

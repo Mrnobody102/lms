@@ -44,7 +44,7 @@
 - **Tính năng đặc thù**:
   - Push Notifications (thông báo lịch học, bài tập).
   - Offline Mode (tải bài học về học offline).
-  - Audio/Microphone integrate (luyện phát âm tiếng Trung).
+  - Audio/Microphone integrate (luyện phát âm hoặc phản hồi nói).
 
 ## DevOps & Infrastructure (DevOps & Hạ tầng) - Dự kiến
 

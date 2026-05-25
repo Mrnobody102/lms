@@ -200,11 +200,11 @@ web-student Tasks:
 
 Use these categories to group tasks when planning:
 
-| Category           | Examples                                   |
-| ------------------ | ------------------------------------------ |
-| Content Management | Courses, Lessons, HSK Roadmaps, Vocabulary |
-| User Management    | Students, Admins, Roles, Permissions       |
-| Engagement         | Quizzes, Flashcards, Progress Tracking     |
-| Community          | Blog, Rankings, Discussions                |
-| Commerce           | Subscriptions, Payments, Premium Content   |
-| Infrastructure     | Auth, Notifications, File Uploads          |
+| Category           | Examples                                 |
+| ------------------ | ---------------------------------------- |
+| Content Management | Courses, Lessons, Roadmaps, Vocabulary   |
+| User Management    | Students, Admins, Roles, Permissions     |
+| Engagement         | Quizzes, Flashcards, Progress Tracking   |
+| Community          | Blog, Rankings, Discussions              |
+| Commerce           | Subscriptions, Payments, Premium Content |
+| Infrastructure     | Auth, Notifications, File Uploads        |

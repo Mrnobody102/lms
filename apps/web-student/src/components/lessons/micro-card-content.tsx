@@ -194,7 +194,7 @@ function MicroCard({
     }
 
     const utterance = new SpeechSynthesisUtterance(card.front);
-    utterance.lang = 'zh-CN';
+    utterance.lang = navigator.language || 'en-US';
     window.speechSynthesis.speak(utterance);
   };
 

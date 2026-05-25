@@ -70,7 +70,7 @@ export class PronunciationAssessmentService {
         mediaAssetId: assessment.mediaAsset.id,
         mediaUrl: assessment.mediaAsset.url,
         expectedText: assessment.expectedText ?? undefined,
-        targetLanguage: assessment.session.scenarioRef?.targetLanguage ?? 'zh-CN',
+        targetLanguage: assessment.session.scenarioRef?.targetLanguage ?? 'en-US',
       });
 
       return this.prisma.pronunciationAssessment.update({

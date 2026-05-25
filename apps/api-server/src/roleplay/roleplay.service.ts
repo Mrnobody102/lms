@@ -185,7 +185,7 @@ export class RoleplayService {
       mediaAssetId: asset.id,
       mediaUrl: asset.url,
       expectedText: dto.expectedText,
-      targetLanguage: session.scenarioRef?.targetLanguage ?? 'zh-CN',
+      targetLanguage: session.scenarioRef?.targetLanguage ?? 'en-US',
     });
 
     const coreMessages = this.toModelMessages([...session.messages, userMessage]);

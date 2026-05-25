@@ -4,7 +4,7 @@ Cập nhật lần cuối: 2026-05-24 (AI practice review, roleplay scenarios/au
 
 ## Định hướng sản phẩm
 
-LMS Platform đi theo mô hình **Hybrid AI-Enhanced Learning**: giữ nền tảng học truyền thống (course/lesson/practice/exam) nhưng nhúng các cơ chế đã được nghiên cứu khoa học giáo dục chứng minh hiệu quả, kết hợp AI để cá nhân hóa. Trục sản phẩm gần với HSK/IELTS/Duolingo hiện đại.
+LMS Platform đi theo mô hình **Hybrid AI-Enhanced Learning**: giữ nền tảng học truyền thống (course/lesson/practice/exam) nhưng nhúng các cơ chế đã được nghiên cứu khoa học giáo dục chứng minh hiệu quả, kết hợp AI để cá nhân hóa. Trục sản phẩm gần với IELTS/TOEIC/Duolingo hiện đại.
 
 Trục sản phẩm:
 
@@ -151,7 +151,7 @@ Data cần bổ sung:
 
 ### P3. Content Hierarchy
 
-Mục tiêu: tránh để mọi thứ chỉ là `Course -> Lesson` khi sản phẩm có HSK/book/unit.
+Mục tiêu: tránh để mọi thứ chỉ là `Course -> Lesson` khi sản phẩm có program/book/unit.
 
 Trạng thái: đã hoàn thành Batch A.
 
@@ -167,8 +167,8 @@ Trạng thái: đã hoàn thành Batch A.
 
 Mô hình hiện tại:
 
-- `Program`: HSK, IELTS, Coding... (đã có)
-- `Level`: HSK 1, HSK 2... (đã có)
+- `Program`: IELTS, TOEIC, Coding... (đã có)
+- `Level`: Beginner, Intermediate, IELTS 5.5... (đã có)
 - `Course` hoặc `Book`: khóa/chương trình cụ thể.
 - `CourseUnit`: unit/chapter trong course.
 - `Lesson`.

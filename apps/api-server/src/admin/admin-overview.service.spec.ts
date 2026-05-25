@@ -32,7 +32,7 @@ describe('AdminOverviewService', () => {
             fullName: 'Student One',
             isActive: true,
             createdAt: new Date('2026-04-26T09:00:00.000Z'),
-            enrollments: [{ course: { title: 'HSK 1' } }],
+            enrollments: [{ course: { title: 'IELTS Foundations' } }],
           },
         ]),
       },
@@ -113,7 +113,7 @@ describe('AdminOverviewService', () => {
     expect(result.recentRegistrations).toEqual([
       expect.objectContaining({
         id: 'user-1',
-        latestCourseTitle: 'HSK 1',
+        latestCourseTitle: 'IELTS Foundations',
       }),
     ]);
     expect(result.reporting.practiceAccuracy).toEqual({

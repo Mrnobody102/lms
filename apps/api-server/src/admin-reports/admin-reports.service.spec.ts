@@ -56,7 +56,7 @@ describe('AdminReportsService', () => {
       prisma.program.findMany = vi.fn().mockResolvedValue([
         {
           id: 'prog-1',
-          title: 'HSK',
+          title: 'IELTS',
           _count: { levels: 2 },
           levels: [
             {
@@ -99,7 +99,7 @@ describe('AdminReportsService', () => {
       expect(result.programs).toHaveLength(1);
       expect(result.programs[0]).toMatchObject({
         id: 'prog-1',
-        title: 'HSK',
+        title: 'IELTS',
         levelCount: 2,
         courseCount: 2,
         enrollmentCount: 5,
@@ -129,7 +129,7 @@ describe('AdminReportsService', () => {
       prisma.program.findMany = vi.fn().mockResolvedValue([
         {
           id: 'prog-1',
-          title: 'HSK',
+          title: 'IELTS',
           _count: { levels: 1 },
           levels: [{ id: 'lvl-1', courses: [{ id: 'course-1' }] }],
         },
@@ -179,9 +179,9 @@ describe('AdminReportsService', () => {
       const prisma = buildPrismaMock();
       prisma.level.findFirst = vi.fn().mockResolvedValue({
         id: 'lvl-1',
-        title: 'HSK 1',
+        title: 'IELTS Foundations',
         order: 1,
-        program: { id: 'prog-1', title: 'HSK' },
+        program: { id: 'prog-1', title: 'IELTS' },
         courses: [
           { id: 'course-1', title: 'Course A' },
           { id: 'course-2', title: 'Course B' },

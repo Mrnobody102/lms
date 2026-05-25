@@ -25,12 +25,12 @@ const mockScenario = {
   unitId: 'unit-1',
   title: 'Hotel check-in',
   description: 'Practice checking into a hotel.',
-  targetLanguage: 'zh-CN',
-  level: 'HSK 1',
+  targetLanguage: 'en-US',
+  level: 'IELTS Foundations',
   skillTags: ['speaking'],
   mode: 'MIXED',
   openingMessage: 'Welcome to the hotel.',
-  course: { id: 'course-1', title: 'HSK 1 Basics' },
+  course: { id: 'course-1', title: 'IELTS Foundations' },
   unit: { id: 'unit-1', title: 'Travel' },
 };
 

@@ -10,7 +10,7 @@ const adminUser = {
 
 const course = {
   id: 'course-1',
-  title: 'HSK 1 Basics',
+  title: 'IELTS Foundations',
   description: 'Intro course',
   levelId: null,
   lessons: [],
@@ -72,7 +72,7 @@ async function installPracticeAiReviewMocks(page: Page) {
     errorMessage: null,
     createdAt: '2026-05-24T00:00:00.000Z',
     completedAt: '2026-05-24T00:00:01.000Z',
-    course: { id: 'course-1', title: 'HSK 1 Basics' },
+    course: { id: 'course-1', title: 'IELTS Foundations' },
     unit: { id: 'unit-1', title: 'Greetings' },
     drafts: [draft()],
     _count: { drafts: 1 },

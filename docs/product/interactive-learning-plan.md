@@ -1,6 +1,6 @@
 # Plan: Mô Hình Học Tập Lai Hiện Đại (Hybrid AI-Enhanced Learning 2026)
 
-> **Phân Tích Tầm Nhìn Chiến Lược:** Hệ thống đang dịch chuyển theo mô hình **Lai (Hybrid)**: Giữ vững các giá trị đào tạo truyền thống (Video bài giảng, Flashcards, Quizzes) nhưng được "siêu cấp hóa" bằng AI để tối ưu hiệu quả. Đây là hướng đi thực tế và bền vững nhất cho các trung tâm ngoại ngữ (đặc biệt là Tiếng Trung) - nơi cần sự kết hợp giữa kiến thức nền tảng vững chắc và khả năng thực hành giao tiếp linh hoạt.
+> **Phân Tích Tầm Nhìn Chiến Lược:** Hệ thống đang dịch chuyển theo mô hình **Lai (Hybrid)**: Giữ vững các giá trị đào tạo truyền thống (Video bài giảng, Flashcards, Quizzes) nhưng được "siêu cấp hóa" bằng AI để tối ưu hiệu quả. Đây là hướng đi thực tế và bền vững nhất cho các trung tâm ngoại ngữ (đặc biệt là Ngôn ngữ mục tiêu) - nơi cần sự kết hợp giữa kiến thức nền tảng vững chắc và khả năng thực hành giao tiếp linh hoạt.
 >
 > Hệ thống của chúng ta không thay thế giáo viên hay giáo trình truyền thống, mà đóng vai trò là một **Hệ sinh thái thông minh** hỗ trợ học viên mọi lúc, mọi nơi.
 
@@ -19,7 +19,7 @@
 
 ### 3. Thực Hành Mô Phỏng Với AI (AI Roleplay & Assignments)
 
-- **Hội thoại đóng vai:** Sau khi học xong ngữ pháp/từ vựng truyền thống, học viên sẽ được "Quăng vào thực tế ảo" với AI. Ví dụ: Đóng vai mặc cả đi chợ, phỏng vấn xin việc bằng tiếng Trung.
+- **Hội thoại đóng vai:** Sau khi học xong ngữ pháp/từ vựng truyền thống, học viên sẽ được "Quăng vào thực tế ảo" với AI. Ví dụ: Đóng vai mặc cả đi chợ, phỏng vấn xin việc bằng ngôn ngữ mục tiêu.
 - **Chấm điểm đa phương thức:** Học viên nộp bài nói (Audio) hoặc bài viết, AI sẽ bóc tách từng lỗi phát âm, dùng từ và đưa ra lời phê chi tiết (Granular Feedback).
 
 ---

@@ -216,15 +216,15 @@ export function LessonPlayer({
       "home": "Home"
     },
     "hero": {
-      "badge": "Learn Chinese with HSK Standards",
+      "badge": "Learn with structured pathways",
       "title": "Master",
-      "titleAlt": "Chinese",
+      "titleAlt": "New Skills",
       "desc": "Comprehensive online learning platform..."
     },
     "features": {
       "whyUs": "Why Choose Us?",
       "items": {
-        "hsk": { "title": "Standard HSK Roadmap", "desc": "..." },
+        "roadmap": { "title": "Structured Learning Roadmap", "desc": "..." },
         "library": { "title": "Massive Library", "desc": "..." }
       }
     }

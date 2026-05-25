@@ -18,7 +18,7 @@ Xây dựng một "Shopify cho Giáo Dục". Bạn là người sở hữu nền
 
 - **Multi-tenant**: Mỗi trung tâm có dữ liệu, giao diện, và học viên riêng biệt.
 - **Scalable**: Một source code duy nhất phục vụ hàng ngàn trung tâm.
-- **Modular**: Các tính năng chuyên sâu (như Luyện viết chữ Hán, Code Editor) được thiết kế dạng module, có thể bật/tắt tùy nhu cầu của từng trung tâm.
+- **Modular**: Các tính năng chuyên sâu (như Luyện viết chữ viết, Code Editor) được thiết kế dạng module, có thể bật/tắt tùy nhu cầu của từng trung tâm.
 
 ## Các Ứng Dụng (Apps)
 

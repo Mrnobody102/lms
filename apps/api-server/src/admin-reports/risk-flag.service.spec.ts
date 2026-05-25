@@ -25,7 +25,7 @@ function buildPrismaMock() {
             email: 'alice@example.com',
             cohortMemberships: [{ cohortId: 'cohort-1' }],
           },
-          course: { title: 'HSK 1' },
+          course: { title: 'IELTS Foundations' },
         },
       ]),
     },

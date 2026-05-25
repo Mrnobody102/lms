@@ -13,7 +13,7 @@ import type { RoleplayMode, RoleplayScenario } from '@/lib/roleplay-api';
 import { roleplayApi } from '@/lib/roleplay-api';
 
 const MODES: RoleplayMode[] = ['TEXT', 'AUDIO', 'MIXED'];
-const DEFAULT_TARGET_LANGUAGE = 'zh-CN';
+const DEFAULT_TARGET_LANGUAGE = 'en-US';
 
 interface ScenarioDraft {
   courseId: string;

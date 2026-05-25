@@ -55,7 +55,7 @@ describe('AiEvaluationService', () => {
         type: PracticeQuestionType.AI_EVALUATED_TEXT,
         answer: 'Hello',
         correctAnswer: 'Hello',
-        courseTitle: 'HSK 1',
+        courseTitle: 'IELTS Foundations',
       }),
     ).resolves.toEqual({
       status: 'AUTO_REVIEWED',

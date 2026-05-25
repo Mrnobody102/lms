@@ -11,7 +11,7 @@ describe('PronunciationAssessmentService', () => {
           tenantId: 'tenant-1',
           expectedText: 'ni hao',
           mediaAsset: { id: 'asset-1', url: 'https://cdn.example.com/audio.wav' },
-          session: { scenarioRef: { targetLanguage: 'zh-CN' } },
+          session: { scenarioRef: { targetLanguage: 'en-US' } },
         }),
         update: vi.fn().mockResolvedValue({ id: 'assessment-1' }),
       },

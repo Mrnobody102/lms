@@ -33,12 +33,12 @@ export class CreateRoleplayScenarioDto {
   @IsUUID()
   unitId?: string;
 
-  @ApiPropertyOptional({ example: 'zh-CN', default: 'zh-CN' })
+  @ApiPropertyOptional({ example: 'en-US', default: 'en-US' })
   @IsOptional()
   @IsString()
   targetLanguage?: string;
 
-  @ApiPropertyOptional({ example: 'HSK 1' })
+  @ApiPropertyOptional({ example: 'Beginner' })
   @IsOptional()
   @IsString()
   level?: string;
@@ -59,7 +59,7 @@ export class CreateRoleplayScenarioDto {
   @MaxLength(4000)
   systemPrompt: string;
 
-  @ApiPropertyOptional({ example: '你好，想喝点什么？' })
+  @ApiPropertyOptional({ example: 'Hello, what would you like to order?' })
   @IsOptional()
   @IsString()
   @MaxLength(1000)

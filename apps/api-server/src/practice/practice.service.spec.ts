@@ -439,7 +439,7 @@ describe('PracticeService', () => {
             exerciseSet: {
               id: 'set-1',
               title: 'Vocabulary',
-              course: { id: 'course-1', title: 'HSK 1' },
+              course: { id: 'course-1', title: 'IELTS Foundations' },
               unit: { id: 'unit-1', title: 'Unit 1' },
             },
             answers: [
@@ -537,7 +537,7 @@ describe('PracticeService', () => {
             id: 'set-1',
             title: 'Vocabulary',
             description: 'Basics',
-            course: { id: 'course-1', title: 'HSK 1' },
+            course: { id: 'course-1', title: 'IELTS Foundations' },
             unit: { id: 'unit-1', title: 'Unit 1' },
           },
         }),

@@ -127,7 +127,7 @@ Hiện hệ thống đã chuyển từ `Course -> Lesson` sang `Course -> Course
 - Thêm `CourseUnit` làm unit/chapter thuộc `Course`.
 - `Lesson` giữ `courseId` và có `unitId` nullable để migrate dữ liệu cũ an toàn.
 - Course detail API trả cả `units` grouped và `lessons` phẳng để giữ backward compatibility.
-- Sau đó mới cân nhắc `Program/Level` nếu cần HSK 1/2/3 rõ ràng.
+- Sau đó mới cân nhắc `Program/Level` nếu cần IELTS Foundations/2/3 rõ ràng.
 
 ### 3. Practice và exam
 

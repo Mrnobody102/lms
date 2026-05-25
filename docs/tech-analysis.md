@@ -1,11 +1,11 @@
 # Phân Tích Chuyên Sâu: Sức Mạnh Công Nghệ & Kiến Trúc
 
-Tài liệu này phân tích lý do tại sao bộ Tech Stack và Kiến trúc hiện tại là lựa chọn tối ưu cho hệ thống LMS tiếng Trung quy mô lớn, hỗ trợ đa trung tâm (Multi-tenant).
+Tài liệu này phân tích lý do tại sao bộ Tech Stack và Kiến trúc hiện tại là lựa chọn tối ưu cho hệ thống LMS đa năng quy mô lớn, hỗ trợ đa trung tâm (Multi-tenant).
 
 ## Mục Lục
 
 - [1. Khả Năng Mở Rộng & Quản Lý Đa Trung Tâm (Multi-tenancy)](#1-khả-năng-mở-rộng--quản-lý-đa-trung-tâm-multi-tenancy)
-- [2. Tối Ưu Cho Web Học Tiếng Trung (Chinese Learning)](#2-tối-ưu-cho-web-học-tiếng-trung-chinese-learning)
+- [2. Tối Ưu Cho Nền Tảng Học Tập Tương Tác](#2-tối-ưu-cho-nền-tảng-học-tập-tương-tác)
 - [3. Hiệu Quả Kinh Doanh & Bán Khóa Học](#3-hiệu-quả-kinh-doanh--bán-khóa-học)
 - [4. Vận Hành & Bảo Trì](#4-vận-hành--bảo-trì)
 - [5. Chiến Lược Scale Lên Triệu Users](#5-chiến-lược-scale-lên-triệu-users)
@@ -32,21 +32,21 @@ Tài liệu này phân tích lý do tại sao bộ Tech Stack và Kiến trúc h
 - **Điểm mạnh**: Shared database với row-level tenant scoping.
 - **Lợi ích**: Chi phí vận hành thấp hơn mô hình database-per-tenant, đồng thời vẫn có thể backup và migrate dữ liệu cho toàn bộ hệ thống một cách nhất quán.
 
-## 2. Tối Ưu Cho Web Học Tiếng Trung (Chinese Learning)
+## 2. Tối Ưu Cho Nền Tảng Học Tập Tương Tác
 
-Học tiếng Trung đòi hỏi các xử lý đặc thù về âm thanh, hình ảnh và ký tự. Stack hiện tại xử lý rất tốt:
+Các chương trình ngôn ngữ, luyện thi và kỹ năng đòi hỏi xử lý tốt âm thanh, nội dung tương tác, câu hỏi đa dạng và dữ liệu đa ngôn ngữ. Stack hiện tại xử lý tốt các nhu cầu này:
 
 ### React & Next.js (Frontend)
 
 - **Trải nghiệm người dùng (UX)** cực mượt mà (như App Mobile) nhờ Single Page Application (SPA).
-- **Hỗ trợ Unicode/Font**: Dễ dàng tích hợp các Webfont tiếng Trung (như Noto Sans SC) để hiển thị Pinyin và Hanzi đẹp mắt trên mọi thiết bị.
+- **Hỗ trợ Unicode/Font**: Dễ dàng tích hợp webfont phù hợp để hiển thị nhiều ngôn ngữ, ký hiệu phiên âm và nội dung học tập trên mọi thiết bị.
 - **Tương tác cao**: Các thư viện như `framer-motion` (có thể thêm vào) giúp tạo animation cho Stroke Order (thứ tự nét viết) mượt mà.
 
 ### UI Components (Shared Package)
 
 - **Module hóa**: Ta có thể xây dựng các component chuyên biệt trong `packages/ui`:
-  - `<PinyinDisplay />`: Tự động format thanh điệu.
-  - `<HanziWriter />`: Component vẽ chữ Hán.
+  - `<PhoneticsDisplay />`: Hiển thị phiên âm hoặc ký hiệu phát âm.
+  - `<WritingPractice />`: Component luyện viết hoặc thao tác tương tác theo từng chương trình.
   - `<AudioPlayer />`: Player chuyên dụng cho việc nghe chép chính tả (tua chậm, lặp đoạn).
 - **Tái sử dụng**: Các component này được dùng chung cho cả Web Student (để học) và Web Admin (để soạn bài), đảm bảo tính nhất quán.
 

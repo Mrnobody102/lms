@@ -91,14 +91,14 @@ describe('LessonService', () => {
 
     await service.update('lesson-1', 'tenant-1', {
       type: LessonType.micro_card,
-      content: JSON.stringify({ front: '你', back: 'you' }),
+      content: JSON.stringify({ front: 'collaborate', back: 'work together' }),
     });
 
     expect(prisma.lesson.update).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           type: LessonType.micro_card,
-          content: JSON.stringify({ front: '你', back: 'you' }),
+          content: JSON.stringify({ front: 'collaborate', back: 'work together' }),
         }),
       }),
     );
@@ -152,7 +152,9 @@ describe('LessonService', () => {
       id: 'lesson-1',
       courseId: 'course-1',
       type: LessonType.micro_card,
-      content: JSON.stringify({ cards: [{ id: 'card-1', front: '你', back: 'you' }] }),
+      content: JSON.stringify({
+        cards: [{ id: 'card-1', front: 'collaborate', back: 'work together' }],
+      }),
     });
 
     await service.trackMicroCardEvent(
@@ -201,7 +203,15 @@ describe('LessonService', () => {
       courseId: 'course-1',
       type: LessonType.micro_card,
       content: JSON.stringify({
-        cards: [{ id: 'card-1', front: '好', pinyin: 'hao3', back: 'good', example: '你好' }],
+        cards: [
+          {
+            id: 'card-1',
+            front: 'collaborate',
+            phonetics: '/kəˈlæbəreɪt/',
+            back: 'work together',
+            example: 'The team will collaborate on the project.',
+          },
+        ],
       }),
     });
 
@@ -218,10 +228,10 @@ describe('LessonService', () => {
       'lesson-1:card-1',
       {
         customContent: {
-          back: 'good',
-          example: '你好',
-          front: '好',
-          phonetics: 'hao3',
+          back: 'work together',
+          example: 'The team will collaborate on the project.',
+          front: 'collaborate',
+          phonetics: '/kəˈlæbəreɪt/',
         },
         skillCodes: [],
       },

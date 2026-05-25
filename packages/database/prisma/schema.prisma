@@ -1260,7 +1260,7 @@ model RoleplayScenario {
   unit           CourseUnit?       @relation(fields: [unitId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
   title          String
   description    String?
-  targetLanguage String            @default("zh-CN")
+  targetLanguage String            @default("en-US")
   level          String?
   skillTags      String[]
   mode           RoleplayMode      @default(TEXT)

@@ -16,10 +16,10 @@ const lesson = {
     cards: [
       {
         id: 'card-1',
-        front: '你好',
-        pinyin: 'ni3 hao3',
-        back: 'hello',
-        example: '你好，我叫 Linh。',
+        front: 'collaborate',
+        phonetics: '/kəˈlæbəreɪt/',
+        back: 'work together',
+        example: 'The team will collaborate on the project.',
       },
     ],
   }),
@@ -31,7 +31,7 @@ const lesson = {
 
 const course = {
   id: 'course-1',
-  title: 'HSK 1 Basics',
+  title: 'IELTS Foundations',
   lessons: [lesson],
   units: [{ id: 'unit-1', title: 'Greetings', order: 1, courseId: 'course-1', lessons: [lesson] }],
   _count: { lessons: 1 },
@@ -95,7 +95,7 @@ async function installMicrolearningMocks(page: Page) {
         eligible: false,
         certificate: null,
         progress: {
-          course: { id: 'course-1', title: 'HSK 1 Basics' },
+          course: { id: 'course-1', title: 'IELTS Foundations' },
           totalLessons: 1,
           completedLessons: 0,
           completionPercentage: 0,
@@ -141,10 +141,10 @@ test('student can complete a micro-card and save it to SRS', async ({ page }) =>
   await page.getByRole('button', { name: 'Login Now' }).click();
 
   await page.goto('/en/lessons/lesson-1');
-  await expect(page.getByText('你好')).toBeVisible();
+  await expect(page.getByText('collaborate')).toBeVisible();
 
-  await page.getByText('你好').click();
-  await expect(page.getByText('hello')).toBeVisible();
+  await page.getByText('collaborate').click();
+  await expect(page.getByText('work together')).toBeVisible();
 
   await page.getByLabel('Add to review').click();
   await expect.poll(() => mocks.getAddToReviewCount()).toBe(1);

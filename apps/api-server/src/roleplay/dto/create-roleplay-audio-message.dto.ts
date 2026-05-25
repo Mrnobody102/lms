@@ -6,7 +6,7 @@ export class CreateRoleplayAudioMessageDto {
   @IsUUID()
   mediaAssetId: string;
 
-  @ApiPropertyOptional({ example: '你好，我想点一杯咖啡。' })
+  @ApiPropertyOptional({ example: 'Hello, I would like to order a coffee.' })
   @IsOptional()
   @IsString()
   @MaxLength(1000)

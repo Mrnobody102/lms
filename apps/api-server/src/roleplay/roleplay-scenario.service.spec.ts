@@ -50,7 +50,7 @@ describe('RoleplayScenarioService', () => {
         isPublished: false,
         mode: RoleplayMode.TEXT,
         skillTags: [],
-        targetLanguage: 'zh-CN',
+        targetLanguage: 'en-US',
         tenantId: 'tenant-1',
       }),
     });

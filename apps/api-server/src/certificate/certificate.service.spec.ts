@@ -12,7 +12,7 @@ describe('CertificateService', () => {
     issuedAt,
     revokedAt: null,
     user: { fullName: 'Student One' },
-    course: { id: 'course-1', title: 'HSK 1' },
+    course: { id: 'course-1', title: 'IELTS Foundations' },
     tenant: { name: 'Demo Center' },
   });
 
@@ -21,7 +21,7 @@ describe('CertificateService', () => {
       course: {
         findFirst: vi.fn().mockResolvedValue({
           id: 'course-1',
-          title: 'HSK 1',
+          title: 'IELTS Foundations',
           lessons,
         }),
       },

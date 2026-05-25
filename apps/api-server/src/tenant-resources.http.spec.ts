@@ -108,8 +108,8 @@ describe('Tenant resource HTTP flow', () => {
   const courses = [
     {
       id: courseOneId,
-      title: 'HSK 1 Basics',
-      slug: 'hsk-1-basics',
+      title: 'IELTS Foundations',
+      slug: 'ielts-foundations',
       isActive: true,
       totalDuration: 30,
       tenantId: tenantOneId,
