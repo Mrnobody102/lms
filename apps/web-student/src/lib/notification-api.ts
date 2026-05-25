@@ -14,6 +14,12 @@ export interface Notification {
 export interface GetNotificationsResponse {
   notifications: Notification[];
   unreadCount: number;
+  meta: {
+    skip: number;
+    take: number;
+    total: number;
+    hasMore: boolean;
+  };
 }
 
 export type NotificationStreamEvent =
@@ -24,7 +30,28 @@ export type NotificationStreamEvent =
 export const notificationApi = {
   getNotifications: async (skip = 0, take = 20): Promise<GetNotificationsResponse> => {
     const res = await api.get('/notifications', { params: { skip, take } });
-    return res.data;
+    const raw = res.data as unknown;
+    if (isNotificationsResponse(raw)) {
+      return raw;
+    }
+
+    const fallbackNotifications =
+      isRecord(raw) && Array.isArray(raw.notifications)
+        ? (raw.notifications as Notification[])
+        : [];
+    const fallbackUnreadCount =
+      isRecord(raw) && typeof raw.unreadCount === 'number' ? raw.unreadCount : 0;
+
+    return {
+      notifications: fallbackNotifications,
+      unreadCount: fallbackUnreadCount,
+      meta: {
+        skip,
+        take,
+        total: fallbackNotifications.length,
+        hasMore: false,
+      },
+    };
   },
 
   markAsRead: async (id: string): Promise<void> => {
@@ -95,15 +122,36 @@ function parseNotificationStreamEvent(value: string): NotificationStreamEvent | 
 }
 
 function isNotification(value: unknown): value is Notification {
-  if (!value || typeof value !== 'object') {
+  if (!isRecord(value)) {
     return false;
   }
 
-  const record = value as Record<string, unknown>;
   return (
-    typeof record.id === 'string' &&
-    typeof record.title === 'string' &&
-    typeof record.type === 'string' &&
-    typeof record.createdAt === 'string'
+    typeof value.id === 'string' &&
+    typeof value.title === 'string' &&
+    typeof value.type === 'string' &&
+    typeof value.createdAt === 'string'
   );
+}
+
+function isNotificationsResponse(value: unknown): value is GetNotificationsResponse {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  const meta = value.meta;
+  return (
+    Array.isArray(value.notifications) &&
+    typeof value.unreadCount === 'number' &&
+    !!meta &&
+    typeof meta === 'object' &&
+    typeof (meta as Record<string, unknown>).skip === 'number' &&
+    typeof (meta as Record<string, unknown>).take === 'number' &&
+    typeof (meta as Record<string, unknown>).total === 'number' &&
+    typeof (meta as Record<string, unknown>).hasMore === 'boolean'
+  );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object';
 }

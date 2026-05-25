@@ -200,6 +200,7 @@ test('student can view roleplay dashboard and interact with chat', async ({ page
   await page.locator('input[type="email"]').fill('student@example.com');
   await page.locator('input[type="password"]').fill('Student@123');
   await page.getByRole('button', { name: 'Login Now' }).click();
+  await expect(page).toHaveURL(/\/en\/courses$/, { timeout: 10000 });
 
   // Navigate to Roleplay
   await page.goto('/en/roleplay');

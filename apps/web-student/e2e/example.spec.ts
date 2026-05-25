@@ -470,7 +470,7 @@ async function waitForHydratedForm(page: Page) {
   await page.locator('form[data-hydrated="true"]').waitFor();
 }
 
-test('student can register, land on courses, and logout', async ({ page }) => {
+test('student can register and return to login', async ({ page }) => {
   await installStudentApiMocks(page);
 
   await page.goto('/en/register');
@@ -480,12 +480,11 @@ test('student can register, land on courses, and logout', async ({ page }) => {
   await page.locator('input[type="password"]').fill('Student@123');
   await page.getByRole('button', { name: 'Create Learning Account' }).click();
 
-  await expect(page).toHaveURL(/\/en\/courses$/, { timeout: navigationTimeout });
-  await expect(page.getByRole('heading', { name: 'All Courses' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Logout' })).toBeVisible();
-
-  await page.getByRole('button', { name: 'Logout' }).click();
-  await expect(page.getByRole('link', { name: 'Login', exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/en\/login\?registered=1$/, { timeout: navigationTimeout });
+  await expect(
+    page.getByText('Account created successfully. Please log in to continue.'),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Login Now' })).toBeVisible();
 });
 
 test('student can login, open a lesson, and mark it completed', async ({ page }) => {

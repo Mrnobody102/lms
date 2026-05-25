@@ -31,6 +31,16 @@ export interface PracticeExerciseSetSummary {
   _count?: { questions: number; attempts: number };
 }
 
+interface PaginatedPracticeExerciseSets {
+  data: PracticeExerciseSetSummary[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 export interface PracticeExerciseSetQuestion {
   id: string;
   order: number;
@@ -131,8 +141,8 @@ export interface PracticeAttemptDetail extends PracticeAttemptSummary {
 export const practiceApi = {
   getExerciseSets(params?: { courseId?: string; unitId?: string; skill?: string }) {
     return api
-      .get('/practice/exercise-sets', { params })
-      .then((response) => response.data as PracticeExerciseSetSummary[]);
+      .get('/practice/exercise-sets', { params: { limit: 100, ...params } })
+      .then((response) => normalizeExerciseSets(response.data));
   },
 
   getExerciseSet(id: string) {
@@ -159,3 +169,33 @@ export const practiceApi = {
       .then((response) => response.data as PracticeAttemptDetail);
   },
 };
+
+function normalizeExerciseSets(value: unknown): PracticeExerciseSetSummary[] {
+  if (Array.isArray(value)) {
+    return value as PracticeExerciseSetSummary[];
+  }
+
+  if (isPaginatedPracticeExerciseSets(value)) {
+    return value.data;
+  }
+
+  return [];
+}
+
+function isPaginatedPracticeExerciseSets(value: unknown): value is PaginatedPracticeExerciseSets {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+  const meta = record.meta;
+  return (
+    Array.isArray(record.data) &&
+    !!meta &&
+    typeof meta === 'object' &&
+    typeof (meta as Record<string, unknown>).page === 'number' &&
+    typeof (meta as Record<string, unknown>).limit === 'number' &&
+    typeof (meta as Record<string, unknown>).total === 'number' &&
+    typeof (meta as Record<string, unknown>).totalPages === 'number'
+  );
+}

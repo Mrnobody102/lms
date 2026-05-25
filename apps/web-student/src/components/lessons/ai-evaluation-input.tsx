@@ -5,6 +5,8 @@ import { Mic, Square } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { AIFeedbackPanel } from './ai-feedback-panel';
 
+const DEFAULT_SPEECH_LANGUAGE = 'en-US';
+
 interface AIEvaluationInputProps {
   type: 'AI_EVALUATED_AUDIO' | 'AI_EVALUATED_TEXT';
   value: string;
@@ -71,7 +73,7 @@ export function AIEvaluationInput({
     }
 
     const recognition = new Recognition();
-    recognition.lang = navigator.language || 'en-US';
+    recognition.lang = navigator.language || DEFAULT_SPEECH_LANGUAGE;
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
     recognition.onresult = (event) => {

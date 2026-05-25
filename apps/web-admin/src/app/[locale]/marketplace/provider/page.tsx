@@ -23,7 +23,7 @@ export default function MarketplaceProviderPage() {
           <div className="max-w-6xl mx-auto">
             <AdminHeader
               title={t('marketplace.providerNav')}
-              description="Quản lý các khóa học / tài nguyên bạn đang cho thuê trên hệ thống."
+              description={t('marketplace.providerDescription')}
               showCreateCourse={false}
             />
 
@@ -49,11 +49,13 @@ export default function MarketplaceProviderPage() {
                 <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-5">
                   <Store className="w-10 h-10 text-primary" />
                 </div>
-                <h3 className="text-xl font-semibold tracking-tight mb-2">Chưa có tài nguyên</h3>
+                <h3 className="text-xl font-semibold tracking-tight mb-2">
+                  {t('marketplace.providerEmptyTitle')}
+                </h3>
                 <p className="text-sm text-muted-foreground max-w-sm mb-8">
-                  Bạn chưa đăng tải khóa học hay tài nguyên nào lên Marketplace.
+                  {t('marketplace.providerEmptyDescription')}
                 </p>
-                <Button className="rounded-xl px-6">Đăng tài nguyên mới</Button>
+                <Button className="rounded-xl px-6">{t('marketplace.publishResource')}</Button>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -77,8 +79,10 @@ export default function MarketplaceProviderPage() {
                       <div className="mt-4 pt-4 border-t flex justify-between items-center text-sm">
                         <span className="font-medium text-primary">
                           {item.pricingModel === 'FREE'
-                            ? 'Miễn phí'
-                            : `${item.price.toLocaleString()} VND`}
+                            ? t('marketplace.freePrice')
+                            : t('marketplace.priceValue', {
+                                price: item.price.toLocaleString(),
+                              })}
                         </span>
                         <span className="bg-muted px-2 py-1 rounded-md text-xs">
                           {item.resourceType}

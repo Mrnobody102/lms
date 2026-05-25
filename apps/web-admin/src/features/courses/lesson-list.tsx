@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { CourseUnit, Lesson, LessonType } from '@/lib/course-api';
 import {
@@ -734,9 +734,9 @@ function LessonRows({
   };
 
   return (
-    <div>
+    <div className="overflow-x-auto">
       <div
-        className="grid gap-2 px-4 py-2.5 bg-muted/20 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
+        className="grid min-w-[720px] gap-2 bg-muted/20 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
         style={{ gridTemplateColumns: LESSON_ROW_GRID_TEMPLATE }}
       >
         <span className="w-4" /> {/* spacer for drag handle */}
@@ -810,108 +810,207 @@ function SortableLesson({
     transition,
     zIndex: isDragging ? 1 : 0,
     position: 'relative' as const,
-    gridTemplateColumns: LESSON_ROW_GRID_TEMPLATE,
   };
 
   const typeConfig = getTypeConfig(t);
   const cfg = typeConfig[lesson.type as keyof typeof typeConfig] ?? typeConfig.text;
   const summary = getLessonSummary(lesson, t);
   const previewUrl = getPreviewUrl?.(lesson) ?? null;
+  const isMobileLayout = useIsMobileLessonRow();
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`grid gap-2 px-4 py-3 items-center border-t hover:bg-muted/30 transition-colors group ${
+      className={`border-t transition-colors hover:bg-muted/30 group ${
         isDragging ? 'shadow-lg ring-1 ring-primary/20 bg-background opacity-90' : ''
       }`}
     >
-      <div className="flex items-center justify-center">
-        {onReorder && (
-          <div
-            {...attributes}
-            {...listeners}
-            className="cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-foreground p-1"
-          >
-            <GripVertical className="h-4 w-4" />
+      {isMobileLayout ? (
+        <div className="flex items-start gap-3 px-4 py-3 md:hidden">
+          <div className="flex shrink-0 items-center gap-2 pt-1">
+            {onReorder && (
+              <div
+                {...attributes}
+                {...listeners}
+                className="cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-foreground"
+              >
+                <GripVertical className="h-4 w-4" />
+              </div>
+            )}
+            <input
+              type="checkbox"
+              checked={selectedLessonIds.includes(lesson.id)}
+              onChange={(event) => onToggleSelection(lesson.id, event.target.checked)}
+              aria-label={t('selectItem')}
+            />
           </div>
-        )}
-      </div>
-      <div className="flex justify-center">
-        <input
-          type="checkbox"
-          checked={selectedLessonIds.includes(lesson.id)}
-          onChange={(event) => onToggleSelection(lesson.id, event.target.checked)}
-          aria-label={t('selectItem')}
-        />
-      </div>
-      <span className="text-center text-sm font-semibold text-muted-foreground">
-        {String(idx + 1).padStart(2, '0')}
-      </span>
-      <div className="flex items-center gap-1.5">
-        <Badge className={`${cfg.color} border-0 font-medium text-[10px] px-1.5 py-0`}>
-          {cfg.label}
-        </Badge>
-      </div>
-      <div className="min-w-0 pr-2">
-        <p className="truncate text-sm font-medium">{lesson.title}</p>
-        {summary && <p className="truncate text-xs text-muted-foreground">{summary}</p>}
-      </div>
-      <div className="flex items-center justify-end gap-1 text-xs text-muted-foreground">
-        <Clock className="w-3 h-3" />
-        <span>{lesson.duration}m</span>
-      </div>
-      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        {previewUrl && (
-          <Button
-            asChild
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-muted-foreground hover:text-foreground"
-            title={t('lessonPreview')}
-            aria-label={t('lessonPreview')}
-          >
-            <a href={previewUrl} target="_blank" rel="noreferrer">
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
-          </Button>
-        )}
-        {onDuplicate && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-muted-foreground hover:text-foreground"
-            title={t('duplicateLesson')}
-            aria-label={t('duplicateLesson')}
-            onClick={() => onDuplicate(lesson)}
-          >
-            <Copy className="w-3.5 h-3.5" />
-          </Button>
-        )}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 text-muted-foreground hover:text-foreground"
-          title={t('editLesson')}
-          aria-label={t('editLesson')}
-          onClick={() => onEdit(lesson)}
+          <div className="min-w-0 flex-1">
+            <div className="mb-1.5 flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="break-words text-sm font-medium">{lesson.title}</p>
+                {summary && (
+                  <p className="mt-1 break-words text-xs text-muted-foreground">{summary}</p>
+                )}
+              </div>
+              <div className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+                <Clock className="h-3 w-3" />
+                <span>{lesson.duration}m</span>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-semibold text-muted-foreground">
+                  {String(idx + 1).padStart(2, '0')}
+                </span>
+                <Badge className={`${cfg.color} border-0 px-1.5 py-0 text-[10px] font-medium`}>
+                  {cfg.label}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-1">
+                {previewUrl && (
+                  <Button
+                    asChild
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                    title={t('lessonPreview')}
+                    aria-label={t('lessonPreview')}
+                  >
+                    <a href={previewUrl} target="_blank" rel="noreferrer">
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  </Button>
+                )}
+                {onDuplicate && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                    title={t('duplicateLesson')}
+                    aria-label={t('duplicateLesson')}
+                    onClick={() => onDuplicate(lesson)}
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                  title={t('editLesson')}
+                  aria-label={t('editLesson')}
+                  onClick={() => onEdit(lesson)}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-destructive/70 hover:text-destructive"
+                  title={t('deleteCourse')}
+                  aria-label={t('deleteCourse')}
+                  onClick={() => setConfirmDelete(lesson.id)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div
+          className="hidden min-w-[720px] items-center gap-2 px-4 py-3 md:grid"
+          style={{ gridTemplateColumns: LESSON_ROW_GRID_TEMPLATE }}
         >
-          <Pencil className="w-3.5 h-3.5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 text-destructive/70 hover:text-destructive"
-          title={t('deleteCourse')}
-          aria-label={t('deleteCourse')}
-          onClick={() => setConfirmDelete(lesson.id)}
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </Button>
-      </div>
+          <div className="flex items-center justify-center">
+            {onReorder && (
+              <div
+                {...attributes}
+                {...listeners}
+                className="cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-foreground p-1"
+              >
+                <GripVertical className="h-4 w-4" />
+              </div>
+            )}
+          </div>
+          <div className="flex justify-center">
+            <input
+              type="checkbox"
+              checked={selectedLessonIds.includes(lesson.id)}
+              onChange={(event) => onToggleSelection(lesson.id, event.target.checked)}
+              aria-label={t('selectItem')}
+            />
+          </div>
+          <span className="text-center text-sm font-semibold text-muted-foreground">
+            {String(idx + 1).padStart(2, '0')}
+          </span>
+          <div className="flex items-center gap-1.5">
+            <Badge className={`${cfg.color} border-0 font-medium text-[10px] px-1.5 py-0`}>
+              {cfg.label}
+            </Badge>
+          </div>
+          <div className="min-w-0 pr-2">
+            <p className="truncate text-sm font-medium">{lesson.title}</p>
+            {summary && <p className="truncate text-xs text-muted-foreground">{summary}</p>}
+          </div>
+          <div className="flex items-center justify-end gap-1 text-xs text-muted-foreground">
+            <Clock className="w-3 h-3" />
+            <span>{lesson.duration}m</span>
+          </div>
+          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            {previewUrl && (
+              <Button
+                asChild
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                title={t('lessonPreview')}
+                aria-label={t('lessonPreview')}
+              >
+                <a href={previewUrl} target="_blank" rel="noreferrer">
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </Button>
+            )}
+            {onDuplicate && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                title={t('duplicateLesson')}
+                aria-label={t('duplicateLesson')}
+                onClick={() => onDuplicate(lesson)}
+              >
+                <Copy className="w-3.5 h-3.5" />
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              title={t('editLesson')}
+              aria-label={t('editLesson')}
+              onClick={() => onEdit(lesson)}
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-destructive/70 hover:text-destructive"
+              title={t('deleteCourse')}
+              aria-label={t('deleteCourse')}
+              onClick={() => setConfirmDelete(lesson.id)}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {confirmDelete === lesson.id && (
-        <div className="col-span-7 bg-destructive/5 border border-destructive/20 rounded-lg p-3 flex items-center justify-between gap-3 mt-2">
+        <div className="mx-4 mb-3 flex items-center justify-between gap-3 rounded-lg border border-destructive/20 bg-destructive/5 p-3">
           <span className="text-sm text-destructive">{t('confirmDeleteLesson')}</span>
           <div className="flex gap-2 shrink-0">
             <Button size="sm" variant="outline" onClick={() => setConfirmDelete(null)}>
@@ -932,6 +1031,23 @@ function SortableLesson({
       )}
     </div>
   );
+}
+
+function useIsMobileLessonRow() {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window === 'undefined' ? false : window.matchMedia('(max-width: 767px)').matches,
+  );
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 767px)');
+    const sync = () => setIsMobile(mediaQuery.matches);
+
+    sync();
+    mediaQuery.addEventListener('change', sync);
+    return () => mediaQuery.removeEventListener('change', sync);
+  }, []);
+
+  return isMobile;
 }
 
 function getLessonsForUnit(unit: CourseUnit, sortedLessons: Lesson[]) {

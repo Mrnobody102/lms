@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { courseApi } from '@/lib/course-api';
+import { courseApi, CourseListParams } from '@/lib/course-api';
 
-export function useCourses(enabled = true) {
+export function useCourses(params?: CourseListParams, enabled = true) {
   return useQuery({
-    queryKey: ['courses'],
-    queryFn: () => courseApi.getCourses(),
+    queryKey: ['courses', params],
+    queryFn: () => courseApi.getCourses(params),
     enabled,
     staleTime: 60 * 1000,
   });

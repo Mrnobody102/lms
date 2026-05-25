@@ -1,8 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { AiGenerationJobStatus, PracticeQuestionType } from '@/lib/practice-api';
+import type {
+  AiGenerationJobStatus,
+  PracticeListParams,
+  PracticeQuestionType,
+} from '@/lib/practice-api';
 import { practiceApi } from '@/lib/practice-api';
 
-export function usePracticeQuestions(params?: { courseId?: string; unitId?: string }) {
+export function usePracticeQuestions(params?: PracticeListParams) {
   return useQuery({
     queryKey: ['practice-questions', params],
     queryFn: () => practiceApi.getQuestions(params),
@@ -70,10 +74,18 @@ export function useDeletePracticeQuestion() {
   });
 }
 
-export function usePracticeExerciseSets(params?: { courseId?: string; unitId?: string }) {
+export function usePracticeExerciseSets(params?: PracticeListParams) {
   return useQuery({
     queryKey: ['practice-exercise-sets', params],
     queryFn: () => practiceApi.getExerciseSets(params),
+    staleTime: 60 * 1000,
+  });
+}
+
+export function usePracticeExerciseSetsPage(params?: PracticeListParams) {
+  return useQuery({
+    queryKey: ['practice-exercise-sets-page', params],
+    queryFn: () => practiceApi.getExerciseSetsPage(params),
     staleTime: 60 * 1000,
   });
 }
@@ -91,7 +103,7 @@ export function useCreatePracticeExerciseSet() {
       questionIds: string[];
     }) => practiceApi.createExerciseSet(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['practice-exercise-sets'] });
+      invalidatePracticeExerciseSetLists(queryClient);
     },
   });
 }
@@ -120,7 +132,7 @@ export function useUpdatePracticeExerciseSet() {
       };
     }) => practiceApi.updateExerciseSet(data.id, data.payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['practice-exercise-sets'] });
+      invalidatePracticeExerciseSetLists(queryClient);
       queryClient.invalidateQueries({ queryKey: ['practice-exercise-set'] });
     },
   });
@@ -132,7 +144,7 @@ export function useDeletePracticeExerciseSet() {
   return useMutation({
     mutationFn: (id: string) => practiceApi.deleteExerciseSet(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['practice-exercise-sets'] });
+      invalidatePracticeExerciseSetLists(queryClient);
       queryClient.invalidateQueries({ queryKey: ['practice-exercise-set'] });
     },
   });
@@ -269,7 +281,7 @@ export function useBulkRejectAiDrafts() {
   });
 }
 
-export function useReviewQueue(params?: { courseId?: string; unitId?: string }) {
+export function useReviewQueue(params?: PracticeListParams) {
   return useQuery({
     queryKey: ['practice-review-queue', params],
     queryFn: () => practiceApi.getReviewQueue(params),
@@ -328,4 +340,9 @@ function invalidateAiDraftQueries(queryClient: ReturnType<typeof useQueryClient>
   queryClient.invalidateQueries({ queryKey: ['practice-ai-generation'] });
   queryClient.invalidateQueries({ queryKey: ['practice-questions'] });
   queryClient.invalidateQueries({ queryKey: ['practice-review-queue'] });
+}
+
+function invalidatePracticeExerciseSetLists(queryClient: ReturnType<typeof useQueryClient>) {
+  queryClient.invalidateQueries({ queryKey: ['practice-exercise-sets'] });
+  queryClient.invalidateQueries({ queryKey: ['practice-exercise-sets-page'] });
 }

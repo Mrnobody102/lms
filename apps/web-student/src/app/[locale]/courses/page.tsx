@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { PaginationControls } from '@repo/ui';
 import {
   ArrowRight,
   BarChart3,
@@ -28,15 +29,31 @@ import { Link } from '../../../navigation';
 import type { Course } from '../../../lib/course-api';
 
 type StatusFilter = 'all' | CourseProgressState;
+const COURSES_PAGE_SIZE = 12;
 
 export default function CoursesPage() {
   const t = useTranslations('Student');
   const { isAuthenticated, isInitialized } = useAuthStore();
-  const { data: courses = [], isLoading, isError } = useCourses(isAuthenticated);
-  const { data: progressSummary, isLoading: isProgressLoading } =
-    useProgressSummary(isAuthenticated);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<StatusFilter>('all');
+  const [page, setPage] = useState(1);
+  const {
+    data: courseData,
+    isLoading,
+    isError,
+  } = useCourses(
+    {
+      page,
+      limit: COURSES_PAGE_SIZE,
+      search: query.trim() || undefined,
+    },
+    isAuthenticated,
+  );
+  const { data: progressSummary, isLoading: isProgressLoading } =
+    useProgressSummary(isAuthenticated);
+  const courses = useMemo(() => courseData?.data ?? [], [courseData?.data]);
+  const totalPages = Math.max(courseData?.meta.totalPages ?? 1, 1);
+  const hasCourseSearch = query.trim().length > 0;
   const progressByCourseId = useMemo(() => {
     return new Map(
       (progressSummary?.courses ?? []).map((courseProgress) => [
@@ -55,20 +72,13 @@ export default function CoursesPage() {
     [t],
   );
   const filteredCourses = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
-
     return courses.filter((course) => {
       const progress = progressByCourseId.get(course.id);
       const state = progress ? getCourseProgressState(progress) : 'notStarted';
       const matchesFilter = filter === 'all' || state === filter;
-      const matchesQuery =
-        normalizedQuery.length === 0 ||
-        course.title.toLowerCase().includes(normalizedQuery) ||
-        course.description?.toLowerCase().includes(normalizedQuery);
-
-      return matchesFilter && matchesQuery;
+      return matchesFilter;
     });
-  }, [courses, filter, progressByCourseId, query]);
+  }, [courses, filter, progressByCourseId]);
 
   const { groupedCourses, ungroupedCourses } = useMemo(() => {
     const groups: Record<
@@ -220,7 +230,10 @@ export default function CoursesPage() {
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <input
                   value={query}
-                  onChange={(event) => setQuery(event.target.value)}
+                  onChange={(event) => {
+                    setQuery(event.target.value);
+                    setPage(1);
+                  }}
                   placeholder={t('courses.searchPlaceholder')}
                   className="h-10 w-full rounded-md border bg-background pl-9 pr-3 text-sm outline-none focus:border-primary"
                 />
@@ -241,8 +254,12 @@ export default function CoursesPage() {
                 <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
                   <GraduationCap className="h-8 w-8 text-muted-foreground" />
                 </div>
-                <h3 className="mb-2 text-lg font-semibold">{t('courses.empty')}</h3>
-                <p className="text-sm text-muted-foreground">{t('courses.emptyDesc')}</p>
+                <h3 className="mb-2 text-lg font-semibold">
+                  {hasCourseSearch ? t('courses.noFilteredTitle') : t('courses.empty')}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {hasCourseSearch ? t('courses.noFilteredDesc') : t('courses.emptyDesc')}
+                </p>
               </div>
             ) : (
               <div className="space-y-8">
@@ -275,7 +292,10 @@ export default function CoursesPage() {
                       <button
                         key={item.key}
                         type="button"
-                        onClick={() => setFilter(item.key)}
+                        onClick={() => {
+                          setFilter(item.key);
+                          setPage(1);
+                        }}
                         className={`h-9 rounded-md border px-3 text-sm font-medium transition-colors ${
                           filter === item.key
                             ? 'border-primary bg-primary text-primary-foreground'
@@ -326,6 +346,17 @@ export default function CoursesPage() {
                       )}
                     </div>
                   )}
+                  <PaginationControls
+                    page={page}
+                    totalPages={totalPages}
+                    disabled={isLoading}
+                    labels={{
+                      previous: t('courses.paginationPrevious'),
+                      next: t('courses.paginationNext'),
+                      pageValue: t('courses.paginationPage', { page, total: totalPages }),
+                    }}
+                    onPageChange={setPage}
+                  />
                 </section>
               </div>
             )}

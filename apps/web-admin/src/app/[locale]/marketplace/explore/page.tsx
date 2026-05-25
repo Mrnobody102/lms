@@ -26,7 +26,7 @@ export default function MarketplaceExplorePage() {
   const errorMessage = error instanceof Error ? error.message : error ? String(error) : null;
 
   const handleSubscribe = (id: string) => {
-    if (confirm('Bạn muốn đăng ký sử dụng tài nguyên này?')) {
+    if (confirm(t('marketplace.subscribeConfirm'))) {
       subscribeMutation.mutate({ id });
     }
   };
@@ -39,7 +39,7 @@ export default function MarketplaceExplorePage() {
           <div className="max-w-6xl mx-auto">
             <AdminHeader
               title={t('marketplace.exploreNav')}
-              description="Khám phá và thuê lại dữ liệu khóa học từ các trung tâm khác."
+              description={t('marketplace.exploreDescription')}
               showCreateCourse={false}
             />
 
@@ -47,7 +47,7 @@ export default function MarketplaceExplorePage() {
             <div className="flex h-11 flex-1 items-center rounded-xl border border-input bg-background text-foreground shadow-sm mb-6 max-w-md focus-within:ring-4 focus-within:ring-primary/10">
               <Search className="ml-3.5 h-4 w-4 shrink-0 text-muted-foreground" />
               <Input
-                placeholder="Tìm kiếm tài nguyên..."
+                placeholder={t('marketplace.searchPlaceholder')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="h-full min-w-0 flex-1 border-0 bg-transparent px-3 py-0 shadow-none focus-visible:ring-0"
@@ -77,10 +77,10 @@ export default function MarketplaceExplorePage() {
                   <PackageSearch className="w-10 h-10 text-primary" />
                 </div>
                 <h3 className="text-xl font-semibold tracking-tight mb-2">
-                  Chưa có tài nguyên nào
+                  {t('marketplace.exploreEmptyTitle')}
                 </h3>
                 <p className="text-sm text-muted-foreground max-w-sm">
-                  Hiện tại chưa có khóa học hay dữ liệu nào được chia sẻ trên hệ thống.
+                  {t('marketplace.exploreEmptyDescription')}
                 </p>
               </div>
             ) : (
@@ -114,11 +114,15 @@ export default function MarketplaceExplorePage() {
                           </p>
                           <div className="mt-4 text-sm font-medium text-primary">
                             {item.pricingModel === 'FREE'
-                              ? 'Miễn phí'
-                              : `${item.price.toLocaleString()} VND`}
+                              ? t('marketplace.freePrice')
+                              : t('marketplace.priceValue', {
+                                  price: item.price.toLocaleString(),
+                                })}
                           </div>
                           <div className="mt-1 text-xs text-muted-foreground">
-                            Cung cấp bởi: {item.ownerTenant?.name || 'Trung tâm ẩn danh'}
+                            {t('marketplace.providedBy', {
+                              name: item.ownerTenant?.name ?? t('marketplace.anonymousProvider'),
+                            })}
                           </div>
                         </div>
 
@@ -129,7 +133,8 @@ export default function MarketplaceExplorePage() {
                               className="w-full rounded-lg bg-green-50 text-green-700 hover:bg-green-100 border-green-200 border cursor-default"
                               disabled
                             >
-                              <CheckCircle2 className="w-4 h-4 mr-2" /> Đã đăng ký
+                              <CheckCircle2 className="w-4 h-4 mr-2" />{' '}
+                              {t('marketplace.subscribed')}
                             </Button>
                           ) : (
                             <Button
@@ -137,7 +142,7 @@ export default function MarketplaceExplorePage() {
                               onClick={() => handleSubscribe(item.id)}
                               disabled={subscribeMutation.isPending}
                             >
-                              Thuê tài nguyên này
+                              {t('marketplace.subscribeCta')}
                             </Button>
                           )}
                         </div>

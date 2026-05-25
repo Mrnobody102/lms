@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import { useTranslations } from 'next-intl';
+import { PaginationControls } from '@repo/ui';
 import {
   AlertCircle,
   ArrowDown,
@@ -40,7 +41,14 @@ import {
 import { AudioUploadField } from '@/components/media/audio-upload-field';
 import { formatDraftValue, parseCsv, parseList } from '@/features/authoring/draft-utils';
 import { useCourse, useCourses } from '@/hooks/use-courses';
-import { useCreateExam, useDeleteExam, useExam, useExams, useUpdateExam } from '@/hooks/use-exams';
+import {
+  useCreateExam,
+  useDeleteExam,
+  useExam,
+  useExamsPage,
+  useUpdateExam,
+} from '@/hooks/use-exams';
+import { useDebounce } from '@/hooks/use-debounce';
 import { Exam, ExamQuestionType, ExamSummary } from '@/lib/exam-api';
 
 type ExamQuestionDraft = {
@@ -76,9 +84,7 @@ function createExamQuestionDraft(type: ExamQuestionType = 'MULTIPLE_CHOICE'): Ex
   };
 }
 
-function includesNormalized(haystack: string, needle: string) {
-  return haystack.toLowerCase().includes(needle.toLowerCase());
-}
+const EXAMS_PAGE_SIZE = 10;
 
 export default function AdminExamsPage() {
   const t = useTranslations('Admin');
@@ -102,6 +108,7 @@ export default function AdminExamsPage() {
   const [selectedExamIds, setSelectedExamIds] = useState<string[]>([]);
   const [examSearch, setExamSearch] = useState('');
   const [examStatusFilter, setExamStatusFilter] = useState<'all' | 'published' | 'draft'>('all');
+  const [examPage, setExamPage] = useState(1);
   const [examBulkDeleteOpen, setExamBulkDeleteOpen] = useState(false);
   const [examBulkAction, setExamBulkAction] = useState<'publish' | 'unpublish' | 'delete' | null>(
     null,
@@ -112,32 +119,25 @@ export default function AdminExamsPage() {
   const { data: selectedCourse } = useCourse(courseId);
   const units = selectedCourse?.units ?? [];
   const query = { courseId: courseId || undefined, unitId: unitId || undefined };
-  const { data: exams = [], isLoading: examsLoading } = useExams(query);
+  const debouncedExamSearch = useDebounce(examSearch, 300);
+  const { data: examsPageData, isLoading: examsLoading } = useExamsPage({
+    ...query,
+    page: examPage,
+    limit: EXAMS_PAGE_SIZE,
+    search: debouncedExamSearch.trim() || undefined,
+    status: examStatusFilter,
+  });
   const { data: templateExam, isLoading: templateLoading } = useExam(templateExamId);
   const createExam = useCreateExam();
   const updateExam = useUpdateExam();
   const deleteExam = useDeleteExam();
   const selectedUnit = units.find((unit) => unit.id === unitId) ?? null;
   const examSaving = createExam.isPending || updateExam.isPending;
-  const filteredExams = useMemo(() => {
-    const search = examSearch.trim();
-    return exams.filter((exam) => {
-      const statusMatches =
-        examStatusFilter === 'all' ||
-        (examStatusFilter === 'published' && exam.isPublished) ||
-        (examStatusFilter === 'draft' && !exam.isPublished);
-      const textMatches =
-        !search ||
-        includesNormalized(exam.title, search) ||
-        includesNormalized(exam.description ?? '', search) ||
-        includesNormalized(exam.unit?.title ?? '', search);
-      return statusMatches && textMatches;
-    });
-  }, [examSearch, examStatusFilter, exams]);
-  const selectedExams = useMemo(
-    () => exams.filter((exam) => selectedExamIds.includes(exam.id)),
-    [exams, selectedExamIds],
-  );
+  const exams = examsPageData?.data ?? [];
+  const filteredExams = exams;
+  const examsTotal = examsPageData?.meta.total ?? exams.length;
+  const examsTotalPages = Math.max(examsPageData?.meta.totalPages ?? 1, 1);
+  const hasExamFilters = debouncedExamSearch.trim().length > 0 || examStatusFilter !== 'all';
   const examBulkPending = examBulkAction !== null;
   const draft = useMemo(
     () =>
@@ -162,6 +162,7 @@ export default function AdminExamsPage() {
     setUnitId('');
     setEditingExamId(null);
     setSelectedExamIds([]);
+    setExamPage(1);
   }, [courseId]);
 
   useEffect(() => {
@@ -361,6 +362,7 @@ export default function AdminExamsPage() {
   const clearExamFilters = () => {
     setExamSearch('');
     setExamStatusFilter('all');
+    setExamPage(1);
   };
 
   const handleToggleExamPublished = (exam: ExamSummary) => {
@@ -379,20 +381,19 @@ export default function AdminExamsPage() {
   };
 
   const handleBulkExamPublish = async (nextPublished: boolean) => {
-    if (selectedExams.length === 0) return;
+    if (selectedExamIds.length === 0) return;
+    const ids = [...selectedExamIds];
     setExamBulkAction(nextPublished ? 'publish' : 'unpublish');
     try {
       await Promise.all(
-        selectedExams.map((exam) =>
-          updateExam.mutateAsync({ id: exam.id, payload: { isPublished: nextPublished } }),
-        ),
+        ids.map((id) => updateExam.mutateAsync({ id, payload: { isPublished: nextPublished } })),
       );
       setSelectedExamIds([]);
       setMessage({
         type: 'success',
         text: nextPublished
-          ? t('bulkExamsPublished', { count: selectedExams.length })
-          : t('bulkExamsUnpublished', { count: selectedExams.length }),
+          ? t('bulkExamsPublished', { count: ids.length })
+          : t('bulkExamsUnpublished', { count: ids.length }),
       });
     } catch {
       setMessage({ type: 'error', text: t('bulkExamUpdateError') });
@@ -402,8 +403,8 @@ export default function AdminExamsPage() {
   };
 
   const handleBulkDeleteExams = async () => {
-    if (selectedExams.length === 0) return;
-    const ids = selectedExams.map((exam) => exam.id);
+    if (selectedExamIds.length === 0) return;
+    const ids = [...selectedExamIds];
     setExamBulkAction('delete');
     try {
       await Promise.all(ids.map((id) => deleteExam.mutateAsync(id)));
@@ -471,6 +472,7 @@ export default function AdminExamsPage() {
                   onChange={(event) => {
                     setUnitId(event.target.value);
                     setSelectedExamIds([]);
+                    setExamPage(1);
                   }}
                   className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   disabled={!courseId}
@@ -526,7 +528,7 @@ export default function AdminExamsPage() {
                           <p className="text-sm text-muted-foreground">{t('examTemplatesDesc')}</p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge variant="secondary">{filteredExams.length}</Badge>
+                          <Badge variant="secondary">{examsTotal}</Badge>
                           {exams.length > 0 && (
                             <>
                               <Button
@@ -555,14 +557,20 @@ export default function AdminExamsPage() {
                       <div className="mb-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_auto]">
                         <Input
                           value={examSearch}
-                          onChange={(event) => setExamSearch(event.target.value)}
+                          onChange={(event) => {
+                            setExamSearch(event.target.value);
+                            setExamPage(1);
+                          }}
                           placeholder={t('searchExams')}
                         />
                         <select
                           value={examStatusFilter}
-                          onChange={(event) =>
-                            setExamStatusFilter(event.target.value as 'all' | 'published' | 'draft')
-                          }
+                          onChange={(event) => {
+                            setExamStatusFilter(
+                              event.target.value as 'all' | 'published' | 'draft',
+                            );
+                            setExamPage(1);
+                          }}
                           className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                         >
                           <option value="all">{t('allStatuses')}</option>
@@ -582,9 +590,7 @@ export default function AdminExamsPage() {
                       {examsLoading ? (
                         <LoadingRow label={t('loading')} />
                       ) : exams.length === 0 ? (
-                        <EmptyState title={t('noExams')} />
-                      ) : filteredExams.length === 0 ? (
-                        <EmptyState title={t('noFilteredExams')} />
+                        <EmptyState title={hasExamFilters ? t('noFilteredExams') : t('noExams')} />
                       ) : (
                         <div className="grid gap-3">
                           {selectedExamIds.length > 0 && (
@@ -756,6 +762,20 @@ export default function AdminExamsPage() {
                               </div>
                             </article>
                           ))}
+                          <PaginationControls
+                            page={examPage}
+                            totalPages={examsTotalPages}
+                            disabled={examsLoading}
+                            labels={{
+                              previous: t('previousPage'),
+                              next: t('nextPage'),
+                              pageValue: t('pageValue', {
+                                page: examPage,
+                                total: examsTotalPages,
+                              }),
+                            }}
+                            onPageChange={setExamPage}
+                          />
                         </div>
                       )}
                     </section>

@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { PaginationControls } from '@repo/ui';
 import { DraftPreviewCard } from '@/components/authoring/draft-preview-card';
 import { QuestionOptionsEditor } from '@/components/authoring/question-options-editor';
 import { AdminHeader } from '@/components/layout/admin-header';
@@ -32,7 +33,7 @@ import {
   useCreatePracticeQuestion,
   useDeletePracticeExerciseSet,
   useDeletePracticeQuestion,
-  usePracticeExerciseSets,
+  usePracticeExerciseSetsPage,
   usePracticeExerciseSet,
   usePracticeQuestions,
   useUpdatePracticeExerciseSet,
@@ -43,6 +44,7 @@ import {
   useBulkApprovePracticeQuestions,
   useBulkRejectPracticeQuestions,
 } from '@/hooks/use-practice';
+import { useDebounce } from '@/hooks/use-debounce';
 import type {
   PracticeExerciseSet,
   PracticeQuestion,
@@ -63,9 +65,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 
-function includesNormalized(haystack: string, needle: string) {
-  return haystack.toLowerCase().includes(needle.toLowerCase());
-}
+const PRACTICE_LIST_PAGE_SIZE = 10;
 
 export default function AdminPracticePage() {
   const t = useTranslations('Admin');
@@ -94,11 +94,13 @@ export default function AdminPracticePage() {
   const [questionBulkAction, setQuestionBulkAction] = useState<'delete' | null>(null);
   const [questionSearch, setQuestionSearch] = useState('');
   const [questionTypeFilter, setQuestionTypeFilter] = useState<'all' | PracticeQuestionType>('all');
+  const [questionPage, setQuestionPage] = useState(1);
   const [selectedExerciseSetIds, setSelectedExerciseSetIds] = useState<string[]>([]);
   const [exerciseSetSearch, setExerciseSetSearch] = useState('');
   const [exerciseSetStatusFilter, setExerciseSetStatusFilter] = useState<
     'all' | 'published' | 'draft'
   >('all');
+  const [exerciseSetPage, setExerciseSetPage] = useState(1);
   const [exerciseSetBulkDeleteOpen, setExerciseSetBulkDeleteOpen] = useState(false);
   const [exerciseSetBulkAction, setExerciseSetBulkAction] = useState<
     'publish' | 'unpublish' | 'delete' | null
@@ -110,13 +112,28 @@ export default function AdminPracticePage() {
   >('questions');
   const [selectedReviewIds, setSelectedReviewIds] = useState<string[]>([]);
   const [reviewBulkAction, setReviewBulkAction] = useState<'approve' | 'reject' | null>(null);
+  const [reviewQueuePage, setReviewQueuePage] = useState(1);
 
   const { data: selectedCourse } = useCourse(courseId);
   const units = selectedCourse?.units ?? [];
   const selectedUnit = units.find((unit) => unit.id === unitId) ?? null;
   const query = { courseId: courseId || undefined, unitId: unitId || undefined };
-  const { data: questions = [], isLoading: questionsLoading } = usePracticeQuestions(query);
-  const { data: exerciseSets = [], isLoading: setsLoading } = usePracticeExerciseSets(query);
+  const debouncedQuestionSearch = useDebounce(questionSearch, 300);
+  const debouncedExerciseSetSearch = useDebounce(exerciseSetSearch, 300);
+  const { data: questionsPageData, isLoading: questionsLoading } = usePracticeQuestions({
+    ...query,
+    page: questionPage,
+    limit: PRACTICE_LIST_PAGE_SIZE,
+    search: debouncedQuestionSearch.trim() || undefined,
+    questionType: questionTypeFilter === 'all' ? undefined : questionTypeFilter,
+  });
+  const { data: exerciseSetsPageData, isLoading: setsLoading } = usePracticeExerciseSetsPage({
+    ...query,
+    page: exerciseSetPage,
+    limit: PRACTICE_LIST_PAGE_SIZE,
+    search: debouncedExerciseSetSearch.trim() || undefined,
+    status: exerciseSetStatusFilter,
+  });
   const createQuestion = useCreatePracticeQuestion();
   const updateQuestion = useUpdatePracticeQuestion();
   const deleteQuestion = useDeletePracticeQuestion();
@@ -128,45 +145,30 @@ export default function AdminPracticePage() {
   const rejectQuestion = useRejectPracticeQuestion();
   const bulkApproveQuestions = useBulkApprovePracticeQuestions();
   const bulkRejectQuestions = useBulkRejectPracticeQuestions();
-  const { data: reviewQueue = [], isLoading: reviewQueueLoading } = useReviewQueue(query);
+  const { data: reviewQueuePageData, isLoading: reviewQueueLoading } = useReviewQueue({
+    ...query,
+    page: reviewQueuePage,
+    limit: PRACTICE_LIST_PAGE_SIZE,
+  });
+  const questions = questionsPageData?.data ?? [];
+  const questionsTotal = questionsPageData?.meta.total ?? questions.length;
+  const questionTotalPages = Math.max(questionsPageData?.meta.totalPages ?? 1, 1);
+  const exerciseSets = exerciseSetsPageData?.data ?? [];
+  const exerciseSetsTotal = exerciseSetsPageData?.meta.total ?? exerciseSets.length;
+  const exerciseSetTotalPages = Math.max(exerciseSetsPageData?.meta.totalPages ?? 1, 1);
+  const reviewQueue = reviewQueuePageData?.data ?? [];
+  const reviewQueueTotal = reviewQueuePageData?.meta.total ?? reviewQueue.length;
+  const reviewQueueTotalPages = Math.max(reviewQueuePageData?.meta.totalPages ?? 1, 1);
+  const hasQuestionFilters =
+    debouncedQuestionSearch.trim().length > 0 || questionTypeFilter !== 'all';
+  const hasExerciseSetFilters =
+    debouncedExerciseSetSearch.trim().length > 0 || exerciseSetStatusFilter !== 'all';
 
   const questionSaving = createQuestion.isPending || updateQuestion.isPending;
   const exerciseSetSaving = createExerciseSet.isPending || updateExerciseSet.isPending;
   const reviewBulkPending = reviewBulkAction !== null;
-  const filteredQuestions = useMemo(() => {
-    const search = questionSearch.trim();
-    return questions.filter((question) => {
-      const typeMatches = questionTypeFilter === 'all' || question.type === questionTypeFilter;
-      const textMatches =
-        !search ||
-        includesNormalized(question.prompt, search) ||
-        question.skillTags.some((tag) => includesNormalized(tag, search));
-      return typeMatches && textMatches;
-    });
-  }, [questionSearch, questionTypeFilter, questions]);
-  const filteredExerciseSets = useMemo(() => {
-    const search = exerciseSetSearch.trim();
-    return exerciseSets.filter((set) => {
-      const statusMatches =
-        exerciseSetStatusFilter === 'all' ||
-        (exerciseSetStatusFilter === 'published' && set.isPublished) ||
-        (exerciseSetStatusFilter === 'draft' && !set.isPublished);
-      const textMatches =
-        !search ||
-        includesNormalized(set.title, search) ||
-        includesNormalized(set.description ?? '', search) ||
-        includesNormalized(set.unit?.title ?? '', search);
-      return statusMatches && textMatches;
-    });
-  }, [exerciseSetSearch, exerciseSetStatusFilter, exerciseSets]);
-  const selectedQuestions = useMemo(
-    () => questions.filter((question) => selectedQuestionIds.includes(question.id)),
-    [questions, selectedQuestionIds],
-  );
-  const selectedExerciseSets = useMemo(
-    () => exerciseSets.filter((set) => selectedExerciseSetIds.includes(set.id)),
-    [exerciseSets, selectedExerciseSetIds],
-  );
+  const filteredQuestions = questions;
+  const filteredExerciseSets = exerciseSets;
   const questionBulkPending = questionBulkAction !== null;
   const exerciseSetBulkPending = exerciseSetBulkAction !== null;
   const questionDraft = useMemo(
@@ -205,6 +207,9 @@ export default function AdminPracticePage() {
     setSelectedReviewIds([]);
     setEditingQuestionId(null);
     setEditingExerciseSetId(null);
+    setQuestionPage(1);
+    setExerciseSetPage(1);
+    setReviewQueuePage(1);
   }, [courseId]);
 
   useEffect(() => {
@@ -380,8 +385,8 @@ export default function AdminPracticePage() {
   };
 
   const handleBulkDeleteQuestions = async () => {
-    if (selectedQuestions.length === 0) return;
-    const ids = selectedQuestions.map((question) => question.id);
+    if (selectedQuestionIds.length === 0) return;
+    const ids = [...selectedQuestionIds];
     setQuestionBulkAction('delete');
     try {
       await Promise.all(ids.map((id) => deleteQuestion.mutateAsync(id)));
@@ -410,6 +415,7 @@ export default function AdminPracticePage() {
   const clearQuestionFilters = () => {
     setQuestionSearch('');
     setQuestionTypeFilter('all');
+    setQuestionPage(1);
   };
 
   const handleSubmitExerciseSet = (event: FormEvent) => {
@@ -488,6 +494,7 @@ export default function AdminPracticePage() {
   const clearExerciseSetFilters = () => {
     setExerciseSetSearch('');
     setExerciseSetStatusFilter('all');
+    setExerciseSetPage(1);
   };
 
   const handleToggleExerciseSetPublished = (set: PracticeExerciseSet) => {
@@ -506,20 +513,21 @@ export default function AdminPracticePage() {
   };
 
   const handleBulkExerciseSetPublish = async (nextPublished: boolean) => {
-    if (selectedExerciseSets.length === 0) return;
+    if (selectedExerciseSetIds.length === 0) return;
+    const ids = [...selectedExerciseSetIds];
     setExerciseSetBulkAction(nextPublished ? 'publish' : 'unpublish');
     try {
       await Promise.all(
-        selectedExerciseSets.map((set) =>
-          updateExerciseSet.mutateAsync({ id: set.id, payload: { isPublished: nextPublished } }),
+        ids.map((id) =>
+          updateExerciseSet.mutateAsync({ id, payload: { isPublished: nextPublished } }),
         ),
       );
       setSelectedExerciseSetIds([]);
       setMessage({
         type: 'success',
         text: nextPublished
-          ? t('bulkPracticeSetsPublished', { count: selectedExerciseSets.length })
-          : t('bulkPracticeSetsUnpublished', { count: selectedExerciseSets.length }),
+          ? t('bulkPracticeSetsPublished', { count: ids.length })
+          : t('bulkPracticeSetsUnpublished', { count: ids.length }),
       });
     } catch {
       setMessage({ type: 'error', text: t('bulkPracticeSetUpdateError') });
@@ -529,8 +537,8 @@ export default function AdminPracticePage() {
   };
 
   const handleBulkDeleteExerciseSets = async () => {
-    if (selectedExerciseSets.length === 0) return;
-    const ids = selectedExerciseSets.map((set) => set.id);
+    if (selectedExerciseSetIds.length === 0) return;
+    const ids = [...selectedExerciseSetIds];
     setExerciseSetBulkAction('delete');
     try {
       await Promise.all(ids.map((id) => deleteExerciseSet.mutateAsync(id)));
@@ -648,6 +656,10 @@ export default function AdminPracticePage() {
                     setUnitId(event.target.value);
                     setSelectedQuestionIds([]);
                     setSelectedExerciseSetIds([]);
+                    setSelectedReviewIds([]);
+                    setQuestionPage(1);
+                    setExerciseSetPage(1);
+                    setReviewQueuePage(1);
                   }}
                   className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   disabled={!courseId}
@@ -711,12 +723,12 @@ export default function AdminPracticePage() {
                     >
                       <Sparkles className="h-4 w-4" />
                       {t('reviewQueue')}
-                      {reviewQueue.length > 0 && (
+                      {reviewQueueTotal > 0 && (
                         <Badge
                           variant="secondary"
                           className="ml-1 h-5 w-5 p-0 flex items-center justify-center rounded-full"
                         >
-                          {reviewQueue.length}
+                          {reviewQueueTotal}
                         </Badge>
                       )}
                     </button>
@@ -742,7 +754,7 @@ export default function AdminPracticePage() {
                           <p className="text-sm text-muted-foreground">{t('questionBankDesc')}</p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge variant="secondary">{filteredQuestions.length}</Badge>
+                          <Badge variant="secondary">{questionsTotal}</Badge>
                           <Button
                             variant="default"
                             size="sm"
@@ -774,16 +786,20 @@ export default function AdminPracticePage() {
                       <div className="mb-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_auto]">
                         <Input
                           value={questionSearch}
-                          onChange={(event) => setQuestionSearch(event.target.value)}
+                          onChange={(event) => {
+                            setQuestionSearch(event.target.value);
+                            setQuestionPage(1);
+                          }}
                           placeholder={t('searchQuestions')}
                         />
                         <select
                           value={questionTypeFilter}
-                          onChange={(event) =>
+                          onChange={(event) => {
                             setQuestionTypeFilter(
                               event.target.value as 'all' | PracticeQuestionType,
-                            )
-                          }
+                            );
+                            setQuestionPage(1);
+                          }}
                           className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                         >
                           <option value="all">{t('allQuestionTypes')}</option>
@@ -807,9 +823,13 @@ export default function AdminPracticePage() {
                       {questionsLoading ? (
                         <LoadingRow label={t('loading')} />
                       ) : questions.length === 0 ? (
-                        <EmptyState title={t('noPracticeQuestions')} />
-                      ) : filteredQuestions.length === 0 ? (
-                        <EmptyState title={t('noFilteredPracticeQuestions')} />
+                        <EmptyState
+                          title={
+                            hasQuestionFilters
+                              ? t('noFilteredPracticeQuestions')
+                              : t('noPracticeQuestions')
+                          }
+                        />
                       ) : (
                         <>
                           {selectedQuestionIds.length > 0 && (
@@ -936,6 +956,21 @@ export default function AdminPracticePage() {
                               </label>
                             ))}
                           </div>
+                          <PaginationControls
+                            page={questionPage}
+                            totalPages={questionTotalPages}
+                            disabled={questionsLoading}
+                            className="mt-4"
+                            labels={{
+                              previous: t('previousPage'),
+                              next: t('nextPage'),
+                              pageValue: t('pageValue', {
+                                page: questionPage,
+                                total: questionTotalPages,
+                              }),
+                            }}
+                            onPageChange={setQuestionPage}
+                          />
                         </>
                       )}
                     </section>
@@ -949,7 +984,7 @@ export default function AdminPracticePage() {
                           <p className="text-sm text-muted-foreground">{t('reviewQueueDesc')}</p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge variant="secondary">{reviewQueue.length}</Badge>
+                          <Badge variant="secondary">{reviewQueueTotal}</Badge>
                           {reviewQueue.length > 0 && (
                             <>
                               <Button
@@ -1056,7 +1091,7 @@ export default function AdminPracticePage() {
                                         className="gap-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-50 dark:bg-indigo-900/30 dark:text-indigo-400"
                                       >
                                         <Sparkles className="h-3 w-3" />
-                                        AI Generated
+                                        {t('aiGenerated')}
                                       </Badge>
                                     )}
                                   </div>
@@ -1097,6 +1132,20 @@ export default function AdminPracticePage() {
                               </div>
                             </label>
                           ))}
+                          <PaginationControls
+                            page={reviewQueuePage}
+                            totalPages={reviewQueueTotalPages}
+                            disabled={reviewQueueLoading}
+                            labels={{
+                              previous: t('previousPage'),
+                              next: t('nextPage'),
+                              pageValue: t('pageValue', {
+                                page: reviewQueuePage,
+                                total: reviewQueueTotalPages,
+                              }),
+                            }}
+                            onPageChange={setReviewQueuePage}
+                          />
                         </div>
                       )}
                     </section>
@@ -1110,7 +1159,7 @@ export default function AdminPracticePage() {
                           <p className="text-sm text-muted-foreground">{t('exerciseSetsDesc')}</p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge variant="secondary">{filteredExerciseSets.length}</Badge>
+                          <Badge variant="secondary">{exerciseSetsTotal}</Badge>
                           {exerciseSets.length > 0 && (
                             <>
                               <Button
@@ -1139,16 +1188,20 @@ export default function AdminPracticePage() {
                       <div className="mb-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_auto]">
                         <Input
                           value={exerciseSetSearch}
-                          onChange={(event) => setExerciseSetSearch(event.target.value)}
+                          onChange={(event) => {
+                            setExerciseSetSearch(event.target.value);
+                            setExerciseSetPage(1);
+                          }}
                           placeholder={t('searchExerciseSets')}
                         />
                         <select
                           value={exerciseSetStatusFilter}
-                          onChange={(event) =>
+                          onChange={(event) => {
                             setExerciseSetStatusFilter(
                               event.target.value as 'all' | 'published' | 'draft',
-                            )
-                          }
+                            );
+                            setExerciseSetPage(1);
+                          }}
                           className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                         >
                           <option value="all">{t('allStatuses')}</option>
@@ -1168,9 +1221,13 @@ export default function AdminPracticePage() {
                       {setsLoading ? (
                         <LoadingRow label={t('loading')} />
                       ) : exerciseSets.length === 0 ? (
-                        <EmptyState title={t('noExerciseSets')} />
-                      ) : filteredExerciseSets.length === 0 ? (
-                        <EmptyState title={t('noFilteredExerciseSets')} />
+                        <EmptyState
+                          title={
+                            hasExerciseSetFilters
+                              ? t('noFilteredExerciseSets')
+                              : t('noExerciseSets')
+                          }
+                        />
                       ) : (
                         <div className="grid gap-3">
                           {selectedExerciseSetIds.length > 0 && (
@@ -1299,6 +1356,20 @@ export default function AdminPracticePage() {
                               </div>
                             </div>
                           ))}
+                          <PaginationControls
+                            page={exerciseSetPage}
+                            totalPages={exerciseSetTotalPages}
+                            disabled={setsLoading}
+                            labels={{
+                              previous: t('previousPage'),
+                              next: t('nextPage'),
+                              pageValue: t('pageValue', {
+                                page: exerciseSetPage,
+                                total: exerciseSetTotalPages,
+                              }),
+                            }}
+                            onPageChange={setExerciseSetPage}
+                          />
                         </div>
                       )}
                     </section>

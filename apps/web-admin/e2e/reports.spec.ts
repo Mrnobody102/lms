@@ -131,6 +131,7 @@ test('admin can view reports dashboard and see time-series charts', async ({ pag
   await page.locator('input[type="email"]').fill('admin@example.com');
   await page.locator('input[type="password"]').fill('Admin@123');
   await page.getByRole('button', { name: 'Login', exact: true }).click();
+  await expect(page).toHaveURL(/\/en$/, { timeout: 10000 });
 
   // Navigate to Reports
   await page.goto('/en/reports');

@@ -1,7 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { courseApi, CourseCreateInput, CourseUpdateInput, Lesson } from '@/lib/course-api';
+import {
+  courseApi,
+  CourseCreateInput,
+  CourseListParams,
+  CourseUpdateInput,
+  Lesson,
+} from '@/lib/course-api';
 
-export function useCourses(params?: { page?: number; limit?: number; search?: string }) {
+export function useCourses(params?: CourseListParams) {
   return useQuery({
     queryKey: ['courses', params],
     queryFn: () => courseApi.getCourses(params),

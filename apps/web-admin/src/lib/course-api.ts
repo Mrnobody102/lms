@@ -133,11 +133,26 @@ interface PaginatedResponse<T> {
   meta: { page: number; limit: number; total: number; totalPages: number };
 }
 
+export type CourseStatusFilter = 'all' | 'published' | 'draft';
+
+export interface CourseListParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: CourseStatusFilter;
+}
+
 export const courseApi = {
   // Returns { data: Course[], meta } — caller extracts .data for array
-  getCourses(params?: { page?: number; limit?: number; search?: string }) {
+  getCourses(params?: CourseListParams) {
     return api.get('/courses', { params }).then((r) => {
       const raw = r.data as Record<string, unknown>;
+      if (Array.isArray(r.data)) {
+        return {
+          data: r.data as Course[],
+          meta: createPaginationMeta(params, r.data.length),
+        };
+      }
       if (raw && raw.success === false) {
         const msg = raw.message || 'Failed to load courses';
         throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg));
@@ -242,6 +257,18 @@ export const courseApi = {
     return api.patch(`/lessons/reorder`, { courseId, unitId, lessonIds });
   },
 };
+
+function createPaginationMeta(params: CourseListParams | undefined, total: number) {
+  const page = params?.page ?? 1;
+  const limit = params?.limit ?? Math.max(total, 1);
+
+  return {
+    page,
+    limit,
+    total,
+    totalPages: Math.max(1, Math.ceil(total / limit)),
+  };
+}
 
 export function normalizeCourseAiSettings(value: unknown): CourseAiSettings {
   if (!value || typeof value !== 'object') {

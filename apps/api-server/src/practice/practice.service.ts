@@ -18,8 +18,9 @@ import { MediaService } from '../media/media.service';
 import { SkillMasteryService } from '../skill/skill-mastery.service';
 import { SrsService } from '../srs/srs.service';
 import { AiService } from '../ai/ai.service';
-import { GeneratePracticeDto } from './dto/generate-practice.dto';
 import { AiEvaluationService, type PracticeAiFeedback } from './ai-evaluation.service';
+import { GeneratePracticeDto } from './dto/generate-practice.dto';
+import type { PracticeSetStatusFilter } from './dto/practice-query.dto';
 
 interface PracticeUser {
   id: string;
@@ -36,6 +37,29 @@ interface AttemptAnswerForStats {
   question: {
     type: PracticeQuestionType;
   };
+}
+
+interface PracticeListQuery {
+  courseId?: string;
+  unitId?: string;
+  skill?: string;
+  search?: string;
+  questionType?: PracticeQuestionType;
+  status?: PracticeSetStatusFilter;
+  page?: number;
+  limit?: number;
+}
+
+interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+interface PaginatedResult<T> {
+  data: T[];
+  meta: PaginationMeta;
 }
 
 @Injectable()
@@ -146,27 +170,42 @@ export class PracticeService {
     return { generated: saved.length, questions: saved };
   }
 
-  async listPendingReview(
-    tenantId: string,
-    query: { courseId?: string; unitId?: string; skill?: string },
-  ) {
+  async listPendingReview(tenantId: string, query: PracticeListQuery) {
     const skills = this.parseSkillFilter(query.skill);
+    const { page, limit, skip } = this.getPagination(query);
+    const search = query.search?.trim();
+    const where: Prisma.PracticeQuestionWhereInput = {
+      tenantId,
+      courseId: query.courseId,
+      unitId: query.unitId,
+      type: query.questionType,
+      skillTags: skills ? { hasSome: skills } : undefined,
+      reviewStatus: 'PENDING_REVIEW',
+      deletedAt: null,
+    };
 
-    return this.prisma.practiceQuestion.findMany({
-      where: {
-        tenantId,
-        courseId: query.courseId,
-        unitId: query.unitId,
-        skillTags: skills ? { hasSome: skills } : undefined,
-        reviewStatus: 'PENDING_REVIEW',
-        deletedAt: null,
-      },
-      include: {
-        course: { select: { id: true, title: true } },
-        unit: { select: { id: true, title: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    if (search) {
+      where.OR = [
+        { prompt: { contains: search, mode: 'insensitive' } },
+        { explanation: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.practiceQuestion.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          course: { select: { id: true, title: true } },
+          unit: { select: { id: true, title: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.practiceQuestion.count({ where }),
+    ]);
+
+    return this.toPaginatedResult(data, total, page, limit);
   }
 
   async approveQuestion(id: string, tenantId: string) {
@@ -307,23 +346,38 @@ export class PracticeService {
     });
   }
 
-  async listQuestions(
-    tenantId: string,
-    query: { courseId?: string; unitId?: string; skill?: string },
-  ) {
+  async listQuestions(tenantId: string, query: PracticeListQuery) {
     const skills = this.parseSkillFilter(query.skill);
+    const { page, limit, skip } = this.getPagination(query);
+    const search = query.search?.trim();
+    const where: Prisma.PracticeQuestionWhereInput = {
+      tenantId,
+      courseId: query.courseId,
+      unitId: query.unitId,
+      type: query.questionType,
+      skillTags: skills ? { hasSome: skills } : undefined,
+      reviewStatus: 'APPROVED',
+      deletedAt: null,
+    };
 
-    return this.prisma.practiceQuestion.findMany({
-      where: {
-        tenantId,
-        courseId: query.courseId,
-        unitId: query.unitId,
-        skillTags: skills ? { hasSome: skills } : undefined,
-        reviewStatus: 'APPROVED',
-        deletedAt: null,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    if (search) {
+      where.OR = [
+        { prompt: { contains: search, mode: 'insensitive' } },
+        { explanation: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.practiceQuestion.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.practiceQuestion.count({ where }),
+    ]);
+
+    return this.toPaginatedResult(data, total, page, limit);
   }
 
   async createExerciseSet(
@@ -456,28 +510,27 @@ export class PracticeService {
     });
   }
 
-  async listExerciseSets(
-    tenantId: string,
-    user: PracticeUser,
-    query: { courseId?: string; unitId?: string; skill?: string },
-  ) {
+  async listExerciseSets(tenantId: string, user: PracticeUser, query: PracticeListQuery) {
+    const { page, limit, skip } = this.getPagination(query);
     const where: Prisma.PracticeExerciseSetWhereInput = {
       tenantId,
       courseId: query.courseId,
       unitId: query.unitId,
       deletedAt: null,
     };
+    const andFilters: Prisma.PracticeExerciseSetWhereInput[] = [];
 
     if (user.role === Role.STUDENT) {
       where.isPublished = true;
       if (query.courseId) {
         where.course = this.learningAccess.courseWhere(tenantId, user, query.courseId);
       } else {
-        where.OR = [
-          { courseId: null },
-          { course: this.learningAccess.courseWhere(tenantId, user) },
-        ];
+        andFilters.push({
+          OR: [{ courseId: null }, { course: this.learningAccess.courseWhere(tenantId, user) }],
+        });
       }
+    } else if (query.status && query.status !== 'all') {
+      where.isPublished = query.status === 'published';
     }
 
     if (query.skill) {
@@ -494,15 +547,36 @@ export class PracticeService {
       }
     }
 
-    return this.prisma.practiceExerciseSet.findMany({
-      where,
-      include: {
-        _count: { select: { questions: true, attempts: true } },
-        course: { select: { id: true, title: true } },
-        unit: { select: { id: true, title: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    const search = query.search?.trim();
+    if (search) {
+      andFilters.push({
+        OR: [
+          { title: { contains: search, mode: 'insensitive' } },
+          { description: { contains: search, mode: 'insensitive' } },
+          { unit: { title: { contains: search, mode: 'insensitive' } } },
+        ],
+      });
+    }
+    if (andFilters.length > 0) {
+      where.AND = andFilters;
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.practiceExerciseSet.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          _count: { select: { questions: true, attempts: true } },
+          course: { select: { id: true, title: true } },
+          unit: { select: { id: true, title: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.practiceExerciseSet.count({ where }),
+    ]);
+
+    return this.toPaginatedResult(data, total, page, limit);
   }
 
   async getExerciseSet(id: string, tenantId: string, user: PracticeUser) {
@@ -951,6 +1025,34 @@ export class PracticeService {
       .filter(Boolean);
 
     return skills && skills.length > 0 ? Array.from(new Set(skills)) : undefined;
+  }
+
+  private getPagination(query: Pick<PracticeListQuery, 'page' | 'limit'>) {
+    const page = Math.max(query.page ?? 1, 1);
+    const limit = Math.min(Math.max(query.limit ?? 20, 1), 100);
+
+    return {
+      page,
+      limit,
+      skip: (page - 1) * limit,
+    };
+  }
+
+  private toPaginatedResult<T>(
+    data: T[],
+    total: number,
+    page: number,
+    limit: number,
+  ): PaginatedResult<T> {
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / limit)),
+      },
+    };
   }
 
   private scoreAnswer(

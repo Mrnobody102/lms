@@ -3,6 +3,7 @@ import { EnrollmentStatus, Prisma, Role } from '@repo/database';
 import { AuditAction, AuditLogService, AuditStatus } from '../common/services/audit-log.service';
 import { LearningAccessService } from '../common/services/learning-access.service';
 import { PrismaService } from '../common/services/prisma.service';
+import type { CourseStatusFilter } from './dto/course-query.dto';
 
 type EnrollmentLearnerStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
 
@@ -76,9 +77,9 @@ export class CourseService {
   async findAll(
     tenantId: string,
     user: { id: string; role: Role },
-    options: { page?: number; limit?: number; search?: string } = {},
+    options: { page?: number; limit?: number; search?: string; status?: CourseStatusFilter } = {},
   ) {
-    const { page = 1, limit = 10, search } = options;
+    const { page = 1, limit = 10, search, status = 'all' } = options;
     const skip = (page - 1) * limit;
 
     const where = this.learningAccess.courseWhere(tenantId, user, undefined, {
@@ -86,6 +87,9 @@ export class CourseService {
     });
     if (search) {
       Object.assign(where, { title: { contains: search, mode: 'insensitive' as const } });
+    }
+    if (user.role !== Role.STUDENT && status !== 'all') {
+      Object.assign(where, { isActive: status === 'published' });
     }
 
     const [courses, total] = await Promise.all([

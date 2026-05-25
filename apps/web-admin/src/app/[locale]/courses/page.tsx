@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { PaginationControls } from '@repo/ui';
 import { AdminHeader } from '@/components/layout/admin-header';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
@@ -12,25 +13,29 @@ import { BookOpen, AlertCircle, Search } from 'lucide-react';
 import { Link } from '@/navigation';
 import { useDebounce } from '@/hooks/use-debounce';
 
+const COURSES_PAGE_SIZE = 12;
+
 export default function CoursesPage() {
   const t = useTranslations('Admin');
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'published' | 'draft'>('all');
+  const [page, setPage] = useState(1);
 
-  const { data: courseData, isLoading, error } = useCourses();
-  const deleteCourse = useDeleteCourse();
   const debouncedSearch = useDebounce(search, 300);
+  const {
+    data: courseData,
+    isLoading,
+    error,
+  } = useCourses({
+    page,
+    limit: COURSES_PAGE_SIZE,
+    search: debouncedSearch.trim() || undefined,
+    status: filter,
+  });
+  const deleteCourse = useDeleteCourse();
 
   const allCourses = Array.isArray(courseData?.data) ? courseData.data : [];
-  const courses = allCourses.filter((c) => {
-    const matchesSearch = c.title.toLowerCase().includes(debouncedSearch.toLowerCase());
-    const lessonCount = c._count?.lessons ?? c.lessons?.length ?? 0;
-    const matchesFilter =
-      filter === 'all' ||
-      (filter === 'published' && lessonCount > 0) ||
-      (filter === 'draft' && lessonCount === 0);
-    return matchesSearch && matchesFilter;
-  });
+  const totalPages = Math.max(courseData?.meta?.totalPages ?? 1, 1);
 
   const errorMessage = error instanceof Error ? error.message : error ? String(error) : null;
 
@@ -57,7 +62,10 @@ export default function CoursesPage() {
                 <Input
                   placeholder={t('searchCourses')}
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setPage(1);
+                  }}
                   className="h-full min-w-0 flex-1 border-0 bg-transparent px-3 py-0 shadow-none focus-visible:ring-0"
                 />
               </div>
@@ -67,7 +75,10 @@ export default function CoursesPage() {
                     key={f}
                     variant={filter === f ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => setFilter(f)}
+                    onClick={() => {
+                      setFilter(f);
+                      setPage(1);
+                    }}
                   >
                     {f === 'all'
                       ? t('allCourses')
@@ -101,7 +112,7 @@ export default function CoursesPage() {
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{errorMessage}</AlertDescription>
               </Alert>
-            ) : courses.length === 0 ? (
+            ) : allCourses.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-24 text-center rounded-xl border border-dashed bg-muted/20">
                 <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-5">
                   <BookOpen className="w-10 h-10 text-primary" />
@@ -115,10 +126,10 @@ export default function CoursesPage() {
             ) : (
               <>
                 <p className="text-sm text-muted-foreground mb-4">
-                  {t('coursesFound', { count: courses.length })}
+                  {t('coursesFound', { count: courseData?.meta?.total ?? allCourses.length })}
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {courses.map((course) => (
+                  {allCourses.map((course) => (
                     <CourseCard
                       key={course.id}
                       course={course}
@@ -127,6 +138,18 @@ export default function CoursesPage() {
                     />
                   ))}
                 </div>
+                <PaginationControls
+                  page={page}
+                  totalPages={totalPages}
+                  disabled={isLoading}
+                  className="mt-6"
+                  labels={{
+                    previous: t('previousPage'),
+                    next: t('nextPage'),
+                    pageValue: t('pageValue', { page, total: totalPages }),
+                  }}
+                  onPageChange={setPage}
+                />
               </>
             )}
           </div>

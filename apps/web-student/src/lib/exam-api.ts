@@ -45,6 +45,16 @@ export interface Exam extends ExamSummary {
   sections: ExamSection[];
 }
 
+interface PaginatedExams {
+  data: ExamSummary[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 export interface ExamAttempt {
   id: string;
   examId: string;
@@ -104,7 +114,9 @@ export interface ExamAttemptDetail extends ExamAttemptSummary {
 
 export const examApi = {
   getExams(params?: { courseId?: string; unitId?: string }) {
-    return api.get('/exams', { params }).then((response) => response.data as ExamSummary[]);
+    return api
+      .get('/exams', { params: { limit: 100, ...params } })
+      .then((response) => normalizeExams(response.data));
   },
 
   getExam(id: string) {
@@ -133,3 +145,33 @@ export const examApi = {
     return api.get(`/exams/attempts/${id}`).then((response) => response.data as ExamAttemptDetail);
   },
 };
+
+function normalizeExams(value: unknown): ExamSummary[] {
+  if (Array.isArray(value)) {
+    return value as ExamSummary[];
+  }
+
+  if (isPaginatedExams(value)) {
+    return value.data;
+  }
+
+  return [];
+}
+
+function isPaginatedExams(value: unknown): value is PaginatedExams {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+  const meta = record.meta;
+  return (
+    Array.isArray(record.data) &&
+    !!meta &&
+    typeof meta === 'object' &&
+    typeof (meta as Record<string, unknown>).page === 'number' &&
+    typeof (meta as Record<string, unknown>).limit === 'number' &&
+    typeof (meta as Record<string, unknown>).total === 'number' &&
+    typeof (meta as Record<string, unknown>).totalPages === 'number'
+  );
+}

@@ -60,7 +60,7 @@ export function MatchingQuestion({ options, value, disabled, onChange }: Matchin
   return (
     <div className="mt-4">
       <p className="mb-4 text-sm text-muted-foreground">{t('practice.matchingInstruction')}</p>
-      <div className="grid grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-8">
         <div className="space-y-3">
           {left.map((leftItem) => {
             const isSelected = selectedLeft === leftItem;
@@ -70,26 +70,27 @@ export function MatchingQuestion({ options, value, disabled, onChange }: Matchin
               <div
                 key={leftItem}
                 onClick={() => !isMapped && handleLeftClick(leftItem)}
-                className={`flex items-center justify-between min-h-[3rem] px-4 py-2 border rounded-md transition-all cursor-pointer ${
+                className={`flex min-h-[3rem] items-center justify-between gap-3 rounded-md border px-4 py-2 transition-all ${
                   disabled
-                    ? 'opacity-60 cursor-not-allowed'
+                    ? 'cursor-not-allowed opacity-60'
                     : isMapped
-                      ? 'border-emerald-500 bg-emerald-500/10 cursor-default'
+                      ? 'cursor-default border-emerald-500 bg-emerald-500/10'
                       : isSelected
-                        ? 'border-primary ring-2 ring-primary/20 bg-primary/5'
-                        : 'hover:border-primary/50 hover:bg-muted'
+                        ? 'cursor-pointer border-primary bg-primary/5 ring-2 ring-primary/20'
+                        : 'cursor-pointer hover:border-primary/50 hover:bg-muted'
                 }`}
               >
-                <span className="text-sm font-medium">{leftItem}</span>
+                <span className="min-w-0 break-words text-sm font-medium">{leftItem}</span>
                 {isMapped && !disabled && (
                   <button
+                    type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleUnmap(leftItem);
                     }}
-                    className="text-xs text-destructive hover:underline ml-2"
+                    className="shrink-0 text-xs text-destructive hover:underline"
                   >
-                    Unmatch
+                    {t('practice.matchingUnmatch')}
                   </button>
                 )}
               </div>
@@ -115,10 +116,10 @@ export function MatchingQuestion({ options, value, disabled, onChange }: Matchin
                         : 'cursor-not-allowed opacity-50 bg-muted/30'
                 }`}
               >
-                <span className="text-sm">{rightItem}</span>
+                <span className="break-words text-sm">{rightItem}</span>
                 {isMapped && (
-                  <span className="text-xs font-semibold text-emerald-600 mt-1">
-                    Matched with: {mappedLeftItem}
+                  <span className="mt-1 break-words text-xs font-semibold text-emerald-600">
+                    {t('practice.matchingMatchedWith', { value: mappedLeftItem ?? '' })}
                   </span>
                 )}
               </div>

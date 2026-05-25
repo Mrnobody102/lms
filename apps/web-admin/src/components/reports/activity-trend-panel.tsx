@@ -6,16 +6,8 @@ import { useTranslations } from 'next-intl';
 import { LineChart as LineChartIcon } from 'lucide-react';
 import { useActivityTrend } from '@/hooks/use-reports';
 import type { TrendReportFilters } from '@/lib/reports-api';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { MeasuredChart } from './measured-chart';
 
 interface ActivityTrendPanelProps {
   filters?: TrendReportFilters;
@@ -74,9 +66,14 @@ export function ActivityTrendPanel({ filters = {} }: ActivityTrendPanelProps) {
       ) : chartData.length === 0 ? (
         <p className="text-sm text-muted-foreground py-6 text-center">{t('reports.noData')}</p>
       ) : (
-        <div className="w-full h-[300px] mt-6">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+        <MeasuredChart className="w-full h-[300px] mt-6">
+          {({ height, width }) => (
+            <BarChart
+              data={chartData}
+              height={height}
+              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              width={width}
+            >
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
               <XAxis
                 dataKey="date"
@@ -132,8 +129,8 @@ export function ActivityTrendPanel({ filters = {} }: ActivityTrendPanelProps) {
                 );
               })}
             </BarChart>
-          </ResponsiveContainer>
-        </div>
+          )}
+        </MeasuredChart>
       )}
     </div>
   );

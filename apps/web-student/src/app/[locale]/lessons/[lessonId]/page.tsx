@@ -21,13 +21,17 @@ import { StudentNav } from '../../../../components/layout/student-nav';
 
 export default function LessonPage() {
   const t = useTranslations('Student');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem('lms_sidebar_open');
-    if (saved !== null) {
-      setIsSidebarOpen(saved === 'true');
+    const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
+    if (!isDesktop) {
+      setIsSidebarOpen(false);
+      return;
     }
+
+    const saved = localStorage.getItem('lms_sidebar_open');
+    setIsSidebarOpen(saved === null ? true : saved === 'true');
   }, []);
 
   const handleToggleSidebar = () => {

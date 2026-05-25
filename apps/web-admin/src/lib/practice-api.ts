@@ -81,6 +81,31 @@ export interface PaginatedAiGenerationJobs {
   };
 }
 
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: PaginationMeta;
+}
+
+export type PracticeSetStatusFilter = 'all' | 'published' | 'draft';
+
+export interface PracticeListParams {
+  courseId?: string;
+  unitId?: string;
+  skill?: string;
+  search?: string;
+  questionType?: PracticeQuestionType;
+  status?: PracticeSetStatusFilter;
+  page?: number;
+  limit?: number;
+}
+
 export interface AiBulkApproveResult {
   approved: number;
   failed: number;
@@ -111,8 +136,10 @@ export interface PracticeExerciseSetDetail extends PracticeExerciseSet {
 }
 
 export const practiceApi = {
-  getQuestions(params?: { courseId?: string; unitId?: string }) {
-    return api.get('/practice/questions', { params }).then((r) => r.data as PracticeQuestion[]);
+  getQuestions(params?: PracticeListParams) {
+    return api
+      .get('/practice/questions', { params })
+      .then((r) => normalizePaginatedResponse<PracticeQuestion>(r.data, params));
   },
 
   createQuestion(data: {
@@ -151,10 +178,16 @@ export const practiceApi = {
     return api.delete(`/practice/questions/${id}`).then((r) => r.data as PracticeQuestion);
   },
 
-  getExerciseSets(params?: { courseId?: string; unitId?: string }) {
+  getExerciseSets(params?: PracticeListParams) {
+    return practiceApi
+      .getExerciseSetsPage({ limit: 100, ...params })
+      .then((response) => response.data);
+  },
+
+  getExerciseSetsPage(params?: PracticeListParams) {
     return api
       .get('/practice/exercise-sets', { params })
-      .then((r) => r.data as PracticeExerciseSet[]);
+      .then((r) => normalizePaginatedResponse<PracticeExerciseSet>(r.data, params));
   },
 
   createExerciseSet(data: {
@@ -277,8 +310,10 @@ export const practiceApi = {
       .then((r) => r.data as AiBulkRejectResult);
   },
 
-  getReviewQueue(params?: { courseId?: string; unitId?: string }) {
-    return api.get('/practice/review-queue', { params }).then((r) => r.data as PracticeQuestion[]);
+  getReviewQueue(params?: PracticeListParams) {
+    return api
+      .get('/practice/review-queue', { params })
+      .then((r) => normalizePaginatedResponse<PracticeQuestion>(r.data, params));
   },
 
   approveQuestion(id: string) {
@@ -297,3 +332,54 @@ export const practiceApi = {
     return api.post('/practice/review-queue/bulk-reject', { ids }).then((r) => r.data);
   },
 };
+
+function normalizePaginatedResponse<T>(
+  value: unknown,
+  params?: PracticeListParams,
+): PaginatedResponse<T> {
+  if (isPaginatedResponse<T>(value)) {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return {
+      data: value as T[],
+      meta: createPaginationMeta(params, value.length),
+    };
+  }
+
+  return {
+    data: [],
+    meta: createPaginationMeta(params, 0),
+  };
+}
+
+function isPaginatedResponse<T>(value: unknown): value is PaginatedResponse<T> {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+  const meta = record.meta;
+  return (
+    Array.isArray(record.data) &&
+    !!meta &&
+    typeof meta === 'object' &&
+    typeof (meta as Record<string, unknown>).page === 'number' &&
+    typeof (meta as Record<string, unknown>).limit === 'number' &&
+    typeof (meta as Record<string, unknown>).total === 'number' &&
+    typeof (meta as Record<string, unknown>).totalPages === 'number'
+  );
+}
+
+function createPaginationMeta(params: PracticeListParams | undefined, total: number) {
+  const page = params?.page ?? 1;
+  const limit = params?.limit ?? Math.max(total, 1);
+
+  return {
+    page,
+    limit,
+    total,
+    totalPages: Math.max(1, Math.ceil(total / limit)),
+  };
+}

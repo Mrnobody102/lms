@@ -58,6 +58,8 @@ export default function NotificationsPage() {
 
   const notifications = data?.notifications || [];
   const unreadCount = data?.unreadCount || 0;
+  const totalPages = Math.max(1, Math.ceil((data?.meta.total ?? 0) / ITEMS_PER_PAGE));
+  const canGoNext = data?.meta.hasMore ?? false;
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -192,11 +194,11 @@ export default function NotificationsPage() {
                     {t('pagination.prev')}
                   </Button>
                   <span className="text-sm font-medium text-muted-foreground">
-                    {t('pagination.page', { page: page + 1 })}
+                    {t('pagination.page', { page: page + 1, total: totalPages })}
                   </span>
                   <Button
                     variant="outline"
-                    disabled={notifications.length < ITEMS_PER_PAGE}
+                    disabled={!canGoNext}
                     onClick={() => setPage((p) => p + 1)}
                   >
                     {t('pagination.next')}

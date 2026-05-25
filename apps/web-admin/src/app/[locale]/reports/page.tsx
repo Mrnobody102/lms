@@ -90,7 +90,7 @@ export default function ReportsHomePage() {
                       value={compareCohortId}
                       onChange={(e) => setCompareCohortId(e.target.value)}
                     >
-                      <option value="">{t('common.none') ?? 'None'}</option>
+                      <option value="">{t('common.none')}</option>
                       {cohorts
                         .filter((c) => c.id !== selectedCohortId)
                         .map((cohort) => (

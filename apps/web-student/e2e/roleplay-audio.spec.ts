@@ -106,6 +106,7 @@ test('student can upload roleplay audio and see pronunciation status', async ({ 
   await page.locator('input[type="email"]').fill('student@example.com');
   await page.locator('input[type="password"]').fill('Student@123');
   await page.getByRole('button', { name: 'Login Now' }).click();
+  await expect(page).toHaveURL(/\/en\/courses$/, { timeout: 10000 });
 
   await page.goto('/en/roleplay/session-audio');
   await expect(page.getByRole('heading', { name: 'Roleplay Session' })).toBeVisible();

@@ -139,6 +139,7 @@ test('student can complete a micro-card and save it to SRS', async ({ page }) =>
   await page.locator('input[type="email"]').fill('student@example.com');
   await page.locator('input[type="password"]').fill('Student@123');
   await page.getByRole('button', { name: 'Login Now' }).click();
+  await expect(page).toHaveURL(/\/en\/courses$/, { timeout: 10000 });
 
   await page.goto('/en/lessons/lesson-1');
   await expect(page.getByText('collaborate')).toBeVisible();

@@ -1,10 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ExamQuestionType, examApi } from '@/lib/exam-api';
+import { ExamListParams, ExamQuestionType, examApi } from '@/lib/exam-api';
 
-export function useExams(params?: { courseId?: string; unitId?: string }) {
+export function useExams(params?: ExamListParams) {
   return useQuery({
     queryKey: ['exams', params],
     queryFn: () => examApi.getExams(params),
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useExamsPage(params?: ExamListParams) {
+  return useQuery({
+    queryKey: ['exams-page', params],
+    queryFn: () => examApi.getExamsPage(params),
     staleTime: 60 * 1000,
   });
 }
@@ -46,7 +54,7 @@ export function useCreateExam() {
       }>;
     }) => examApi.createExam(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['exams'] });
+      invalidateExamLists(queryClient);
     },
   });
 }
@@ -82,7 +90,7 @@ export function useUpdateExam() {
       };
     }) => examApi.updateExam(data.id, data.payload),
     onSuccess: (_result, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['exams'] });
+      invalidateExamLists(queryClient);
       queryClient.invalidateQueries({ queryKey: ['exam', variables.id] });
     },
   });
@@ -94,8 +102,13 @@ export function useDeleteExam() {
   return useMutation({
     mutationFn: (id: string) => examApi.deleteExam(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['exams'] });
+      invalidateExamLists(queryClient);
       queryClient.invalidateQueries({ queryKey: ['exam'] });
     },
   });
+}
+
+function invalidateExamLists(queryClient: ReturnType<typeof useQueryClient>) {
+  queryClient.invalidateQueries({ queryKey: ['exams'] });
+  queryClient.invalidateQueries({ queryKey: ['exams-page'] });
 }

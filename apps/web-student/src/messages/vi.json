@@ -132,7 +132,7 @@
       "pagination": {
         "prev": "Trang trước",
         "next": "Trang sau",
-        "page": "Trang {page}"
+        "page": "Trang {page} / {total}"
       }
     },
     "dailyQuest": {
@@ -640,7 +640,10 @@
       "loadError": "Không thể tải khóa học lúc này.",
       "retry": "Thử lại",
       "empty": "Chưa có khóa học nào",
-      "emptyDesc": "Hãy quay lại sau để khám phá các khóa học mới."
+      "emptyDesc": "Hãy quay lại sau để khám phá các khóa học mới.",
+      "paginationPrevious": "Trang trước",
+      "paginationNext": "Trang sau",
+      "paginationPage": "Trang {page} / {total}"
     },
     "practice": {
       "feedbackDetails": "Chi tiết nhận xét:",
@@ -691,6 +694,8 @@
       "matching": "Nối cặp",
       "ordering": "Sắp xếp",
       "matchingInstruction": "Bấm mục bên trái, rồi bấm mục bên phải để ghép cặp.",
+      "matchingUnmatch": "Bỏ nối",
+      "matchingMatchedWith": "Đã nối với: {value}",
       "orderingInstruction": "Kéo thả các mục để sắp xếp theo đúng thứ tự.",
       "aiAudio": "Phát âm (AI chấm)",
       "aiText": "Viết đoạn văn (AI chấm)",
@@ -781,6 +786,8 @@
       "aiAudio": "Phát âm (AI chấm)",
       "aiText": "Viết đoạn văn (AI chấm)",
       "matchingInstruction": "Bấm mục bên trái, rồi bấm mục bên phải để ghép cặp.",
+      "matchingUnmatch": "Bỏ nối",
+      "matchingMatchedWith": "Đã nối với: {value}",
       "fillBlankPlaceholder": "Nhập đáp án",
       "pointsValue": "{points, plural, one {# điểm} other {# điểm}}",
       "correct": "Đúng",

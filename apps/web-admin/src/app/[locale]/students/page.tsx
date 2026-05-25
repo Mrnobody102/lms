@@ -342,118 +342,120 @@ export default function AdminStudentsPage() {
                 <p className="text-sm text-muted-foreground max-w-sm">{t('noStudentsDesc')}</p>
               </div>
             ) : (
-              <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
-                <div className="grid grid-cols-[3rem_minmax(0,1.1fr)_140px_160px_180px] gap-4 border-b bg-muted/30 px-5 py-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground items-center">
-                  <span className="flex justify-center">{t('selectItem')}</span>
-                  <span>{t('students')}</span>
-                  <span>{t('status')}</span>
-                  <span>{t('tenant')}</span>
-                  <span>{t('actions')}</span>
-                </div>
+              <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
+                <div className="min-w-[760px]">
+                  <div className="grid grid-cols-[3rem_minmax(0,1.1fr)_140px_160px_180px] gap-4 border-b bg-muted/30 px-5 py-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground items-center">
+                    <span className="flex justify-center">{t('selectItem')}</span>
+                    <span>{t('students')}</span>
+                    <span>{t('status')}</span>
+                    <span>{t('tenant')}</span>
+                    <span>{t('actions')}</span>
+                  </div>
 
-                <div className="divide-y">
-                  {visibleStudents.map((student) => (
-                    <div
-                      key={student.id}
-                      className="grid grid-cols-[3rem_minmax(0,1.1fr)_140px_160px_180px] gap-4 px-5 py-4 hover:bg-muted/50 transition-colors items-center"
-                    >
-                      <div className="flex justify-center">
-                        <input
-                          type="checkbox"
-                          className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                          checked={selectedStudentIds.includes(student.id)}
-                          onChange={(event) =>
-                            handleToggleStudent(student.id, event.target.checked)
-                          }
-                          aria-label={t('selectItem')}
-                        />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">
-                          {student.fullName || student.email}
-                        </p>
-                        <p className="truncate text-xs text-muted-foreground">{student.email}</p>
-                        {student.createdAt && (
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {t('studentSince', {
-                              value: new Intl.DateTimeFormat(locale, {
-                                dateStyle: 'medium',
-                              }).format(new Date(student.createdAt)),
-                            })}
+                  <div className="divide-y">
+                    {visibleStudents.map((student) => (
+                      <div
+                        key={student.id}
+                        className="grid grid-cols-[3rem_minmax(0,1.1fr)_140px_160px_180px] gap-4 px-5 py-4 hover:bg-muted/50 transition-colors items-center"
+                      >
+                        <div className="flex justify-center">
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                            checked={selectedStudentIds.includes(student.id)}
+                            onChange={(event) =>
+                              handleToggleStudent(student.id, event.target.checked)
+                            }
+                            aria-label={t('selectItem')}
+                          />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">
+                            {student.fullName || student.email}
                           </p>
-                        )}
-                      </div>
-
-                      <div className="flex items-center">
-                        <Badge variant={student.isActive ? 'success' : 'outline'}>
-                          {student.isActive ? t('activeStudents') : t('inactiveStudents')}
-                        </Badge>
-                      </div>
-
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        {student.tenant?.name || student.tenantId}
-                      </div>
-
-                      <div className="flex items-center">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant={student.isActive ? 'outline' : 'default'}
-                          disabled={updateStudentStatus.isPending}
-                          onClick={() => {
-                            updateStudentStatus.mutate(
-                              {
-                                userId: student.id,
-                                isActive: !student.isActive,
-                              },
-                              {
-                                onSuccess: () => {
-                                  setMessage({
-                                    type: 'success',
-                                    text: student.isActive
-                                      ? t('studentDeactivated')
-                                      : t('studentActivated'),
-                                  });
-                                },
-                                onError: () => {
-                                  setMessage({
-                                    type: 'error',
-                                    text: t('studentStatusUpdateError'),
-                                  });
-                                },
-                              },
-                            );
-                          }}
-                          className="gap-1.5"
-                        >
-                          {updateStudentStatus.isPending ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : student.isActive ? (
-                            <UserX2 className="h-4 w-4" />
-                          ) : (
-                            <UserCheck2 className="h-4 w-4" />
+                          <p className="truncate text-xs text-muted-foreground">{student.email}</p>
+                          {student.createdAt && (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {t('studentSince', {
+                                value: new Intl.DateTimeFormat(locale, {
+                                  dateStyle: 'medium',
+                                }).format(new Date(student.createdAt)),
+                              })}
+                            </p>
                           )}
-                          {student.isActive ? t('deactivate') : t('activate')}
-                        </Button>
+                        </div>
+
+                        <div className="flex items-center">
+                          <Badge variant={student.isActive ? 'success' : 'outline'}>
+                            {student.isActive ? t('activeStudents') : t('inactiveStudents')}
+                          </Badge>
+                        </div>
+
+                        <div className="flex items-center text-sm text-muted-foreground">
+                          {student.tenant?.name || student.tenantId}
+                        </div>
+
+                        <div className="flex items-center">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={student.isActive ? 'outline' : 'default'}
+                            disabled={updateStudentStatus.isPending}
+                            onClick={() => {
+                              updateStudentStatus.mutate(
+                                {
+                                  userId: student.id,
+                                  isActive: !student.isActive,
+                                },
+                                {
+                                  onSuccess: () => {
+                                    setMessage({
+                                      type: 'success',
+                                      text: student.isActive
+                                        ? t('studentDeactivated')
+                                        : t('studentActivated'),
+                                    });
+                                  },
+                                  onError: () => {
+                                    setMessage({
+                                      type: 'error',
+                                      text: t('studentStatusUpdateError'),
+                                    });
+                                  },
+                                },
+                              );
+                            }}
+                            className="gap-1.5"
+                          >
+                            {updateStudentStatus.isPending ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : student.isActive ? (
+                              <UserX2 className="h-4 w-4" />
+                            ) : (
+                              <UserCheck2 className="h-4 w-4" />
+                            )}
+                            {student.isActive ? t('deactivate') : t('activate')}
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="border-t bg-muted/10 px-5 py-4">
-                  <PaginationControls
-                    page={page}
-                    totalPages={totalPages}
-                    disabled={isLoading}
-                    labels={{
-                      previous: t('previousPage'),
-                      next: t('nextPage'),
-                      pageValue: t('pageValue', { page, total: Math.max(totalPages, 1) }),
-                    }}
-                    onPageChange={(nextPage) => {
-                      setPage(nextPage);
-                      setSelectedStudentIds([]);
-                    }}
-                  />
+                    ))}
+                  </div>
+                  <div className="border-t bg-muted/10 px-5 py-4">
+                    <PaginationControls
+                      page={page}
+                      totalPages={totalPages}
+                      disabled={isLoading}
+                      labels={{
+                        previous: t('previousPage'),
+                        next: t('nextPage'),
+                        pageValue: t('pageValue', { page, total: Math.max(totalPages, 1) }),
+                      }}
+                      onPageChange={(nextPage) => {
+                        setPage(nextPage);
+                        setSelectedStudentIds([]);
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             )}

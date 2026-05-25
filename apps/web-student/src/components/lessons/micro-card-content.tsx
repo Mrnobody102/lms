@@ -14,6 +14,8 @@ import {
 import { useTranslations } from 'next-intl';
 import { useAddMicroCardToReview, useTrackMicroCardEvent } from './use-micro-card-events';
 
+const DEFAULT_SPEECH_LANGUAGE = 'en-US';
+
 interface MicroCardContentProps {
   lessonId: string;
   content?: string | null;
@@ -194,7 +196,7 @@ function MicroCard({
     }
 
     const utterance = new SpeechSynthesisUtterance(card.front);
-    utterance.lang = navigator.language || 'en-US';
+    utterance.lang = navigator.language || DEFAULT_SPEECH_LANGUAGE;
     window.speechSynthesis.speak(utterance);
   };
 

@@ -132,7 +132,7 @@
       "pagination": {
         "prev": "Previous",
         "next": "Next",
-        "page": "Page {page}"
+        "page": "Page {page} / {total}"
       }
     },
     "dailyQuest": {
@@ -640,7 +640,10 @@
       "loadError": "Cannot load courses right now.",
       "retry": "Retry",
       "empty": "No courses available",
-      "emptyDesc": "Check back later for new courses."
+      "emptyDesc": "Check back later for new courses.",
+      "paginationPrevious": "Previous",
+      "paginationNext": "Next",
+      "paginationPage": "Page {page} / {total}"
     },
     "practice": {
       "feedbackDetails": "Feedback Details:",
@@ -691,6 +694,8 @@
       "matching": "Matching",
       "ordering": "Ordering",
       "matchingInstruction": "Click a left item, then click a right item to match them.",
+      "matchingUnmatch": "Unmatch",
+      "matchingMatchedWith": "Matched with: {value}",
       "orderingInstruction": "Drag and drop items to put them in the correct order.",
       "aiAudio": "Speaking (AI Graded)",
       "aiText": "Writing (AI Graded)",
@@ -781,6 +786,8 @@
       "aiAudio": "Speaking (AI graded)",
       "aiText": "Writing (AI graded)",
       "matchingInstruction": "Click a left item, then click a right item to match them.",
+      "matchingUnmatch": "Unmatch",
+      "matchingMatchedWith": "Matched with: {value}",
       "fillBlankPlaceholder": "Type your answer",
       "pointsValue": "{points, plural, one {# point} other {# points}}",
       "correct": "Correct",

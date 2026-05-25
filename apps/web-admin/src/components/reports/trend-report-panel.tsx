@@ -6,16 +6,8 @@ import { useTranslations } from 'next-intl';
 import { TrendingUp } from 'lucide-react';
 import { useMasteryTrend } from '@/hooks/use-reports';
 import type { ReportFilters } from '@/lib/reports-api';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { MeasuredChart } from './measured-chart';
 
 interface TrendReportPanelProps {
   filters?: ReportFilters & { days?: number };
@@ -102,9 +94,14 @@ export function TrendReportPanel({ filters = {} }: TrendReportPanelProps) {
       ) : chartData.length === 0 || lines.length === 0 ? (
         <p className="text-sm text-muted-foreground py-6 text-center">{t('reports.noData')}</p>
       ) : (
-        <div className="w-full h-[300px] mt-6">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+        <MeasuredChart className="w-full h-[300px] mt-6">
+          {({ height, width }) => (
+            <LineChart
+              data={chartData}
+              height={height}
+              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              width={width}
+            >
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
               <XAxis
                 dataKey="date"
@@ -148,8 +145,8 @@ export function TrendReportPanel({ filters = {} }: TrendReportPanelProps) {
                 />
               ))}
             </LineChart>
-          </ResponsiveContainer>
-        </div>
+          )}
+        </MeasuredChart>
       )}
     </div>
   );

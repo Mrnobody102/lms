@@ -350,6 +350,7 @@ describe('PracticeService', () => {
     const prisma = {
       practiceQuestion: {
         findMany: vi.fn().mockResolvedValue([]),
+        count: vi.fn().mockResolvedValue(0),
       },
     };
     const learningAccess = {
@@ -386,6 +387,7 @@ describe('PracticeService', () => {
     const prisma = {
       practiceExerciseSet: {
         findMany: vi.fn().mockResolvedValue([]),
+        count: vi.fn().mockResolvedValue(0),
       },
     };
     const learningAccess = {
@@ -411,9 +413,13 @@ describe('PracticeService', () => {
         where: expect.objectContaining({
           tenantId: 'tenant-1',
           isPublished: true,
-          OR: expect.arrayContaining([
-            { courseId: null },
-            { course: { tenantId: 'tenant-1', userId: 'user-1' } },
+          AND: expect.arrayContaining([
+            expect.objectContaining({
+              OR: expect.arrayContaining([
+                { courseId: null },
+                { course: { tenantId: 'tenant-1', userId: 'user-1' } },
+              ]),
+            }),
           ]),
           questions: {
             some: {

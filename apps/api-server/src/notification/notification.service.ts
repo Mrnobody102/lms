@@ -50,18 +50,31 @@ export class NotificationService {
   }
 
   async getUserNotifications(tenantId: string, userId: string, skip = 0, take = 20) {
-    const notifications = await this.prisma.notification.findMany({
-      where: { tenantId, userId },
-      orderBy: { createdAt: 'desc' },
-      skip,
-      take,
-    });
+    const [notifications, unreadCount, total] = await Promise.all([
+      this.prisma.notification.findMany({
+        where: { tenantId, userId },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take,
+      }),
+      this.prisma.notification.count({
+        where: { tenantId, userId, readAt: null },
+      }),
+      this.prisma.notification.count({
+        where: { tenantId, userId },
+      }),
+    ]);
 
-    const unreadCount = await this.prisma.notification.count({
-      where: { tenantId, userId, readAt: null },
-    });
-
-    return { notifications, unreadCount };
+    return {
+      notifications,
+      unreadCount,
+      meta: {
+        skip,
+        take,
+        total,
+        hasMore: skip + notifications.length < total,
+      },
+    };
   }
 
   async markAsRead(tenantId: string, userId: string, id: string) {

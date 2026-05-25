@@ -17,6 +17,7 @@ import { MediaService } from '../media/media.service';
 import { SkillMasteryService } from '../skill/skill-mastery.service';
 import { SrsService } from '../srs/srs.service';
 import { CreateExamDto } from './dto/create-exam.dto';
+import type { ExamStatusFilter } from './dto/exam-query.dto';
 
 interface ExamUser {
   id: string;
@@ -26,6 +27,15 @@ interface ExamUser {
 interface SubmittedExamAnswer {
   questionId: string;
   answer: unknown;
+}
+
+interface ExamListQuery {
+  courseId?: string;
+  unitId?: string;
+  search?: string;
+  status?: ExamStatusFilter;
+  page?: number;
+  limit?: number;
 }
 
 interface ExamQuestionForScoring {
@@ -249,7 +259,10 @@ export class ExamService {
     });
   }
 
-  async listExams(tenantId: string, user: ExamUser, query: { courseId?: string; unitId?: string }) {
+  async listExams(tenantId: string, user: ExamUser, query: ExamListQuery) {
+    const page = Math.max(query.page ?? 1, 1);
+    const limit = Math.min(Math.max(query.limit ?? 20, 1), 100);
+    const andFilters: Prisma.ExamWhereInput[] = [];
     const where: Prisma.ExamWhereInput = {
       tenantId,
       courseId: query.courseId,
@@ -262,22 +275,52 @@ export class ExamService {
       if (query.courseId) {
         where.course = this.learningAccess.courseWhere(tenantId, user, query.courseId);
       } else {
-        where.OR = [
-          { courseId: null },
-          { course: this.learningAccess.courseWhere(tenantId, user) },
-        ];
+        andFilters.push({
+          OR: [{ courseId: null }, { course: this.learningAccess.courseWhere(tenantId, user) }],
+        });
       }
+    } else if (query.status && query.status !== 'all') {
+      where.isPublished = query.status === 'published';
     }
 
-    return this.prisma.exam.findMany({
-      where,
-      include: {
-        _count: { select: { sections: true, attempts: true } },
-        course: { select: { id: true, title: true } },
-        unit: { select: { id: true, title: true } },
+    const search = query.search?.trim();
+    if (search) {
+      andFilters.push({
+        OR: [
+          { title: { contains: search, mode: 'insensitive' } },
+          { description: { contains: search, mode: 'insensitive' } },
+          { unit: { title: { contains: search, mode: 'insensitive' } } },
+        ],
+      });
+    }
+    if (andFilters.length > 0) {
+      where.AND = andFilters;
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.exam.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        include: {
+          _count: { select: { sections: true, attempts: true } },
+          course: { select: { id: true, title: true } },
+          unit: { select: { id: true, title: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.exam.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / limit)),
       },
-      orderBy: { createdAt: 'desc' },
-    });
+    };
   }
 
   async getExam(id: string, tenantId: string, user: ExamUser) {

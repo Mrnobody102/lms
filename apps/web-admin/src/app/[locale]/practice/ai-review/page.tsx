@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { PaginationControls } from '@repo/ui';
 import { AdminHeader } from '@/components/layout/admin-header';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
@@ -53,6 +54,7 @@ const JOB_STATUSES: Array<'all' | AiGenerationJobStatus> = [
   'FAILED',
   'CANCELLED',
 ];
+const AI_JOBS_PAGE_SIZE = 20;
 
 interface DraftEditState {
   prompt: string;
@@ -68,6 +70,7 @@ export default function PracticeAiReviewPage() {
   const [courseId, setCourseId] = useState('');
   const [unitId, setUnitId] = useState('');
   const [status, setStatus] = useState<'all' | AiGenerationJobStatus>('all');
+  const [jobsPage, setJobsPage] = useState(1);
   const [selectedJobId, setSelectedJobId] = useState('');
   const [topic, setTopic] = useState('');
   const [context, setContext] = useState('');
@@ -87,9 +90,12 @@ export default function PracticeAiReviewPage() {
     courseId: courseId || undefined,
     unitId: unitId || undefined,
     status: status === 'all' ? undefined : status,
-    limit: 50,
+    page: jobsPage,
+    limit: AI_JOBS_PAGE_SIZE,
   });
   const jobs = useMemo(() => jobsQuery.data?.data ?? [], [jobsQuery.data?.data]);
+  const jobsTotal = jobsQuery.data?.meta.total ?? jobs.length;
+  const jobsTotalPages = Math.max(jobsQuery.data?.meta.totalPages ?? 1, 1);
   const selectedJobQuery = useAiGeneration(selectedJobId);
   const selectedJob = selectedJobQuery.data;
 
@@ -102,6 +108,7 @@ export default function PracticeAiReviewPage() {
   useEffect(() => {
     setUnitId('');
     setSelectedJobId('');
+    setJobsPage(1);
   }, [courseId]);
 
   useEffect(() => {
@@ -141,6 +148,7 @@ export default function PracticeAiReviewPage() {
       },
       {
         onSuccess: (job) => {
+          setJobsPage(1);
           setSelectedJobId(job.id);
           setTopic('');
           setContext('');
@@ -311,6 +319,7 @@ export default function PracticeAiReviewPage() {
                   onChange={(event) => {
                     setUnitId(event.target.value);
                     setSelectedJobId('');
+                    setJobsPage(1);
                   }}
                   className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   disabled={!courseId}
@@ -327,9 +336,11 @@ export default function PracticeAiReviewPage() {
                 <Label>{t('aiReviewStatus')}</Label>
                 <select
                   value={status}
-                  onChange={(event) =>
-                    setStatus(event.target.value as 'all' | AiGenerationJobStatus)
-                  }
+                  onChange={(event) => {
+                    setStatus(event.target.value as 'all' | AiGenerationJobStatus);
+                    setSelectedJobId('');
+                    setJobsPage(1);
+                  }}
                   className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 >
                   {JOB_STATUSES.map((item) => (
@@ -348,7 +359,7 @@ export default function PracticeAiReviewPage() {
                     <h2 className="text-base font-semibold">{t('aiReviewJobs')}</h2>
                     <p className="text-sm text-muted-foreground">{t('aiReviewJobsDesc')}</p>
                   </div>
-                  <Badge variant="secondary">{jobs.length}</Badge>
+                  <Badge variant="secondary">{jobsTotal}</Badge>
                 </div>
 
                 <form
@@ -430,32 +441,49 @@ export default function PracticeAiReviewPage() {
                       {t('aiReviewNoJobs')}
                     </p>
                   ) : (
-                    jobs.map((job) => (
-                      <button
-                        key={job.id}
-                        type="button"
-                        onClick={() => setSelectedJobId(job.id)}
-                        className={`w-full rounded-lg border p-3 text-left transition-colors ${
-                          selectedJobId === job.id
-                            ? 'border-primary bg-primary/5'
-                            : 'bg-background hover:border-primary/40'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="line-clamp-1 text-sm font-semibold">{job.topic}</p>
-                            <p className="mt-1 text-xs text-muted-foreground">
-                              {job.requestedCount} ·{' '}
-                              {getPracticeQuestionTypeLabel(job.questionType, t)}
-                            </p>
+                    <>
+                      {jobs.map((job) => (
+                        <button
+                          key={job.id}
+                          type="button"
+                          onClick={() => setSelectedJobId(job.id)}
+                          className={`w-full rounded-lg border p-3 text-left transition-colors ${
+                            selectedJobId === job.id
+                              ? 'border-primary bg-primary/5'
+                              : 'bg-background hover:border-primary/40'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="line-clamp-1 text-sm font-semibold">{job.topic}</p>
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                {job.requestedCount} ·{' '}
+                                {getPracticeQuestionTypeLabel(job.questionType, t)}
+                              </p>
+                            </div>
+                            <StatusBadge
+                              label={getJobStatusLabel(job.status, t)}
+                              status={job.status}
+                            />
                           </div>
-                          <StatusBadge
-                            label={getJobStatusLabel(job.status, t)}
-                            status={job.status}
-                          />
-                        </div>
-                      </button>
-                    ))
+                        </button>
+                      ))}
+                      <PaginationControls
+                        page={jobsPage}
+                        totalPages={jobsTotalPages}
+                        disabled={jobsQuery.isLoading}
+                        className="pt-2"
+                        labels={{
+                          previous: t('previousPage'),
+                          next: t('nextPage'),
+                          pageValue: t('pageValue', { page: jobsPage, total: jobsTotalPages }),
+                        }}
+                        onPageChange={(nextPage) => {
+                          setJobsPage(nextPage);
+                          setSelectedJobId('');
+                        }}
+                      />
+                    </>
                   )}
                 </div>
               </section>

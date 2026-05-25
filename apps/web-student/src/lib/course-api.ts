@@ -44,19 +44,43 @@ export interface Course {
   } | null;
 }
 
+export interface CourseListParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+}
+
+export interface PaginatedCoursesResponse {
+  data: Course[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 export const courseApi = {
-  getCourses: async () => {
-    const response = await api.get<Course[]>('/courses');
-    const raw = response.data as unknown as Record<string, unknown>;
-    if (raw && raw.success === false) {
+  getCourses: async (params?: CourseListParams): Promise<PaginatedCoursesResponse> => {
+    const response = await api.get('/courses', { params });
+    const raw = response.data as unknown;
+    if (isRecord(raw) && raw.success === false) {
       const msg = raw.message || 'Failed to load courses';
       throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg));
     }
-    if (raw && raw.data && Array.isArray(raw.data)) {
-      return raw.data as Course[];
+    if (isPaginatedCoursesResponse(raw)) {
+      return raw;
     }
-    if (Array.isArray(raw)) return raw;
-    return [];
+    if (Array.isArray(raw)) {
+      return {
+        data: raw as Course[],
+        meta: createPaginationMeta(params, raw.length),
+      };
+    }
+    return {
+      data: [],
+      meta: createPaginationMeta(params, 0),
+    };
   },
 
   getCourse: async (id: string) => {
@@ -69,3 +93,36 @@ export const courseApi = {
     return response.data;
   },
 };
+
+function isPaginatedCoursesResponse(value: unknown): value is PaginatedCoursesResponse {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  const meta = value.meta;
+  return (
+    Array.isArray(value.data) &&
+    !!meta &&
+    typeof meta === 'object' &&
+    typeof (meta as Record<string, unknown>).page === 'number' &&
+    typeof (meta as Record<string, unknown>).limit === 'number' &&
+    typeof (meta as Record<string, unknown>).total === 'number' &&
+    typeof (meta as Record<string, unknown>).totalPages === 'number'
+  );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object';
+}
+
+function createPaginationMeta(params: CourseListParams | undefined, total: number) {
+  const page = params?.page ?? 1;
+  const limit = params?.limit ?? Math.max(total, 1);
+
+  return {
+    page,
+    limit,
+    total,
+    totalPages: Math.max(1, Math.ceil(total / limit)),
+  };
+}
