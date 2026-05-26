@@ -3,6 +3,7 @@
 import { useParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { AuthRequiredPanel } from '../../../../components/auth/auth-required-panel';
 import { LessonHeader } from '../../../../components/lessons/lesson-header';
 import { LessonSidebar } from '../../../../components/lessons/lesson-sidebar';
 import { LessonContent } from '../../../../components/lessons/lesson-content';
@@ -10,6 +11,7 @@ import { LessonNavigation } from '../../../../components/lessons/lesson-navigati
 import { CourseCertificatePanel } from '../../../../components/certificates/course-certificate-panel';
 import { DiscussionPanel } from '../../../../components/discussions/discussion-panel';
 import { useLesson, useCourse } from '../../../../hooks/use-courses';
+import { useAuthStore } from '../../../../features/auth/auth.store';
 import {
   useCourseProgress,
   useRecordLessonActivity,
@@ -19,6 +21,7 @@ import { LearningActivityType, ProgressStatus } from '../../../../lib/progress-a
 
 export default function LessonPage() {
   const t = useTranslations('Student');
+  const { isAuthenticated, isInitialized } = useAuthStore();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
@@ -48,19 +51,38 @@ export default function LessonPage() {
 
   const lessonParam = params.lessonId;
   const lessonId = (Array.isArray(lessonParam) ? lessonParam[0] : lessonParam) ?? '';
+  const canLoadProtectedLesson = isInitialized && isAuthenticated;
 
-  const { data: currentLesson, isLoading: lessonLoading, error: lessonError } = useLesson(lessonId);
-  const { data: course, isLoading: courseLoading } = useCourse(currentLesson?.courseId ?? '');
-  const { data: progress = [] } = useCourseProgress(currentLesson?.courseId ?? '');
+  const {
+    data: currentLesson,
+    isLoading: lessonLoading,
+    error: lessonError,
+  } = useLesson(lessonId, canLoadProtectedLesson);
+  const {
+    data: course,
+    isLoading: courseLoading,
+    error: courseError,
+  } = useCourse(
+    currentLesson?.courseId ?? '',
+    canLoadProtectedLesson && Boolean(currentLesson?.courseId),
+  );
+  const { data: progress = [] } = useCourseProgress(
+    currentLesson?.courseId ?? '',
+    canLoadProtectedLesson && Boolean(currentLesson?.courseId),
+  );
   const updateProgress = useUpdateProgress();
   const { mutate: recordLessonActivity } = useRecordLessonActivity();
   const trackedLessonIdRef = useRef<string | null>(null);
 
-  const loading = lessonLoading || courseLoading;
-  const hasError = Boolean(lessonError);
+  const loading = !isInitialized || (canLoadProtectedLesson && (lessonLoading || courseLoading));
+  const hasError = Boolean(lessonError || courseError);
 
   useEffect(() => {
-    if (!currentLesson || trackedLessonIdRef.current === currentLesson.id) {
+    if (
+      !canLoadProtectedLesson ||
+      !currentLesson ||
+      trackedLessonIdRef.current === currentLesson.id
+    ) {
       return;
     }
 
@@ -69,7 +91,17 @@ export default function LessonPage() {
       lessonId: currentLesson.id,
       type: LearningActivityType.LESSON_OPENED,
     });
-  }, [currentLesson, recordLessonActivity]);
+  }, [canLoadProtectedLesson, currentLesson, recordLessonActivity]);
+
+  if (isInitialized && !isAuthenticated) {
+    return (
+      <div className="h-screen bg-background">
+        <main className="flex h-full items-center justify-center p-6">
+          <AuthRequiredPanel returnTo={'/lessons/' + lessonId} />
+        </main>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

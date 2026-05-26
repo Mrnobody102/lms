@@ -10,11 +10,11 @@ export function useExams(params?: { courseId?: string; unitId?: string }, enable
   });
 }
 
-export function useExam(id: string) {
+export function useExam(id: string, enabled = true) {
   return useQuery({
     queryKey: ['exam', id],
     queryFn: () => examApi.getExam(id),
-    enabled: Boolean(id),
+    enabled: enabled && Boolean(id),
     staleTime: 60 * 1000,
   });
 }
@@ -31,11 +31,11 @@ export function useExamAttempts(
   });
 }
 
-export function useExamAttempt(id: string) {
+export function useExamAttempt(id: string, enabled = true) {
   return useQuery({
     queryKey: ['exam-attempt', id],
     queryFn: () => examApi.getAttempt(id),
-    enabled: Boolean(id),
+    enabled: enabled && Boolean(id),
     staleTime: 30 * 1000,
   });
 }

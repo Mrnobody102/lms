@@ -1,11 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { LearningActivityType, progressApi, ProgressStatus } from '@/lib/progress-api';
 
-export function useCourseProgress(courseId: string) {
+export function useCourseProgress(courseId: string, enabled = true) {
   return useQuery({
     queryKey: ['course-progress', courseId],
     queryFn: () => progressApi.getCourseProgress(courseId),
-    enabled: !!courseId,
+    enabled: enabled && !!courseId,
     staleTime: 30 * 1000,
   });
 }

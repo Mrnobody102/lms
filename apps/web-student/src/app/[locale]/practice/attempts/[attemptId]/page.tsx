@@ -3,8 +3,10 @@
 import { ArrowLeft, CheckCircle2, Loader2, RotateCcw, XCircle } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+import { AuthRequiredPanel } from '@/components/auth/auth-required-panel';
 import { StudentNav } from '@/components/layout/student-nav';
 import { AIFeedbackPanel } from '@/components/lessons/ai-feedback-panel';
+import { useAuthStore } from '@/features/auth/auth.store';
 import { usePracticeAttempt } from '@/hooks/use-practice';
 import { getPracticeAttemptStats, PracticeQuestion } from '@/lib/practice-api';
 import { Link } from '@/navigation';
@@ -13,11 +15,13 @@ import { AudioPromptPlayer } from '@/components/practice/audio-prompt-player';
 
 export default function PracticeAttemptReviewPage() {
   const t = useTranslations('Student');
+  const { isAuthenticated, isInitialized } = useAuthStore();
   const locale = useLocale();
   const params = useParams();
   const attemptId =
     (Array.isArray(params.attemptId) ? params.attemptId[0] : params.attemptId) ?? '';
-  const { data: attempt, isLoading, isError } = usePracticeAttempt(attemptId);
+  const canLoadAttempt = isInitialized && isAuthenticated;
+  const { data: attempt, isLoading, isError } = usePracticeAttempt(attemptId, canLoadAttempt);
   const stats = attempt ? getPracticeAttemptStats(attempt) : null;
 
   return (
@@ -33,7 +37,9 @@ export default function PracticeAttemptReviewPage() {
           {t('practice.backToPractice')}
         </Link>
 
-        {isLoading ? (
+        {isInitialized && !isAuthenticated ? (
+          <AuthRequiredPanel returnTo={'/practice/attempts/' + attemptId} />
+        ) : !isInitialized || isLoading ? (
           <div className="flex items-center gap-2 rounded-md border p-4 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
             {t('practice.loadingAttempt')}

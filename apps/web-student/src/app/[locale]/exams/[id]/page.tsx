@@ -4,7 +4,9 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { ArrowLeft, CheckCircle2, Loader2, RotateCcw, XCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { AuthRequiredPanel } from '@/components/auth/auth-required-panel';
 import { StudentNav } from '@/components/layout/student-nav';
+import { useAuthStore } from '@/features/auth/auth.store';
 import { useExam, useStartExamAttempt, useSubmitExamAttempt } from '@/hooks/use-exams';
 import {
   Exam,
@@ -22,10 +24,12 @@ import { isQuestionAnswered, parseSubmittedAnswer } from '@/lib/question-answer.
 
 export default function ExamAttemptPage() {
   const t = useTranslations('Student');
+  const { isAuthenticated, isInitialized } = useAuthStore();
   const params = useParams();
   const idParam = params.id;
   const examId = (Array.isArray(idParam) ? idParam[0] : idParam) ?? '';
-  const { data: exam, isLoading, isError } = useExam(examId);
+  const canLoadExam = isInitialized && isAuthenticated;
+  const { data: exam, isLoading, isError } = useExam(examId, canLoadExam);
   const startAttempt = useStartExamAttempt(examId);
   const [activeExam, setActiveExam] = useState<Exam | null>(null);
   const [attempt, setAttempt] = useState<ExamAttempt | null>(null);
@@ -162,7 +166,9 @@ export default function ExamAttemptPage() {
           {t('exam.backToExams')}
         </Link>
 
-        {isLoading ? (
+        {isInitialized && !isAuthenticated ? (
+          <AuthRequiredPanel returnTo={'/exams/' + examId} />
+        ) : !isInitialized || isLoading ? (
           <div className="flex items-center gap-2 rounded-md border p-4 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
             {t('exam.loading')}

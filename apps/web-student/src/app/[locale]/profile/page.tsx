@@ -44,14 +44,25 @@ function formatDuration(seconds: number) {
 }
 
 export default function ProfilePage() {
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, isInitialized, user } = useAuthStore();
   const authT = useTranslations('Student.auth');
   const t = useTranslations('Student.profile');
-  const { data: stats, isLoading } = useProfileStats();
+  const { data: stats, isLoading } = useProfileStats(isInitialized && isAuthenticated);
   const profileInitial =
     user?.fullName?.charAt(0).toUpperCase() ??
     user?.email?.charAt(0).toUpperCase() ??
     t('defaultName').charAt(0).toUpperCase();
+
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen bg-background font-sans">
+        <StudentNav showLinks />
+        <main className="mx-auto flex max-w-lg items-center justify-center px-6 py-24">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </main>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return (

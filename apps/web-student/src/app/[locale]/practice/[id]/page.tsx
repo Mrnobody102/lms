@@ -4,7 +4,9 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { ArrowLeft, CheckCircle2, Loader2, RotateCcw, XCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { AuthRequiredPanel } from '@/components/auth/auth-required-panel';
 import { StudentNav } from '@/components/layout/student-nav';
+import { useAuthStore } from '@/features/auth/auth.store';
 import { usePracticeExerciseSet, useSubmitPracticeAttempt } from '@/hooks/use-practice';
 import {
   PracticeAnswerFeedback,
@@ -23,10 +25,16 @@ import { Sparkles } from 'lucide-react';
 
 export default function PracticeAttemptPage() {
   const t = useTranslations('Student');
+  const { isAuthenticated, isInitialized } = useAuthStore();
   const params = useParams();
   const idParam = params.id;
   const exerciseSetId = (Array.isArray(idParam) ? idParam[0] : idParam) ?? '';
-  const { data: exerciseSet, isLoading, isError } = usePracticeExerciseSet(exerciseSetId);
+  const canLoadExerciseSet = isInitialized && isAuthenticated;
+  const {
+    data: exerciseSet,
+    isLoading,
+    isError,
+  } = usePracticeExerciseSet(exerciseSetId, canLoadExerciseSet);
   const submitAttempt = useSubmitPracticeAttempt(exerciseSetId);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [result, setResult] = useState<PracticeAttemptResult | null>(null);
@@ -103,7 +111,9 @@ export default function PracticeAttemptPage() {
           {t('practice.backToPractice')}
         </Link>
 
-        {isLoading ? (
+        {isInitialized && !isAuthenticated ? (
+          <AuthRequiredPanel returnTo={'/practice/' + exerciseSetId} />
+        ) : !isInitialized || isLoading ? (
           <div className="flex items-center gap-2 rounded-md border p-4 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
             {t('practice.loading')}

@@ -17,11 +17,11 @@ export function usePracticeExerciseSets(
   });
 }
 
-export function usePracticeExerciseSet(id: string) {
+export function usePracticeExerciseSet(id: string, enabled = true) {
   return useQuery({
     queryKey: ['practice-exercise-set', id],
     queryFn: () => practiceApi.getExerciseSet(id),
-    enabled: Boolean(id),
+    enabled: enabled && Boolean(id),
     staleTime: 60 * 1000,
   });
 }
@@ -42,11 +42,11 @@ export function usePracticeAttempts(
   });
 }
 
-export function usePracticeAttempt(id: string) {
+export function usePracticeAttempt(id: string, enabled = true) {
   return useQuery({
     queryKey: ['practice-attempt', id],
     queryFn: () => practiceApi.getAttempt(id),
-    enabled: Boolean(id),
+    enabled: enabled && Boolean(id),
     staleTime: 30 * 1000,
   });
 }

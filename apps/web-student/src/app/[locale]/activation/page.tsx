@@ -10,7 +10,7 @@ import api from '@/lib/api';
 
 export default function ActivationPage() {
   const t = useTranslations('Student.activation');
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, isInitialized } = useAuthStore();
 
   const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -40,6 +40,17 @@ export default function ActivationPage() {
   };
 
   const authT = useTranslations('Student.auth');
+
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen bg-background font-sans">
+        <StudentNav showLinks />
+        <main className="mx-auto flex max-w-lg items-center justify-center px-6 py-24">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </main>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return (

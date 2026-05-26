@@ -14,9 +14,11 @@ import {
   PlayCircle,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { AuthRequiredPanel } from '@/components/auth/auth-required-panel';
 import { CourseCertificatePanel } from '@/components/certificates/course-certificate-panel';
 import { useTranslations } from 'next-intl';
 import { StudentNav } from '@/components/layout/student-nav';
+import { useAuthStore } from '@/features/auth/auth.store';
 import { useCourse } from '@/hooks/use-courses';
 import { useExams } from '@/hooks/use-exams';
 import { usePracticeExerciseSets } from '@/hooks/use-practice';
@@ -32,17 +34,33 @@ import { Link } from '@/navigation';
 
 export default function CourseDetailPage() {
   const t = useTranslations('Student');
+  const { isAuthenticated, isInitialized } = useAuthStore();
   const params = useParams();
   const courseParam = params.courseId;
   const courseId = (Array.isArray(courseParam) ? courseParam[0] : courseParam) ?? '';
+  const canLoadProtectedCourse = isInitialized && isAuthenticated;
 
-  const { data: course, isLoading: isCourseLoading, isError: isCourseError } = useCourse(courseId);
-  const { data: progress = [], isLoading: isProgressLoading } = useCourseProgress(courseId);
-  const { data: practiceSets = [], isLoading: isPracticeLoading } = usePracticeExerciseSets({
+  const {
+    data: course,
+    isLoading: isCourseLoading,
+    isError: isCourseError,
+  } = useCourse(courseId, canLoadProtectedCourse);
+  const { data: progress = [], isLoading: isProgressLoading } = useCourseProgress(
     courseId,
-  });
-  const { data: exams = [], isLoading: isExamsLoading } = useExams({ courseId });
-  const isLoading = isCourseLoading || isProgressLoading || isPracticeLoading || isExamsLoading;
+    canLoadProtectedCourse,
+  );
+  const { data: practiceSets = [], isLoading: isPracticeLoading } = usePracticeExerciseSets(
+    { courseId },
+    canLoadProtectedCourse,
+  );
+  const { data: exams = [], isLoading: isExamsLoading } = useExams(
+    { courseId },
+    canLoadProtectedCourse,
+  );
+  const isLoading =
+    !isInitialized ||
+    (canLoadProtectedCourse &&
+      (isCourseLoading || isProgressLoading || isPracticeLoading || isExamsLoading));
 
   const progressMap = useMemo(
     () =>
@@ -53,6 +71,17 @@ export default function CourseDetailPage() {
       ),
     [progress],
   );
+
+  if (isInitialized && !isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-background font-sans">
+        <StudentNav showLinks />
+        <main className="mx-auto max-w-lg px-6 py-24">
+          <AuthRequiredPanel returnTo={'/courses/' + courseId} />
+        </main>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return <CourseDetailLoading />;

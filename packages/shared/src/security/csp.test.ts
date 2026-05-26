@@ -18,7 +18,15 @@ describe('buildContentSecurityPolicy', () => {
   it('allows unsafe inline scripts only when explicitly requested', () => {
     const policy = buildContentSecurityPolicy([], { allowUnsafeInline: true });
 
-    expect(policy).toContain("script-src 'self' 'unsafe-inline'");
+    expect(policy).toMatch(/script-src [^;]*'unsafe-inline'/);
+  });
+
+  it('allows trusted video and identity iframe sources', () => {
+    const policy = buildContentSecurityPolicy();
+
+    expect(policy).toContain(
+      "frame-src 'self' https://accounts.google.com https://www.youtube.com https://www.youtube-nocookie.com",
+    );
   });
 
   it('allows local websocket and loopback connect sources in non-production dev mode', () => {

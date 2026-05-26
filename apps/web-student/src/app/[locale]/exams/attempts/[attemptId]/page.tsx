@@ -3,7 +3,9 @@
 import { ArrowLeft, CheckCircle2, Loader2, PlayCircle, RotateCcw, XCircle } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+import { AuthRequiredPanel } from '@/components/auth/auth-required-panel';
 import { StudentNav } from '@/components/layout/student-nav';
+import { useAuthStore } from '@/features/auth/auth.store';
 import { useExamAttempt } from '@/hooks/use-exams';
 import { ExamQuestion } from '@/lib/exam-api';
 import { Link } from '@/navigation';
@@ -13,11 +15,13 @@ import { AudioPromptPlayer } from '@/components/practice/audio-prompt-player';
 
 export default function ExamAttemptReviewPage() {
   const t = useTranslations('Student');
+  const { isAuthenticated, isInitialized } = useAuthStore();
   const locale = useLocale();
   const params = useParams();
   const attemptId =
     (Array.isArray(params.attemptId) ? params.attemptId[0] : params.attemptId) ?? '';
-  const { data: attempt, isLoading, isError } = useExamAttempt(attemptId);
+  const canLoadAttempt = isInitialized && isAuthenticated;
+  const { data: attempt, isLoading, isError } = useExamAttempt(attemptId, canLoadAttempt);
   const answerStats = attempt?.status === 'SUBMITTED' ? buildAnswerStats(attempt.answers) : null;
 
   return (
@@ -33,7 +37,9 @@ export default function ExamAttemptReviewPage() {
           {t('exam.backToExams')}
         </Link>
 
-        {isLoading ? (
+        {isInitialized && !isAuthenticated ? (
+          <AuthRequiredPanel returnTo={'/exams/attempts/' + attemptId} />
+        ) : !isInitialized || isLoading ? (
           <div className="flex items-center gap-2 rounded-md border p-4 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
             {t('exam.loadingAttempt')}
