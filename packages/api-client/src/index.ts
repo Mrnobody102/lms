@@ -44,7 +44,7 @@ function appendApiPath(baseUrl: string): string {
 }
 
 function getDefaultBaseUrl(): string {
-  if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
+  if (typeof window !== 'undefined') {
     return '/api';
   }
 
@@ -182,7 +182,6 @@ export function createApiClient(config: ApiClientConfig = {}): AxiosInstance {
         axiosError.response?.status === 401 &&
         originalRequest &&
         !originalRequest._retry &&
-        originalRequest.skipUnauthorizedRedirect !== true &&
         !originalRequest.url?.includes('/auth/refresh') &&
         !originalRequest.url?.includes('/auth/login') &&
         typeof window !== 'undefined'

@@ -24,6 +24,7 @@ export function buildContentSecurityPolicy(
     'https://www.youtube-nocookie.com',
   ];
   const scriptSources = ["'self'", 'https://accounts.google.com'];
+  const styleSources = ["'self'", "'unsafe-inline'", 'https://accounts.google.com'];
 
   if (options.allowUnsafeInline) {
     scriptSources.push("'unsafe-inline'");
@@ -78,7 +79,7 @@ export function buildContentSecurityPolicy(
     `frame-src ${frameSources.join(' ')}`,
     "form-action 'self'",
     `script-src ${scriptSources.join(' ')}`,
-    "style-src 'self' 'unsafe-inline'",
+    `style-src ${styleSources.join(' ')}`,
     "img-src 'self' data: https:",
     "font-src 'self' data:",
     `connect-src ${Array.from(allowedConnectSources).join(' ')}`,

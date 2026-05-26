@@ -69,8 +69,15 @@ export function GoogleSignInButton({
   className,
 }: GoogleSignInButtonProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const onCredentialRef = useRef(onCredential);
+  const onErrorRef = useRef(onError);
   const [scriptReady, setScriptReady] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    onCredentialRef.current = onCredential;
+    onErrorRef.current = onError;
+  }, [onCredential, onError]);
 
   useEffect(() => {
     if (!clientId) {
@@ -85,7 +92,7 @@ export function GoogleSignInButton({
     const existingScript = document.getElementById(GOOGLE_SCRIPT_ID) as HTMLScriptElement | null;
     if (existingScript) {
       existingScript.addEventListener('load', () => setScriptReady(true), { once: true });
-      existingScript.addEventListener('error', () => onError?.(), { once: true });
+      existingScript.addEventListener('error', () => onErrorRef.current?.(), { once: true });
       return;
     }
 
@@ -95,9 +102,9 @@ export function GoogleSignInButton({
     script.async = true;
     script.defer = true;
     script.onload = () => setScriptReady(true);
-    script.onerror = () => onError?.();
+    script.onerror = () => onErrorRef.current?.();
     document.head.appendChild(script);
-  }, [clientId, onError]);
+  }, [clientId]);
 
   useEffect(() => {
     if (!clientId || !scriptReady || !containerRef.current || disabled) {
@@ -110,12 +117,14 @@ export function GoogleSignInButton({
       client_id: clientId,
       callback: (response) => {
         if (!response.credential) {
-          onError?.();
+          onErrorRef.current?.();
           return;
         }
 
         setLoading(true);
-        void Promise.resolve(onCredential(response.credential)).finally(() => setLoading(false));
+        void Promise.resolve(onCredentialRef.current(response.credential)).finally(() =>
+          setLoading(false),
+        );
       },
       auto_select: false,
       cancel_on_tap_outside: true,
@@ -129,7 +138,7 @@ export function GoogleSignInButton({
       width: 320,
       locale,
     });
-  }, [clientId, disabled, locale, onCredential, onError, scriptReady]);
+  }, [clientId, disabled, locale, scriptReady]);
 
   if (!clientId || disabled) {
     return (
