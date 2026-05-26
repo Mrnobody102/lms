@@ -362,6 +362,49 @@ describe('AuthService', () => {
       expect(result.user).not.toHaveProperty('password');
       expect(result.user).not.toHaveProperty('tokenVersion');
     });
+
+    it('should default production cookies to cross-site compatible SameSite none', async () => {
+      const originalNodeEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+      prisma.tenant.findFirst.mockResolvedValue({ id: 'tenant-1', isActive: true });
+      prisma.user.findFirst.mockResolvedValue({
+        id: 'user-1',
+        email: 'student@example.com',
+        password: 'hashed-password',
+        fullName: 'Student User',
+        phoneNumber: null,
+        avatarUrl: null,
+        role: 'STUDENT',
+        isActive: true,
+        tenantId: 'tenant-1',
+        createdAt: new Date('2026-04-21T00:00:00.000Z'),
+        updatedAt: new Date('2026-04-21T00:00:00.000Z'),
+        deletedAt: null,
+      });
+      vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+
+      try {
+        await service.login(
+          {
+            email: 'student@example.com',
+            password: 'Student@123',
+          },
+          'tenant-1',
+          response,
+        );
+
+        expect(response.cookie).toHaveBeenCalledWith(
+          'access_token',
+          'signed-jwt-token',
+          expect.objectContaining({
+            secure: true,
+            sameSite: 'none',
+          }),
+        );
+      } finally {
+        process.env.NODE_ENV = originalNodeEnv;
+      }
+    });
   });
 
   describe('loginWithGoogle', () => {

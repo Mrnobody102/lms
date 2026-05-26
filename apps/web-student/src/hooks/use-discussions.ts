@@ -50,6 +50,67 @@ export function useCreateDiscussionReply(target: DiscussionTarget) {
   });
 }
 
+export function useUpdateDiscussionThread(target: DiscussionTarget) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      threadId,
+      title,
+      content,
+    }: {
+      threadId: string;
+      title?: string;
+      content?: string;
+    }) => discussionApi.updateThread(threadId, { title, content }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: discussionKey(target) });
+    },
+  });
+}
+
+export function useDeleteDiscussionThread(target: DiscussionTarget) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (threadId: string) => discussionApi.deleteThread(threadId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: discussionKey(target) });
+    },
+  });
+}
+
+export function useUpdateDiscussionReply(target: DiscussionTarget) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      threadId,
+      replyId,
+      content,
+    }: {
+      threadId: string;
+      replyId: string;
+      content: string;
+    }) => discussionApi.updateReply(threadId, replyId, content),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: discussionKey(target) });
+    },
+  });
+}
+
+export function useDeleteDiscussionReply(target: DiscussionTarget) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ threadId, replyId }: { threadId: string; replyId: string }) =>
+      discussionApi.deleteReply(threadId, replyId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: discussionKey(target) });
+    },
+  });
+}
+
 export function useResolveDiscussionThread(target: DiscussionTarget) {
   const queryClient = useQueryClient();
 

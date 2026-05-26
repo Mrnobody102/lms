@@ -967,12 +967,14 @@ export class AuthService {
   }
 
   private getCookieOptions(): CookieOptions {
-    const sameSite =
-      this.configService.get<'lax' | 'strict' | 'none'>('AUTH_COOKIE_SAME_SITE') ?? 'lax';
+    const configuredSameSite = this.configService.get<'lax' | 'strict' | 'none'>(
+      'AUTH_COOKIE_SAME_SITE',
+    );
+    const sameSite = configuredSameSite ?? (process.env.NODE_ENV === 'production' ? 'none' : 'lax');
     const domain = this.configService.get<string>('AUTH_COOKIE_DOMAIN') || undefined;
 
     return {
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.NODE_ENV === 'production' || sameSite === 'none',
       sameSite,
       domain,
       path: '/',

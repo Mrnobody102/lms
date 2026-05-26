@@ -10,17 +10,33 @@ describe('DiscussionService', () => {
         create: vi.fn().mockResolvedValue({ id: 'thread-1' }),
         findMany: vi.fn().mockResolvedValue([]),
         count: vi.fn().mockResolvedValue(0),
-        findFirst: vi.fn().mockResolvedValue({
-          id: 'thread-1',
-          authorId: 'student-1',
-          targetType: DiscussionTargetType.LESSON,
-          lessonId: 'lesson-1',
-          exerciseSetId: null,
+        findFirst: vi.fn().mockImplementation((args?: { where?: { content?: string } }) => {
+          if (args?.where?.content) {
+            return Promise.resolve(null);
+          }
+
+          return Promise.resolve({
+            id: 'thread-1',
+            authorId: 'student-1',
+            targetType: DiscussionTargetType.LESSON,
+            lessonId: 'lesson-1',
+            exerciseSetId: null,
+          });
         }),
         update: vi.fn().mockResolvedValue({ id: 'thread-1', isResolved: true }),
+        delete: vi.fn().mockResolvedValue({ id: 'thread-1' }),
       },
       discussionReply: {
         create: vi.fn().mockResolvedValue({ id: 'reply-1' }),
+        findFirst: vi.fn().mockImplementation((args?: { where?: { content?: string } }) => {
+          if (args?.where?.content) {
+            return Promise.resolve(null);
+          }
+
+          return Promise.resolve({ id: 'reply-1', authorId: 'student-1' });
+        }),
+        update: vi.fn().mockResolvedValue({ id: 'reply-1' }),
+        delete: vi.fn().mockResolvedValue({ id: 'reply-1' }),
       },
       lesson: {
         findFirst: vi.fn().mockResolvedValue({ id: 'lesson-1' }),
@@ -120,5 +136,58 @@ describe('DiscussionService', () => {
         },
       ),
     ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('allows the author to edit their discussion thread', async () => {
+    const { prisma, service } = createService();
+
+    await service.updateThread(
+      'thread-1',
+      'tenant-1',
+      { id: 'student-1', role: Role.STUDENT },
+      {
+        title: 'Updated',
+        content: 'Updated discussion',
+      },
+    );
+
+    expect(prisma.discussionThread.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id_tenantId: { id: 'thread-1', tenantId: 'tenant-1' } },
+        data: {
+          title: 'Updated',
+          content: 'Updated discussion',
+        },
+      }),
+    );
+  });
+
+  it('allows admins to delete spam threads', async () => {
+    const { prisma, service } = createService();
+
+    await service.deleteThread('thread-1', 'tenant-1', { id: 'admin-1', role: Role.ADMIN });
+
+    expect(prisma.discussionThread.delete).toHaveBeenCalledWith({
+      where: { id_tenantId: { id: 'thread-1', tenantId: 'tenant-1' } },
+    });
+  });
+
+  it('blocks duplicate replies from the same author in a short window', async () => {
+    const { prisma, service } = createService();
+    prisma.discussionReply.findFirst.mockResolvedValueOnce({
+      id: 'reply-duplicate',
+      authorId: 'student-1',
+    });
+
+    await expect(
+      service.createReply(
+        'thread-1',
+        'tenant-1',
+        { id: 'student-1', role: Role.STUDENT },
+        {
+          content: 'Reply',
+        },
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 });

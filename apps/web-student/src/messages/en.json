@@ -482,7 +482,15 @@
       "resolved": "Resolved",
       "resolve": "Resolve",
       "replyPlaceholder": "Write a reply...",
-      "reply": "Reply"
+      "reply": "Reply",
+      "save": "Save",
+      "cancel": "Cancel",
+      "editThread": "Edit question",
+      "deleteThread": "Delete question",
+      "deleteThreadConfirm": "Delete this question and all replies in the thread?",
+      "editReply": "Edit reply",
+      "deleteReply": "Delete reply",
+      "deleteReplyConfirm": "Delete this reply?"
     },
     "certificate": {
       "title": "Course certificate",

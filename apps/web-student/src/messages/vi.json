@@ -482,7 +482,15 @@
       "resolved": "Đã giải quyết",
       "resolve": "Đánh dấu xong",
       "replyPlaceholder": "Viết phản hồi...",
-      "reply": "Phản hồi"
+      "reply": "Phản hồi",
+      "save": "Lưu",
+      "cancel": "Hủy",
+      "editThread": "Sửa câu hỏi",
+      "deleteThread": "Xóa câu hỏi",
+      "deleteThreadConfirm": "Xóa toàn bộ câu hỏi và các phản hồi trong luồng này?",
+      "editReply": "Sửa phản hồi",
+      "deleteReply": "Xóa phản hồi",
+      "deleteReplyConfirm": "Xóa phản hồi này?"
     },
     "certificate": {
       "title": "Chứng chỉ khóa học",

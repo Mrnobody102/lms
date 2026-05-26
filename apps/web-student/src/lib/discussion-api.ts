@@ -38,6 +38,10 @@ export interface DiscussionThreadPage {
   };
 }
 
+export interface DiscussionDeleteResult {
+  id: string;
+}
+
 export const discussionApi = {
   getThreads(params: {
     targetType: DiscussionTargetType;
@@ -65,6 +69,30 @@ export const discussionApi = {
     return api
       .post(`/discussions/${threadId}/replies`, { content })
       .then((response) => response.data as DiscussionReply);
+  },
+
+  updateThread(threadId: string, input: { title?: string; content?: string }) {
+    return api
+      .patch(`/discussions/${threadId}`, input)
+      .then((response) => response.data as DiscussionThread);
+  },
+
+  deleteThread(threadId: string) {
+    return api
+      .delete(`/discussions/${threadId}`)
+      .then((response) => response.data as DiscussionDeleteResult);
+  },
+
+  updateReply(threadId: string, replyId: string, content: string) {
+    return api
+      .patch(`/discussions/${threadId}/replies/${replyId}`, { content })
+      .then((response) => response.data as DiscussionReply);
+  },
+
+  deleteReply(threadId: string, replyId: string) {
+    return api
+      .delete(`/discussions/${threadId}/replies/${replyId}`)
+      .then((response) => response.data as DiscussionDeleteResult);
   },
 
   resolveThread(threadId: string) {

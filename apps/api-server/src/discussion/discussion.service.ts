@@ -10,6 +10,8 @@ import { PrismaService } from '../common/services/prisma.service';
 import { CreateDiscussionReplyDto } from './dto/create-discussion-reply.dto';
 import { CreateDiscussionThreadDto } from './dto/create-discussion-thread.dto';
 import { DiscussionQueryDto } from './dto/discussion-query.dto';
+import { UpdateDiscussionReplyDto } from './dto/update-discussion-reply.dto';
+import { UpdateDiscussionThreadDto } from './dto/update-discussion-thread.dto';
 
 interface DiscussionUser {
   id: string;
@@ -20,6 +22,8 @@ interface TargetResolution {
   lessonId?: string;
   exerciseSetId?: string;
 }
+
+const DUPLICATE_WINDOW_MS = 60_000;
 
 @Injectable()
 export class DiscussionService {
@@ -61,18 +65,68 @@ export class DiscussionService {
 
   async createThread(tenantId: string, user: DiscussionUser, dto: CreateDiscussionThreadDto) {
     const target = await this.resolveTarget(tenantId, user, dto);
+    const content = dto.content.trim();
+    const title = dto.title?.trim() || null;
+    await this.ensureThreadIsNotDuplicate(tenantId, user.id, dto.targetType, target, content);
 
     return this.prisma.discussionThread.create({
       data: {
         tenantId,
         authorId: user.id,
         targetType: dto.targetType,
-        title: dto.title?.trim() || null,
-        content: dto.content.trim(),
+        title,
+        content,
         ...target,
       },
       include: discussionThreadInclude,
     });
+  }
+
+  async updateThread(
+    threadId: string,
+    tenantId: string,
+    user: DiscussionUser,
+    dto: UpdateDiscussionThreadDto,
+  ) {
+    const thread = await this.getAccessibleThread(threadId, tenantId, user);
+
+    if (thread.authorId !== user.id) {
+      throw new ForbiddenException('Only the thread author can edit this discussion');
+    }
+
+    const data: Prisma.DiscussionThreadUpdateInput = {};
+
+    if (dto.title !== undefined) {
+      data.title = dto.title.trim() || null;
+    }
+
+    if (dto.content !== undefined) {
+      data.content = dto.content.trim();
+    }
+
+    if (Object.keys(data).length === 0) {
+      throw new BadRequestException('No discussion changes were provided');
+    }
+
+    return this.prisma.discussionThread.update({
+      where: { id_tenantId: { id: thread.id, tenantId } },
+      data,
+      include: discussionThreadInclude,
+    });
+  }
+
+  async deleteThread(threadId: string, tenantId: string, user: DiscussionUser) {
+    const thread = await this.getAccessibleThread(threadId, tenantId, user);
+
+    if (!this.canDeleteContent(thread.authorId, user)) {
+      throw new ForbiddenException('Only the thread author or an admin can delete this discussion');
+    }
+
+    await this.prisma.discussionThread.delete({
+      where: { id_tenantId: { id: thread.id, tenantId } },
+    });
+
+    return { id: thread.id };
   }
 
   async createReply(
@@ -82,22 +136,59 @@ export class DiscussionService {
     dto: CreateDiscussionReplyDto,
   ) {
     const thread = await this.getAccessibleThread(threadId, tenantId, user);
+    const content = dto.content.trim();
+    await this.ensureReplyIsNotDuplicate(tenantId, user.id, thread.id, content);
 
     return this.prisma.discussionReply.create({
       data: {
         tenantId,
         threadId: thread.id,
         authorId: user.id,
-        content: dto.content.trim(),
+        content,
       },
       include: discussionReplyInclude,
     });
   }
 
+  async updateReply(
+    threadId: string,
+    replyId: string,
+    tenantId: string,
+    user: DiscussionUser,
+    dto: UpdateDiscussionReplyDto,
+  ) {
+    const thread = await this.getAccessibleThread(threadId, tenantId, user);
+    const reply = await this.getReplyInThread(replyId, thread.id, tenantId);
+
+    if (reply.authorId !== user.id) {
+      throw new ForbiddenException('Only the reply author can edit this reply');
+    }
+
+    return this.prisma.discussionReply.update({
+      where: { id_tenantId: { id: reply.id, tenantId } },
+      data: { content: dto.content.trim() },
+      include: discussionReplyInclude,
+    });
+  }
+
+  async deleteReply(threadId: string, replyId: string, tenantId: string, user: DiscussionUser) {
+    const thread = await this.getAccessibleThread(threadId, tenantId, user);
+    const reply = await this.getReplyInThread(replyId, thread.id, tenantId);
+
+    if (!this.canDeleteContent(reply.authorId, user)) {
+      throw new ForbiddenException('Only the reply author or an admin can delete this reply');
+    }
+
+    await this.prisma.discussionReply.delete({
+      where: { id_tenantId: { id: reply.id, tenantId } },
+    });
+
+    return { id: reply.id };
+  }
+
   async resolveThread(threadId: string, tenantId: string, user: DiscussionUser) {
     const thread = await this.getAccessibleThread(threadId, tenantId, user);
-    const canResolve =
-      thread.authorId === user.id || user.role === Role.ADMIN || user.role === Role.SUPER_ADMIN;
+    const canResolve = thread.authorId === user.id || this.canModerateDiscussion(user);
 
     if (!canResolve) {
       throw new ForbiddenException(
@@ -138,6 +229,76 @@ export class DiscussionService {
     });
 
     return thread;
+  }
+
+  private async getReplyInThread(replyId: string, threadId: string, tenantId: string) {
+    const reply = await this.prisma.discussionReply.findFirst({
+      where: { id: replyId, threadId, tenantId },
+      select: { id: true, authorId: true },
+    });
+
+    if (!reply) {
+      throw new NotFoundException(`Discussion reply with ID ${replyId} not found`);
+    }
+
+    return reply;
+  }
+
+  private async ensureThreadIsNotDuplicate(
+    tenantId: string,
+    authorId: string,
+    targetType: DiscussionTargetType,
+    target: TargetResolution,
+    content: string,
+  ) {
+    const existing = await this.prisma.discussionThread.findFirst({
+      where: {
+        tenantId,
+        authorId,
+        targetType,
+        lessonId: target.lessonId,
+        exerciseSetId: target.exerciseSetId,
+        content,
+        createdAt: { gte: new Date(Date.now() - DUPLICATE_WINDOW_MS) },
+      },
+      select: { id: true },
+    });
+
+    if (existing) {
+      throw new BadRequestException('Duplicate discussion content was posted too quickly');
+    }
+  }
+
+  private async ensureReplyIsNotDuplicate(
+    tenantId: string,
+    authorId: string,
+    threadId: string,
+    content: string,
+  ) {
+    const existing = await this.prisma.discussionReply.findFirst({
+      where: {
+        tenantId,
+        authorId,
+        threadId,
+        content,
+        createdAt: { gte: new Date(Date.now() - DUPLICATE_WINDOW_MS) },
+      },
+      select: { id: true },
+    });
+
+    if (existing) {
+      throw new BadRequestException('Duplicate reply content was posted too quickly');
+    }
+  }
+
+  private canDeleteContent(authorId: string, user: DiscussionUser) {
+    return authorId === user.id || this.canModerateDiscussion(user);
+  }
+
+  private canModerateDiscussion(user: DiscussionUser) {
+    return (
+      user.role === Role.ADMIN || user.role === Role.SUPER_ADMIN || user.role === Role.INSTRUCTOR
+    );
   }
 
   private async resolveTarget(
