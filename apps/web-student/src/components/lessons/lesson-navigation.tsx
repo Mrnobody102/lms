@@ -78,7 +78,7 @@ export function LessonNavigation({
               </Link>
             ) : (
               <span
-                title="Hoàn thành bài học để mở khóa"
+                title={t('lesson.completeToUnlock')}
                 className="flex items-center gap-2 rounded-xl border border-border bg-muted px-4 py-2 text-sm font-bold text-muted-foreground opacity-50 cursor-not-allowed"
               >
                 {t('lesson.next')}

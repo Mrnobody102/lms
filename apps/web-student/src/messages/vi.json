@@ -28,7 +28,10 @@
         "title": "Khóa học nổi bật",
         "desc": "Bắt đầu hành trình chinh phục mục tiêu của bạn ngay hôm nay",
         "viewAll": "Xem tất cả",
-        "students": "học viên"
+        "students": "học viên",
+        "featured": {
+          "communication360": "Tiếng Anh Giao Tiếp 360"
+        }
       },
       "contact": {
         "title": "Sẵn sàng bứt phá?",
@@ -38,6 +41,7 @@
         "email": "Email",
         "register": "Đăng ký tư vấn",
         "namePlaceholder": "Họ và tên",
+        "nameExample": "Nguyễn Văn A",
         "phonePlaceholder": "Số điện thoại",
         "emailPlaceholder": "Email",
         "submit": "Gửi yêu cầu"
@@ -428,8 +432,11 @@
         "Luyện tập phát âm từ mới"
       ],
       "part": "Phần",
+      "completeToUnlock": "Hoàn thành bài học để mở khóa",
+      "readingDurationValue": "{minutes} phút đọc",
       "readingMaterial": "Tài liệu đọc",
       "endOfContent": "Kết thúc nội dung",
+      "emptyTextContent": "Chưa có nội dung cho bài học này.",
       "videoComingSoon": "Video sẽ sớm ra mắt",
       "videoUnavailable": "Video không khả dụng",
       "videoUnsupported": "Trình duyệt này không hỗ trợ thẻ video.",
@@ -678,7 +685,9 @@
         "text": "Bài đọc",
         "quiz": "Quiz",
         "simulation": "Mô phỏng",
-        "micro_card": "Thẻ học"
+        "micro_card": "Thẻ học",
+        "practice": "Luyện tập",
+        "exam": "Kiểm tra"
       },
       "loading": "Đang tải khóa học...",
       "loadError": "Không thể tải khóa học lúc này.",
@@ -732,6 +741,7 @@
       "attemptSubmittedAtValue": "Nộp lúc {value}",
       "yourAnswerValue": "Câu trả lời của bạn: {value}",
       "answerRequired": "Hãy trả lời tất cả câu hỏi trước khi nộp bài.",
+      "unansweredQuestionsValue": "(Câu chưa trả lời: {value})",
       "submitError": "Không thể nộp bài luyện tập này.",
       "multipleChoice": "Trắc nghiệm",
       "fillBlank": "Điền đáp án",
@@ -818,6 +828,7 @@
       "startError": "Không thể bắt đầu lần làm này.",
       "startRequired": "Hãy bắt đầu bài kiểm tra trước khi nộp.",
       "answerRequired": "Hãy trả lời tất cả câu hỏi trước khi nộp.",
+      "unansweredQuestionsValue": "(Câu chưa trả lời: {value})",
       "timeRemainingValue": "Còn lại {value}",
       "expiredBadge": "Hết giờ",
       "expiredMessage": "Đã hết thời gian làm bài. Hãy bắt đầu lại lần làm mới để làm tiếp.",

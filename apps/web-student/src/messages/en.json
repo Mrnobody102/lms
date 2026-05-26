@@ -28,7 +28,10 @@
         "title": "Featured Courses",
         "desc": "Start your journey to conquer your goals today",
         "viewAll": "View All",
-        "students": "students"
+        "students": "students",
+        "featured": {
+          "communication360": "Conversational English 360"
+        }
       },
       "contact": {
         "title": "Ready to Break Through?",
@@ -38,6 +41,7 @@
         "email": "Email",
         "register": "Register for Consultation",
         "namePlaceholder": "Full Name",
+        "nameExample": "Jane Smith",
         "phonePlaceholder": "Phone Number",
         "emailPlaceholder": "Email Address",
         "submit": "Submit Request"
@@ -428,8 +432,11 @@
         "Practice new vocabulary pronunciation"
       ],
       "part": "Part",
+      "completeToUnlock": "Complete this lesson to unlock",
+      "readingDurationValue": "{minutes} min read",
       "readingMaterial": "Reading Material",
       "endOfContent": "End of content",
+      "emptyTextContent": "No content is available for this lesson yet.",
       "videoComingSoon": "Video content coming soon",
       "videoUnavailable": "Video unavailable",
       "videoUnsupported": "Your browser does not support the video tag.",
@@ -678,7 +685,9 @@
         "text": "Text",
         "quiz": "Quiz",
         "simulation": "Simulation",
-        "micro_card": "Flashcards"
+        "micro_card": "Flashcards",
+        "practice": "Practice",
+        "exam": "Exam"
       },
       "loading": "Loading courses...",
       "loadError": "Cannot load courses right now.",
@@ -732,6 +741,7 @@
       "attemptSubmittedAtValue": "Submitted {value}",
       "yourAnswerValue": "Your answer: {value}",
       "answerRequired": "Answer every question before submitting.",
+      "unansweredQuestionsValue": "(Unanswered questions: {value})",
       "submitError": "Cannot submit this practice attempt.",
       "multipleChoice": "Multiple choice",
       "fillBlank": "Fill blank",
@@ -818,6 +828,7 @@
       "startError": "Cannot start this exam attempt.",
       "startRequired": "Start the exam before submitting answers.",
       "answerRequired": "Answer every question before submitting.",
+      "unansweredQuestionsValue": "(Unanswered questions: {value})",
       "timeRemainingValue": "{value} remaining",
       "expiredBadge": "Time expired",
       "expiredMessage": "This attempt has run out of time. Start a new attempt to continue.",

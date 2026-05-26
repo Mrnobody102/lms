@@ -21,7 +21,7 @@ export function FeaturedCoursesSection() {
     },
     {
       id: '2',
-      title: 'Tiếng Anh Giao Tiếp 360',
+      title: t('landing.courses.featured.communication360'),
       image:
         'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=800&q=80',
       tag: 'NEW',

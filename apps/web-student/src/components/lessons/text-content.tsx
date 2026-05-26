@@ -31,7 +31,7 @@ export function TextContent({ content, title, duration }: TextContentProps) {
           {duration && (
             <span className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground bg-muted/60 px-3 py-1.5 rounded-full border">
               <Clock className="w-3.5 h-3.5" />
-              {duration} phút đọc
+              {t('lesson.readingDurationValue', { minutes: duration })}
             </span>
           )}
         </div>
@@ -62,7 +62,7 @@ export function TextContent({ content, title, duration }: TextContentProps) {
           {content ? (
             <div dangerouslySetInnerHTML={{ __html: safeContent }} />
           ) : (
-            <p className="opacity-50 text-center py-8">Chưa có nội dung cho bài học này.</p>
+            <p className="opacity-50 text-center py-8">{t('lesson.emptyTextContent')}</p>
           )}
         </div>
         <div className="px-6 sm:px-8 lg:px-10 py-4 border-t border-dashed flex items-center justify-between text-xs font-bold uppercase tracking-widest text-muted-foreground/40 bg-muted/20">

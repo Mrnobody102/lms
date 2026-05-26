@@ -285,8 +285,10 @@ export default function ExamAttemptPage() {
                     {showValidationErrors && !allAnswered && (
                       <span className="flex items-center gap-2">
                         <XCircle className="h-4 w-4" />
-                        {t('exam.answerRequired')} (Câu chưa trả lời: {unansweredIndices.join(', ')}
-                        )
+                        {t('exam.answerRequired')}{' '}
+                        {t('exam.unansweredQuestionsValue', {
+                          value: unansweredIndices.join(', '),
+                        })}
                       </span>
                     )}
                   </div>

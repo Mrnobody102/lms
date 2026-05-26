@@ -189,8 +189,10 @@ export default function PracticeAttemptPage() {
                   {showValidationErrors && !allAnswered && (
                     <span className="flex items-center gap-2">
                       <XCircle className="h-4 w-4" />
-                      {t('practice.answerRequired')} (Câu chưa trả lời:{' '}
-                      {unansweredIndices.join(', ')})
+                      {t('practice.answerRequired')}{' '}
+                      {t('practice.unansweredQuestionsValue', {
+                        value: unansweredIndices.join(', '),
+                      })}
                     </span>
                   )}
                 </div>

@@ -64,7 +64,7 @@ export function ContactFooter() {
                 <input
                   type="text"
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-                  placeholder="Nguyễn Văn A"
+                  placeholder={t('landing.contact.nameExample')}
                 />
               </div>
 
