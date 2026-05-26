@@ -522,6 +522,12 @@ test('student can view the learning dashboard summary', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'IELTS Foundations' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Resume lesson' })).toBeVisible();
   await expect(page.getByText('0 sessions')).toBeVisible();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Continue your course' })).toBeVisible({
+    timeout: navigationTimeout,
+  });
 });
 
 test('student can submit AI practice and review AI feedback', async ({ page }) => {

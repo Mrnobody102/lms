@@ -1,7 +1,19 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search } from 'lucide-react';
+import {
+  Bot,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  Filter,
+  Globe,
+  KeyRound,
+  Languages,
+  Search,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import {
   createColumnHelper,
@@ -20,24 +32,70 @@ interface TenantListProps {
 }
 
 const columnHelper = createColumnHelper<Tenant>();
+const DEFAULT_TENANT_LIST_LOCALE = 'vi';
+type StatusFilter = 'all' | 'active' | 'inactive';
 
 export function TenantList({ tenants, loading }: TenantListProps) {
   const t = useTranslations('SuperPortal.tenants');
   const locale = useLocale();
   const [globalFilter, setGlobalFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const statusFilters: Array<{ id: StatusFilter; label: string }> = [
+    { id: 'all', label: t('filter.all') },
+    { id: 'active', label: t('filter.active') },
+    { id: 'inactive', label: t('filter.inactive') },
+  ];
+
+  const filteredTenants = useMemo(() => {
+    if (statusFilter === 'active') {
+      return tenants.filter((tenant) => tenant.isActive);
+    }
+
+    if (statusFilter === 'inactive') {
+      return tenants.filter((tenant) => !tenant.isActive);
+    }
+
+    return tenants;
+  }, [statusFilter, tenants]);
 
   const columns = useMemo(
     () => [
       columnHelper.accessor('name', {
         header: t('name'),
-        cell: (info) => <span className="font-medium">{info.getValue()}</span>,
+        cell: (info) => (
+          <div className="min-w-48">
+            <div className="font-semibold">{info.getValue()}</div>
+            <div className="mt-1 font-mono text-xs text-muted-foreground">
+              {info.row.original.slug}
+            </div>
+          </div>
+        ),
       }),
       columnHelper.accessor((row) => row.domain || `${row.slug}.lms.com`, {
         id: 'domain',
         header: t('domain'),
         cell: (info) => (
-          <span className="font-mono text-xs text-muted-foreground">{info.getValue()}</span>
+          <div className="flex min-w-44 items-center gap-2 font-mono text-xs text-muted-foreground">
+            <Globe className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">{info.getValue()}</span>
+          </div>
         ),
+      }),
+      columnHelper.accessor((row) => row.settings, {
+        id: 'configuration',
+        header: t('configuration'),
+        cell: (info) => {
+          const settings = readTenantSettings(info.getValue());
+          return (
+            <div className="flex min-w-48 flex-wrap gap-1.5">
+              <TenantPill icon={Languages}>{settings.defaultLocale.toUpperCase()}</TenantPill>
+              {settings.aiTutorEnabled && <TenantPill icon={Bot}>{t('ai')}</TenantPill>}
+              {settings.activationCodesEnabled && (
+                <TenantPill icon={KeyRound}>{t('activation')}</TenantPill>
+              )}
+            </div>
+          );
+        },
       }),
       columnHelper.accessor('isActive', {
         header: t('status'),
@@ -74,7 +132,7 @@ export function TenantList({ tenants, loading }: TenantListProps) {
   );
 
   const table = useReactTable({
-    data: tenants,
+    data: filteredTenants,
     columns,
     state: {
       globalFilter,
@@ -99,18 +157,49 @@ export function TenantList({ tenants, loading }: TenantListProps) {
   });
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-2xl border bg-card shadow-sm">
-      <div className="flex flex-col items-start justify-between gap-4 border-b bg-card/50 p-6 sm:flex-row sm:items-center">
-        <h3 className="font-semibold">{t('list')}</h3>
-        <div className="flex h-10 items-center rounded-lg border border-input bg-background text-foreground transition-colors focus-within:ring-2 focus-within:ring-primary/20">
-          <Search className="pointer-events-none ml-3.5 h-4 w-4 shrink-0 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder={t('searchPlaceholder')}
-            value={globalFilter ?? ''}
-            onChange={(e) => setGlobalFilter(e.target.value)}
-            className="h-full w-full min-w-0 flex-1 border-0 bg-transparent px-3 py-0 text-sm text-foreground outline-none placeholder:text-muted-foreground/50 focus:ring-0 sm:w-72"
-          />
+    <div className="flex flex-col overflow-hidden rounded-lg border bg-card shadow-sm">
+      <div className="border-b bg-card/50 p-4 sm:p-5">
+        <div className="flex flex-col items-start justify-between gap-4 lg:flex-row lg:items-center">
+          <div>
+            <h3 className="font-semibold">{t('list')}</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {t('listSummary', {
+                total: tenants.length,
+                active: tenants.filter((tenant) => tenant.isActive).length,
+              })}
+            </p>
+          </div>
+
+          <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
+            <div className="flex h-10 items-center rounded-lg border border-input bg-background text-foreground transition-colors focus-within:ring-2 focus-within:ring-primary/20 sm:w-80">
+              <Search className="pointer-events-none ml-3.5 h-4 w-4 shrink-0 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder={t('searchPlaceholder')}
+                value={globalFilter ?? ''}
+                onChange={(e) => setGlobalFilter(e.target.value)}
+                className="h-full w-full min-w-0 flex-1 border-0 bg-transparent px-3 py-0 text-sm text-foreground outline-none placeholder:text-muted-foreground/50 focus:ring-0"
+              />
+            </div>
+
+            <div className="inline-flex h-10 items-center gap-1 rounded-lg border bg-background p-1">
+              <Filter className="ml-2 h-4 w-4 text-muted-foreground" />
+              {statusFilters.map((filter) => (
+                <button
+                  key={filter.id}
+                  type="button"
+                  onClick={() => setStatusFilter(filter.id)}
+                  className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                    statusFilter === filter.id
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -228,4 +317,42 @@ function formatDate(value: string, locale: string) {
   return new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
   }).format(new Date(value));
+}
+
+function TenantPill({ children, icon: Icon }: { children: React.ReactNode; icon: LucideIcon }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-md border bg-muted/40 px-2 py-1 text-[11px] font-semibold text-muted-foreground">
+      <Icon className="h-3 w-3" />
+      {children}
+    </span>
+  );
+}
+
+function readTenantSettings(settings: Record<string, unknown>) {
+  const localization = readRecord(settings.localization);
+  const features = readRecord(settings.features);
+
+  return {
+    defaultLocale:
+      readLocale(localization.defaultLocale) ||
+      readLocale(settings.defaultLocale) ||
+      DEFAULT_TENANT_LIST_LOCALE,
+    aiTutorEnabled: readBoolean(features.aiTutorEnabled, true),
+    activationCodesEnabled: readBoolean(features.activationCodesEnabled, true),
+  };
+}
+
+function readRecord(value: unknown): Record<string, unknown> {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+  return {};
+}
+
+function readBoolean(value: unknown, fallback: boolean): boolean {
+  return typeof value === 'boolean' ? value : fallback;
+}
+
+function readLocale(value: unknown): 'vi' | 'en' | '' {
+  return value === 'vi' || value === 'en' ? value : '';
 }

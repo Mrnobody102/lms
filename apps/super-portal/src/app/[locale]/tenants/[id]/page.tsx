@@ -5,15 +5,21 @@ import { useLocale, useTranslations } from 'next-intl';
 import {
   Activity,
   ArrowLeft,
+  BookOpen,
   Bot,
   Building2,
+  CheckCircle2,
+  ExternalLink,
   Globe,
   KeyRound,
+  Mail,
   Loader2,
   Palette,
+  RotateCcw,
   Save,
   Settings,
   SlidersHorizontal,
+  Users,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -26,11 +32,14 @@ import { Link } from '@/navigation';
 
 const DEFAULT_PRIMARY_COLOR = '#2563eb';
 const DEFAULT_TENANT_LOCALE: 'vi' = 'vi';
+type TenantDetailTab = 'overview' | 'branding' | 'access' | 'limits';
+type TenantSettingsTab = Exclude<TenantDetailTab, 'overview'>;
 
 export default function TenantDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const t = useTranslations('SuperPortal.tenantDetails');
   const locale = useLocale();
+  const [activeTab, setActiveTab] = useState<TenantDetailTab>('overview');
   const { isAuthenticated, isInitialized } = useAuthStore();
   const { data: currentTenant, isLoading: tenantLoading } = useTenant(id, {
     enabled: isAuthenticated,
@@ -86,6 +95,8 @@ export default function TenantDetailsPage({ params }: { params: Promise<{ id: st
     );
   }
 
+  const tenantSettings = normalizeTenantSettings(currentTenant.settings);
+
   return (
     <div className="min-h-screen font-sans">
       <Header />
@@ -100,68 +111,43 @@ export default function TenantDetailsPage({ params }: { params: Promise<{ id: st
           </Link>
         </div>
 
-        <div className="flex justify-between items-start mb-8">
-          <div>
-            <h1 className="text-3xl font-extrabold mb-2 flex items-center gap-3">
-              <Building2 className="w-8 h-8 text-primary" />
-              {currentTenant.name}
-            </h1>
-            <p className="text-muted-foreground font-medium flex items-center gap-2">
-              <Globe className="w-4 h-4" />
-              {currentTenant.domain || `${currentTenant.slug}.lms.com`}
-            </p>
-          </div>
-          <div>
-            {currentTenant.isActive ? (
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
-                <span className="w-2 h-2 rounded-full mr-2 bg-emerald-400" />
-                {t('active')}
+        <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+          <div className="min-w-0">
+            <div className="mb-3 flex flex-wrap items-center gap-3">
+              <h1 className="flex min-w-0 items-center gap-3 text-3xl font-extrabold">
+                <Building2 className="h-8 w-8 shrink-0 text-primary" />
+                <span className="truncate">{currentTenant.name}</span>
+              </h1>
+              <TenantStatusBadge isActive={currentTenant.isActive} />
+            </div>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
+              <span className="inline-flex items-center gap-2 font-medium">
+                <Globe className="h-4 w-4" />
+                {currentTenant.domain || `${currentTenant.slug}.lms.com`}
               </span>
-            ) : (
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border bg-red-500/10 text-red-400 border-red-500/20">
-                <span className="w-2 h-2 rounded-full mr-2 bg-red-400" />
-                {t('inactive')}
-              </span>
-            )}
+              {currentTenant.domain && (
+                <a
+                  href={`https://${currentTenant.domain}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-primary hover:underline"
+                >
+                  {t('openDomain')}
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="col-span-1 bg-card border rounded-2xl p-6 h-fit shadow-sm">
-            <h3 className="text-lg font-bold mb-4 border-b pb-2">{t('generalInfo')}</h3>
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1 font-medium">{t('nameLabel')}</p>
-                <p className="font-semibold">{currentTenant.name}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground mb-1 font-medium">{t('slugLabel')}</p>
-                <p className="font-mono text-xs bg-muted p-1 rounded inline-block">
-                  {currentTenant.slug}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground mb-1 font-medium">{t('domainLabel')}</p>
-                <p className="font-semibold">{currentTenant.domain || t('notSet')}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground mb-1 font-medium">{t('createdAt')}</p>
-                <p className="font-semibold">{formatDateTime(currentTenant.createdAt, locale)}</p>
-              </div>
-            </div>
-          </div>
+        <TenantTabs activeTab={activeTab} onChange={setActiveTab} />
 
-          <div className="col-span-1 md:col-span-2 space-y-6">
-            <div className="bg-card border rounded-2xl p-6 shadow-sm">
-              <div className="flex items-center justify-between mb-4 border-b pb-2">
-                <h3 className="text-lg font-bold flex items-center gap-2">
-                  <Settings className="w-5 h-5 text-primary" />
-                  {t('settingsTitle')}
-                </h3>
-              </div>
-              <TenantSettingsForm tenant={currentTenant} />
-            </div>
-          </div>
+        <div className="mt-6">
+          {activeTab === 'overview' ? (
+            <TenantOverview locale={locale} settings={tenantSettings} tenant={currentTenant} />
+          ) : (
+            <TenantSettingsForm mode={activeTab} tenant={currentTenant} />
+          )}
         </div>
       </div>
       {!isAuthenticated && <LoginModal />}
@@ -177,6 +163,210 @@ function formatDateTime(value: string, locale: string) {
   }).format(new Date(value));
 }
 
+function TenantStatusBadge({ isActive }: { isActive: boolean }) {
+  const t = useTranslations('SuperPortal.tenantDetails');
+
+  return isActive ? (
+    <span className="inline-flex items-center rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+      <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-emerald-500" />
+      {t('active')}
+    </span>
+  ) : (
+    <span className="inline-flex items-center rounded-md border border-destructive/20 bg-destructive/10 px-2.5 py-1 text-xs font-semibold text-destructive">
+      <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-destructive" />
+      {t('inactive')}
+    </span>
+  );
+}
+
+function TenantTabs({
+  activeTab,
+  onChange,
+}: {
+  activeTab: TenantDetailTab;
+  onChange: (tab: TenantDetailTab) => void;
+}) {
+  const t = useTranslations('SuperPortal.tenantDetails');
+  const tabs: Array<{ icon: LucideIcon; id: TenantDetailTab; label: string }> = [
+    { id: 'overview', label: t('tabOverview'), icon: Building2 },
+    { id: 'branding', label: t('tabBranding'), icon: Palette },
+    { id: 'access', label: t('tabAccess'), icon: KeyRound },
+    { id: 'limits', label: t('tabLimits'), icon: SlidersHorizontal },
+  ];
+
+  return (
+    <div className="flex flex-wrap gap-2 border-b">
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          type="button"
+          onClick={() => onChange(tab.id)}
+          className={`inline-flex items-center gap-2 border-b-2 px-3 py-3 text-sm font-semibold transition-colors ${
+            activeTab === tab.id
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <tab.icon className="h-4 w-4" />
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function TenantOverview({
+  locale,
+  settings,
+  tenant,
+}: {
+  locale: string;
+  settings: TenantSettingsFormState;
+  tenant: Tenant;
+}) {
+  const t = useTranslations('SuperPortal.tenantDetails');
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="space-y-6">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <MetricTile
+            icon={CheckCircle2}
+            label={t('statusLabel')}
+            value={tenant.isActive ? t('active') : t('inactive')}
+          />
+          <MetricTile icon={Globe} label={t('domainLabel')} value={tenant.domain || t('notSet')} />
+          <MetricTile
+            icon={Mail}
+            label={t('supportEmailLabel')}
+            value={settings.supportEmail || t('notSet')}
+          />
+          <MetricTile icon={Palette} label={t('primaryColorLabel')} value={settings.primaryColor} />
+        </div>
+
+        <div className="rounded-lg border bg-card p-5">
+          <h3 className="mb-4 flex items-center gap-2 text-base font-bold">
+            <Settings className="h-5 w-5 text-primary" />
+            {t('generalInfo')}
+          </h3>
+          <div className="grid gap-4 md:grid-cols-2">
+            <DetailItem label={t('nameLabel')} value={tenant.name} />
+            <DetailItem label={t('slugLabel')} value={tenant.slug} mono />
+            <DetailItem label={t('domainLabel')} value={tenant.domain || t('notSet')} />
+            <DetailItem label={t('createdAt')} value={formatDateTime(tenant.createdAt, locale)} />
+            <DetailItem
+              label={t('defaultLocaleLabel')}
+              value={settings.defaultLocale.toUpperCase()}
+            />
+            <DetailItem
+              label={t('featuresTitle')}
+              value={[
+                settings.aiTutorEnabled ? t('aiTutorEnabledLabel') : null,
+                settings.activationCodesEnabled ? t('activationCodesEnabledLabel') : null,
+              ]
+                .filter(Boolean)
+                .join(', ')}
+            />
+          </div>
+        </div>
+      </div>
+
+      <TenantPreview settings={settings} tenant={tenant} />
+    </div>
+  );
+}
+
+function MetricTile({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-lg border bg-card p-4">
+      <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        <Icon className="h-4 w-4" />
+      </div>
+      <p className="text-xs font-semibold uppercase text-muted-foreground">{label}</p>
+      <p className="mt-1 truncate text-sm font-bold">{value}</p>
+    </div>
+  );
+}
+
+function DetailItem({ label, mono, value }: { label: string; mono?: boolean; value: string }) {
+  return (
+    <div>
+      <p className="mb-1 text-xs font-semibold uppercase text-muted-foreground">{label}</p>
+      <p className={mono ? 'font-mono text-sm font-semibold' : 'text-sm font-semibold'}>{value}</p>
+    </div>
+  );
+}
+
+function TenantPreview({
+  settings,
+  tenant,
+}: {
+  settings: TenantSettingsFormState;
+  tenant: Tenant;
+}) {
+  const t = useTranslations('SuperPortal.tenantDetails');
+  const primaryColor = normalizeColor(settings.primaryColor);
+  const displayName = settings.brandName || tenant.name;
+
+  return (
+    <div className="rounded-lg border bg-card p-5">
+      <h3 className="mb-4 flex items-center gap-2 text-base font-bold">
+        <Building2 className="h-5 w-5 text-primary" />
+        {t('portalPreview')}
+      </h3>
+      <div className="overflow-hidden rounded-lg border bg-background">
+        <div className="flex items-center justify-between border-b px-4 py-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <div
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-sm font-bold text-foreground"
+              style={
+                settings.logoUrl
+                  ? {
+                      backgroundImage: `url(${settings.logoUrl})`,
+                      backgroundPosition: 'center',
+                      backgroundSize: 'cover',
+                    }
+                  : { backgroundColor: primaryColor, color: '#ffffff' }
+              }
+            >
+              {settings.logoUrl ? null : displayName.slice(0, 1).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold">{displayName}</p>
+              <p className="truncate text-xs text-muted-foreground">
+                {tenant.domain || `${tenant.slug}.lms.com`}
+              </p>
+            </div>
+          </div>
+          <span className="rounded-md border px-2 py-1 text-xs font-semibold">
+            {settings.defaultLocale.toUpperCase()}
+          </span>
+        </div>
+        <div className="space-y-3 p-4">
+          <div className="h-2 w-24 rounded-full" style={{ backgroundColor: primaryColor }} />
+          <div className="h-2 w-full rounded-full bg-muted" />
+          <div className="h-2 w-2/3 rounded-full bg-muted" />
+          <button
+            type="button"
+            className="mt-2 inline-flex h-9 w-full items-center justify-center rounded-lg text-sm font-bold text-white"
+            style={{ backgroundColor: primaryColor }}
+          >
+            {t('previewAction')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface TenantSettingsFormState {
   brandName: string;
   logoUrl: string;
@@ -189,12 +379,14 @@ interface TenantSettingsFormState {
   activationCodesEnabled: boolean;
 }
 
-function TenantSettingsForm({ tenant }: { tenant: Tenant }) {
+function TenantSettingsForm({ mode, tenant }: { mode: TenantSettingsTab; tenant: Tenant }) {
   const t = useTranslations('SuperPortal.tenantDetails');
   const updateTenant = useUpdateTenant();
   const [form, setForm] = useState<TenantSettingsFormState>(() =>
     normalizeTenantSettings(tenant.settings),
   );
+  const savedForm = normalizeTenantSettings(tenant.settings);
+  const isDirty = !formsEqual(form, savedForm);
 
   useEffect(() => {
     setForm(normalizeTenantSettings(tenant.settings));
@@ -230,118 +422,151 @@ function TenantSettingsForm({ tenant }: { tenant: Tenant }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <section className="space-y-4">
-        <SectionHeading icon={Palette} title={t('brandingTitle')} description={t('brandingDesc')} />
+      {mode === 'branding' && (
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+          <section className="rounded-lg border bg-card p-5">
+            <SectionHeading
+              icon={Palette}
+              title={t('brandingTitle')}
+              description={t('brandingDesc')}
+            />
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <TextField
-            label={t('brandNameLabel')}
-            value={form.brandName}
-            placeholder={tenant.name}
-            onChange={(value) => updateField('brandName', value)}
-          />
-          <TextField
-            label={t('logoUrlLabel')}
-            value={form.logoUrl}
-            placeholder="https://example.com/logo.png"
-            onChange={(value) => updateField('logoUrl', value)}
-          />
-          <div>
-            <label className="mb-1 block text-sm font-bold">{t('primaryColorLabel')}</label>
-            <div className="flex h-10 overflow-hidden rounded-lg border bg-background">
-              <input
-                type="color"
-                className="h-10 w-12 border-0 bg-transparent p-1"
-                value={normalizeColor(form.primaryColor)}
-                onChange={(event) => updateField('primaryColor', event.target.value)}
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              <TextField
+                label={t('brandNameLabel')}
+                value={form.brandName}
+                placeholder={tenant.name}
+                onChange={(value) => updateField('brandName', value)}
               />
-              <input
-                type="text"
-                className="min-w-0 flex-1 bg-transparent px-3 text-sm outline-none"
-                value={form.primaryColor}
-                onChange={(event) => updateField('primaryColor', event.target.value)}
+              <TextField
+                label={t('logoUrlLabel')}
+                value={form.logoUrl}
+                placeholder="https://example.com/logo.png"
+                onChange={(value) => updateField('logoUrl', value)}
+              />
+              <div>
+                <label className="mb-1 block text-sm font-bold">{t('primaryColorLabel')}</label>
+                <div className="flex h-10 overflow-hidden rounded-lg border bg-background">
+                  <input
+                    type="color"
+                    className="h-10 w-12 border-0 bg-transparent p-1"
+                    value={normalizeColor(form.primaryColor)}
+                    onChange={(event) => updateField('primaryColor', event.target.value)}
+                  />
+                  <input
+                    type="text"
+                    className="min-w-0 flex-1 bg-transparent px-3 text-sm outline-none"
+                    value={form.primaryColor}
+                    onChange={(event) => updateField('primaryColor', event.target.value)}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-bold">{t('defaultLocaleLabel')}</label>
+                <select
+                  value={form.defaultLocale}
+                  onChange={(event) =>
+                    updateField('defaultLocale', event.target.value as 'vi' | 'en')
+                  }
+                  className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                >
+                  <option value="vi">{t('localeVi')}</option>
+                  <option value="en">{t('localeEn')}</option>
+                </select>
+              </div>
+            </div>
+          </section>
+
+          <TenantPreview settings={form} tenant={tenant} />
+        </div>
+      )}
+
+      {mode === 'access' && (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <section className="rounded-lg border bg-card p-5">
+            <SectionHeading icon={Globe} title={t('supportTitle')} description={t('supportDesc')} />
+            <div className="mt-5">
+              <TextField
+                label={t('supportEmailLabel')}
+                type="email"
+                value={form.supportEmail}
+                placeholder="support@example.com"
+                onChange={(value) => updateField('supportEmail', value)}
               />
             </div>
+          </section>
+
+          <section className="rounded-lg border bg-card p-5">
+            <SectionHeading
+              icon={KeyRound}
+              title={t('featuresTitle')}
+              description={t('featuresDesc')}
+            />
+            <div className="mt-5 grid gap-3">
+              <ToggleRow
+                icon={Bot}
+                title={t('aiTutorEnabledLabel')}
+                description={t('aiTutorEnabledDesc')}
+                checked={form.aiTutorEnabled}
+                onChange={(checked) => updateField('aiTutorEnabled', checked)}
+              />
+              <ToggleRow
+                icon={KeyRound}
+                title={t('activationCodesEnabledLabel')}
+                description={t('activationCodesEnabledDesc')}
+                checked={form.activationCodesEnabled}
+                onChange={(checked) => updateField('activationCodesEnabled', checked)}
+              />
+            </div>
+          </section>
+        </div>
+      )}
+
+      {mode === 'limits' && (
+        <section className="rounded-lg border bg-card p-5">
+          <SectionHeading
+            icon={SlidersHorizontal}
+            title={t('limitsTitle')}
+            description={t('limitsDesc')}
+          />
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <TextField
+              label={t('maxStudentsLabel')}
+              type="number"
+              min={0}
+              value={form.maxStudents}
+              placeholder="500"
+              onChange={(value) => updateField('maxStudents', value)}
+            />
+            <TextField
+              label={t('maxCoursesLabel')}
+              type="number"
+              min={0}
+              value={form.maxCourses}
+              placeholder="50"
+              onChange={(value) => updateField('maxCourses', value)}
+            />
           </div>
-          <div>
-            <label className="mb-1 block text-sm font-bold">{t('defaultLocaleLabel')}</label>
-            <select
-              value={form.defaultLocale}
-              onChange={(event) => updateField('defaultLocale', event.target.value as 'vi' | 'en')}
-              className="h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
-            >
-              <option value="vi">{t('localeVi')}</option>
-              <option value="en">{t('localeEn')}</option>
-            </select>
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            <UsagePlaceholder icon={Users} label={t('studentUsage')} limit={form.maxStudents} />
+            <UsagePlaceholder icon={BookOpen} label={t('courseUsage')} limit={form.maxCourses} />
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      <section className="space-y-4">
-        <SectionHeading icon={Globe} title={t('supportTitle')} description={t('supportDesc')} />
-        <TextField
-          label={t('supportEmailLabel')}
-          type="email"
-          value={form.supportEmail}
-          placeholder="support@example.com"
-          onChange={(value) => updateField('supportEmail', value)}
-        />
-      </section>
-
-      <section className="space-y-4">
-        <SectionHeading
-          icon={SlidersHorizontal}
-          title={t('limitsTitle')}
-          description={t('limitsDesc')}
-        />
-        <div className="grid gap-4 md:grid-cols-2">
-          <TextField
-            label={t('maxStudentsLabel')}
-            type="number"
-            min={0}
-            value={form.maxStudents}
-            placeholder="500"
-            onChange={(value) => updateField('maxStudents', value)}
-          />
-          <TextField
-            label={t('maxCoursesLabel')}
-            type="number"
-            min={0}
-            value={form.maxCourses}
-            placeholder="50"
-            onChange={(value) => updateField('maxCourses', value)}
-          />
-        </div>
-      </section>
-
-      <section className="space-y-4">
-        <SectionHeading
-          icon={KeyRound}
-          title={t('featuresTitle')}
-          description={t('featuresDesc')}
-        />
-        <div className="grid gap-3 md:grid-cols-2">
-          <ToggleRow
-            icon={Bot}
-            title={t('aiTutorEnabledLabel')}
-            description={t('aiTutorEnabledDesc')}
-            checked={form.aiTutorEnabled}
-            onChange={(checked) => updateField('aiTutorEnabled', checked)}
-          />
-          <ToggleRow
-            icon={KeyRound}
-            title={t('activationCodesEnabledLabel')}
-            description={t('activationCodesEnabledDesc')}
-            checked={form.activationCodesEnabled}
-            onChange={(checked) => updateField('activationCodesEnabled', checked)}
-          />
-        </div>
-      </section>
-
-      <div className="flex justify-end border-t pt-5">
+      <div className="flex flex-col justify-end gap-3 border-t pt-5 sm:flex-row">
+        <button
+          type="button"
+          disabled={!isDirty || updateTenant.isPending}
+          onClick={() => setForm(savedForm)}
+          className="inline-flex items-center justify-center gap-2 rounded-lg border px-5 py-2.5 text-sm font-bold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+        >
+          <RotateCcw className="h-4 w-4" />
+          {t('resetChanges')}
+        </button>
         <button
           type="submit"
-          disabled={updateTenant.isPending}
+          disabled={!isDirty || updateTenant.isPending}
           className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-md transition-all hover:opacity-90 disabled:opacity-50 active:scale-95"
         >
           {updateTenant.isPending ? (
@@ -437,6 +662,48 @@ function ToggleRow({
         className="mt-1 h-4 w-4 rounded border-border text-primary"
       />
     </label>
+  );
+}
+
+function UsagePlaceholder({
+  icon: Icon,
+  label,
+  limit,
+}: {
+  icon: LucideIcon;
+  label: string;
+  limit: string;
+}) {
+  const t = useTranslations('SuperPortal.tenantDetails');
+  const hasLimit = limit.trim().length > 0;
+
+  return (
+    <div className="rounded-lg border bg-background p-4">
+      <div className="mb-3 flex items-center gap-2 text-sm font-bold">
+        <Icon className="h-4 w-4 text-primary" />
+        {label}
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-muted">
+        <div className="h-full w-0 rounded-full bg-primary" />
+      </div>
+      <p className="mt-2 text-xs text-muted-foreground">
+        {hasLimit ? t('usageLimit', { limit }) : t('usageUnlimited')}
+      </p>
+    </div>
+  );
+}
+
+function formsEqual(a: TenantSettingsFormState, b: TenantSettingsFormState): boolean {
+  return (
+    a.brandName === b.brandName &&
+    a.logoUrl === b.logoUrl &&
+    a.primaryColor === b.primaryColor &&
+    a.defaultLocale === b.defaultLocale &&
+    a.supportEmail === b.supportEmail &&
+    a.maxStudents === b.maxStudents &&
+    a.maxCourses === b.maxCourses &&
+    a.aiTutorEnabled === b.aiTutorEnabled &&
+    a.activationCodesEnabled === b.activationCodesEnabled
   );
 }
 

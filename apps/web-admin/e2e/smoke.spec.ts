@@ -219,6 +219,11 @@ test('admin can login and view dashboard overview', async ({ page }) => {
   await expect(page.getByText('Learner One')).toBeVisible();
   await expect(page.getByText('IELTS Foundations')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Learning reports' })).toBeVisible();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload();
+  await expect(page).toHaveURL(/\/en$/, { timeout: 60000 });
+  await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 60000 });
 });
 
 test('admin can open course editor without i18n or lesson-table layout regressions', async ({

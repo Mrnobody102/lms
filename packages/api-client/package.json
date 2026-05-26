@@ -8,6 +8,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc -w",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "eslint \"src/**/*.ts\""
   },

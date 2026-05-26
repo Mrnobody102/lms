@@ -1,7 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { Server, PlusCircle, Calendar } from 'lucide-react';
+import {
+  Building2,
+  Calendar,
+  CheckCircle2,
+  Globe2,
+  PauseCircle,
+  PlusCircle,
+  Server,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useAuthStore } from '@/features/auth/auth.store';
 import { SystemTelemetryDashboard } from '@/features/system/components/system-telemetry-dashboard';
 import { TenantFormModal } from '@/features/tenants/components/tenant-form-modal';
@@ -54,6 +63,28 @@ export default function SuperAdminHome() {
         </div>
 
         <SystemTelemetryDashboard />
+        <div className="mb-6 grid gap-3 md:grid-cols-4">
+          <TenantSummaryMetric
+            label={t('tenantSummary.total')}
+            value={tenants.length}
+            icon={Building2}
+          />
+          <TenantSummaryMetric
+            label={t('tenantSummary.active')}
+            value={tenants.filter((tenant) => tenant.isActive).length}
+            icon={CheckCircle2}
+          />
+          <TenantSummaryMetric
+            label={t('tenantSummary.inactive')}
+            value={tenants.filter((tenant) => !tenant.isActive).length}
+            icon={PauseCircle}
+          />
+          <TenantSummaryMetric
+            label={t('tenantSummary.customDomains')}
+            value={tenants.filter((tenant) => tenant.domain).length}
+            icon={Globe2}
+          />
+        </div>
         <TenantList tenants={tenants} loading={isLoading} />
       </div>
 
@@ -61,6 +92,30 @@ export default function SuperAdminHome() {
       {!isAuthenticated && <LoginModal />}
 
       <Footer />
+    </div>
+  );
+}
+
+function TenantSummaryMetric({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: number;
+}) {
+  return (
+    <div className="rounded-lg border bg-card p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium text-muted-foreground">{label}</p>
+          <p className="mt-1 text-2xl font-bold">{value.toLocaleString()}</p>
+        </div>
+        <div className="rounded-lg bg-primary/10 p-2 text-primary">
+          <Icon className="h-5 w-5" />
+        </div>
+      </div>
     </div>
   );
 }
