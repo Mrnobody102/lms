@@ -53,7 +53,7 @@ export function VideoPlayer({ lessonId, videoUrl, title, onComplete }: VideoPlay
 
   if (!videoUrl) {
     return (
-      <div className="relative aspect-video bg-black rounded-[2rem] shadow-2xl flex flex-col items-center justify-center border border-white/5 overflow-hidden">
+      <div className="relative mx-auto flex aspect-video w-full max-w-6xl flex-col items-center justify-center overflow-hidden rounded-xl border border-white/5 bg-black shadow-2xl">
         <PlayCircle className="w-16 h-16 text-muted-foreground opacity-20" />
         <p className="text-muted-foreground mt-4 font-medium uppercase tracking-widest text-xs">
           {t('lesson.videoComingSoon')}
@@ -100,7 +100,7 @@ export function VideoPlayer({ lessonId, videoUrl, title, onComplete }: VideoPlay
   const safeSrc = safeUrl(embedUrl);
 
   return (
-    <div className="relative aspect-video bg-black rounded-[2rem] shadow-2xl shadow-primary/10 overflow-hidden border border-white/5 group transition-transform duration-500 hover:scale-[1.005]">
+    <div className="group relative mx-auto aspect-video w-full max-w-6xl overflow-hidden rounded-xl border border-white/5 bg-black shadow-2xl shadow-primary/10 transition-transform duration-500 hover:scale-[1.002]">
       {!safeSrc ? (
         <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
           <p className="text-sm font-medium">{t('lesson.videoUnavailable')}</p>

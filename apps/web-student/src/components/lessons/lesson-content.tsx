@@ -27,6 +27,7 @@ interface LessonContentProps {
 
 export function LessonContent({ lesson, onComplete }: LessonContentProps) {
   const t = useTranslations('Student');
+  const isVideoLesson = lesson.type === 'video';
 
   const renderContent = () => {
     switch (lesson.type) {
@@ -81,7 +82,11 @@ export function LessonContent({ lesson, onComplete }: LessonContentProps) {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-10 flex-1">
+    <div
+      className={`mx-auto w-full flex-1 ${
+        isVideoLesson ? 'max-w-none px-4 py-5 sm:px-6 lg:px-8' : 'max-w-5xl p-4 sm:p-6 lg:p-10'
+      }`}
+    >
       <div className="w-full">{renderContent()}</div>
     </div>
   );

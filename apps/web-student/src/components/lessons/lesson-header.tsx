@@ -19,18 +19,18 @@ export function LessonHeader({ course, isSidebarOpen, toggleSidebar }: LessonHea
   const streak = progressSummary?.totals?.currentStreak ?? 0;
 
   return (
-    <header className="h-16 border-b bg-background/80 backdrop-blur-xl px-6 flex items-center justify-between shrink-0 z-50">
-      <div className="flex items-center gap-4">
+    <header className="h-14 border-b bg-background/90 backdrop-blur-xl px-4 flex items-center justify-between shrink-0 z-50">
+      <div className="flex min-w-0 items-center gap-3">
         <Link
           href={`/courses/${course.id}`}
-          className="p-2 hover:bg-muted rounded-xl transition-all active:scale-90 text-muted-foreground hover:text-foreground border border-transparent hover:border-border focus:outline-none focus:ring-2 focus:ring-primary/20"
+          className="p-2 hover:bg-muted rounded-lg transition-all active:scale-90 text-muted-foreground hover:text-foreground border border-transparent hover:border-border focus:outline-none focus:ring-2 focus:ring-primary/20"
           aria-label={t('lesson.backToCourse')}
           title={t('lesson.backToCourse')}
         >
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <div className="h-8 w-[1px] bg-border mx-2 hidden sm:block"></div>
-        <div>
+        <div className="h-7 w-[1px] bg-border hidden sm:block"></div>
+        <div className="min-w-0">
           <h1 className="font-bold text-sm sm:text-base line-clamp-1 bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
             {course.title}
           </h1>
@@ -41,23 +41,23 @@ export function LessonHeader({ course, isSidebarOpen, toggleSidebar }: LessonHea
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         {streak > 0 && (
           <div
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/10 text-orange-500 rounded-full font-bold text-sm border border-orange-500/20 mr-2"
+            className="flex items-center gap-1.5 px-2.5 py-1 bg-orange-500/10 text-orange-500 rounded-full font-bold text-sm border border-orange-500/20 mr-1"
             title={`${streak} Day Streak!`}
           >
             <Flame className="w-4 h-4 animate-pulse" />
             <span>{streak}</span>
           </div>
         )}
-        <div className="hidden sm:flex items-center gap-1 bg-muted/50 p-1 rounded-xl border">
+        <div className="hidden sm:flex items-center gap-1 bg-muted/50 p-1 rounded-lg border">
           <ThemeToggle label={t('themeToggle')} />
           <LanguageToggle />
         </div>
         <button
           onClick={toggleSidebar}
-          className="p-2 hover:bg-muted rounded-xl transition-all active:scale-90 border border-transparent hover:border-border focus:outline-none focus:ring-2 focus:ring-primary/20"
+          className="p-2 hover:bg-muted rounded-lg transition-all active:scale-90 border border-transparent hover:border-border focus:outline-none focus:ring-2 focus:ring-primary/20"
           aria-label={
             isSidebarOpen ? t('lesson.closeCurriculumSidebar') : t('lesson.openCurriculumSidebar')
           }

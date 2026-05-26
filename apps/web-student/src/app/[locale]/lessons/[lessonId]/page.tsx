@@ -17,8 +17,6 @@ import {
 } from '../../../../hooks/use-progress';
 import { LearningActivityType, ProgressStatus } from '../../../../lib/progress-api';
 
-import { StudentNav } from '../../../../components/layout/student-nav';
-
 export default function LessonPage() {
   const t = useTranslations('Student');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -76,7 +74,6 @@ export default function LessonPage() {
   if (loading) {
     return (
       <div className="h-screen flex flex-col bg-background">
-        <StudentNav showLinks />
         <div className="flex-1 flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
         </div>
@@ -87,7 +84,6 @@ export default function LessonPage() {
   if (hasError || !currentLesson || !course) {
     return (
       <div className="h-screen flex flex-col bg-background">
-        <StudentNav showLinks />
         <div className="flex-1 flex items-center justify-center p-8">
           <div className="text-center p-8 rounded-[2rem] bg-card border shadow-2xl max-w-md mx-auto animate-in fade-in zoom-in duration-500">
             <h1 className="text-3xl font-black mb-4 tracking-tighter">{t('lesson.notFound')}</h1>
@@ -120,7 +116,6 @@ export default function LessonPage() {
 
   return (
     <div className="flex flex-col h-screen bg-background overflow-hidden selection:bg-primary/20">
-      <StudentNav showLinks />
       <LessonHeader
         course={course}
         isSidebarOpen={isSidebarOpen}
