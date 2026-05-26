@@ -53,9 +53,12 @@ export function LessonSidebar({
       <aside
         className={`
         fixed inset-0 z-[60] bg-background lg:relative lg:inset-auto lg:z-0
-        w-full sm:w-[22rem] border-l flex flex-col shrink-0 transition-all duration-500 ease-in-out
-        ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full lg:hidden lg:w-0'}
-        ${!isSidebarOpen && 'lg:hidden shadow-none border-l-0'}
+        border-l flex flex-col shrink-0 transition-all duration-300 ease-in-out overflow-hidden
+        ${
+          isSidebarOpen
+            ? 'w-full sm:w-[22rem] translate-x-0'
+            : 'w-0 translate-x-full lg:translate-x-0 border-l-0'
+        }
       `}
       >
         <div className="p-8 border-b space-y-6 shrink-0 bg-muted/20">
