@@ -12,37 +12,50 @@
 pnpm test
 ```
 
-2. Chạy lint:
+2. Chạy contract/i18n/production readiness checks:
+
+```bash
+pnpm run check:contracts
+```
+
+3. Kiểm tra production env thật trước deploy. Lệnh này chỉ in tên biến lỗi,
+   không in giá trị secret:
+
+```bash
+pnpm run check:production-env -- --file .env.production
+```
+
+4. Chạy lint:
 
 ```bash
 pnpm lint
 ```
 
-3. Build ổn định:
+5. Build ổn định:
 
 ```bash
 pnpm run build:stable
 ```
 
-4. Smoke backend với Postgres và Redis:
+6. Smoke backend với Postgres và Redis:
 
 ```bash
 pnpm run smoke:api
 ```
 
-5. Kiểm tra trạng thái migration nếu đang chuẩn bị deploy shared/staging/production:
+7. Kiểm tra trạng thái migration nếu đang chuẩn bị deploy shared/staging/production:
 
 ```bash
 pnpm db:status
 ```
 
-6. Smoke E2E UI:
+8. Smoke E2E UI:
 
 ```bash
 pnpm test:e2e
 ```
 
-7. Nếu cần chạy một lệnh duy nhất:
+9. Nếu cần chạy một lệnh duy nhất:
 
 ```bash
 pnpm run release:check

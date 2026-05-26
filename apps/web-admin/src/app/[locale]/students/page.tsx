@@ -6,10 +6,10 @@ import { useSearchParams } from 'next/navigation';
 import { AdminHeader } from '@/components/layout/admin-header';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
-import { Alert, AlertDescription, Badge, Button, Input } from '@/components/ui';
+import { Badge, Button, Input } from '@/components/ui';
 import { useStudents, useUpdateStudentStatus } from '@/hooks/use-admin-users';
 import { useCohorts } from '@/hooks/use-cohorts';
-import { PaginationControls } from '@repo/ui';
+import { EmptyState, ErrorState, LoadingState, PaginationControls } from '@repo/ui';
 import {
   AlertCircle,
   CheckCircle2,
@@ -314,33 +314,23 @@ export default function AdminStudentsPage() {
             )}
 
             {isLoading ? (
-              <div className="flex items-center gap-2 rounded-md border p-4 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                {t('loading')}
-              </div>
+              <LoadingState title={t('loading')} className="rounded-md border" />
             ) : isError ? (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{t('studentsLoadError')}</AlertDescription>
-              </Alert>
+              <ErrorState title={t('studentsLoadError')} />
             ) : students.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-24 text-center rounded-xl border border-dashed bg-muted/20">
-                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-5">
-                  <Users className="w-10 h-10 text-primary" />
-                </div>
-                <h3 className="text-xl font-semibold tracking-tight mb-2">{t('noStudents')}</h3>
-                <p className="text-sm text-muted-foreground max-w-sm">{t('noStudentsDesc')}</p>
-              </div>
+              <EmptyState
+                icon={Users}
+                title={t('noStudents')}
+                description={t('noStudentsDesc')}
+                className="rounded-xl border border-dashed bg-muted/20 py-24"
+              />
             ) : visibleStudents.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-24 text-center rounded-xl border border-dashed bg-muted/20">
-                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-5">
-                  <Search className="w-10 h-10 text-primary" />
-                </div>
-                <h3 className="text-xl font-semibold tracking-tight mb-2">
-                  {t('noFilteredStudents')}
-                </h3>
-                <p className="text-sm text-muted-foreground max-w-sm">{t('noStudentsDesc')}</p>
-              </div>
+              <EmptyState
+                icon={Search}
+                title={t('noFilteredStudents')}
+                description={t('noStudentsDesc')}
+                className="rounded-xl border border-dashed bg-muted/20 py-24"
+              />
             ) : (
               <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
                 <div className="min-w-[760px]">

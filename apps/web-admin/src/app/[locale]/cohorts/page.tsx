@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Plus, Users, Pencil, Trash2 } from 'lucide-react';
 import { Link } from '@/navigation';
-import { Button } from '@repo/ui';
+import { Button, EmptyState, LoadingState } from '@repo/ui';
 import { useCohorts, Cohort } from '@/hooks/use-cohorts';
 import { CohortModal } from '@/components/cohorts/cohort-modal';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
@@ -48,7 +48,7 @@ export default function CohortsPage() {
             </div>
 
             {isLoading ? (
-              <div className="p-8 text-center">{t('common.loading')}</div>
+              <LoadingState title={t('common.loading')} className="rounded-md border" />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {cohorts.map((cohort) => (
@@ -101,11 +101,13 @@ export default function CohortsPage() {
                 ))}
 
                 {cohorts.length === 0 && (
-                  <div className="col-span-full py-12 text-center bg-muted/30 rounded-xl border border-dashed border-border">
-                    <Users className="w-12 h-12 mx-auto text-muted-foreground mb-4 opacity-50" />
-                    <h3 className="text-lg font-medium">{t('cohorts.emptyStateTitle')}</h3>
-                    <p className="text-muted-foreground mt-1">{t('cohorts.emptyStateDesc')}</p>
-                  </div>
+                  <EmptyState
+                    icon={Users}
+                    title={t('cohorts.emptyStateTitle')}
+                    description={t('cohorts.emptyStateDesc')}
+                    action={<Button onClick={handleCreate}>{t('cohorts.createBtn')}</Button>}
+                    className="col-span-full rounded-xl border border-dashed border-border bg-muted/30 py-12"
+                  />
                 )}
               </div>
             )}

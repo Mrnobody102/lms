@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { PaginationControls } from '@repo/ui';
+import { EmptyState, ErrorState, LoadingState, PaginationControls } from '@repo/ui';
 import {
   ArrowRight,
   BarChart3,
@@ -9,7 +9,6 @@ import {
   CheckCircle2,
   Clock3,
   GraduationCap,
-  Loader2,
   Map as MapIcon,
   Search,
 } from 'lucide-react';
@@ -241,26 +240,16 @@ export default function CoursesPage() {
             </header>
 
             {!isInitialized || isLoading || (isAuthenticated && isProgressLoading) ? (
-              <div className="flex flex-col items-center justify-center space-y-4 py-24 opacity-50">
-                <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                <p className="text-sm font-medium text-muted-foreground">{t('courses.loading')}</p>
-              </div>
+              <LoadingState title={t('courses.loading')} className="py-24" />
             ) : isError ? (
-              <div className="rounded-md border border-destructive/20 bg-destructive/5 p-5 text-sm text-destructive">
-                {t('courses.loadError')}
-              </div>
+              <ErrorState title={t('courses.loadError')} />
             ) : courses.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-24 text-center">
-                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-                  <GraduationCap className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <h3 className="mb-2 text-lg font-semibold">
-                  {hasCourseSearch ? t('courses.noFilteredTitle') : t('courses.empty')}
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  {hasCourseSearch ? t('courses.noFilteredDesc') : t('courses.emptyDesc')}
-                </p>
-              </div>
+              <EmptyState
+                icon={hasCourseSearch ? Search : GraduationCap}
+                title={hasCourseSearch ? t('courses.noFilteredTitle') : t('courses.empty')}
+                description={hasCourseSearch ? t('courses.noFilteredDesc') : t('courses.emptyDesc')}
+                className="py-24"
+              />
             ) : (
               <div className="space-y-8">
                 <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -308,12 +297,12 @@ export default function CoursesPage() {
                   </div>
 
                   {filteredCourses.length === 0 ? (
-                    <div className="rounded-md border border-dashed p-8 text-center">
-                      <h2 className="text-lg font-semibold">{t('courses.noFilteredTitle')}</h2>
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        {t('courses.noFilteredDesc')}
-                      </p>
-                    </div>
+                    <EmptyState
+                      icon={Search}
+                      title={t('courses.noFilteredTitle')}
+                      description={t('courses.noFilteredDesc')}
+                      className="rounded-md border border-dashed p-8"
+                    />
                   ) : (
                     <div className="flex flex-col gap-10">
                       {Object.values(groupedCourses).map((program) => (

@@ -1,0 +1,26 @@
+[
+  {
+    "file": "apps/api-server/src/admin/admin-system.service.ts",
+    "delegate": "user",
+    "operation": "count",
+    "reason": "Super admin system telemetry intentionally aggregates users across tenants."
+  },
+  {
+    "file": "apps/api-server/src/admin/admin-system.service.ts",
+    "delegate": "course",
+    "operation": "count",
+    "reason": "Super admin system telemetry intentionally aggregates courses across tenants."
+  },
+  {
+    "file": "apps/api-server/src/admin/admin-system.service.ts",
+    "delegate": "courseEnrollment",
+    "operation": "count",
+    "reason": "Super admin system telemetry intentionally aggregates enrollments across tenants."
+  },
+  {
+    "file": "apps/api-server/src/admin/admin-system.service.ts",
+    "delegate": "learningActivity",
+    "operation": "count",
+    "reason": "Super admin system telemetry intentionally aggregates learning activity across tenants."
+  }
+]

@@ -19,9 +19,9 @@ import {
   Input,
   Label,
   Separator,
-  Skeleton,
 } from '@/components/ui';
 import { AlertCircle, Edit2, Plus, Sparkles, Trash2 } from 'lucide-react';
+import { EmptyState, ErrorState, LoadingState } from '@repo/ui';
 import { useCreateSkill, useDeleteSkill, useSkills, useUpdateSkill } from '@/hooks/use-skills';
 import type { Skill } from '@/lib/skill-api';
 
@@ -147,27 +147,17 @@ export default function SkillsPage() {
             <Separator className="mb-6" />
 
             {isLoading ? (
-              <div className="space-y-3">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-16 w-full" />
-                ))}
-              </div>
+              <LoadingState title={t('loading')} className="rounded-md border" />
             ) : errorMessage ? (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{errorMessage}</AlertDescription>
-              </Alert>
+              <ErrorState title={errorMessage} />
             ) : sorted.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-24 text-center rounded-xl border border-dashed bg-muted/20">
-                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                  <Sparkles className="w-8 h-8 text-muted-foreground" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">{t('skills.empty')}</h3>
-                <p className="text-sm text-muted-foreground max-w-sm mb-6">
-                  {t('skills.emptyDesc')}
-                </p>
-                <Button onClick={openCreate}>{t('skills.create')}</Button>
-              </div>
+              <EmptyState
+                icon={Sparkles}
+                title={t('skills.empty')}
+                description={t('skills.emptyDesc')}
+                action={<Button onClick={openCreate}>{t('skills.create')}</Button>}
+                className="rounded-xl border border-dashed bg-muted/20 py-24"
+              />
             ) : (
               <div className="rounded-xl border bg-card divide-y">
                 {sorted.map((skill) => (

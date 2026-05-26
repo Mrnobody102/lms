@@ -12,8 +12,10 @@ import {
   KeyRound,
   Languages,
   Search,
+  SearchX,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { EmptyState, LoadingState } from '@repo/ui';
 import { useLocale, useTranslations } from 'next-intl';
 import {
   createColumnHelper,
@@ -225,10 +227,7 @@ export function TenantList({ tenants, loading }: TenantListProps) {
                   colSpan={columns.length}
                   className="px-6 py-10 text-center text-muted-foreground"
                 >
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                    {t('loading')}
-                  </div>
+                  <LoadingState title={t('loading')} />
                 </td>
               </tr>
             ) : table.getRowModel().rows.length === 0 ? (
@@ -237,7 +236,7 @@ export function TenantList({ tenants, loading }: TenantListProps) {
                   colSpan={columns.length}
                   className="px-6 py-10 text-center text-muted-foreground"
                 >
-                  {t('empty')}
+                  <EmptyState icon={SearchX} title={t('empty')} />
                 </td>
               </tr>
             ) : (
