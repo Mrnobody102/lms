@@ -173,12 +173,20 @@ export default function LearningDashboard() {
           <section className="rounded-md border p-6">
             <h2 className="text-lg font-semibold">{t('dashboard.emptyTitle')}</h2>
             <p className="mt-2 text-sm text-muted-foreground">{t('dashboard.emptyDesc')}</p>
-            <Link
-              href="/courses"
-              className="mt-5 inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90"
-            >
-              {t('dashboard.browseCourses')}
-            </Link>
+            <div className="mt-5 flex flex-wrap items-center gap-4">
+              <Link
+                href="/courses"
+                className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90"
+              >
+                {t('dashboard.browseCourses')}
+              </Link>
+              <Link
+                href="/activation"
+                className="inline-flex h-10 items-center justify-center rounded-md border border-primary/20 bg-primary/10 px-4 text-sm font-medium text-primary hover:bg-primary/20"
+              >
+                {t('dashboard.enterActivationCode')}
+              </Link>
+            </div>
           </section>
         ) : (
           <div className="grid gap-8 lg:grid-cols-[1.7fr_1fr]">

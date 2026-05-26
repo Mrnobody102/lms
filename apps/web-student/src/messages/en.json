@@ -192,6 +192,7 @@
       "emptyTitle": "No learning progress yet",
       "emptyDesc": "Open an enrolled course to start tracking progress.",
       "browseCourses": "Browse courses",
+      "enterActivationCode": "Enter activation code",
       "continueLearning": "Continue learning",
       "completedCount": "{completed} / {total} lessons completed",
       "duration": "{minutes} mins",

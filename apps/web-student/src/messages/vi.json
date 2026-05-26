@@ -192,6 +192,7 @@
       "emptyTitle": "Chưa có tiến độ học tập",
       "emptyDesc": "Mở một khóa học đã được enroll để bắt đầu ghi nhận tiến độ.",
       "browseCourses": "Xem khóa học",
+      "enterActivationCode": "Nhập mã kích hoạt",
       "continueLearning": "Tiếp tục học",
       "completedCount": "Đã hoàn thành {completed} / {total} bài học",
       "duration": "{minutes} phút",
