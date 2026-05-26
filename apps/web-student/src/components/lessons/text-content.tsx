@@ -1,6 +1,7 @@
 'use client';
 
-import { Clock, BookOpen } from 'lucide-react';
+import { useEffect, useMemo, useRef } from 'react';
+import { BookOpen, Clock } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import { useTranslations } from 'next-intl';
 
@@ -8,17 +9,76 @@ interface TextContentProps {
   content?: string;
   title: string;
   duration?: number;
+  onComplete?: () => void;
 }
 
-export function TextContent({ content, title, duration }: TextContentProps) {
+export function TextContent({ content, title, duration, onComplete }: TextContentProps) {
   const t = useTranslations('Student');
-  const safeContent = content
-    ? DOMPurify.sanitize(content, {
-        USE_PROFILES: { html: true },
-        FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed'],
-        FORBID_ATTR: ['onerror', 'onload', 'onclick'],
-      })
-    : '';
+  const completionRef = useRef<HTMLDivElement>(null);
+  const onCompleteRef = useRef(onComplete);
+  const hasTriggeredCompleteRef = useRef(false);
+  const safeContent = useMemo(
+    () =>
+      content
+        ? DOMPurify.sanitize(content, {
+            USE_PROFILES: { html: true },
+            FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed'],
+            FORBID_ATTR: ['style'],
+            ADD_ATTR: ['target', 'rel', 'data-callout', 'data-lesson-diagram'],
+          })
+        : '',
+    [content],
+  );
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+
+  useEffect(() => {
+    hasTriggeredCompleteRef.current = false;
+  }, [content]);
+
+  useEffect(() => {
+    if (!safeContent) {
+      return;
+    }
+
+    const node = completionRef.current;
+    if (!node) {
+      return;
+    }
+
+    let completionTimer: number | undefined;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting && !hasTriggeredCompleteRef.current) {
+          completionTimer = window.setTimeout(() => {
+            if (hasTriggeredCompleteRef.current) {
+              return;
+            }
+
+            hasTriggeredCompleteRef.current = true;
+            onCompleteRef.current?.();
+          }, 1200);
+          return;
+        }
+
+        if (completionTimer) {
+          window.clearTimeout(completionTimer);
+          completionTimer = undefined;
+        }
+      },
+      { threshold: 0.75 },
+    );
+
+    observer.observe(node);
+    return () => {
+      if (completionTimer) {
+        window.clearTimeout(completionTimer);
+      }
+      observer.disconnect();
+    };
+  }, [safeContent]);
 
   return (
     <div className="w-full">
@@ -57,10 +117,23 @@ export function TextContent({ content, title, duration }: TextContentProps) {
             prose-blockquote:border-l-4 prose-blockquote:border-primary/40 prose-blockquote:bg-primary/5 prose-blockquote:rounded-r-xl prose-blockquote:py-2 prose-blockquote:not-italic
             prose-p:text-muted-foreground prose-p:leading-relaxed
             prose-strong:text-foreground prose-strong:font-bold
+            prose-a:text-primary prose-a:font-semibold prose-a:underline-offset-4 hover:prose-a:underline
+            prose-img:rounded-xl prose-img:border prose-img:border-border prose-img:shadow-sm
+            prose-figure:my-7 prose-figcaption:mt-2 prose-figcaption:text-center prose-figcaption:text-xs prose-figcaption:text-muted-foreground
+            prose-code:rounded prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:text-foreground prose-code:before:content-[''] prose-code:after:content-['']
+            prose-pre:rounded-xl prose-pre:border prose-pre:border-border prose-pre:bg-muted prose-pre:text-foreground
+            prose-hr:border-border prose-hr:my-8
+            prose-mark:rounded prose-mark:bg-yellow-200/70 prose-mark:px-1 dark:prose-mark:bg-yellow-500/25 dark:prose-mark:text-yellow-100
+            [&_aside]:my-6 [&_aside]:rounded-xl [&_aside]:border [&_aside]:border-primary/20 [&_aside]:bg-primary/5 [&_aside]:p-4 [&_aside]:text-sm
+            [&_[data-lesson-diagram]]:my-6 [&_[data-lesson-diagram]]:rounded-xl [&_[data-lesson-diagram]]:border [&_[data-lesson-diagram]]:border-border [&_[data-lesson-diagram]]:bg-muted/30 [&_[data-lesson-diagram]]:p-5
+            [&_[data-lesson-diagram]_ol]:mb-0 [&_[data-lesson-diagram]_ul]:mb-0
           `}
         >
           {content ? (
-            <div dangerouslySetInnerHTML={{ __html: safeContent }} />
+            <>
+              <div dangerouslySetInnerHTML={{ __html: safeContent }} />
+              <div ref={completionRef} className="h-px" aria-hidden="true" />
+            </>
           ) : (
             <p className="opacity-50 text-center py-8">{t('lesson.emptyTextContent')}</p>
           )}

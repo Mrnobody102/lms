@@ -519,6 +519,7 @@
     "videoUrlPlaceholder": "https://example.com/video.mp4",
     "lessonContent": "Nội dung bài học",
     "lessonContentPlaceholder": "Nhập nội dung bài học tại đây...",
+    "lessonContentEditorHelp": "Có thể định dạng bảng, ảnh, khối ghi chú/sơ đồ hoặc import file HTML, Markdown, TXT có sẵn.",
     "lessonMissingContent": "Thiếu nội dung",
     "lessonContentLength": "{count} ký tự",
     "lessonQuizSummary": "{count, plural, =0 {Chưa có câu hỏi} one {# câu hỏi} other {# câu hỏi}}",

@@ -134,15 +134,18 @@ export default function LessonPage() {
     currentIndex >= 0 && currentIndex < (course.lessons?.length ?? 0) - 1
       ? (course.lessons?.[currentIndex + 1] ?? null)
       : null;
+  const isCompleted = progress.some(
+    (p) => p.lessonId === currentLesson.id && p.status === ProgressStatus.COMPLETED,
+  );
 
   const handleComplete = () => {
+    if (isCompleted) {
+      return;
+    }
+
     updateProgress.mutate({
       lessonId: currentLesson.id,
       status: ProgressStatus.COMPLETED,
-    });
-    recordLessonActivity({
-      lessonId: currentLesson.id,
-      type: LearningActivityType.LESSON_COMPLETED,
     });
   };
 
@@ -161,9 +164,7 @@ export default function LessonPage() {
             prevLesson={prevLesson}
             nextLesson={nextLesson}
             onComplete={handleComplete}
-            isCompleted={progress.some(
-              (p) => p.lessonId === currentLesson.id && p.status === ProgressStatus.COMPLETED,
-            )}
+            isCompleted={isCompleted}
           />
           <div className="mx-auto mb-10 w-full max-w-5xl px-4 sm:px-6 lg:px-10">
             <CourseCertificatePanel courseId={currentLesson.courseId} />

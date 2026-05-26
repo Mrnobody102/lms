@@ -72,6 +72,7 @@ export class ProgressService {
           type: LearningActivityType.LESSON_COMPLETED,
         },
       });
+      await this.updateUserStreak(userId, tenantId);
     }
 
     return progress;

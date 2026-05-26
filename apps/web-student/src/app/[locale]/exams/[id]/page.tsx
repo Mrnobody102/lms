@@ -1,13 +1,14 @@
 'use client';
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { ArrowLeft, CheckCircle2, Loader2, RotateCcw, XCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { AuthRequiredPanel } from '@/components/auth/auth-required-panel';
 import { StudentNav } from '@/components/layout/student-nav';
 import { useAuthStore } from '@/features/auth/auth.store';
 import { useExam, useStartExamAttempt, useSubmitExamAttempt } from '@/hooks/use-exams';
+import { useUpdateProgress } from '@/hooks/use-progress';
 import {
   Exam,
   ExamAnswerFeedback,
@@ -15,6 +16,8 @@ import {
   ExamAttemptResult,
   ExamQuestion,
 } from '@/lib/exam-api';
+import { getReturnLessonHref, withReturnLessonId } from '@/lib/lesson-return';
+import { ProgressStatus } from '@/lib/progress-api';
 import { Link } from '@/navigation';
 import { MatchingQuestion } from '@/components/lessons/matching-question';
 import { OrderingQuestion } from '@/components/lessons/ordering-question';
@@ -26,11 +29,16 @@ export default function ExamAttemptPage() {
   const t = useTranslations('Student');
   const { isAuthenticated, isInitialized } = useAuthStore();
   const params = useParams();
+  const searchParams = useSearchParams();
   const idParam = params.id;
   const examId = (Array.isArray(idParam) ? idParam[0] : idParam) ?? '';
+  const returnLessonId = searchParams.get('returnLessonId');
+  const returnLessonHref = getReturnLessonHref(returnLessonId);
+  const currentHref = withReturnLessonId(`/exams/${examId}`, returnLessonId);
   const canLoadExam = isInitialized && isAuthenticated;
   const { data: exam, isLoading, isError } = useExam(examId, canLoadExam);
   const startAttempt = useStartExamAttempt(examId);
+  const updateProgress = useUpdateProgress();
   const [activeExam, setActiveExam] = useState<Exam | null>(null);
   const [attempt, setAttempt] = useState<ExamAttempt | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -136,6 +144,12 @@ export default function ExamAttemptPage() {
           setResult(data);
           setAttempt(data.attempt);
           setRemainingMs(0);
+          if (returnLessonId) {
+            updateProgress.mutate({
+              lessonId: returnLessonId,
+              status: ProgressStatus.COMPLETED,
+            });
+          }
           window.scrollTo({ top: 0, behavior: 'smooth' });
         },
         onError: (error) => setMessage(getSubmitErrorMessage(error, t)),
@@ -159,15 +173,15 @@ export default function ExamAttemptPage() {
 
       <main className="mx-auto max-w-4xl px-6 py-10">
         <Link
-          href="/exams"
+          href={returnLessonHref ?? '/exams'}
           className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary"
         >
           <ArrowLeft className="h-4 w-4" />
-          {t('exam.backToExams')}
+          {returnLessonHref ? t('exam.backToLesson') : t('exam.backToExams')}
         </Link>
 
         {isInitialized && !isAuthenticated ? (
-          <AuthRequiredPanel returnTo={'/exams/' + examId} />
+          <AuthRequiredPanel returnTo={currentHref} />
         ) : !isInitialized || isLoading ? (
           <div className="flex items-center gap-2 rounded-md border p-4 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -221,7 +235,11 @@ export default function ExamAttemptPage() {
             {result && (
               <ResultSummary
                 result={result}
-                reviewHref={`/exams/attempts/${result.attempt.id}`}
+                reviewHref={withReturnLessonId(
+                  `/exams/attempts/${result.attempt.id}`,
+                  returnLessonId,
+                )}
+                returnLessonHref={returnLessonHref}
                 onRetry={resetAttempt}
               />
             )}
@@ -482,10 +500,12 @@ function QuestionCard({
 function ResultSummary({
   result,
   reviewHref,
+  returnLessonHref,
   onRetry,
 }: {
   result: ExamAttemptResult;
   reviewHref: string;
+  returnLessonHref: string | null;
   onRetry: () => void;
 }) {
   const t = useTranslations('Student');
@@ -523,6 +543,14 @@ function ResultSummary({
           </div>
         </div>
         <div className="flex flex-wrap gap-3">
+          {returnLessonHref && (
+            <Link
+              href={returnLessonHref}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90"
+            >
+              {t('exam.continueLesson')}
+            </Link>
+          )}
           <Link
             href={reviewHref}
             className="inline-flex h-10 items-center justify-center gap-2 rounded-md border px-4 text-sm font-semibold hover:bg-muted"

@@ -1,13 +1,14 @@
 'use client';
 
 import { ArrowLeft, CheckCircle2, Loader2, PlayCircle, RotateCcw, XCircle } from 'lucide-react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { AuthRequiredPanel } from '@/components/auth/auth-required-panel';
 import { StudentNav } from '@/components/layout/student-nav';
 import { useAuthStore } from '@/features/auth/auth.store';
 import { useExamAttempt } from '@/hooks/use-exams';
 import { ExamQuestion } from '@/lib/exam-api';
+import { getReturnLessonHref, withReturnLessonId } from '@/lib/lesson-return';
 import { Link } from '@/navigation';
 import { AIFeedbackPanel } from '@/components/lessons/ai-feedback-panel';
 import { AiTutorButton } from '@/components/lessons/ai-tutor-button';
@@ -18,8 +19,12 @@ export default function ExamAttemptReviewPage() {
   const { isAuthenticated, isInitialized } = useAuthStore();
   const locale = useLocale();
   const params = useParams();
+  const searchParams = useSearchParams();
   const attemptId =
     (Array.isArray(params.attemptId) ? params.attemptId[0] : params.attemptId) ?? '';
+  const returnLessonId = searchParams.get('returnLessonId');
+  const returnLessonHref = getReturnLessonHref(returnLessonId);
+  const currentHref = withReturnLessonId(`/exams/attempts/${attemptId}`, returnLessonId);
   const canLoadAttempt = isInitialized && isAuthenticated;
   const { data: attempt, isLoading, isError } = useExamAttempt(attemptId, canLoadAttempt);
   const answerStats = attempt?.status === 'SUBMITTED' ? buildAnswerStats(attempt.answers) : null;
@@ -30,15 +35,15 @@ export default function ExamAttemptReviewPage() {
 
       <main className="mx-auto max-w-4xl px-6 py-10">
         <Link
-          href="/exams"
+          href={returnLessonHref ?? '/exams'}
           className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary"
         >
           <ArrowLeft className="h-4 w-4" />
-          {t('exam.backToExams')}
+          {returnLessonHref ? t('exam.backToLesson') : t('exam.backToExams')}
         </Link>
 
         {isInitialized && !isAuthenticated ? (
-          <AuthRequiredPanel returnTo={'/exams/attempts/' + attemptId} />
+          <AuthRequiredPanel returnTo={currentHref} />
         ) : !isInitialized || isLoading ? (
           <div className="flex items-center gap-2 rounded-md border p-4 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -121,9 +126,17 @@ export default function ExamAttemptReviewPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-3">
+                  {attempt.status === 'SUBMITTED' && returnLessonHref && (
+                    <Link
+                      href={returnLessonHref}
+                      className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90"
+                    >
+                      {t('exam.continueLesson')}
+                    </Link>
+                  )}
                   {attempt.status === 'STARTED' && !attempt.isExpired && (
                     <Link
-                      href={`/exams/${attempt.exam.id}`}
+                      href={withReturnLessonId(`/exams/${attempt.exam.id}`, returnLessonId)}
                       className="inline-flex h-10 items-center justify-center gap-2 rounded-md border px-4 text-sm font-semibold hover:bg-muted"
                     >
                       <PlayCircle className="h-4 w-4" />
@@ -131,7 +144,7 @@ export default function ExamAttemptReviewPage() {
                     </Link>
                   )}
                   <Link
-                    href={`/exams/${attempt.exam.id}`}
+                    href={withReturnLessonId(`/exams/${attempt.exam.id}`, returnLessonId)}
                     className="inline-flex h-10 items-center justify-center gap-2 rounded-md border px-4 text-sm font-semibold hover:bg-muted"
                   >
                     <RotateCcw className="h-4 w-4" />

@@ -519,6 +519,7 @@
     "videoUrlPlaceholder": "https://example.com/video.mp4",
     "lessonContent": "Lesson Content",
     "lessonContentPlaceholder": "Enter lesson content here...",
+    "lessonContentEditorHelp": "Supports tables, images, callouts, diagram blocks, and importing existing HTML, Markdown, or TXT files.",
     "lessonMissingContent": "Missing content",
     "lessonContentLength": "{count} chars",
     "lessonQuizSummary": "{count, plural, =0 {No questions} one {# question} other {# questions}}",

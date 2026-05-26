@@ -468,7 +468,9 @@
       "simulationInputPlaceholder": "Type your message...",
       "simulationSend": "Send",
       "openPractice": "Open practice",
-      "openExam": "Open exam"
+      "openPracticeDesc": "This practice set stays in the lesson flow. After submission, progress is recorded and you can return to the lesson.",
+      "openExam": "Open exam",
+      "openExamDesc": "This exam stays in the lesson flow. After submission, progress is recorded and you can return to the lesson."
     },
     "discussion": {
       "title": "Discussion",
@@ -728,6 +730,8 @@
       "courseFallback": "Course",
       "start": "Start practice",
       "backToPractice": "Back to practice",
+      "backToLesson": "Back to lesson",
+      "continueLesson": "Continue lesson",
       "publishedSets": "Published sets",
       "publishedSetsValue": "{count, plural, =0 {No published sets} one {# published set} other {# published sets}}",
       "totalQuestions": "Total questions",
@@ -803,6 +807,8 @@
       "courseFallback": "Course",
       "open": "Open exam",
       "backToExams": "Back to exams",
+      "backToLesson": "Back to lesson",
+      "continueLesson": "Continue lesson",
       "publishedExams": "Published exams",
       "publishedExamsValue": "{count, plural, =0 {No published exams} one {# published exam} other {# published exams}}",
       "activeAttempts": "Active attempts",

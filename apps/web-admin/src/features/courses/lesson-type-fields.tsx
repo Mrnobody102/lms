@@ -110,6 +110,7 @@ export function LessonTypeFields({
           placeholder={t('lessonContentPlaceholder')}
           minHeight="14rem"
         />
+        <p className="text-xs text-muted-foreground">{t('lessonContentEditorHelp')}</p>
       </div>
     );
   }

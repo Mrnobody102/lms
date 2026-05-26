@@ -1,34 +1,40 @@
 'use client';
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { useParams } from 'next/navigation';
-import { ArrowLeft, CheckCircle2, Loader2, RotateCcw, XCircle } from 'lucide-react';
+import { useParams, useSearchParams } from 'next/navigation';
+import { ArrowLeft, CheckCircle2, Loader2, RotateCcw, Sparkles, XCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { AuthRequiredPanel } from '@/components/auth/auth-required-panel';
+import { DiscussionPanel } from '@/components/discussions/discussion-panel';
 import { StudentNav } from '@/components/layout/student-nav';
-import { useAuthStore } from '@/features/auth/auth.store';
-import { usePracticeExerciseSet, useSubmitPracticeAttempt } from '@/hooks/use-practice';
-import {
-  PracticeAnswerFeedback,
-  PracticeAttemptResult,
-  PracticeQuestion,
-} from '@/lib/practice-api';
-import { Link } from '@/navigation';
 import { AIEvaluationInput } from '@/components/lessons/ai-evaluation-input';
 import { MatchingQuestion } from '@/components/lessons/matching-question';
 import { OrderingQuestion } from '@/components/lessons/ordering-question';
 import { AudioPromptPlayer } from '@/components/practice/audio-prompt-player';
 import { SocraticTutorPanel } from '@/components/practice/socratic-tutor-panel';
-import { DiscussionPanel } from '@/components/discussions/discussion-panel';
+import { useAuthStore } from '@/features/auth/auth.store';
+import { usePracticeExerciseSet, useSubmitPracticeAttempt } from '@/hooks/use-practice';
+import { useUpdateProgress } from '@/hooks/use-progress';
+import { getReturnLessonHref, withReturnLessonId } from '@/lib/lesson-return';
+import {
+  PracticeAnswerFeedback,
+  PracticeAttemptResult,
+  PracticeQuestion,
+} from '@/lib/practice-api';
 import { isQuestionAnswered, parseSubmittedAnswer } from '@/lib/question-answer.util';
-import { Sparkles } from 'lucide-react';
+import { ProgressStatus } from '@/lib/progress-api';
+import { Link } from '@/navigation';
 
 export default function PracticeAttemptPage() {
   const t = useTranslations('Student');
   const { isAuthenticated, isInitialized } = useAuthStore();
   const params = useParams();
+  const searchParams = useSearchParams();
   const idParam = params.id;
   const exerciseSetId = (Array.isArray(idParam) ? idParam[0] : idParam) ?? '';
+  const returnLessonId = searchParams.get('returnLessonId');
+  const returnLessonHref = getReturnLessonHref(returnLessonId);
+  const currentHref = withReturnLessonId(`/practice/${exerciseSetId}`, returnLessonId);
   const canLoadExerciseSet = isInitialized && isAuthenticated;
   const {
     data: exerciseSet,
@@ -36,6 +42,7 @@ export default function PracticeAttemptPage() {
     isError,
   } = usePracticeExerciseSet(exerciseSetId, canLoadExerciseSet);
   const submitAttempt = useSubmitPracticeAttempt(exerciseSetId);
+  const updateProgress = useUpdateProgress();
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [result, setResult] = useState<PracticeAttemptResult | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -84,6 +91,12 @@ export default function PracticeAttemptPage() {
       {
         onSuccess: (data) => {
           setResult(data);
+          if (returnLessonId) {
+            updateProgress.mutate({
+              lessonId: returnLessonId,
+              status: ProgressStatus.COMPLETED,
+            });
+          }
           window.scrollTo({ top: 0, behavior: 'smooth' });
         },
         onError: () => setMessage(t('practice.submitError')),
@@ -104,15 +117,15 @@ export default function PracticeAttemptPage() {
 
       <main className="mx-auto max-w-4xl px-6 py-10">
         <Link
-          href="/practice"
+          href={returnLessonHref ?? '/practice'}
           className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary"
         >
           <ArrowLeft className="h-4 w-4" />
-          {t('practice.backToPractice')}
+          {returnLessonHref ? t('practice.backToLesson') : t('practice.backToPractice')}
         </Link>
 
         {isInitialized && !isAuthenticated ? (
-          <AuthRequiredPanel returnTo={'/practice/' + exerciseSetId} />
+          <AuthRequiredPanel returnTo={currentHref} />
         ) : !isInitialized || isLoading ? (
           <div className="flex items-center gap-2 rounded-md border p-4 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -146,7 +159,11 @@ export default function PracticeAttemptPage() {
             {result && (
               <ResultSummary
                 result={result}
-                reviewHref={`/practice/attempts/${result.attempt.id}`}
+                reviewHref={withReturnLessonId(
+                  `/practice/attempts/${result.attempt.id}`,
+                  returnLessonId,
+                )}
+                returnLessonHref={returnLessonHref}
                 onRetry={resetAttempt}
               />
             )}
@@ -407,10 +424,12 @@ function QuestionCard({
 function ResultSummary({
   result,
   reviewHref,
+  returnLessonHref,
   onRetry,
 }: {
   result: PracticeAttemptResult;
   reviewHref: string;
+  returnLessonHref: string | null;
   onRetry: () => void;
 }) {
   const t = useTranslations('Student');
@@ -440,6 +459,14 @@ function ResultSummary({
           )}
         </div>
         <div className="flex flex-wrap gap-3">
+          {returnLessonHref && (
+            <Link
+              href={returnLessonHref}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90"
+            >
+              {t('practice.continueLesson')}
+            </Link>
+          )}
           <Link
             href={reviewHref}
             className="inline-flex h-10 items-center justify-center gap-2 rounded-md border px-4 text-sm font-semibold hover:bg-muted"

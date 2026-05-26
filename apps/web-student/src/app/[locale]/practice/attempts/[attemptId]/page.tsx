@@ -1,13 +1,14 @@
 'use client';
 
 import { ArrowLeft, CheckCircle2, Loader2, RotateCcw, XCircle } from 'lucide-react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { AuthRequiredPanel } from '@/components/auth/auth-required-panel';
 import { StudentNav } from '@/components/layout/student-nav';
 import { AIFeedbackPanel } from '@/components/lessons/ai-feedback-panel';
 import { useAuthStore } from '@/features/auth/auth.store';
 import { usePracticeAttempt } from '@/hooks/use-practice';
+import { getReturnLessonHref, withReturnLessonId } from '@/lib/lesson-return';
 import { getPracticeAttemptStats, PracticeQuestion } from '@/lib/practice-api';
 import { Link } from '@/navigation';
 import { AiTutorButton } from '@/components/lessons/ai-tutor-button';
@@ -18,8 +19,12 @@ export default function PracticeAttemptReviewPage() {
   const { isAuthenticated, isInitialized } = useAuthStore();
   const locale = useLocale();
   const params = useParams();
+  const searchParams = useSearchParams();
   const attemptId =
     (Array.isArray(params.attemptId) ? params.attemptId[0] : params.attemptId) ?? '';
+  const returnLessonId = searchParams.get('returnLessonId');
+  const returnLessonHref = getReturnLessonHref(returnLessonId);
+  const currentHref = withReturnLessonId(`/practice/attempts/${attemptId}`, returnLessonId);
   const canLoadAttempt = isInitialized && isAuthenticated;
   const { data: attempt, isLoading, isError } = usePracticeAttempt(attemptId, canLoadAttempt);
   const stats = attempt ? getPracticeAttemptStats(attempt) : null;
@@ -30,15 +35,15 @@ export default function PracticeAttemptReviewPage() {
 
       <main className="mx-auto max-w-4xl px-6 py-10">
         <Link
-          href="/practice"
+          href={returnLessonHref ?? '/practice'}
           className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary"
         >
           <ArrowLeft className="h-4 w-4" />
-          {t('practice.backToPractice')}
+          {returnLessonHref ? t('practice.backToLesson') : t('practice.backToPractice')}
         </Link>
 
         {isInitialized && !isAuthenticated ? (
-          <AuthRequiredPanel returnTo={'/practice/attempts/' + attemptId} />
+          <AuthRequiredPanel returnTo={currentHref} />
         ) : !isInitialized || isLoading ? (
           <div className="flex items-center gap-2 rounded-md border p-4 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -109,13 +114,23 @@ export default function PracticeAttemptReviewPage() {
                     })}
                   </p>
                 </div>
-                <Link
-                  href={`/practice/${attempt.exerciseSet.id}`}
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-md border px-4 text-sm font-semibold hover:bg-muted"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                  {t('practice.tryAgain')}
-                </Link>
+                <div className="flex flex-wrap gap-3">
+                  {returnLessonHref && (
+                    <Link
+                      href={returnLessonHref}
+                      className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90"
+                    >
+                      {t('practice.continueLesson')}
+                    </Link>
+                  )}
+                  <Link
+                    href={withReturnLessonId(`/practice/${attempt.exerciseSet.id}`, returnLessonId)}
+                    className="inline-flex h-10 items-center justify-center gap-2 rounded-md border px-4 text-sm font-semibold hover:bg-muted"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    {t('practice.tryAgain')}
+                  </Link>
+                </div>
               </div>
             </section>
 

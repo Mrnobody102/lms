@@ -468,7 +468,9 @@
       "simulationInputPlaceholder": "Nhập tin nhắn của bạn...",
       "simulationSend": "Gửi",
       "openPractice": "Mở bài luyện tập",
-      "openExam": "Mở đề thi"
+      "openPracticeDesc": "Bài luyện tập này thuộc đúng mạch bài học. Sau khi nộp, hệ thống sẽ ghi nhận hoàn thành và đưa bạn quay lại bài học.",
+      "openExam": "Mở đề thi",
+      "openExamDesc": "Bài kiểm tra này thuộc đúng mạch bài học. Sau khi nộp, hệ thống sẽ ghi nhận hoàn thành và đưa bạn quay lại bài học."
     },
     "discussion": {
       "title": "Thảo luận",
@@ -728,6 +730,8 @@
       "courseFallback": "Khóa học",
       "start": "Bắt đầu luyện tập",
       "backToPractice": "Quay lại luyện tập",
+      "backToLesson": "Quay lại bài học",
+      "continueLesson": "Tiếp tục bài học",
       "publishedSets": "Bộ bài đã xuất bản",
       "publishedSetsValue": "{count, plural, =0 {Chưa có bộ bài} one {# bộ bài} other {# bộ bài}}",
       "totalQuestions": "Tổng câu hỏi",
@@ -803,6 +807,8 @@
       "courseFallback": "Khóa học",
       "open": "Mở đề",
       "backToExams": "Quay lại kiểm tra",
+      "backToLesson": "Quay lại bài học",
+      "continueLesson": "Tiếp tục bài học",
       "publishedExams": "Đề đã xuất bản",
       "publishedExamsValue": "{count, plural, =0 {Chưa có đề} one {# đề} other {# đề}}",
       "activeAttempts": "Lần làm đang mở",
