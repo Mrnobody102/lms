@@ -2,7 +2,6 @@
 
 import {
   BookOpen,
-  ChevronDown,
   Dumbbell,
   FileCheck2,
   Home,
@@ -80,6 +79,8 @@ export function StudentNav({ showLinks = false }: StudentNavProps) {
       active ? 'bg-primary/10 text-primary' : 'hover:bg-muted hover:text-primary'
     }`;
 
+  const shouldShowLinks = showLinks && isAuthenticated;
+
   return (
     <header className="sticky top-0 z-40 border-b bg-card/80 backdrop-blur-md transition-colors duration-300">
       <nav className="flex items-center justify-between gap-2 px-4 py-3 sm:px-6">
@@ -92,7 +93,7 @@ export function StudentNav({ showLinks = false }: StudentNavProps) {
           </span>
         </Link>
 
-        {showLinks && (
+        {shouldShowLinks && (
           <div className="hidden min-w-0 flex-1 justify-center gap-1 text-sm font-medium text-muted-foreground lg:flex">
             {mainItems.map((item) => (
               <Link
@@ -105,48 +106,10 @@ export function StudentNav({ showLinks = false }: StudentNavProps) {
               </Link>
             ))}
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button type="button" className={linkClass(isGroupActive(practiceItems))}>
-                  <Dumbbell className="h-3.5 w-3.5 shrink-0" />
-                  <span>{t('nav.practiceGroup')}</span>
-                  <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-60" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-52">
-                {practiceItems.map((item) => {
-                  if (item.disabled) {
-                    return (
-                      <DropdownMenuItem
-                        key={item.href ?? item.label}
-                        disabled
-                        className="flex items-center gap-2 opacity-60"
-                        title={t('nav.comingSoon')}
-                      >
-                        <item.icon className="h-4 w-4 shrink-0" />
-                        <span>{item.label}</span>
-                        <span className="ml-auto text-[10px] uppercase tracking-wide text-muted-foreground">
-                          {t('nav.comingSoon')}
-                        </span>
-                      </DropdownMenuItem>
-                    );
-                  }
-                  return (
-                    <DropdownMenuItem key={item.href} asChild>
-                      <Link
-                        href={item.href ?? '/'}
-                        className={`flex w-full items-center gap-2 ${
-                          isActive(item.href) ? 'text-primary' : ''
-                        }`}
-                      >
-                        <item.icon className="h-4 w-4 shrink-0" />
-                        <span>{item.label}</span>
-                      </Link>
-                    </DropdownMenuItem>
-                  );
-                })}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Link href="/practice" className={linkClass(isGroupActive(practiceItems))}>
+              <Dumbbell className="h-3.5 w-3.5 shrink-0" />
+              <span>{t('nav.practiceGroup')}</span>
+            </Link>
 
             <Link href={examsItem.href ?? '/'} className={linkClass(isActive(examsItem.href))}>
               <examsItem.icon className="h-3.5 w-3.5 shrink-0" />
@@ -156,7 +119,7 @@ export function StudentNav({ showLinks = false }: StudentNavProps) {
         )}
 
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-          {showLinks && (
+          {shouldShowLinks && (
             <div className="flex items-center lg:hidden">
               <Sheet>
                 <SheetTrigger asChild>
@@ -180,9 +143,8 @@ export function StudentNav({ showLinks = false }: StudentNavProps) {
                   <MobileGroup items={mainItems} isActive={isActive} t={t} />
 
                   <MobileGroup
-                    title={t('nav.practiceGroup')}
-                    items={practiceItems}
-                    isActive={isActive}
+                    items={[{ href: '/practice', icon: Dumbbell, label: t('nav.practiceGroup') }]}
+                    isActive={() => isGroupActive(practiceItems)}
                     t={t}
                   />
 
@@ -268,7 +230,7 @@ export function StudentNav({ showLinks = false }: StudentNavProps) {
         </div>
       </nav>
 
-      {isGroupActive(practiceItems) ? (
+      {shouldShowLinks && isGroupActive(practiceItems) ? (
         <PracticeTabStrip
           items={practiceItems}
           isActive={isActive}

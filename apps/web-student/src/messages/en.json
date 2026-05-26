@@ -1,5 +1,48 @@
 {
   "Student": {
+    "landing": {
+      "nav": {
+        "home": "Home",
+        "highlights": "Highlights",
+        "courses": "Courses",
+        "team": "Our Team",
+        "contact": "Contact"
+      },
+      "stats": {
+        "students": "Students",
+        "teachers": "Teachers",
+        "passRate": "Pass Rate",
+        "courses": "Courses"
+      },
+      "features": {
+        "title": "Why Choose Us?",
+        "desc": "Exclusive learning methodology combining artificial intelligence and top-tier pedagogical experience.",
+        "ai": "Learn with AI",
+        "aiDesc": "Automatically analyze weaknesses and suggest personalized learning paths.",
+        "community": "Community",
+        "communityDesc": "Highly interactive environment, discussions, and 24/7 support.",
+        "quality": "High Quality",
+        "qualityDesc": "Curriculum crafted by leading experts."
+      },
+      "courses": {
+        "title": "Featured Courses",
+        "desc": "Start your journey to conquer your goals today",
+        "viewAll": "View All",
+        "students": "students"
+      },
+      "contact": {
+        "title": "Ready to Break Through?",
+        "desc": "Leave your information to receive consultation on the most suitable learning path for you.",
+        "address": "Address",
+        "phone": "Hotline",
+        "email": "Email",
+        "register": "Register for Consultation",
+        "namePlaceholder": "Full Name",
+        "phonePlaceholder": "Phone Number",
+        "emailPlaceholder": "Email Address",
+        "submit": "Submit Request"
+      }
+    },
     "activation": {
       "title": "Enter Activation Code",
       "description": "Enter your activation code to unlock a course or learning program.",

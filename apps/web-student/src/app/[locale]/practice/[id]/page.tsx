@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { ArrowLeft, CheckCircle2, Loader2, RotateCcw, XCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -31,6 +31,7 @@ export default function PracticeAttemptPage() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [result, setResult] = useState<PracticeAttemptResult | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [showValidationErrors, setShowValidationErrors] = useState(false);
 
   const questions = useMemo(
     () => exerciseSet?.questions.map((link) => link.question) ?? [],
@@ -41,16 +42,29 @@ export default function PracticeAttemptPage() {
     [questions],
   );
 
-  const allAnswered =
-    questions.length > 0 &&
-    questions.every((question) => isQuestionAnswered(question, answers[question.id]));
+  const unansweredIndices = useMemo(() => {
+    return questions
+      .map((question, index) =>
+        isQuestionAnswered(question, answers[question.id]) ? -1 : index + 1,
+      )
+      .filter((i) => i !== -1);
+  }, [questions, answers]);
+  const allAnswered = questions.length > 0 && unansweredIndices.length === 0;
+
+  // Clear validation errors when user answers all questions
+  useEffect(() => {
+    if (showValidationErrors && allAnswered) {
+      setShowValidationErrors(false);
+      setMessage(null);
+    }
+  }, [allAnswered, showValidationErrors]);
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
     setMessage(null);
 
     if (!allAnswered) {
-      setMessage(t('practice.answerRequired'));
+      setShowValidationErrors(true);
       return;
     }
 
@@ -73,6 +87,7 @@ export default function PracticeAttemptPage() {
     setAnswers({});
     setResult(null);
     setMessage(null);
+    setShowValidationErrors(false);
   };
 
   return (
@@ -146,6 +161,9 @@ export default function PracticeAttemptPage() {
                     value={answers[question.id] ?? ''}
                     feedback={feedback}
                     disabled={Boolean(result)}
+                    showError={
+                      showValidationErrors && !isQuestionAnswered(question, answers[question.id])
+                    }
                     onChange={(value) =>
                       setAnswers((current) => ({ ...current, [question.id]: value }))
                     }
@@ -156,27 +174,38 @@ export default function PracticeAttemptPage() {
                 );
               })}
 
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-                {result && (
-                  <button
-                    type="button"
-                    onClick={resetAttempt}
-                    className="inline-flex h-11 items-center justify-center gap-2 rounded-md border px-5 text-sm font-semibold hover:bg-muted"
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                    {t('practice.tryAgain')}
-                  </button>
-                )}
-                {!result && (
-                  <button
-                    type="submit"
-                    disabled={submitAttempt.isPending}
-                    className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {submitAttempt.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                    {t('practice.submit')}
-                  </button>
-                )}
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-4 border-t">
+                <div className="text-sm font-semibold text-destructive">
+                  {showValidationErrors && !allAnswered && (
+                    <span className="flex items-center gap-2">
+                      <XCircle className="h-4 w-4" />
+                      {t('practice.answerRequired')} (Câu chưa trả lời:{' '}
+                      {unansweredIndices.join(', ')})
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                  {result && (
+                    <button
+                      type="button"
+                      onClick={resetAttempt}
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-md border px-5 text-sm font-semibold hover:bg-muted"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                      {t('practice.tryAgain')}
+                    </button>
+                  )}
+                  {!result && (
+                    <button
+                      type="submit"
+                      disabled={submitAttempt.isPending}
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {submitAttempt.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                      {t('practice.submit')}
+                    </button>
+                  )}
+                </div>
               </div>
             </form>
 
@@ -196,6 +225,7 @@ function QuestionCard({
   value,
   feedback,
   disabled,
+  showError,
   onChange,
   formatFeedbackAnswer,
 }: {
@@ -204,6 +234,7 @@ function QuestionCard({
   value: string;
   feedback?: PracticeAnswerFeedback;
   disabled: boolean;
+  showError?: boolean;
   onChange: (value: string) => void;
   formatFeedbackAnswer: (value: unknown) => string;
 }) {
@@ -214,7 +245,14 @@ function QuestionCard({
   const audioUrl = question.audioMediaAsset?.url ?? null;
 
   return (
-    <section className="rounded-md border bg-card p-5">
+    <section
+      id={`question-${index}`}
+      className={`rounded-md border p-5 transition-colors ${
+        showError
+          ? 'border-destructive bg-destructive/5 ring-1 ring-destructive shadow-[0_0_15px_rgba(239,68,68,0.1)]'
+          : 'bg-card'
+      }`}
+    >
       <div className="mb-4 flex items-start gap-3">
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-sm font-bold text-primary">
           {index + 1}

@@ -1,5 +1,48 @@
 {
   "Student": {
+    "landing": {
+      "nav": {
+        "home": "Trang chủ",
+        "highlights": "Điểm nổi bật",
+        "courses": "Khóa học",
+        "team": "Đội ngũ",
+        "contact": "Liên hệ"
+      },
+      "stats": {
+        "students": "Học viên",
+        "teachers": "Giảng viên",
+        "passRate": "Tỷ lệ đỗ",
+        "courses": "Khóa học"
+      },
+      "features": {
+        "title": "Tại sao chọn chúng tôi?",
+        "desc": "Phương pháp học tập độc quyền kết hợp giữa trí tuệ nhân tạo và kinh nghiệm sư phạm hàng đầu.",
+        "ai": "Học cùng AI",
+        "aiDesc": "Tự động phân tích điểm yếu và gợi ý lộ trình cá nhân hóa.",
+        "community": "Cộng đồng",
+        "communityDesc": "Môi trường tương tác cao, thảo luận và hỗ trợ 24/7.",
+        "quality": "Chất lượng cao",
+        "qualityDesc": "Giáo trình được biên soạn bởi các chuyên gia hàng đầu."
+      },
+      "courses": {
+        "title": "Khóa học nổi bật",
+        "desc": "Bắt đầu hành trình chinh phục mục tiêu của bạn ngay hôm nay",
+        "viewAll": "Xem tất cả",
+        "students": "học viên"
+      },
+      "contact": {
+        "title": "Sẵn sàng bứt phá?",
+        "desc": "Để lại thông tin để nhận tư vấn lộ trình học phù hợp nhất với bạn.",
+        "address": "Địa chỉ",
+        "phone": "Hotline",
+        "email": "Email",
+        "register": "Đăng ký tư vấn",
+        "namePlaceholder": "Họ và tên",
+        "phonePlaceholder": "Số điện thoại",
+        "emailPlaceholder": "Email",
+        "submit": "Gửi yêu cầu"
+      }
+    },
     "activation": {
       "title": "Nhập mã kích hoạt",
       "description": "Nhập mã kích hoạt của bạn để mở khóa khóa học hoặc chương trình học.",
