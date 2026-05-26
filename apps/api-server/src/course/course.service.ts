@@ -1,8 +1,16 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  Optional,
+} from '@nestjs/common';
 import { EnrollmentStatus, Prisma, Role } from '@repo/database';
 import { AuditAction, AuditLogService, AuditStatus } from '../common/services/audit-log.service';
 import { LearningAccessService } from '../common/services/learning-access.service';
 import { PrismaService } from '../common/services/prisma.service';
+import { MailService } from '../mail/mail.service';
+import { NotificationService } from '../notification/notification.service';
 import type { CourseStatusFilter } from './dto/course-query.dto';
 
 type EnrollmentLearnerStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
@@ -21,6 +29,12 @@ interface BulkEnrollmentResult {
   skippedUserIds: string[];
 }
 
+interface EnrollmentNotificationTarget {
+  id: string;
+  email: string;
+  fullName: string | null;
+}
+
 export interface EnrollmentAuditContext {
   actorId: string;
   ipAddress?: string;
@@ -29,10 +43,14 @@ export interface EnrollmentAuditContext {
 
 @Injectable()
 export class CourseService {
+  private readonly logger = new Logger(CourseService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly learningAccess: LearningAccessService,
     private readonly auditLog: AuditLogService,
+    @Optional() private readonly notificationService?: NotificationService,
+    @Optional() private readonly mailService?: MailService,
   ) {}
 
   async create(data: {
@@ -319,7 +337,7 @@ export class CourseService {
     userId: string,
     audit?: EnrollmentAuditContext,
   ) {
-    await this.findOne(courseId, tenantId);
+    const course = await this.findOne(courseId, tenantId);
 
     const student = await this.prisma.user.findFirst({
       where: {
@@ -329,12 +347,22 @@ export class CourseService {
         deletedAt: null,
         isActive: true,
       },
-      select: { id: true },
+      select: { id: true, email: true, fullName: true },
     });
 
     if (!student) {
       throw new BadRequestException('Active student not found in this tenant');
     }
+
+    const existingActiveEnrollment = await this.prisma.courseEnrollment.findFirst({
+      where: {
+        courseId,
+        userId,
+        tenantId,
+        status: EnrollmentStatus.ACTIVE,
+      },
+      select: { id: true },
+    });
 
     const enrollment = await this.prisma.courseEnrollment.upsert({
       where: {
@@ -370,6 +398,10 @@ export class CourseService {
       });
     }
 
+    if (!existingActiveEnrollment) {
+      await this.notifyCourseEnrollment(tenantId, course.id, course.title, [student]);
+    }
+
     return enrollment;
   }
 
@@ -380,7 +412,7 @@ export class CourseService {
     audit?: EnrollmentAuditContext,
   ): Promise<BulkEnrollmentResult> {
     this.assertBulkEnrollmentSize(userIds);
-    await this.findOne(courseId, tenantId);
+    const course = await this.findOne(courseId, tenantId);
 
     const uniqueUserIds = this.uniqueIds(userIds);
     const students = await this.prisma.user.findMany({
@@ -391,7 +423,7 @@ export class CourseService {
         deletedAt: null,
         isActive: true,
       },
-      select: { id: true },
+      select: { id: true, email: true, fullName: true },
     });
     const activeStudentIds = new Set(students.map((student) => student.id));
     const invalidUserIds = uniqueUserIds.filter((userId) => !activeStudentIds.has(userId));
@@ -418,6 +450,22 @@ export class CourseService {
         invalidUserIds,
       });
     }
+
+    const existingActiveEnrollments = await this.prisma.courseEnrollment.findMany({
+      where: {
+        courseId,
+        userId: { in: uniqueUserIds },
+        tenantId,
+        status: EnrollmentStatus.ACTIVE,
+      },
+      select: { userId: true },
+    });
+    const existingActiveUserIds = new Set(
+      existingActiveEnrollments.map((enrollment) => enrollment.userId),
+    );
+    const notificationTargets = students.filter(
+      (student) => !existingActiveUserIds.has(student.id),
+    );
 
     const enrolledAt = new Date();
     await this.prisma.$transaction((tx) =>
@@ -470,6 +518,8 @@ export class CourseService {
       });
     }
 
+    await this.notifyCourseEnrollment(tenantId, course.id, course.title, notificationTargets);
+
     return result;
   }
 
@@ -513,6 +563,8 @@ export class CourseService {
         metadata: { courseId, targetUserId: userId, enrollmentId: enrollment.id },
       });
     }
+
+    await this.notifyCourseRevoked(tenantId, courseId, userId);
 
     return updated;
   }
@@ -584,7 +636,77 @@ export class CourseService {
       });
     }
 
+    await this.notifyCourseRevokedForUsers(tenantId, courseId, processedUserIds);
+
     return result;
+  }
+
+  private async notifyCourseEnrollment(
+    tenantId: string,
+    courseId: string,
+    courseTitle: string,
+    users: EnrollmentNotificationTarget[],
+  ) {
+    if (users.length === 0) {
+      return;
+    }
+
+    await Promise.all(
+      users.map(async (user) => {
+        try {
+          await this.notificationService?.createNotification(
+            tenantId,
+            user.id,
+            'Khóa học đã được kích hoạt',
+            `Bạn đã có quyền truy cập khóa học "${courseTitle}".`,
+            'SUCCESS',
+            `/courses/${courseId}`,
+          );
+        } catch (error) {
+          this.logger.error(`Failed to create enrollment notification for user ${user.id}`, error);
+        }
+
+        const emailTask = this.mailService?.sendCourseEnrollmentEmail({
+          email: user.email,
+          fullName: user.fullName,
+          courseTitle,
+          courseUrl: this.buildStudentCourseUrl(courseId),
+          locale: 'vi',
+        });
+        emailTask?.catch((error: unknown) => {
+          this.logger.error(`Failed to send course enrollment email to ${user.email}`, error);
+        });
+      }),
+    );
+  }
+
+  private async notifyCourseRevoked(tenantId: string, courseId: string, userId: string) {
+    try {
+      await this.notificationService?.createNotification(
+        tenantId,
+        userId,
+        'Quyền truy cập khóa học đã thay đổi',
+        'Bạn đã được gỡ khỏi một khóa học. Nếu có thắc mắc, vui lòng liên hệ quản trị viên.',
+        'WARNING',
+        `/courses/${courseId}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to create course revocation notification for user ${userId}`,
+        error,
+      );
+    }
+  }
+
+  private async notifyCourseRevokedForUsers(tenantId: string, courseId: string, userIds: string[]) {
+    await Promise.all(
+      userIds.map((userId) => this.notifyCourseRevoked(tenantId, courseId, userId)),
+    );
+  }
+
+  private buildStudentCourseUrl(courseId: string) {
+    const baseUrl = process.env.NEXT_PUBLIC_WEB_STUDENT_URL?.replace(/\/$/, '');
+    return baseUrl ? `${baseUrl}/vi/courses/${courseId}` : `/courses/${courseId}`;
   }
 
   async getEnrollmentReport(courseId: string, tenantId: string) {

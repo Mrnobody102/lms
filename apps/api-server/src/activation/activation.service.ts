@@ -3,15 +3,25 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
+  Logger,
+  Optional,
 } from '@nestjs/common';
 import { PrismaService } from '../common/services/prisma.service';
 import { CreateActivationCodeDto } from './dto/create-activation-code.dto';
 import { RedeemActivationCodeDto } from './dto/redeem-activation-code.dto';
 import { EnrollmentStatus } from '@repo/database';
+import { MailService } from '../mail/mail.service';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class ActivationService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(ActivationService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly notificationService?: NotificationService,
+    @Optional() private readonly mailService?: MailService,
+  ) {}
 
   async create(createDto: CreateActivationCodeDto, tenantId: string) {
     if (createDto.courseId) {
@@ -90,12 +100,25 @@ export class ActivationService {
 
   async redeem(redeemDto: RedeemActivationCodeDto, userId: string, tenantId: string) {
     const codeStr = redeemDto.code.trim();
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, tenantId, deletedAt: null },
+      select: { id: true, email: true, fullName: true },
+    });
 
-    return this.prisma.$transaction(async (tx) => {
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const result = await this.prisma.$transaction(async (tx) => {
       // Find the active code
       const activationCode = await tx.activationCode.findUnique({
         where: {
           tenantId_code: { tenantId, code: codeStr },
+        },
+        include: {
+          course: {
+            select: { id: true, title: true },
+          },
         },
       });
 
@@ -167,9 +190,51 @@ export class ActivationService {
       return {
         redemption,
         enrollment,
+        course: activationCode.course,
         message: 'Code redeemed successfully',
       };
     });
+
+    if (result.course) {
+      await this.notifyCourseActivatedByCode(tenantId, user, result.course);
+    }
+
+    return result;
+  }
+
+  private async notifyCourseActivatedByCode(
+    tenantId: string,
+    user: { id: string; email: string; fullName: string | null },
+    course: { id: string; title: string },
+  ) {
+    try {
+      await this.notificationService?.createNotification(
+        tenantId,
+        user.id,
+        'Khóa học đã được kích hoạt',
+        `Mã kích hoạt đã mở khóa khóa học "${course.title}".`,
+        'SUCCESS',
+        `/courses/${course.id}`,
+      );
+    } catch (error) {
+      this.logger.error(`Failed to create activation notification for user ${user.id}`, error);
+    }
+
+    const emailTask = this.mailService?.sendCourseEnrollmentEmail({
+      email: user.email,
+      fullName: user.fullName,
+      courseTitle: course.title,
+      courseUrl: this.buildStudentCourseUrl(course.id),
+      locale: 'vi',
+    });
+    emailTask?.catch((error: unknown) => {
+      this.logger.error(`Failed to send activation email to ${user.email}`, error);
+    });
+  }
+
+  private buildStudentCourseUrl(courseId: string) {
+    const baseUrl = process.env.NEXT_PUBLIC_WEB_STUDENT_URL?.replace(/\/$/, '');
+    return baseUrl ? `${baseUrl}/vi/courses/${courseId}` : `/courses/${courseId}`;
   }
 
   async softDelete(id: string, tenantId: string) {

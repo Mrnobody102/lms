@@ -1,15 +1,21 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, Logger, Optional } from '@nestjs/common';
 import { PrismaService } from '../common/services/prisma.service';
 import { Prisma, CohortMembership, User } from '@repo/database';
 import { AuditAction, AuditLogService, AuditStatus } from '../common/services/audit-log.service';
 import { CreateCohortDto } from './dto/create-cohort.dto';
 import { UpdateCohortDto } from './dto/update-cohort.dto';
+import { MailService } from '../mail/mail.service';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class CohortService {
+  private readonly logger = new Logger(CohortService.name);
+
   constructor(
     private prisma: PrismaService,
     private auditLog: AuditLogService,
+    @Optional() private readonly notificationService?: NotificationService,
+    @Optional() private readonly mailService?: MailService,
   ) {}
 
   async create(tenantId: string, createCohortDto: CreateCohortDto, actorId?: string) {
@@ -345,9 +351,60 @@ export class CohortService {
         },
       });
 
-      return { enrolledCount, skippedCount };
+      return {
+        enrolledCount,
+        skippedCount,
+        enrolledUserIds: [...toCreate.map((e) => e.userId), ...toUpdate],
+      };
     });
 
-    return result;
+    if (result.enrolledUserIds.length > 0) {
+      const users = await this.prisma.user.findMany({
+        where: {
+          tenantId,
+          id: { in: result.enrolledUserIds },
+          deletedAt: null,
+        },
+        select: { id: true, email: true, fullName: true },
+      });
+
+      await Promise.all(
+        users.map(async (user) => {
+          try {
+            await this.notificationService?.createNotification(
+              tenantId,
+              user.id,
+              'Khóa học đã được kích hoạt',
+              `Bạn đã được ghi danh vào khóa học "${course.title}".`,
+              'SUCCESS',
+              `/courses/${course.id}`,
+            );
+          } catch (error) {
+            this.logger.error(
+              `Failed to create cohort enrollment notification for user ${user.id}`,
+              error,
+            );
+          }
+
+          const emailTask = this.mailService?.sendCourseEnrollmentEmail({
+            email: user.email,
+            fullName: user.fullName,
+            courseTitle: course.title,
+            courseUrl: this.buildStudentCourseUrl(course.id),
+            locale: 'vi',
+          });
+          emailTask?.catch((error: unknown) => {
+            this.logger.error(`Failed to send cohort enrollment email to ${user.email}`, error);
+          });
+        }),
+      );
+    }
+
+    return { enrolledCount: result.enrolledCount, skippedCount: result.skippedCount };
+  }
+
+  private buildStudentCourseUrl(courseId: string) {
+    const baseUrl = process.env.NEXT_PUBLIC_WEB_STUDENT_URL?.replace(/\/$/, '');
+    return baseUrl ? `${baseUrl}/vi/courses/${courseId}` : `/courses/${courseId}`;
   }
 }

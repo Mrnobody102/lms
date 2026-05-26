@@ -218,6 +218,9 @@ describe('CourseService', () => {
       user: {
         findMany: vi.fn().mockResolvedValue([{ id: 'user-1' }, { id: 'user-2' }]),
       },
+      courseEnrollment: {
+        findMany: vi.fn().mockResolvedValue([]),
+      },
       $transaction: vi.fn(
         async (
           callback: (tx: {
@@ -247,7 +250,7 @@ describe('CourseService', () => {
         deletedAt: null,
         isActive: true,
       },
-      select: { id: true },
+      select: { id: true, email: true, fullName: true },
     });
     expect(upsertEnrollment).toHaveBeenCalledTimes(2);
     expect(result).toEqual({

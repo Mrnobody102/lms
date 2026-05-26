@@ -123,85 +123,6 @@ export default function CustomCardsPage() {
               <SrsStatsChart enabled={isAuthenticated} />
             </div>
 
-            {isFormOpen && (
-              <div className="mb-8 rounded-xl border bg-card p-6 shadow-sm animate-in fade-in slide-in-from-top-4">
-                <h2 className="text-lg font-bold mb-4">
-                  {editingCardId ? t('edit') : t('addCard')}
-                </h2>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div>
-                      <label className="mb-1 block text-sm font-medium">{t('front')}</label>
-                      <input
-                        type="text"
-                        required
-                        value={formData.front}
-                        onChange={(e) => setFormData({ ...formData, front: e.target.value })}
-                        className="w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                        placeholder={t('frontPlaceholder')}
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-sm font-medium">{t('back')}</label>
-                      <input
-                        type="text"
-                        value={formData.back}
-                        onChange={(e) => setFormData({ ...formData, back: e.target.value })}
-                        className="w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                        placeholder={t('backPlaceholder')}
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-sm font-medium">{t('phonetics')}</label>
-                      <input
-                        type="text"
-                        value={formData.phonetics}
-                        onChange={(e) => setFormData({ ...formData, phonetics: e.target.value })}
-                        className="w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                        placeholder={t('phoneticsPlaceholder')}
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-sm font-medium">{t('skillCode')}</label>
-                      <input
-                        type="text"
-                        value={formData.skillCode}
-                        onChange={(e) => setFormData({ ...formData, skillCode: e.target.value })}
-                        className="w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                        placeholder="VOCAB_1"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm font-medium">{t('example')}</label>
-                    <textarea
-                      value={formData.example}
-                      onChange={(e) => setFormData({ ...formData, example: e.target.value })}
-                      className="w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                      placeholder={t('examplePlaceholder')}
-                      rows={2}
-                    />
-                  </div>
-                  <div className="flex justify-end gap-3 mt-4">
-                    <button
-                      type="button"
-                      onClick={resetForm}
-                      className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
-                    >
-                      {t('cancel')}
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={createCard.isPending || updateCard.isPending}
-                      className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
-                    >
-                      {t('save')}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
-
             <div className="space-y-4">
               {!isInitialized || isLoading ? (
                 <div className="py-12 text-center text-muted-foreground animate-pulse">
@@ -264,6 +185,91 @@ export default function CustomCardsPage() {
                 })
               )}
             </div>
+
+            {isFormOpen && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-4 py-6 backdrop-blur-sm">
+                <div
+                  role="dialog"
+                  aria-modal="true"
+                  className="max-h-[calc(100vh-3rem)] w-full max-w-3xl overflow-y-auto rounded-lg border bg-card p-6 shadow-xl animate-in fade-in zoom-in-95"
+                >
+                  <h2 className="mb-4 text-lg font-bold">
+                    {editingCardId ? t('edit') : t('addCard')}
+                  </h2>
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-1 block text-sm font-medium">{t('front')}</label>
+                        <input
+                          type="text"
+                          required
+                          value={formData.front}
+                          onChange={(e) => setFormData({ ...formData, front: e.target.value })}
+                          className="w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                          placeholder={t('frontPlaceholder')}
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-sm font-medium">{t('back')}</label>
+                        <input
+                          type="text"
+                          value={formData.back}
+                          onChange={(e) => setFormData({ ...formData, back: e.target.value })}
+                          className="w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                          placeholder={t('backPlaceholder')}
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-sm font-medium">{t('phonetics')}</label>
+                        <input
+                          type="text"
+                          value={formData.phonetics}
+                          onChange={(e) => setFormData({ ...formData, phonetics: e.target.value })}
+                          className="w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                          placeholder={t('phoneticsPlaceholder')}
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-sm font-medium">{t('skillCode')}</label>
+                        <input
+                          type="text"
+                          value={formData.skillCode}
+                          onChange={(e) => setFormData({ ...formData, skillCode: e.target.value })}
+                          className="w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                          placeholder="VOCAB_1"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-medium">{t('example')}</label>
+                      <textarea
+                        value={formData.example}
+                        onChange={(e) => setFormData({ ...formData, example: e.target.value })}
+                        className="w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                        placeholder={t('examplePlaceholder')}
+                        rows={3}
+                      />
+                    </div>
+                    <div className="mt-4 flex justify-end gap-3">
+                      <button
+                        type="button"
+                        onClick={resetForm}
+                        className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
+                      >
+                        {t('cancel')}
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={createCard.isPending || updateCard.isPending}
+                        className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                      >
+                        {t('save')}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
           </>
         )}
       </main>

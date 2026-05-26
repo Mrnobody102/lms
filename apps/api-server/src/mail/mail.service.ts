@@ -92,4 +92,76 @@ export class MailService {
       this.logger.error(`Failed to send password reset email to ${email}`, error);
     }
   }
+
+  async sendCourseEnrollmentEmail(input: {
+    email: string;
+    fullName?: string | null;
+    courseTitle: string;
+    courseUrl: string;
+    locale?: string;
+  }): Promise<void> {
+    const isVi = input.locale !== 'en';
+    const recipientName = this.escapeHtml(input.fullName?.trim() || input.email);
+    const courseTitle = this.escapeHtml(input.courseTitle);
+    const courseUrl = this.escapeHtml(input.courseUrl);
+    const subject = isVi
+      ? `Bạn đã được kích hoạt khóa học: ${input.courseTitle}`
+      : `Your course is now active: ${input.courseTitle}`;
+
+    const html = isVi
+      ? `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Khóa học đã được kích hoạt</h2>
+        <p>Chào ${recipientName},</p>
+        <p>Bạn đã có quyền truy cập khóa học <strong>${courseTitle}</strong>.</p>
+        <div style="margin: 30px 0;">
+          <a href="${courseUrl}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Vào khóa học</a>
+        </div>
+        <p>Hãy bắt đầu bài học đầu tiên khi bạn sẵn sàng.</p>
+      </div>
+      `
+      : `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Course access activated</h2>
+        <p>Hi ${recipientName},</p>
+        <p>You now have access to <strong>${courseTitle}</strong>.</p>
+        <div style="margin: 30px 0;">
+          <a href="${courseUrl}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Open course</a>
+        </div>
+        <p>You can start the first lesson whenever you are ready.</p>
+      </div>
+      `;
+
+    if (!this.isEnabled || !this.transporter) {
+      this.logger.debug(`================= EMAIL LOG =================`);
+      this.logger.debug(`To: ${input.email}`);
+      this.logger.debug(`Subject: ${subject}`);
+      this.logger.debug(`Course URL: ${courseUrl}`);
+      this.logger.debug(`=============================================`);
+      return;
+    }
+
+    try {
+      const from =
+        this.configService.get<string>('MAIL_FROM') || 'LMS Platform <noreply@example.com>';
+      await this.transporter.sendMail({
+        from,
+        to: input.email,
+        subject,
+        html,
+      });
+      this.logger.log(`Course enrollment email sent to ${input.email}`);
+    } catch (error) {
+      this.logger.error(`Failed to send course enrollment email to ${input.email}`, error);
+    }
+  }
+
+  private escapeHtml(value: string): string {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
 }
