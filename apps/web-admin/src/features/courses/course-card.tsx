@@ -159,7 +159,7 @@ export function CourseCard({ course, onDelete, deleting }: CourseCardProps) {
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+            className="fixed inset-0 cursor-pointer bg-black/50 backdrop-blur-sm"
             onClick={() => setShowDeleteConfirm(false)}
           />
           <div className="relative z-50 bg-background border rounded-xl p-6 shadow-xl max-w-sm w-full mx-4 animate-in fade-in zoom-in-95 duration-200">

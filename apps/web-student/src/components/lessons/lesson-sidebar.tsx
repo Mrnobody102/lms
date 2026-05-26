@@ -165,7 +165,7 @@ export function LessonSidebar({
       {/* Backdrop for mobile */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-md z-[55] lg:hidden transition-opacity duration-500"
+          className="fixed inset-0 z-[55] cursor-pointer bg-black/60 backdrop-blur-md transition-opacity duration-500 lg:hidden"
           onClick={onClose}
         />
       )}

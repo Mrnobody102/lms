@@ -227,7 +227,7 @@ function GradeButton({
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`flex flex-col items-center justify-center p-4 rounded-xl border transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none ${colorClass}`}
+      className={`flex flex-col items-center justify-center p-4 rounded-xl border transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 ${colorClass}`}
     >
       <span className="font-bold text-lg mb-1">{label}</span>
       <span className="text-xs opacity-70 text-center leading-tight">{hint}</span>

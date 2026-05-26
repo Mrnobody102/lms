@@ -59,7 +59,7 @@ export function DailyQuestWidget() {
           <button
             onClick={handleStartQuest}
             disabled={isPending}
-            className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-orange-500 to-rose-500 px-6 text-sm font-semibold text-white shadow-md transition-all hover:opacity-90 active:scale-95 disabled:pointer-events-none disabled:opacity-70"
+            className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-orange-500 to-rose-500 px-6 text-sm font-semibold text-white shadow-md transition-all hover:opacity-90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
           >
             {isPending ? (
               <>
