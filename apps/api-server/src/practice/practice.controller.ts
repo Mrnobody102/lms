@@ -282,6 +282,13 @@ export class PracticeController {
     return this.practiceService.listExerciseSets(getScopedTenantId(req), req.user, query);
   }
 
+  @Get('recommendations')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'List recommended practice sets for the current student context' })
+  listRecommendations(@Query() query: PracticeQueryDto, @Request() req: AuthenticatedRequest) {
+    return this.practiceService.listRecommendations(getScopedTenantId(req), req.user, query);
+  }
+
   @Get('exercise-sets/:id')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get a practice exercise set' })

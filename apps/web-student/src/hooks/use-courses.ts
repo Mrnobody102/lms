@@ -19,6 +19,15 @@ export function useCourse(id: string, enabled = true) {
   });
 }
 
+export function useCourseActivities(id: string, enabled = true) {
+  return useQuery({
+    queryKey: ['course-activities', id],
+    queryFn: () => courseApi.getCourseActivities(id),
+    enabled: enabled && !!id,
+    staleTime: 30 * 1000,
+  });
+}
+
 export function useLesson(id: string, enabled = true) {
   return useQuery({
     queryKey: ['lesson', id],

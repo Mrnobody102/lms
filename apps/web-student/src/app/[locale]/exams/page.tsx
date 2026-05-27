@@ -38,6 +38,11 @@ export default function ExamsPage() {
     [attempts, now],
   );
   const overview = useMemo(() => buildExamOverview(exams, attempts, now), [attempts, exams, now]);
+  const activeAttempts = attempts.filter(
+    (attempt) => attempt.status === 'STARTED' && !isAttemptExpired(attempt, now),
+  );
+  const unitTests = exams.filter((exam) => Boolean(exam.unitId));
+  const mockTests = exams.filter((exam) => !exam.unitId);
 
   useEffect(() => {
     if (!hasActiveAttempt) {
@@ -122,51 +127,34 @@ export default function ExamsPage() {
                   </section>
                 )}
 
-                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                  {exams.map((exam) => (
-                    <article
-                      key={exam.id}
-                      className="flex min-h-[230px] flex-col rounded-md border bg-card p-5 transition-colors hover:border-primary/40"
-                    >
-                      <div className="mb-4 flex items-start justify-between gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-primary">
-                          <FileCheck2 className="h-5 w-5" />
-                        </div>
-                        <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground">
-                          {t('exam.durationValue', { minutes: exam.durationMinutes })}
-                        </span>
-                      </div>
+                {activeAttempts.length > 0 ? (
+                  <section className="rounded-md border bg-card p-6">
+                    <SectionHeading
+                      icon={<PlayCircle className="h-5 w-5" />}
+                      title={t('exam.activeAttempts')}
+                      desc={t('exam.activeAttemptsDesc')}
+                    />
+                    <div className="mt-5 space-y-3">
+                      {activeAttempts.map((attempt) => (
+                        <AttemptRow key={attempt.id} attempt={attempt} now={now} locale={locale} />
+                      ))}
+                    </div>
+                  </section>
+                ) : null}
 
-                      <div className="min-w-0 flex-1">
-                        <h2 className="line-clamp-2 text-base font-semibold">{exam.title}</h2>
-                        <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
-                          {exam.description || t('exam.noDescription')}
-                        </p>
-                        <div className="mt-4 flex flex-wrap gap-2 text-xs text-muted-foreground">
-                          <span className="rounded-md border px-2 py-1">
-                            {exam.course?.title ?? t('exam.courseFallback')}
-                          </span>
-                          {exam.unit?.title && (
-                            <span className="rounded-md border px-2 py-1">{exam.unit.title}</span>
-                          )}
-                          {exam.passingScore !== null && exam.passingScore !== undefined && (
-                            <span className="rounded-md border px-2 py-1">
-                              {t('exam.passingScoreValue', { value: exam.passingScore })}
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                <ExamSection
+                  title={t('exam.unitTests')}
+                  desc={t('exam.unitTestsDesc')}
+                  exams={unitTests}
+                  emptyLabel={t('exam.noUnitTests')}
+                />
 
-                      <Link
-                        href={`/exams/${exam.id}`}
-                        className="mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90"
-                      >
-                        {t('exam.open')}
-                        <ArrowRight className="h-4 w-4" />
-                      </Link>
-                    </article>
-                  ))}
-                </div>
+                <ExamSection
+                  title={t('exam.mockTests')}
+                  desc={t('exam.mockTestsDesc')}
+                  exams={mockTests}
+                  emptyLabel={t('exam.noMockTests')}
+                />
 
                 <section className="rounded-md border bg-card p-6">
                   <div className="mb-5 flex items-start gap-3">
@@ -302,6 +290,158 @@ export default function ExamsPage() {
           </>
         )}
       </main>
+    </div>
+  );
+}
+
+function ExamSection({
+  title,
+  desc,
+  exams,
+  emptyLabel,
+}: {
+  title: string;
+  desc: string;
+  exams: ExamSummary[];
+  emptyLabel: string;
+}) {
+  return (
+    <section className="rounded-md border bg-card p-6">
+      <SectionHeading icon={<FileCheck2 className="h-5 w-5" />} title={title} desc={desc} />
+      {exams.length === 0 ? (
+        <div className="mt-5 rounded-md border border-dashed p-5 text-sm text-muted-foreground">
+          {emptyLabel}
+        </div>
+      ) : (
+        <div className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {exams.map((exam) => (
+            <ExamCard key={exam.id} exam={exam} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function ExamCard({ exam }: { exam: ExamSummary }) {
+  const t = useTranslations('Student');
+
+  return (
+    <article className="flex min-h-[230px] flex-col rounded-md border bg-background p-5 transition-colors hover:border-primary/40">
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-primary">
+          <FileCheck2 className="h-5 w-5" />
+        </div>
+        <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+          {t('exam.durationValue', { minutes: exam.durationMinutes })}
+        </span>
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <h2 className="line-clamp-2 text-base font-semibold">{exam.title}</h2>
+        <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
+          {exam.description || t('exam.noDescription')}
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2 text-xs text-muted-foreground">
+          <span className="rounded-md border px-2 py-1">
+            {exam.course?.title ?? t('exam.courseFallback')}
+          </span>
+          {exam.unit?.title ? (
+            <span className="rounded-md border px-2 py-1">{exam.unit.title}</span>
+          ) : null}
+          {exam.passingScore !== null && exam.passingScore !== undefined ? (
+            <span className="rounded-md border px-2 py-1">
+              {t('exam.passingScoreValue', { value: exam.passingScore })}
+            </span>
+          ) : null}
+        </div>
+      </div>
+
+      <Link
+        href={`/exams/${exam.id}`}
+        className="mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90"
+      >
+        {t('exam.open')}
+        <ArrowRight className="h-4 w-4" />
+      </Link>
+    </article>
+  );
+}
+
+function AttemptRow({
+  attempt,
+  now,
+  locale,
+}: {
+  attempt: ExamAttemptSummary;
+  now: number;
+  locale: string;
+}) {
+  const t = useTranslations('Student');
+  const attemptExpired = isAttemptExpired(attempt, now);
+
+  return (
+    <article className="flex flex-col gap-4 rounded-md border p-4 md:flex-row md:items-center md:justify-between">
+      <div className="min-w-0 space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="text-sm font-semibold">{attempt.exam.title}</h3>
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+            {attempt.status === 'SUBMITTED'
+              ? t('exam.scoreValue', {
+                  score: attempt.score,
+                  total: attempt.totalPoints,
+                })
+              : t('exam.inProgress')}
+          </span>
+        </div>
+        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+          <span className="rounded-md border px-2 py-1">{attempt.exam.course.title}</span>
+          {attempt.exam.unit?.title ? (
+            <span className="rounded-md border px-2 py-1">{attempt.exam.unit.title}</span>
+          ) : null}
+          <span className="rounded-md border px-2 py-1">
+            {t('exam.attemptStartedAtValue', {
+              value: formatDateTime(attempt.startedAt, locale),
+            })}
+          </span>
+          {attempt.status === 'STARTED' && !attemptExpired ? (
+            <span className="rounded-md border px-2 py-1">
+              <Clock3 className="mr-1 inline-block h-3.5 w-3.5 align-[-2px]" />
+              {t('exam.timeRemainingValue', {
+                value: formatRemainingTime(attempt.deadlineAt, now),
+              })}
+            </span>
+          ) : null}
+        </div>
+      </div>
+
+      <Link
+        href={
+          attempt.status === 'STARTED' && !attemptExpired
+            ? `/exams/${attempt.exam.id}`
+            : `/exams/attempts/${attempt.id}`
+        }
+        className="inline-flex h-10 items-center justify-center gap-2 rounded-md border px-4 text-sm font-semibold hover:bg-muted"
+      >
+        {attempt.status === 'STARTED' && !attemptExpired
+          ? t('exam.resumeAttempt')
+          : t('exam.reviewAttempt')}
+        <ArrowRight className="h-4 w-4" />
+      </Link>
+    </article>
+  );
+}
+
+function SectionHeading({ icon, title, desc }: { icon: ReactNode; title: string; desc: string }) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-primary">
+        {icon}
+      </div>
+      <div>
+        <h2 className="text-lg font-semibold">{title}</h2>
+        <p className="text-sm text-muted-foreground">{desc}</p>
+      </div>
     </div>
   );
 }

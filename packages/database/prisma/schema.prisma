@@ -181,6 +181,27 @@ enum AdaptiveLearningPathItemStatus {
   SKIPPED
 }
 
+enum CourseActivityType {
+  LESSON
+  PRACTICE
+  EXAM
+  ROLEPLAY
+}
+
+enum CourseActivityCompletionPolicy {
+  MANUAL
+  LESSON_COMPLETED
+  PRACTICE_SUBMITTED
+  EXAM_SUBMITTED
+  ROLEPLAY_COMPLETED
+}
+
+enum CourseActivityProgressStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
 model Tenant {
   id                               String                     @id @default(uuid())
   name                             String
@@ -220,6 +241,8 @@ model Tenant {
   discussionThreads                DiscussionThread[]
   discussionReplies                DiscussionReply[]
   courseCertificates               CourseCertificate[]
+  courseActivities                 CourseActivity[]
+  courseActivityProgress           UserCourseActivityProgress[]
   marketplaceItems                 MarketplaceItem[]          @relation("MarketplaceItemOwnerTenant")
   marketplaceSubscriptions         ResourceSubscription[]     @relation("MarketplaceSubscriberTenant")
   marketplaceProvidedSubscriptions ResourceSubscription[]     @relation("MarketplaceProviderTenant")
@@ -276,6 +299,7 @@ model User {
   discussionThreads                 DiscussionThread[]
   discussionReplies                 DiscussionReply[]
   courseCertificates                CourseCertificate[]
+  courseActivityProgress            UserCourseActivityProgress[]
   videoEngagementEvents             VideoEngagementEvent[]
   adaptiveLearningPathItems         AdaptiveLearningPathItem[]
   createdAt                         DateTime                   @default(now())
@@ -353,6 +377,7 @@ model Course {
   roleplayScenarios         RoleplayScenario[]
   courseCertificates        CourseCertificate[]
   adaptiveLearningPathItems AdaptiveLearningPathItem[]
+  courseActivities          CourseActivity[]
   totalDuration             Int                        @default(0)
   aiSettings                Json?
   createdAt                 DateTime                   @default(now())
@@ -420,6 +445,7 @@ model CourseUnit {
   exerciseSets              PracticeExerciseSet[]
   exams                     Exam[]
   roleplayScenarios         RoleplayScenario[]
+  courseActivities          CourseActivity[]
   createdAt                 DateTime                   @default(now())
   updatedAt                 DateTime                   @updatedAt
 
@@ -521,6 +547,56 @@ model LearningActivity {
   @@index([courseId, occurredAt])
   @@index([lessonId, occurredAt])
   @@index([userId, lessonId, type, occurredAt])
+}
+
+model CourseActivity {
+  id               String                         @id @default(uuid())
+  tenantId         String
+  tenant           Tenant                         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  courseId         String
+  course           Course                         @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  unitId           String?
+  unit             CourseUnit?                    @relation(fields: [unitId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
+  type             CourseActivityType
+  targetId         String
+  order            Int                            @default(0)
+  isRequired       Boolean                        @default(true)
+  isPublished      Boolean                        @default(false)
+  estimatedMinutes Int                            @default(0)
+  availableFrom    DateTime?
+  dueAt            DateTime?
+  unlockPolicy     Json?
+  completionPolicy CourseActivityCompletionPolicy @default(MANUAL)
+  deletedAt        DateTime?
+  createdAt        DateTime                       @default(now())
+  updatedAt        DateTime                       @updatedAt
+  progress         UserCourseActivityProgress[]
+
+  @@unique([id, tenantId])
+  @@index([tenantId, courseId, isPublished, deletedAt])
+  @@index([tenantId, unitId, order])
+  @@index([tenantId, type, targetId])
+}
+
+model UserCourseActivityProgress {
+  id             String                       @id @default(uuid())
+  tenantId       String
+  tenant         Tenant                       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User                         @relation(fields: [userId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  activityId     String
+  activity       CourseActivity               @relation(fields: [activityId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  status         CourseActivityProgressStatus @default(NOT_STARTED)
+  completedAt    DateTime?
+  lastAccessedAt DateTime?
+  scorePercent   Int?
+  createdAt      DateTime                     @default(now())
+  updatedAt      DateTime                     @updatedAt
+
+  @@unique([id, tenantId])
+  @@unique([tenantId, userId, activityId])
+  @@index([tenantId, userId, status])
+  @@index([tenantId, activityId])
 }
 
 model PracticeQuestion {

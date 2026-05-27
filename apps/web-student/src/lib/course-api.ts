@@ -44,6 +44,60 @@ export interface Course {
   } | null;
 }
 
+export type CourseActivityType = 'LESSON' | 'PRACTICE' | 'EXAM' | 'ROLEPLAY';
+export type CourseActivityProgressStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
+
+export interface CourseActivityTarget {
+  id: string;
+  title: string;
+  description?: string | null;
+  durationMinutes?: number | null;
+  questionCount?: number;
+  sectionCount?: number;
+  attemptCount?: number;
+  href: string;
+}
+
+export interface CourseActivityProgress {
+  status: CourseActivityProgressStatus;
+  completedAt: string | null;
+  lastAccessedAt: string | null;
+  scorePercent: number | null;
+}
+
+export interface CourseActivity {
+  id: string;
+  type: CourseActivityType;
+  targetId: string;
+  courseId: string;
+  unitId: string | null;
+  order: number;
+  isRequired: boolean;
+  isPublished: boolean;
+  estimatedMinutes: number;
+  availableFrom: string | null;
+  dueAt: string | null;
+  completionPolicy: string;
+  progress: CourseActivityProgress | null;
+  target: CourseActivityTarget;
+}
+
+export interface CourseActivitiesResponse {
+  course: {
+    id: string;
+    title: string;
+    totalDuration?: number | null;
+  };
+  units: Array<{
+    id: string;
+    title: string;
+    description?: string | null;
+    order: number;
+    activities: CourseActivity[];
+  }>;
+  ungroupedActivities: CourseActivity[];
+}
+
 export interface CourseListParams {
   page?: number;
   limit?: number;
@@ -90,6 +144,11 @@ export const courseApi = {
 
   getLesson: async (id: string) => {
     const response = await api.get<Lesson>(`/lessons/${id}`);
+    return response.data;
+  },
+
+  getCourseActivities: async (id: string) => {
+    const response = await api.get<CourseActivitiesResponse>(`/courses/${id}/activities`);
     return response.data;
   },
 };

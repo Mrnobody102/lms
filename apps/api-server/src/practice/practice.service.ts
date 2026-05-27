@@ -5,7 +5,14 @@ import {
   NotFoundException,
   Optional,
 } from '@nestjs/common';
-import { PracticeQuestionType, Prisma, ReviewCardSource, Role } from '@repo/database';
+import {
+  CourseActivityProgressStatus,
+  CourseActivityType,
+  PracticeQuestionType,
+  Prisma,
+  ReviewCardSource,
+  Role,
+} from '@repo/database';
 import { AdaptiveLearningService } from '../adaptive-learning/adaptive-learning.service';
 import { LearningAccessService } from '../common/services/learning-access.service';
 import { PrismaService } from '../common/services/prisma.service';
@@ -61,6 +68,13 @@ interface PaginatedResult<T> {
   data: T[];
   meta: PaginationMeta;
 }
+
+type PracticeRecommendationReason =
+  | 'WEAK_SKILL'
+  | 'SKILL_MATCH'
+  | 'COURSE_CONTEXT'
+  | 'RETRY'
+  | 'NEW_PRACTICE';
 
 @Injectable()
 export class PracticeService {
@@ -579,6 +593,134 @@ export class PracticeService {
     return this.toPaginatedResult(data, total, page, limit);
   }
 
+  async listRecommendations(tenantId: string, user: PracticeUser, query: PracticeListQuery) {
+    const skills = this.parseSkillFilter(query.skill);
+    const where: Prisma.PracticeExerciseSetWhereInput = {
+      tenantId,
+      courseId: query.courseId,
+      unitId: query.unitId,
+      deletedAt: null,
+      isPublished: true,
+    };
+    const andFilters: Prisma.PracticeExerciseSetWhereInput[] = [];
+
+    if (user.role === Role.STUDENT) {
+      if (query.courseId) {
+        where.course = this.learningAccess.courseWhere(tenantId, user, query.courseId);
+      } else {
+        andFilters.push({
+          OR: [{ courseId: null }, { course: this.learningAccess.courseWhere(tenantId, user) }],
+        });
+      }
+    }
+
+    if (skills) {
+      where.questions = {
+        some: {
+          question: {
+            tenantId,
+            skillTags: { hasSome: skills },
+          },
+        },
+      };
+    }
+
+    if (andFilters.length > 0) {
+      where.AND = andFilters;
+    }
+
+    const weakMasteries =
+      user.role === Role.STUDENT
+        ? await this.prisma.skillMastery.findMany({
+            where: { tenantId, userId: user.id },
+            orderBy: [{ mastery: 'asc' }, { attempts: 'desc' }],
+            take: 5,
+          })
+        : [];
+    const weakSkillCodes = new Set(weakMasteries.map((mastery) => mastery.skillCode));
+
+    const sets = await this.prisma.practiceExerciseSet.findMany({
+      where,
+      take: Math.min(query.limit ?? 12, 24),
+      include: {
+        _count: { select: { questions: true, attempts: true } },
+        course: { select: { id: true, title: true } },
+        unit: { select: { id: true, title: true } },
+        questions: {
+          select: {
+            question: {
+              select: { skillTags: true },
+            },
+          },
+        },
+        attempts: {
+          where: { tenantId, userId: user.id },
+          orderBy: { submittedAt: 'desc' },
+          take: 1,
+          select: {
+            id: true,
+            score: true,
+            totalPoints: true,
+            submittedAt: true,
+          },
+        },
+      },
+      orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }],
+    });
+
+    const recommendations = sets
+      .map((set) => {
+        const skillTags = this.uniqueStrings(
+          set.questions.flatMap((link) => link.question.skillTags),
+        );
+        const latestAttempt = set.attempts[0] ?? null;
+        const matchesWeakSkill = skillTags.some((skill) => weakSkillCodes.has(skill));
+        const matchesFilter = skills ? skillTags.some((skill) => skills.includes(skill)) : false;
+        const reason: PracticeRecommendationReason = matchesWeakSkill
+          ? 'WEAK_SKILL'
+          : matchesFilter
+            ? 'SKILL_MATCH'
+            : latestAttempt
+              ? 'RETRY'
+              : query.courseId || query.unitId
+                ? 'COURSE_CONTEXT'
+                : 'NEW_PRACTICE';
+        const priority =
+          (matchesWeakSkill ? 50 : 0) +
+          (matchesFilter ? 30 : 0) +
+          (!latestAttempt ? 10 : 0) +
+          (query.courseId && set.courseId === query.courseId ? 5 : 0);
+
+        return {
+          id: set.id,
+          courseId: set.courseId,
+          unitId: set.unitId,
+          title: set.title,
+          description: set.description,
+          isPublished: set.isPublished,
+          course: set.course,
+          unit: set.unit,
+          _count: set._count,
+          skillTags,
+          latestAttempt: latestAttempt
+            ? {
+                id: latestAttempt.id,
+                score: latestAttempt.score,
+                totalPoints: latestAttempt.totalPoints,
+                submittedAt: latestAttempt.submittedAt,
+                percentage: this.toScorePercent(latestAttempt.score, latestAttempt.totalPoints),
+              }
+            : null,
+          recommendationReason: reason,
+          priority,
+        };
+      })
+      .sort((a, b) => b.priority - a.priority)
+      .map(({ priority: _priority, ...recommendation }) => recommendation);
+
+    return { data: recommendations };
+  }
+
   async getExerciseSet(id: string, tenantId: string, user: PracticeUser) {
     const exerciseSet = await this.prisma.practiceExerciseSet.findFirst({
       where: {
@@ -841,6 +983,14 @@ export class PracticeService {
         })),
     );
 
+    await this.upsertActivityProgressForPractice({
+      tenantId,
+      userId: user.id,
+      exerciseSetId: exerciseSet.id,
+      submittedAt: attempt.submittedAt,
+      scorePercent: this.toScorePercent(score, questions.length),
+    });
+
     if (this.adaptiveLearning && exerciseSet.courseId) {
       try {
         await this.adaptiveLearning.createRecommendationsFromPracticeAttempt({
@@ -1053,6 +1203,62 @@ export class PracticeService {
         totalPages: Math.max(1, Math.ceil(total / limit)),
       },
     };
+  }
+
+  private uniqueStrings(values: string[]) {
+    return Array.from(new Set(values.filter(Boolean)));
+  }
+
+  private toScorePercent(score: number, totalPoints: number) {
+    return totalPoints <= 0 ? 0 : Math.round((score / totalPoints) * 100);
+  }
+
+  private async upsertActivityProgressForPractice(input: {
+    tenantId: string;
+    userId: string;
+    exerciseSetId: string;
+    submittedAt: Date;
+    scorePercent: number;
+  }) {
+    const activity = await this.prisma.courseActivity.findFirst({
+      where: {
+        tenantId: input.tenantId,
+        type: CourseActivityType.PRACTICE,
+        targetId: input.exerciseSetId,
+        deletedAt: null,
+      },
+      select: { id: true },
+      orderBy: { order: 'asc' },
+    });
+
+    if (!activity) {
+      return;
+    }
+
+    await this.prisma.userCourseActivityProgress.upsert({
+      where: {
+        tenantId_userId_activityId: {
+          tenantId: input.tenantId,
+          userId: input.userId,
+          activityId: activity.id,
+        },
+      },
+      update: {
+        status: CourseActivityProgressStatus.COMPLETED,
+        completedAt: input.submittedAt,
+        lastAccessedAt: input.submittedAt,
+        scorePercent: input.scorePercent,
+      },
+      create: {
+        tenantId: input.tenantId,
+        userId: input.userId,
+        activityId: activity.id,
+        status: CourseActivityProgressStatus.COMPLETED,
+        completedAt: input.submittedAt,
+        lastAccessedAt: input.submittedAt,
+        scorePercent: input.scorePercent,
+      },
+    });
   }
 
   private scoreAnswer(

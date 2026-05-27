@@ -72,6 +72,13 @@ describe('Tenant resource HTTP flow', () => {
       update: ReturnType<typeof vi.fn>;
       upsert: ReturnType<typeof vi.fn>;
     };
+    courseActivity: {
+      findFirst: ReturnType<typeof vi.fn>;
+    };
+    userCourseActivityProgress: {
+      findUnique: ReturnType<typeof vi.fn>;
+      upsert: ReturnType<typeof vi.fn>;
+    };
     refreshToken: {
       create: ReturnType<typeof vi.fn>;
       findUnique: ReturnType<typeof vi.fn>;
@@ -686,6 +693,13 @@ describe('Tenant resource HTTP flow', () => {
       courseEnrollment: {
         findFirst: vi.fn().mockResolvedValue(null),
         update: vi.fn(),
+        upsert: vi.fn(),
+      },
+      courseActivity: {
+        findFirst: vi.fn().mockResolvedValue(null),
+      },
+      userCourseActivityProgress: {
+        findUnique: vi.fn().mockResolvedValue(null),
         upsert: vi.fn(),
       },
       refreshToken: {

@@ -97,6 +97,25 @@ export interface PracticeAttemptSummary {
   };
 }
 
+export type PracticeRecommendationReason =
+  | 'WEAK_SKILL'
+  | 'SKILL_MATCH'
+  | 'COURSE_CONTEXT'
+  | 'RETRY'
+  | 'NEW_PRACTICE';
+
+export interface PracticeRecommendation extends PracticeExerciseSetSummary {
+  skillTags: string[];
+  latestAttempt: {
+    id: string;
+    score: number;
+    totalPoints: number;
+    submittedAt: string;
+    percentage: number;
+  } | null;
+  recommendationReason: PracticeRecommendationReason;
+}
+
 export function getPracticeAttemptStats(
   attempt: Pick<PracticeAttemptSummary, 'stats' | 'totalPoints'> & {
     answers?: Array<{ question: PracticeQuestion; aiFeedback?: unknown }>;
@@ -145,6 +164,12 @@ export const practiceApi = {
       .then((response) => normalizeExerciseSets(response.data));
   },
 
+  getRecommendations(params?: { courseId?: string; unitId?: string; skill?: string }) {
+    return api
+      .get('/practice/recommendations', { params: { limit: 12, ...params } })
+      .then((response) => normalizeRecommendations(response.data));
+  },
+
   getExerciseSet(id: string) {
     return api
       .get(`/practice/exercise-sets/${id}`)
@@ -169,6 +194,18 @@ export const practiceApi = {
       .then((response) => response.data as PracticeAttemptDetail);
   },
 };
+
+function normalizeRecommendations(value: unknown): PracticeRecommendation[] {
+  if (Array.isArray(value)) {
+    return value as PracticeRecommendation[];
+  }
+
+  if (value && typeof value === 'object' && Array.isArray((value as { data?: unknown }).data)) {
+    return (value as { data: PracticeRecommendation[] }).data;
+  }
+
+  return [];
+}
 
 function normalizeExerciseSets(value: unknown): PracticeExerciseSetSummary[] {
   if (Array.isArray(value)) {

@@ -1,166 +1,67 @@
 'use client';
 
-import { Link } from '../../navigation';
 import {
   ArrowRight,
-  BarChart3,
   BookOpen,
   CheckCircle2,
-  Clock3,
   Dumbbell,
   FileCheck2,
-  Flame,
+  History,
   Loader2,
-  PlayCircle,
+  RefreshCcw,
+  Target,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
-import { useAuthStore } from '../../features/auth/auth.store';
 import { StudentNav } from '../../components/layout/student-nav';
-import { useProgressSummary } from '../../hooks/use-progress';
-import { getCourseProgressHref } from '../../lib/course-progress-utils';
-import { NextBestItem } from '../../components/dashboard/next-best-item';
-import { SrsReviewCard } from '../../components/dashboard/srs-review-card';
-import { DailyQuestWidget } from '../../components/dashboard/daily-quest-widget';
+import { useAuthStore } from '../../features/auth/auth.store';
+import { useStudentToday } from '../../hooks/use-student-today';
+import type { TodayFeedbackItem, TodayTask, TodayTaskType } from '../../lib/student-api';
+import { Link } from '../../navigation';
 
-// Lazy load heavy dashboard widgets — these pull in large deps (recharts ~400KB, etc.)
-const ActivityCalendar = dynamic(
-  () =>
-    import('../../components/dashboard/activity-calendar').then((mod) => ({
-      default: mod.ActivityCalendar,
-    })),
-  {
-    loading: () => (
-      <div className="h-48 rounded-2xl bg-card animate-pulse border border-border/50" />
-    ),
-    ssr: false,
-  },
-);
-
-const PerformanceReport = dynamic(
-  () =>
-    import('../../components/dashboard/performance-report').then((mod) => ({
-      default: mod.PerformanceReport,
-    })),
-  {
-    loading: () => (
-      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
-        <div className="h-64 rounded-2xl bg-card animate-pulse border border-border/50" />
-        <div className="h-64 rounded-2xl bg-card animate-pulse border border-border/50" />
-      </div>
-    ),
-    ssr: false,
-  },
-);
-
-const CourseProgressPlanner = dynamic(
-  () =>
-    import('../../components/dashboard/course-progress-planner').then((mod) => ({
-      default: mod.CourseProgressPlanner,
-    })),
-  {
-    loading: () => (
-      <div className="h-48 rounded-2xl bg-card animate-pulse border border-border/50" />
-    ),
-  },
-);
-
-const RecentLearningWork = dynamic(
-  () =>
-    import('../../components/dashboard/recent-learning-work').then((mod) => ({
-      default: mod.RecentLearningWork,
-    })),
-  {
-    loading: () => (
-      <div className="h-48 rounded-2xl bg-card animate-pulse border border-border/50" />
-    ),
-  },
-);
-
-const SkillMasteryPanel = dynamic(
-  () =>
-    import('../../components/dashboard/skill-mastery-panel').then((mod) => ({
-      default: mod.SkillMasteryPanel,
-    })),
-  {
-    loading: () => (
-      <div className="h-48 rounded-2xl bg-card animate-pulse border border-border/50" />
-    ),
-  },
-);
-
-const SkillMasteryTrendPanel = dynamic(
-  () =>
-    import('../../components/dashboard/skill-mastery-trend-panel').then((mod) => ({
-      default: mod.SkillMasteryTrendPanel,
-    })),
-  {
-    loading: () => (
-      <div className="h-80 rounded-2xl bg-card animate-pulse border border-border/50" />
-    ),
-    ssr: false,
-  },
-);
-
-const CourseComparisonChart = dynamic(
-  () =>
-    import('../../components/dashboard/course-comparison-chart').then((mod) => ({
-      default: mod.CourseComparisonChart,
-    })),
-  {
-    loading: () => (
-      <div className="h-80 rounded-2xl bg-card animate-pulse border border-border/50" />
-    ),
-    ssr: false,
-  },
-);
+type StudentTranslator = ReturnType<typeof useTranslations>;
 
 export default function LearningDashboard() {
-  const locale = useLocale();
   const t = useTranslations('Student');
+  const locale = useLocale();
   const { isAuthenticated } = useAuthStore();
-  const { data: summary, isLoading } = useProgressSummary();
-  const activeCourse = summary?.activeCourse;
-  const courses =
-    summary?.courses && summary.courses.length > 0
-      ? summary.courses
-      : activeCourse
-        ? [activeCourse]
-        : [];
-  const featuredCourse = activeCourse ?? courses[0] ?? null;
-  const totals = summary?.totals;
-  const featuredLesson = featuredCourse?.continueLesson ?? featuredCourse?.lastAccessedLesson;
-  const formattedLastActivity = featuredCourse?.lastActivityAt
-    ? new Intl.DateTimeFormat(locale, {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-      }).format(new Date(featuredCourse.lastActivityAt))
-    : null;
+  const { data, isLoading, isError } = useStudentToday(isAuthenticated);
 
   if (!isAuthenticated) {
     return null;
   }
 
+  const tasks = data?.tasks ?? [];
+  const courses = data?.courses ?? [];
+  const recentFeedback = [
+    ...(data?.recentFeedback.practice ?? []).map((item) => ({
+      ...item,
+      kind: 'practice' as const,
+    })),
+    ...(data?.recentFeedback.exams ?? []).map((item) => ({ ...item, kind: 'exam' as const })),
+  ]
+    .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())
+    .slice(0, 6);
+
   return (
     <div className="min-h-screen bg-background font-sans">
       <StudentNav showLinks />
 
-      <main className="mx-auto max-w-7xl px-6 py-10">
-        <header className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <header className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-sm font-semibold text-primary">{t('dashboard.badge')}</p>
-            <h1 className="mt-1 text-3xl font-bold tracking-tight">{t('dashboard.title')}</h1>
+            <p className="text-sm font-semibold text-primary">{t('dashboard.todayBadge')}</p>
+            <h1 className="mt-1 text-3xl font-bold tracking-tight">{t('dashboard.todayTitle')}</h1>
             <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-              {t('dashboard.subtitle')}
+              {t('dashboard.todaySubtitle')}
             </p>
           </div>
           <Link
             href="/courses"
             className="inline-flex h-10 items-center justify-center gap-2 rounded-md border px-4 text-sm font-medium hover:bg-muted"
           >
+            <BookOpen className="h-4 w-4" />
             {t('dashboard.allCourses')}
-            <ArrowRight className="h-4 w-4" />
           </Link>
         </header>
 
@@ -169,233 +70,351 @@ export default function LearningDashboard() {
             <Loader2 className="h-4 w-4 animate-spin" />
             {t('dashboard.loading')}
           </div>
-        ) : courses.length === 0 ? (
-          <section className="rounded-md border p-6">
-            <h2 className="text-lg font-semibold">{t('dashboard.emptyTitle')}</h2>
-            <p className="mt-2 text-sm text-muted-foreground">{t('dashboard.emptyDesc')}</p>
-            <div className="mt-5 flex flex-wrap items-center gap-4">
-              <Link
-                href="/courses"
-                className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90"
-              >
-                {t('dashboard.browseCourses')}
-              </Link>
-              <Link
-                href="/activation"
-                className="inline-flex h-10 items-center justify-center rounded-md border border-primary/20 bg-primary/10 px-4 text-sm font-medium text-primary hover:bg-primary/20"
-              >
-                {t('dashboard.enterActivationCode')}
-              </Link>
-            </div>
+        ) : isError || !data ? (
+          <section className="rounded-md border border-destructive/20 bg-destructive/5 p-5 text-sm text-destructive">
+            {t('dashboard.todayLoadError')}
           </section>
         ) : (
-          <div className="grid gap-8 lg:grid-cols-[1.7fr_1fr]">
-            <div className="space-y-8">
-              <DailyQuestWidget />
-              <NextBestItem />
-              <SrsReviewCard />
-              {featuredCourse && (
-                <section className="rounded-md border p-6">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-sm font-semibold text-primary">
-                        {activeCourse
-                          ? t('dashboard.continueLearning')
-                          : t('dashboard.startRecommended')}
-                      </p>
-                      <h2 className="mt-2 text-2xl font-bold">{featuredCourse.course.title}</h2>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {featuredLesson?.title ?? t('dashboard.startRecommendedDesc')}
-                      </p>
-                    </div>
-                    <div className="rounded-md bg-primary/10 px-3 py-2 text-sm font-semibold text-primary">
-                      {featuredCourse.completionPercentage}%
-                    </div>
+          <div className="grid gap-6 lg:grid-cols-[1.55fr_1fr]">
+            <div className="space-y-6">
+              <PrimaryTaskCard task={data.primaryTask} />
+
+              <section className="rounded-md border bg-card p-5">
+                <div className="mb-4 flex items-start gap-3">
+                  <IconFrame icon={Target} />
+                  <div>
+                    <h2 className="text-lg font-semibold">{t('dashboard.todayQueueTitle')}</h2>
+                    <p className="text-sm text-muted-foreground">{t('dashboard.todayQueueDesc')}</p>
                   </div>
+                </div>
+                <div className="space-y-3">
+                  {tasks.map((task) => (
+                    <TaskRow key={task.id} task={task} locale={locale} />
+                  ))}
+                </div>
+              </section>
 
-                  <div className="mt-6 h-2 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full bg-primary"
-                      style={{ width: `${featuredCourse.completionPercentage}%` }}
-                    />
+              <section className="rounded-md border bg-card p-5">
+                <div className="mb-4 flex items-start gap-3">
+                  <IconFrame icon={History} />
+                  <div>
+                    <h2 className="text-lg font-semibold">{t('dashboard.feedbackTitle')}</h2>
+                    <p className="text-sm text-muted-foreground">{t('dashboard.feedbackDesc')}</p>
                   </div>
-
-                  <div className="mt-4 flex flex-wrap gap-4 text-sm text-muted-foreground">
-                    <span>
-                      {t('dashboard.completedCount', {
-                        completed: featuredCourse.completedLessons,
-                        total: featuredCourse.totalLessons,
-                      })}
-                    </span>
-                    {featuredCourse.activitySessions > 0 && (
-                      <span>
-                        {t('dashboard.sessionValue', { count: featuredCourse.activitySessions })}
-                      </span>
-                    )}
-                    {featuredLesson && (
-                      <span>{t('dashboard.duration', { minutes: featuredLesson.duration })}</span>
-                    )}
+                </div>
+                {recentFeedback.length === 0 ? (
+                  <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+                    {t('dashboard.feedbackEmpty')}
                   </div>
-
-                  <div className="mt-5 rounded-md border border-dashed bg-muted/30 p-4">
-                    <p className="text-xs font-semibold text-muted-foreground">
-                      {featuredLesson ? t('dashboard.nextLesson') : t('dashboard.viewCoursePlan')}
-                    </p>
-                    <p className="mt-2 text-sm font-semibold">
-                      {featuredLesson?.title ?? t('dashboard.noNextLesson')}
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {t('dashboard.lastActivityAt', {
-                        value: formattedLastActivity ?? t('dashboard.lastActivityNone'),
-                      })}
-                    </p>
+                ) : (
+                  <div className="space-y-3">
+                    {recentFeedback.map((item) => (
+                      <FeedbackRow key={`${item.kind}-${item.id}`} item={item} locale={locale} />
+                    ))}
                   </div>
-
-                  <Link
-                    href={getCourseProgressHref(featuredCourse)}
-                    className="mt-6 inline-flex h-11 items-center justify-center gap-2 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground hover:opacity-90"
-                  >
-                    <PlayCircle className="h-4 w-4" />
-                    {activeCourse ? t('dashboard.resume') : t('dashboard.startCourse')}
-                  </Link>
-                </section>
-              )}
-
-              <CourseProgressPlanner courses={courses} />
+                )}
+              </section>
             </div>
 
             <aside className="space-y-6">
-              <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                <DashboardStat
-                  icon={BookOpen}
-                  label={t('dashboard.enrolledCourses')}
-                  value={totals?.courses ?? 0}
-                />
-                <DashboardStat
-                  icon={CheckCircle2}
-                  label={t('dashboard.completedLessons')}
-                  value={totals?.completedLessons ?? 0}
-                />
-                <DashboardStat
-                  icon={Clock3}
-                  label={t('dashboard.studySessions')}
-                  value={t('dashboard.sessionValue', { count: totals?.activitySessions ?? 0 })}
-                />
-                <DashboardStat
-                  icon={BarChart3}
-                  label={t('dashboard.overallProgress')}
-                  value={`${totals?.completionPercentage ?? 0}%`}
-                />
-                <DashboardStat
-                  icon={Flame}
-                  label={t('dashboard.currentStreak')}
-                  value={t('dashboard.streakValue', { days: totals?.currentStreak ?? 0 })}
-                />
+              <section className="rounded-md border bg-card p-5">
+                <h2 className="text-lg font-semibold">{t('dashboard.courseSnapshotTitle')}</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {t('dashboard.courseSnapshotDesc')}
+                </p>
+                {courses.length === 0 ? (
+                  <div className="mt-4 rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+                    {t('dashboard.emptyDesc')}
+                  </div>
+                ) : (
+                  <div className="mt-4 space-y-4">
+                    {courses.slice(0, 5).map((course) => (
+                      <CourseSnapshot key={course.course.id} course={course} />
+                    ))}
+                  </div>
+                )}
               </section>
 
-              <section className="space-y-3">
-                <div>
-                  <h2 className="text-lg font-semibold">{t('dashboard.quickActions')}</h2>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {t('dashboard.quickActionsDesc')}
-                  </p>
-                </div>
-                <QuickActionLink
-                  href="/practice"
-                  icon={Dumbbell}
-                  title={t('dashboard.practiceAction')}
-                  desc={t('dashboard.practiceActionDesc')}
+              <section className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+                <MetricTile
+                  icon={RefreshCcw}
+                  label={t('dashboard.reviewDue')}
+                  value={data.srsDue.dueNow}
                 />
-                <QuickActionLink
-                  href="/exams"
-                  icon={FileCheck2}
-                  title={t('dashboard.examAction')}
-                  desc={t('dashboard.examActionDesc')}
-                />
-                <QuickActionLink
-                  href="/courses"
+                <MetricTile
                   icon={BookOpen}
-                  title={t('dashboard.coursesAction')}
-                  desc={t('dashboard.coursesActionDesc')}
+                  label={t('dashboard.enrolledCourses')}
+                  value={courses.length}
+                />
+                <MetricTile
+                  icon={CheckCircle2}
+                  label={t('dashboard.completedLessons')}
+                  value={courses.reduce((sum, course) => sum + course.completedLessons, 0)}
                 />
               </section>
             </aside>
           </div>
-        )}
-
-        {!isLoading && courses.length > 0 && <RecentLearningWork />}
-
-        {!isLoading && courses.length > 0 ? (
-          <div className="mt-8">
-            <CourseComparisonChart />
-          </div>
-        ) : null}
-
-        {!isLoading && courses.length > 0 ? (
-          <div className="mt-8 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-            <SkillMasteryPanel locale={locale} />
-            <SkillMasteryTrendPanel locale={locale} />
-          </div>
-        ) : null}
-
-        <div className="mt-12">
-          <PerformanceReport />
-        </div>
-
-        {summary?.activityCalendar && summary.activityCalendar.length > 0 && (
-          <ActivityCalendar activityCalendar={summary.activityCalendar} />
         )}
       </main>
     </div>
   );
 }
 
-function QuickActionLink({
-  href,
-  icon: Icon,
-  title,
-  desc,
-}: {
-  href: string;
-  icon: LucideIcon;
-  title: string;
-  desc: string;
-}) {
+function PrimaryTaskCard({ task }: { task: TodayTask }) {
+  const t = useTranslations('Student');
+
   return (
-    <Link
-      href={href}
-      className="flex items-center justify-between gap-3 rounded-md border bg-card p-4 transition-colors hover:border-primary/40 hover:bg-muted/40"
-    >
-      <span className="flex min-w-0 items-center gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-          <Icon className="h-5 w-5" />
-        </span>
-        <span className="min-w-0">
-          <span className="block text-sm font-semibold">{title}</span>
-          <span className="mt-1 block text-xs text-muted-foreground">{desc}</span>
-        </span>
-      </span>
-      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-    </Link>
+    <section className="rounded-md border bg-primary p-5 text-primary-foreground">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-start gap-4">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-primary-foreground/15">
+            {renderTaskIcon(task.type, 'h-6 w-6')}
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-primary-foreground/80">
+              {t('dashboard.primaryTask')}
+            </p>
+            <h2 className="mt-1 text-2xl font-bold tracking-tight">{getTaskTitle(task, t)}</h2>
+            <p className="mt-1 text-sm text-primary-foreground/80">{getTaskSubtitle(task, t)}</p>
+          </div>
+        </div>
+        <Link
+          href={task.href}
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-background px-4 text-sm font-semibold text-foreground hover:bg-background/90"
+        >
+          {getTaskCta(task.type, t)}
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      </div>
+    </section>
   );
 }
 
-function DashboardStat({
+function TaskRow({ task, locale }: { task: TodayTask; locale: string }) {
+  const t = useTranslations('Student');
+
+  return (
+    <article className="flex flex-col gap-3 rounded-md border p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex min-w-0 items-start gap-3">
+        <TaskIconFrame type={task.type} />
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold">{getTaskTitle(task, t)}</h3>
+          <p className="mt-1 text-sm text-muted-foreground">{getTaskSubtitle(task, t)}</p>
+          {task.dueAt ? (
+            <p className="mt-2 text-xs text-muted-foreground">
+              {t('dashboard.taskDueAt', { value: formatDateTime(task.dueAt, locale) })}
+            </p>
+          ) : null}
+        </div>
+      </div>
+      <Link
+        href={task.href}
+        className="inline-flex h-9 items-center justify-center gap-2 rounded-md border px-3 text-sm font-medium hover:bg-muted"
+      >
+        {getTaskCta(task.type, t)}
+        <ArrowRight className="h-4 w-4" />
+      </Link>
+    </article>
+  );
+}
+
+function FeedbackRow({
+  item,
+  locale,
+}: {
+  item: TodayFeedbackItem & { kind: 'practice' | 'exam' };
+  locale: string;
+}) {
+  const t = useTranslations('Student');
+  const Icon = item.kind === 'practice' ? Dumbbell : FileCheck2;
+
+  return (
+    <article className="flex flex-col gap-3 rounded-md border p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex min-w-0 items-start gap-3">
+        <IconFrame icon={Icon} />
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-sm font-semibold">{item.title}</h3>
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+              {item.percentage}%
+            </span>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {item.courseTitle ?? t('dashboard.courseFallback')}
+            {item.unitTitle ? ` / ${item.unitTitle}` : ''}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {t('dashboard.feedbackSubmittedAt', {
+              value: formatDateTime(item.submittedAt, locale),
+            })}
+          </p>
+        </div>
+      </div>
+      <Link
+        href={item.href}
+        className="inline-flex h-9 items-center justify-center gap-2 rounded-md border px-3 text-sm font-medium hover:bg-muted"
+      >
+        {t('dashboard.reviewFeedback')}
+        <ArrowRight className="h-4 w-4" />
+      </Link>
+    </article>
+  );
+}
+
+function CourseSnapshot({
+  course,
+}: {
+  course: {
+    course: { id: string; title: string };
+    totalLessons: number;
+    completedLessons: number;
+    completionPercentage: number;
+    continueLesson: { id: string; title: string } | null;
+  };
+}) {
+  const t = useTranslations('Student');
+
+  return (
+    <article className="rounded-md border p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="truncate text-sm font-semibold">{course.course.title}</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {t('dashboard.completedCount', {
+              completed: course.completedLessons,
+              total: course.totalLessons,
+            })}
+          </p>
+        </div>
+        <span className="rounded-md bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">
+          {course.completionPercentage}%
+        </span>
+      </div>
+      <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+        <div
+          className="h-full rounded-full bg-primary"
+          style={{ width: `${course.completionPercentage}%` }}
+        />
+      </div>
+      <Link
+        href={
+          course.continueLesson
+            ? `/lessons/${course.continueLesson.id}`
+            : `/courses/${course.course.id}`
+        }
+        className="mt-4 inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border px-3 text-sm font-medium hover:bg-muted"
+      >
+        {course.continueLesson ? t('dashboard.resume') : t('dashboard.viewCoursePlan')}
+        <ArrowRight className="h-4 w-4" />
+      </Link>
+    </article>
+  );
+}
+
+function MetricTile({
   icon: Icon,
   label,
   value,
 }: {
   icon: LucideIcon;
   label: string;
-  value: number | string;
+  value: number;
 }) {
   return (
-    <div className="rounded-md border p-4">
-      <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary">
-        <Icon className="h-4 w-4" />
-      </div>
-      <p className="text-2xl font-bold">{value}</p>
+    <article className="rounded-md border bg-card p-4">
+      <IconFrame icon={Icon} />
+      <p className="mt-3 text-2xl font-bold">{value}</p>
       <p className="mt-1 text-sm text-muted-foreground">{label}</p>
-    </div>
+    </article>
   );
+}
+
+function IconFrame({ icon: Icon }: { icon: LucideIcon }) {
+  return (
+    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+      <Icon className="h-5 w-5" />
+    </span>
+  );
+}
+
+function TaskIconFrame({ type }: { type: TodayTaskType }) {
+  return (
+    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+      {renderTaskIcon(type, 'h-5 w-5')}
+    </span>
+  );
+}
+
+function renderTaskIcon(type: TodayTaskType, className: string) {
+  switch (type) {
+    case 'ACTIVE_EXAM':
+      return <FileCheck2 className={className} />;
+    case 'REVIEW_DUE':
+      return <RefreshCcw className={className} />;
+    case 'CONTINUE_COURSE':
+      return <BookOpen className={className} />;
+    case 'WEAK_SKILL_PRACTICE':
+      return <Dumbbell className={className} />;
+    case 'BROWSE_COURSES':
+      return <Target className={className} />;
+  }
+}
+
+function getTaskTitle(task: TodayTask, t: StudentTranslator) {
+  switch (task.type) {
+    case 'ACTIVE_EXAM':
+      return t('dashboard.task.activeExamTitle', { title: task.title });
+    case 'REVIEW_DUE':
+      return t('dashboard.task.reviewDueTitle', { count: getNumberMeta(task, 'dueNow') });
+    case 'CONTINUE_COURSE':
+      return t('dashboard.task.continueCourseTitle', { title: task.title });
+    case 'WEAK_SKILL_PRACTICE':
+      return t('dashboard.task.weakSkillTitle', { skill: task.title });
+    case 'BROWSE_COURSES':
+      return t('dashboard.task.browseTitle');
+  }
+}
+
+function getTaskSubtitle(task: TodayTask, t: StudentTranslator) {
+  switch (task.type) {
+    case 'ACTIVE_EXAM':
+      return t('dashboard.task.activeExamSubtitle', { course: task.subtitle });
+    case 'REVIEW_DUE':
+      return t('dashboard.task.reviewDueSubtitle');
+    case 'CONTINUE_COURSE':
+      return t('dashboard.task.continueCourseSubtitle', { course: task.subtitle });
+    case 'WEAK_SKILL_PRACTICE':
+      return t('dashboard.task.weakSkillSubtitle', {
+        mastery: getNumberMeta(task, 'mastery'),
+      });
+    case 'BROWSE_COURSES':
+      return t('dashboard.task.browseSubtitle');
+  }
+}
+
+function getTaskCta(type: TodayTaskType, t: StudentTranslator) {
+  switch (type) {
+    case 'ACTIVE_EXAM':
+      return t('dashboard.task.activeExamCta');
+    case 'REVIEW_DUE':
+      return t('dashboard.task.reviewDueCta');
+    case 'CONTINUE_COURSE':
+      return t('dashboard.task.continueCourseCta');
+    case 'WEAK_SKILL_PRACTICE':
+      return t('dashboard.task.weakSkillCta');
+    case 'BROWSE_COURSES':
+      return t('dashboard.task.browseCta');
+  }
+}
+
+function getNumberMeta(task: TodayTask, key: string) {
+  const value = task.meta[key];
+  return typeof value === 'number' ? value : Number(value ?? 0);
+}
+
+function formatDateTime(value: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date(value));
 }

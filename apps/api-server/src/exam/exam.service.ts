@@ -1,5 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import {
+  CourseActivityProgressStatus,
+  CourseActivityType,
   ExamAttemptStatus,
   ExamQuestionType,
   Prisma,
@@ -439,6 +441,16 @@ export class ExamService {
     });
 
     if (existingAttempt && !this.isAttemptExpired(existingAttempt, exam.durationMinutes)) {
+      await this.upsertActivityProgressForExam({
+        tenantId,
+        userId: user.id,
+        examId: exam.id,
+        status: CourseActivityProgressStatus.IN_PROGRESS,
+        lastAccessedAt: existingAttempt.startedAt,
+        completedAt: null,
+        scorePercent: null,
+      });
+
       return {
         attempt: this.withAttemptTiming(existingAttempt, exam.durationMinutes),
         exam: this.hideAnswers(exam),
@@ -455,6 +467,16 @@ export class ExamService {
         status: ExamAttemptStatus.STARTED,
         totalPoints,
       },
+    });
+
+    await this.upsertActivityProgressForExam({
+      tenantId,
+      userId: user.id,
+      examId: exam.id,
+      status: CourseActivityProgressStatus.IN_PROGRESS,
+      lastAccessedAt: attempt.startedAt,
+      completedAt: null,
+      scorePercent: null,
     });
 
     return {
@@ -579,6 +601,16 @@ export class ExamService {
           isCorrect: result.isCorrect,
         })),
     );
+
+    await this.upsertActivityProgressForExam({
+      tenantId,
+      userId: user.id,
+      examId: attempt.exam.id,
+      status: CourseActivityProgressStatus.COMPLETED,
+      lastAccessedAt: submittedAttempt.submittedAt ?? new Date(),
+      completedAt: submittedAttempt.submittedAt ?? new Date(),
+      scorePercent: this.toScorePercent(score, totalPoints),
+    });
 
     return {
       attempt: this.withAttemptTiming(submittedAttempt, attempt.exam.durationMinutes),
@@ -808,6 +840,74 @@ export class ExamService {
       passed: passingScore === null ? null : percentage >= passingScore,
       answers,
     };
+  }
+
+  private toScorePercent(score: number, totalPoints: number) {
+    return totalPoints <= 0 ? 0 : Math.round((score / totalPoints) * 100);
+  }
+
+  private async upsertActivityProgressForExam(input: {
+    tenantId: string;
+    userId: string;
+    examId: string;
+    status: CourseActivityProgressStatus;
+    lastAccessedAt: Date;
+    completedAt: Date | null;
+    scorePercent: number | null;
+  }) {
+    const activity = await this.prisma.courseActivity.findFirst({
+      where: {
+        tenantId: input.tenantId,
+        type: CourseActivityType.EXAM,
+        targetId: input.examId,
+        deletedAt: null,
+      },
+      select: { id: true },
+      orderBy: { order: 'asc' },
+    });
+
+    if (!activity) {
+      return;
+    }
+
+    const existing = await this.prisma.userCourseActivityProgress.findUnique({
+      where: {
+        tenantId_userId_activityId: {
+          tenantId: input.tenantId,
+          userId: input.userId,
+          activityId: activity.id,
+        },
+      },
+      select: { status: true, completedAt: true, scorePercent: true },
+    });
+    const keepCompleted =
+      existing?.status === CourseActivityProgressStatus.COMPLETED &&
+      input.status !== CourseActivityProgressStatus.COMPLETED;
+
+    await this.prisma.userCourseActivityProgress.upsert({
+      where: {
+        tenantId_userId_activityId: {
+          tenantId: input.tenantId,
+          userId: input.userId,
+          activityId: activity.id,
+        },
+      },
+      update: {
+        status: keepCompleted ? CourseActivityProgressStatus.COMPLETED : input.status,
+        lastAccessedAt: input.lastAccessedAt,
+        completedAt: keepCompleted ? existing?.completedAt : (input.completedAt ?? undefined),
+        scorePercent: keepCompleted ? existing?.scorePercent : (input.scorePercent ?? undefined),
+      },
+      create: {
+        tenantId: input.tenantId,
+        userId: input.userId,
+        activityId: activity.id,
+        status: input.status,
+        lastAccessedAt: input.lastAccessedAt,
+        completedAt: input.completedAt,
+        scorePercent: input.scorePercent,
+      },
+    });
   }
 
   private getAttemptDeadline(attempt: TimedAttempt, durationMinutes: number) {

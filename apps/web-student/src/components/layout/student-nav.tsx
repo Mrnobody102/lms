@@ -6,14 +6,11 @@ import {
   FileCheck2,
   Home,
   KeyRound,
-  Library,
   LogOut,
   User as UserIcon,
   UserPlus,
   Settings,
-  MessageSquare,
   Menu,
-  RefreshCcw,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -54,25 +51,15 @@ export function StudentNav({ showLinks = false }: StudentNavProps) {
   const mainItems: StudentNavItem[] = [
     { href: '/', icon: Home, label: t('nav.home') },
     { href: '/courses', icon: BookOpen, label: t('nav.courses') },
-  ];
-  const practiceItems: StudentNavItem[] = [
     { href: '/practice', icon: Dumbbell, label: t('nav.practice') },
-    { href: '/vocabulary', icon: Library, label: t('nav.vocab') },
-    { href: '/review', icon: RefreshCcw, label: t('nav.review') },
-    { href: '/roleplay', icon: MessageSquare, label: t('nav.roleplay') },
+    { href: '/exams', icon: FileCheck2, label: t('nav.exams') },
   ];
-  const examsItem: StudentNavItem = {
-    href: '/exams',
-    icon: FileCheck2,
-    label: t('nav.exams'),
-  };
 
   const isActive = (href?: string) => {
     if (!href) return false;
     if (href === '/') return pathname === '/';
     return pathname === href || pathname.startsWith(`${href}/`);
   };
-  const isGroupActive = (items: StudentNavItem[]) => items.some((i) => isActive(i.href));
 
   const linkClass = (active: boolean) =>
     `inline-flex h-9 items-center gap-1.5 rounded-md px-3 transition-colors ${
@@ -105,16 +92,6 @@ export function StudentNav({ showLinks = false }: StudentNavProps) {
                 <span>{item.label}</span>
               </Link>
             ))}
-
-            <Link href="/practice" className={linkClass(isGroupActive(practiceItems))}>
-              <Dumbbell className="h-3.5 w-3.5 shrink-0" />
-              <span>{t('nav.practiceGroup')}</span>
-            </Link>
-
-            <Link href={examsItem.href ?? '/'} className={linkClass(isActive(examsItem.href))}>
-              <examsItem.icon className="h-3.5 w-3.5 shrink-0" />
-              <span>{examsItem.label}</span>
-            </Link>
           </div>
         )}
 
@@ -141,14 +118,6 @@ export function StudentNav({ showLinks = false }: StudentNavProps) {
                   </SheetTitle>
 
                   <MobileGroup items={mainItems} isActive={isActive} t={t} />
-
-                  <MobileGroup
-                    items={[{ href: '/practice', icon: Dumbbell, label: t('nav.practiceGroup') }]}
-                    isActive={() => isGroupActive(practiceItems)}
-                    t={t}
-                  />
-
-                  <MobileGroup items={[examsItem]} isActive={isActive} t={t} />
                 </SheetContent>
               </Sheet>
             </div>
@@ -229,72 +198,7 @@ export function StudentNav({ showLinks = false }: StudentNavProps) {
           )}
         </div>
       </nav>
-
-      {shouldShowLinks && isGroupActive(practiceItems) ? (
-        <PracticeTabStrip
-          items={practiceItems}
-          isActive={isActive}
-          comingSoonLabel={t('nav.comingSoon')}
-        />
-      ) : null}
     </header>
-  );
-}
-
-function PracticeTabStrip({
-  items,
-  isActive,
-  comingSoonLabel,
-}: {
-  items: StudentNavItem[];
-  isActive: (href?: string) => boolean;
-  comingSoonLabel: string;
-}) {
-  return (
-    <div className="border-t bg-background/80">
-      <div className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-4 py-2 sm:px-6">
-        {items.map((item) => {
-          const active = isActive(item.href);
-          const className = `inline-flex h-9 shrink-0 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors ${
-            active
-              ? 'bg-primary/10 text-primary'
-              : 'text-muted-foreground hover:bg-muted hover:text-primary'
-          }`;
-          const content = (
-            <>
-              <item.icon className="h-4 w-4 shrink-0" />
-              <span>{item.label}</span>
-            </>
-          );
-
-          if (item.disabled) {
-            return (
-              <button
-                key={item.href ?? item.label}
-                type="button"
-                disabled
-                aria-disabled="true"
-                title={comingSoonLabel}
-                className={`${className} cursor-not-allowed opacity-50 hover:bg-transparent hover:text-muted-foreground`}
-              >
-                {content}
-              </button>
-            );
-          }
-
-          return (
-            <Link
-              key={item.href}
-              href={item.href ?? '/'}
-              aria-current={active ? 'page' : undefined}
-              className={className}
-            >
-              {content}
-            </Link>
-          );
-        })}
-      </div>
-    </div>
   );
 }
 

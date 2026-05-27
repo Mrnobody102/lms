@@ -87,6 +87,13 @@ export class CourseController {
     return this.courseService.findOne(id, getScopedTenantId(req), req.user);
   }
 
+  @Get(':id/activities')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get the course activity timeline grouped by unit' })
+  getActivities(@Param('id', ParseUUIDPipe) id: string, @Request() req: AuthenticatedRequest) {
+    return this.courseService.getActivities(id, getScopedTenantId(req), req.user);
+  }
+
   @Get(':id/report')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)

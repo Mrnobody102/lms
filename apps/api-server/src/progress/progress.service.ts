@@ -1,5 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { LearningActivityType, ProgressStatus, Role } from '@repo/database';
+import {
+  CourseActivityProgressStatus,
+  CourseActivityType,
+  LearningActivityType,
+  ProgressStatus,
+  Role,
+} from '@repo/database';
 import { LearningAccessService } from '../common/services/learning-access.service';
 import { PrismaService } from '../common/services/prisma.service';
 import { buildActivityCalendar } from '../common/utils/activity-calendar.util';
@@ -75,6 +81,20 @@ export class ProgressService {
       await this.updateUserStreak(userId, tenantId);
     }
 
+    await this.upsertActivityProgressForTarget({
+      tenantId,
+      userId,
+      type: CourseActivityType.LESSON,
+      targetId: lessonId,
+      status:
+        status === ProgressStatus.COMPLETED
+          ? CourseActivityProgressStatus.COMPLETED
+          : CourseActivityProgressStatus.IN_PROGRESS,
+      completedAt: status === ProgressStatus.COMPLETED ? new Date() : null,
+      lastAccessedAt: new Date(),
+      scorePercent: null,
+    });
+
     return progress;
   }
 
@@ -108,8 +128,83 @@ export class ProgressService {
 
     // Update User Streak
     await this.updateUserStreak(userId, tenantId);
+    await this.upsertActivityProgressForTarget({
+      tenantId,
+      userId,
+      type: CourseActivityType.LESSON,
+      targetId: lesson.id,
+      status: CourseActivityProgressStatus.IN_PROGRESS,
+      completedAt: null,
+      lastAccessedAt: activity.occurredAt,
+      scorePercent: null,
+    });
 
     return activity;
+  }
+
+  private async upsertActivityProgressForTarget(input: {
+    tenantId: string;
+    userId: string;
+    type: CourseActivityType;
+    targetId: string;
+    status: CourseActivityProgressStatus;
+    completedAt: Date | null;
+    lastAccessedAt: Date | null;
+    scorePercent: number | null;
+  }) {
+    const activity = await this.prisma.courseActivity.findFirst({
+      where: {
+        tenantId: input.tenantId,
+        type: input.type,
+        targetId: input.targetId,
+        deletedAt: null,
+      },
+      select: { id: true },
+      orderBy: { order: 'asc' },
+    });
+
+    if (!activity) {
+      return;
+    }
+
+    const existing = await this.prisma.userCourseActivityProgress.findUnique({
+      where: {
+        tenantId_userId_activityId: {
+          tenantId: input.tenantId,
+          userId: input.userId,
+          activityId: activity.id,
+        },
+      },
+      select: { status: true, completedAt: true },
+    });
+    const shouldKeepCompleted =
+      existing?.status === CourseActivityProgressStatus.COMPLETED &&
+      input.status !== CourseActivityProgressStatus.COMPLETED;
+
+    await this.prisma.userCourseActivityProgress.upsert({
+      where: {
+        tenantId_userId_activityId: {
+          tenantId: input.tenantId,
+          userId: input.userId,
+          activityId: activity.id,
+        },
+      },
+      update: {
+        status: shouldKeepCompleted ? CourseActivityProgressStatus.COMPLETED : input.status,
+        completedAt: shouldKeepCompleted ? existing?.completedAt : (input.completedAt ?? undefined),
+        lastAccessedAt: input.lastAccessedAt ?? undefined,
+        scorePercent: input.scorePercent ?? undefined,
+      },
+      create: {
+        tenantId: input.tenantId,
+        userId: input.userId,
+        activityId: activity.id,
+        status: input.status,
+        completedAt: input.completedAt,
+        lastAccessedAt: input.lastAccessedAt,
+        scorePercent: input.scorePercent,
+      },
+    });
   }
 
   private async updateUserStreak(userId: string, tenantId: string) {

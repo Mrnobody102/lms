@@ -1,6 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import { BadRequestException } from '@nestjs/common';
-import { EnrollmentStatus, ProgressStatus, Role } from '@repo/database';
+import {
+  CourseActivityCompletionPolicy,
+  CourseActivityProgressStatus,
+  CourseActivityType,
+  EnrollmentStatus,
+  ProgressStatus,
+  Role,
+} from '@repo/database';
 import { AuditAction, AuditStatus } from '../common/services/audit-log.service';
 import { CourseService } from './course.service';
 
@@ -428,5 +435,185 @@ describe('CourseService', () => {
     ).resolves.toBeDefined();
 
     expect(prisma.courseUnit.update).toHaveBeenCalledTimes(2);
+  });
+
+  it('should return a tenant-scoped mixed activity timeline for a student', async () => {
+    const prisma = {
+      course: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: 'course-1',
+          title: 'IELTS Foundations',
+          totalDuration: 90,
+          units: [{ id: 'unit-1', title: 'Unit 1', description: null, order: 0 }],
+        }),
+      },
+      courseActivity: {
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: 'activity-1',
+            tenantId: 'tenant-1',
+            courseId: 'course-1',
+            unitId: 'unit-1',
+            type: CourseActivityType.LESSON,
+            targetId: 'lesson-1',
+            order: 0,
+            isRequired: true,
+            isPublished: true,
+            estimatedMinutes: 10,
+            availableFrom: null,
+            dueAt: null,
+            completionPolicy: CourseActivityCompletionPolicy.LESSON_COMPLETED,
+            progress: [
+              {
+                status: CourseActivityProgressStatus.COMPLETED,
+                completedAt: new Date('2026-05-20T00:00:00.000Z'),
+                lastAccessedAt: new Date('2026-05-20T00:00:00.000Z'),
+                scorePercent: null,
+              },
+            ],
+          },
+          {
+            id: 'activity-2',
+            tenantId: 'tenant-1',
+            courseId: 'course-1',
+            unitId: 'unit-1',
+            type: CourseActivityType.PRACTICE,
+            targetId: 'practice-1',
+            order: 1,
+            isRequired: true,
+            isPublished: true,
+            estimatedMinutes: 10,
+            availableFrom: null,
+            dueAt: null,
+            completionPolicy: CourseActivityCompletionPolicy.PRACTICE_SUBMITTED,
+            progress: [],
+          },
+        ]),
+      },
+      lesson: {
+        findMany: vi.fn().mockResolvedValue([{ id: 'lesson-1', title: 'Intro', duration: 10 }]),
+      },
+      practiceExerciseSet: {
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: 'practice-1',
+            title: 'Unit 1 Practice',
+            description: null,
+            _count: { questions: 5, attempts: 1 },
+          },
+        ]),
+      },
+      exam: { findMany: vi.fn().mockResolvedValue([]) },
+      roleplayScenario: { findMany: vi.fn().mockResolvedValue([]) },
+      practiceAttempt: {
+        findMany: vi.fn().mockResolvedValue([
+          {
+            exerciseSetId: 'practice-1',
+            score: 4,
+            totalPoints: 5,
+            submittedAt: new Date('2026-05-21T00:00:00.000Z'),
+          },
+        ]),
+      },
+      examAttempt: { findMany: vi.fn().mockResolvedValue([]) },
+    };
+    const learningAccess = {
+      courseWhere: vi.fn().mockReturnValue({ tenantId: 'tenant-1', id: 'course-1' }),
+    };
+    const service = new CourseService(
+      prisma as never,
+      learningAccess as never,
+      createAuditLogStub() as never,
+    );
+
+    const result = await service.getActivities('course-1', 'tenant-1', {
+      id: 'student-1',
+      role: Role.STUDENT,
+    });
+
+    expect(result.units[0].activities).toHaveLength(2);
+    expect(result.units[0].activities[0]).toEqual(
+      expect.objectContaining({
+        type: CourseActivityType.LESSON,
+        target: expect.objectContaining({ title: 'Intro', href: '/lessons/lesson-1' }),
+        progress: expect.objectContaining({ status: CourseActivityProgressStatus.COMPLETED }),
+      }),
+    );
+    expect(result.units[0].activities[1]).toEqual(
+      expect.objectContaining({
+        type: CourseActivityType.PRACTICE,
+        target: expect.objectContaining({ title: 'Unit 1 Practice', questionCount: 5 }),
+        progress: expect.objectContaining({ scorePercent: 80 }),
+      }),
+    );
+    expect(prisma.courseActivity.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          tenantId: 'tenant-1',
+          courseId: 'course-1',
+        }),
+      }),
+    );
+  });
+
+  it('should not fallback to legacy lessons when stored activities exist but are unpublished for a student', async () => {
+    const prisma = {
+      course: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: 'course-1',
+          title: 'IELTS Foundations',
+          totalDuration: 90,
+          units: [{ id: 'unit-1', title: 'Unit 1', description: null, order: 0 }],
+        }),
+      },
+      courseActivity: {
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: 'activity-1',
+            tenantId: 'tenant-1',
+            courseId: 'course-1',
+            unitId: 'unit-1',
+            type: CourseActivityType.LESSON,
+            targetId: 'lesson-1',
+            order: 0,
+            isRequired: true,
+            isPublished: false,
+            estimatedMinutes: 10,
+            availableFrom: null,
+            dueAt: null,
+            completionPolicy: CourseActivityCompletionPolicy.LESSON_COMPLETED,
+            progress: [],
+          },
+        ]),
+      },
+      lesson: { findMany: vi.fn().mockResolvedValue([]) },
+      practiceExerciseSet: { findMany: vi.fn().mockResolvedValue([]) },
+      exam: { findMany: vi.fn().mockResolvedValue([]) },
+      roleplayScenario: { findMany: vi.fn().mockResolvedValue([]) },
+      practiceAttempt: { findMany: vi.fn() },
+      examAttempt: { findMany: vi.fn() },
+    };
+    const learningAccess = {
+      courseWhere: vi.fn().mockReturnValue({ tenantId: 'tenant-1', id: 'course-1' }),
+    };
+    const service = new CourseService(
+      prisma as never,
+      learningAccess as never,
+      createAuditLogStub() as never,
+    );
+
+    const result = await service.getActivities('course-1', 'tenant-1', {
+      id: 'student-1',
+      role: Role.STUDENT,
+    });
+
+    expect(result.units[0].activities).toEqual([]);
+    expect(prisma.lesson.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          id: { in: [] },
+        }),
+      }),
+    );
   });
 });

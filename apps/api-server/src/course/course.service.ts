@@ -5,7 +5,16 @@ import {
   NotFoundException,
   Optional,
 } from '@nestjs/common';
-import { EnrollmentStatus, Prisma, Role } from '@repo/database';
+import {
+  CourseActivityCompletionPolicy,
+  CourseActivityProgressStatus,
+  CourseActivityType,
+  EnrollmentStatus,
+  ExamAttemptStatus,
+  Prisma,
+  ProgressStatus,
+  Role,
+} from '@repo/database';
 import { AuditAction, AuditLogService, AuditStatus } from '../common/services/audit-log.service';
 import { LearningAccessService } from '../common/services/learning-access.service';
 import { PrismaService } from '../common/services/prisma.service';
@@ -33,6 +42,70 @@ interface EnrollmentNotificationTarget {
   id: string;
   email: string;
   fullName: string | null;
+}
+
+interface CourseTimelineUser {
+  id: string;
+  role: Role;
+}
+
+interface CourseActivityTargetPayload {
+  id: string;
+  title: string;
+  description?: string | null;
+  durationMinutes?: number | null;
+  questionCount?: number;
+  sectionCount?: number;
+  attemptCount?: number;
+  href: string;
+}
+
+interface CourseActivityProgressPayload {
+  status: CourseActivityProgressStatus;
+  completedAt: Date | null;
+  lastAccessedAt: Date | null;
+  scorePercent: number | null;
+}
+
+interface CourseTimelineActivity {
+  id: string;
+  type: CourseActivityType;
+  targetId: string;
+  courseId: string;
+  unitId: string | null;
+  order: number;
+  isRequired: boolean;
+  isPublished: boolean;
+  estimatedMinutes: number;
+  availableFrom: Date | null;
+  dueAt: Date | null;
+  completionPolicy: CourseActivityCompletionPolicy;
+  progress: CourseActivityProgressPayload | null;
+  target: CourseActivityTargetPayload;
+}
+
+interface CourseTimelineUnit {
+  id: string;
+  title: string;
+  description: string | null;
+  order: number;
+  activities: CourseTimelineActivity[];
+}
+
+interface LegacyActivitySource {
+  id: string;
+  type: CourseActivityType;
+  targetId: string;
+  courseId: string;
+  unitId: string | null;
+  order: number;
+  isRequired: boolean;
+  isPublished: boolean;
+  estimatedMinutes: number;
+  availableFrom: Date | null;
+  dueAt: Date | null;
+  completionPolicy: CourseActivityCompletionPolicy;
+  progress?: CourseActivityProgressPayload | null;
 }
 
 export interface EnrollmentAuditContext {
@@ -209,6 +282,130 @@ export class CourseService {
     });
     if (!course) throw new NotFoundException(`Course with ID ${id} not found in this tenant`);
     return course;
+  }
+
+  async getActivities(courseId: string, tenantId: string, user: CourseTimelineUser) {
+    const course = await this.prisma.course.findFirst({
+      where: this.learningAccess.courseWhere(
+        tenantId,
+        user,
+        courseId,
+        user.role !== Role.STUDENT ? { includeInactive: true } : {},
+      ),
+      select: {
+        id: true,
+        title: true,
+        totalDuration: true,
+        units: {
+          where: { deletedAt: null },
+          orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            order: true,
+          },
+        },
+      },
+    });
+
+    if (!course) {
+      throw new NotFoundException(`Course with ID ${courseId} not found in this tenant`);
+    }
+
+    const where: Prisma.CourseActivityWhereInput = {
+      tenantId,
+      courseId,
+      deletedAt: null,
+    };
+
+    const storedActivities = await this.prisma.courseActivity.findMany({
+      where,
+      include: {
+        progress: {
+          where: { tenantId, userId: user.id },
+          orderBy: { updatedAt: 'desc' },
+          take: 1,
+        },
+      },
+      orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+    });
+
+    const visibleStoredActivities =
+      user.role === Role.STUDENT
+        ? storedActivities.filter((activity) => activity.isPublished)
+        : storedActivities;
+    const activitySources =
+      storedActivities.length > 0
+        ? visibleStoredActivities.map((activity): LegacyActivitySource => {
+            const progress = activity.progress[0] ?? null;
+            return {
+              id: activity.id,
+              type: activity.type,
+              targetId: activity.targetId,
+              courseId: activity.courseId,
+              unitId: activity.unitId,
+              order: activity.order,
+              isRequired: activity.isRequired,
+              isPublished: activity.isPublished,
+              estimatedMinutes: activity.estimatedMinutes,
+              availableFrom: activity.availableFrom,
+              dueAt: activity.dueAt,
+              completionPolicy: activity.completionPolicy,
+              progress: progress
+                ? {
+                    status: progress.status,
+                    completedAt: progress.completedAt,
+                    lastAccessedAt: progress.lastAccessedAt,
+                    scorePercent: progress.scorePercent,
+                  }
+                : null,
+            };
+          })
+        : await this.buildLegacyActivitySources(courseId, tenantId, user);
+
+    const targets = await this.getActivityTargets(tenantId, activitySources, user);
+    const inferredProgress = await this.getInferredActivityProgress(
+      tenantId,
+      user,
+      activitySources,
+    );
+    const activities = activitySources
+      .map((activity) => {
+        const target = targets.get(this.activityKey(activity.type, activity.targetId));
+        if (!target) {
+          return null;
+        }
+
+        return {
+          ...activity,
+          progress:
+            activity.progress ??
+            inferredProgress.get(this.activityKey(activity.type, activity.targetId)) ??
+            null,
+          target,
+        };
+      })
+      .filter((activity): activity is CourseTimelineActivity => activity !== null)
+      .sort((a, b) => a.order - b.order);
+
+    const units: CourseTimelineUnit[] = course.units.map((unit) => ({
+      id: unit.id,
+      title: unit.title,
+      description: unit.description,
+      order: unit.order,
+      activities: activities.filter((activity) => activity.unitId === unit.id),
+    }));
+
+    return {
+      course: {
+        id: course.id,
+        title: course.title,
+        totalDuration: course.totalDuration,
+      },
+      units,
+      ungroupedActivities: activities.filter((activity) => !activity.unitId),
+    };
   }
 
   async createUnit(
@@ -935,6 +1132,406 @@ export class CourseService {
     }
 
     return 'NOT_STARTED';
+  }
+
+  private async buildLegacyActivitySources(
+    courseId: string,
+    tenantId: string,
+    user: CourseTimelineUser,
+  ): Promise<LegacyActivitySource[]> {
+    const [lessons, practiceSets, exams, roleplays] = await Promise.all([
+      this.prisma.lesson.findMany({
+        where: {
+          tenantId,
+          courseId,
+          deletedAt: null,
+        },
+        select: {
+          id: true,
+          type: true,
+          courseId: true,
+          unitId: true,
+          order: true,
+          duration: true,
+          practiceExerciseSetId: true,
+          examId: true,
+          progress: {
+            where: { tenantId, userId: user.id },
+            orderBy: { updatedAt: 'desc' },
+            take: 1,
+            select: { status: true, updatedAt: true },
+          },
+        },
+        orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+      }),
+      this.prisma.practiceExerciseSet.findMany({
+        where: {
+          tenantId,
+          courseId,
+          deletedAt: null,
+          ...(user.role === Role.STUDENT ? { isPublished: true } : {}),
+        },
+        select: {
+          id: true,
+          courseId: true,
+          unitId: true,
+          isPublished: true,
+          createdAt: true,
+        },
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      }),
+      this.prisma.exam.findMany({
+        where: {
+          tenantId,
+          courseId,
+          deletedAt: null,
+          ...(user.role === Role.STUDENT ? { isPublished: true } : {}),
+        },
+        select: {
+          id: true,
+          courseId: true,
+          unitId: true,
+          durationMinutes: true,
+          isPublished: true,
+          createdAt: true,
+        },
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      }),
+      this.prisma.roleplayScenario.findMany({
+        where: {
+          tenantId,
+          courseId,
+          deletedAt: null,
+          ...(user.role === Role.STUDENT ? { isPublished: true } : {}),
+        },
+        select: {
+          id: true,
+          courseId: true,
+          unitId: true,
+          isPublished: true,
+          createdAt: true,
+        },
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      }),
+    ]);
+
+    const sources = lessons.map((lesson): LegacyActivitySource => {
+      const lessonProgress = lesson.progress[0];
+      const type =
+        lesson.type === 'practice' && lesson.practiceExerciseSetId
+          ? CourseActivityType.PRACTICE
+          : lesson.type === 'exam' && lesson.examId
+            ? CourseActivityType.EXAM
+            : CourseActivityType.LESSON;
+      const targetId =
+        type === CourseActivityType.PRACTICE
+          ? lesson.practiceExerciseSetId!
+          : type === CourseActivityType.EXAM
+            ? lesson.examId!
+            : lesson.id;
+
+      return {
+        id: `legacy-${lesson.id}`,
+        type,
+        targetId,
+        courseId: lesson.courseId,
+        unitId: lesson.unitId,
+        order: lesson.order,
+        isRequired: true,
+        isPublished: true,
+        estimatedMinutes: lesson.duration,
+        availableFrom: null,
+        dueAt: null,
+        completionPolicy:
+          type === CourseActivityType.PRACTICE
+            ? CourseActivityCompletionPolicy.PRACTICE_SUBMITTED
+            : type === CourseActivityType.EXAM
+              ? CourseActivityCompletionPolicy.EXAM_SUBMITTED
+              : CourseActivityCompletionPolicy.LESSON_COMPLETED,
+        progress: lessonProgress
+          ? {
+              status:
+                lessonProgress.status === ProgressStatus.COMPLETED
+                  ? CourseActivityProgressStatus.COMPLETED
+                  : CourseActivityProgressStatus.IN_PROGRESS,
+              completedAt:
+                lessonProgress.status === ProgressStatus.COMPLETED
+                  ? lessonProgress.updatedAt
+                  : null,
+              lastAccessedAt: lessonProgress.updatedAt,
+              scorePercent: null,
+            }
+          : null,
+      };
+    });
+
+    const referencedPracticeIds = new Set(
+      sources
+        .filter((activity) => activity.type === CourseActivityType.PRACTICE)
+        .map((activity) => activity.targetId),
+    );
+    const referencedExamIds = new Set(
+      sources
+        .filter((activity) => activity.type === CourseActivityType.EXAM)
+        .map((activity) => activity.targetId),
+    );
+
+    practiceSets.forEach((set, index) => {
+      if (referencedPracticeIds.has(set.id)) {
+        return;
+      }
+      sources.push({
+        id: `legacy-practice-${set.id}`,
+        type: CourseActivityType.PRACTICE,
+        targetId: set.id,
+        courseId: set.courseId ?? courseId,
+        unitId: set.unitId,
+        order: 100000 + index,
+        isRequired: true,
+        isPublished: set.isPublished,
+        estimatedMinutes: 10,
+        availableFrom: null,
+        dueAt: null,
+        completionPolicy: CourseActivityCompletionPolicy.PRACTICE_SUBMITTED,
+      });
+    });
+
+    exams.forEach((exam, index) => {
+      if (referencedExamIds.has(exam.id)) {
+        return;
+      }
+      sources.push({
+        id: `legacy-exam-${exam.id}`,
+        type: CourseActivityType.EXAM,
+        targetId: exam.id,
+        courseId: exam.courseId ?? courseId,
+        unitId: exam.unitId,
+        order: 200000 + index,
+        isRequired: true,
+        isPublished: exam.isPublished,
+        estimatedMinutes: exam.durationMinutes,
+        availableFrom: null,
+        dueAt: null,
+        completionPolicy: CourseActivityCompletionPolicy.EXAM_SUBMITTED,
+      });
+    });
+
+    roleplays.forEach((scenario, index) => {
+      sources.push({
+        id: `legacy-roleplay-${scenario.id}`,
+        type: CourseActivityType.ROLEPLAY,
+        targetId: scenario.id,
+        courseId: scenario.courseId ?? courseId,
+        unitId: scenario.unitId,
+        order: 300000 + index,
+        isRequired: true,
+        isPublished: scenario.isPublished,
+        estimatedMinutes: 10,
+        availableFrom: null,
+        dueAt: null,
+        completionPolicy: CourseActivityCompletionPolicy.ROLEPLAY_COMPLETED,
+      });
+    });
+
+    return sources;
+  }
+
+  private async getActivityTargets(
+    tenantId: string,
+    activities: LegacyActivitySource[],
+    user: CourseTimelineUser,
+  ) {
+    const idsByType = new Map<CourseActivityType, string[]>();
+    for (const activity of activities) {
+      idsByType.set(activity.type, [...(idsByType.get(activity.type) ?? []), activity.targetId]);
+    }
+
+    const [lessons, practiceSets, exams, roleplays] = await Promise.all([
+      this.prisma.lesson.findMany({
+        where: {
+          tenantId,
+          id: { in: this.uniqueIds(idsByType.get(CourseActivityType.LESSON) ?? []) },
+          deletedAt: null,
+        },
+        select: { id: true, title: true, duration: true },
+      }),
+      this.prisma.practiceExerciseSet.findMany({
+        where: {
+          tenantId,
+          id: { in: this.uniqueIds(idsByType.get(CourseActivityType.PRACTICE) ?? []) },
+          deletedAt: null,
+          ...(user.role === Role.STUDENT ? { isPublished: true } : {}),
+        },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          _count: { select: { questions: true, attempts: true } },
+        },
+      }),
+      this.prisma.exam.findMany({
+        where: {
+          tenantId,
+          id: { in: this.uniqueIds(idsByType.get(CourseActivityType.EXAM) ?? []) },
+          deletedAt: null,
+          ...(user.role === Role.STUDENT ? { isPublished: true } : {}),
+        },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          durationMinutes: true,
+          _count: { select: { sections: true, attempts: true } },
+        },
+      }),
+      this.prisma.roleplayScenario.findMany({
+        where: {
+          tenantId,
+          id: { in: this.uniqueIds(idsByType.get(CourseActivityType.ROLEPLAY) ?? []) },
+          deletedAt: null,
+          ...(user.role === Role.STUDENT ? { isPublished: true } : {}),
+        },
+        select: { id: true, title: true, description: true },
+      }),
+    ]);
+
+    const targets = new Map<string, CourseActivityTargetPayload>();
+    lessons.forEach((lesson) => {
+      targets.set(this.activityKey(CourseActivityType.LESSON, lesson.id), {
+        id: lesson.id,
+        title: lesson.title,
+        durationMinutes: lesson.duration,
+        href: `/lessons/${lesson.id}`,
+      });
+    });
+    practiceSets.forEach((set) => {
+      targets.set(this.activityKey(CourseActivityType.PRACTICE, set.id), {
+        id: set.id,
+        title: set.title,
+        description: set.description,
+        questionCount: set._count.questions,
+        attemptCount: set._count.attempts,
+        href: `/practice/${set.id}`,
+      });
+    });
+    exams.forEach((exam) => {
+      targets.set(this.activityKey(CourseActivityType.EXAM, exam.id), {
+        id: exam.id,
+        title: exam.title,
+        description: exam.description,
+        durationMinutes: exam.durationMinutes,
+        sectionCount: exam._count.sections,
+        attemptCount: exam._count.attempts,
+        href: `/exams/${exam.id}`,
+      });
+    });
+    roleplays.forEach((scenario) => {
+      targets.set(this.activityKey(CourseActivityType.ROLEPLAY, scenario.id), {
+        id: scenario.id,
+        title: scenario.title,
+        description: scenario.description,
+        href: `/roleplay/${scenario.id}`,
+      });
+    });
+
+    return targets;
+  }
+
+  private async getInferredActivityProgress(
+    tenantId: string,
+    user: CourseTimelineUser,
+    activities: LegacyActivitySource[],
+  ) {
+    const progress = new Map<string, CourseActivityProgressPayload>();
+    const practiceIds = this.uniqueIds(
+      activities
+        .filter((activity) => activity.type === CourseActivityType.PRACTICE)
+        .map((activity) => activity.targetId),
+    );
+    const examIds = this.uniqueIds(
+      activities
+        .filter((activity) => activity.type === CourseActivityType.EXAM)
+        .map((activity) => activity.targetId),
+    );
+
+    const [practiceAttempts, examAttempts] = await Promise.all([
+      practiceIds.length === 0
+        ? Promise.resolve([])
+        : this.prisma.practiceAttempt.findMany({
+            where: {
+              tenantId,
+              userId: user.id,
+              exerciseSetId: { in: practiceIds },
+            },
+            select: {
+              exerciseSetId: true,
+              score: true,
+              totalPoints: true,
+              submittedAt: true,
+            },
+            orderBy: { submittedAt: 'desc' },
+          }),
+      examIds.length === 0
+        ? Promise.resolve([])
+        : this.prisma.examAttempt.findMany({
+            where: {
+              tenantId,
+              userId: user.id,
+              examId: { in: examIds },
+            },
+            select: {
+              examId: true,
+              status: true,
+              score: true,
+              totalPoints: true,
+              startedAt: true,
+              submittedAt: true,
+            },
+            orderBy: { startedAt: 'desc' },
+          }),
+    ]);
+
+    for (const attempt of practiceAttempts) {
+      const key = this.activityKey(CourseActivityType.PRACTICE, attempt.exerciseSetId);
+      if (progress.has(key)) {
+        continue;
+      }
+      progress.set(key, {
+        status: CourseActivityProgressStatus.COMPLETED,
+        completedAt: attempt.submittedAt,
+        lastAccessedAt: attempt.submittedAt,
+        scorePercent: this.toScorePercent(attempt.score, attempt.totalPoints),
+      });
+    }
+
+    for (const attempt of examAttempts) {
+      const key = this.activityKey(CourseActivityType.EXAM, attempt.examId);
+      if (progress.has(key)) {
+        continue;
+      }
+      progress.set(key, {
+        status:
+          attempt.status === ExamAttemptStatus.SUBMITTED
+            ? CourseActivityProgressStatus.COMPLETED
+            : CourseActivityProgressStatus.IN_PROGRESS,
+        completedAt: attempt.submittedAt,
+        lastAccessedAt: attempt.submittedAt ?? attempt.startedAt,
+        scorePercent:
+          attempt.status === ExamAttemptStatus.SUBMITTED
+            ? this.toScorePercent(attempt.score, attempt.totalPoints)
+            : null,
+      });
+    }
+
+    return progress;
+  }
+
+  private activityKey(type: CourseActivityType, targetId: string) {
+    return `${type}:${targetId}`;
+  }
+
+  private toScorePercent(score: number, totalPoints: number) {
+    return totalPoints <= 0 ? 0 : Math.round((score / totalPoints) * 100);
   }
 
   private async ensureUnit(courseId: string, unitId: string, tenantId: string) {

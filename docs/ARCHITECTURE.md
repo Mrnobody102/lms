@@ -90,13 +90,17 @@ graph TD
 
 ## Learning Domain Hiện Tại (Đang dịch chuyển)
 
-Luồng nội dung học tập hiện tại mang tính tuyến tính: `Course -> CourseUnit -> Lesson`.
+Luồng nội dung học tập hiện tại đi theo mô hình course-first:
+`Course -> CourseUnit -> CourseActivity -> target`.
 **Tầm nhìn tương lai:** Sẽ dịch chuyển sang mô hình "Adaptive Skill Tree" nơi AI lắp ráp lộ trình cá nhân hóa từ các "Micro-Cards" thay vì bài giảng dài tĩnh.
 
 - `Course` là khối chính để enrollment, progress, practice, exam bám vào.
 - `CourseUnit` là unit/chapter thuộc `Course`, dùng để nhóm curriculum.
-- `Lesson` vẫn giữ `courseId` để backward compatibility và có `unitId` nullable để migrate dữ liệu cũ an toàn.
+- `CourseActivity` là item trong lộ trình khóa học, trỏ đến `Lesson`, `PracticeExerciseSet`, `Exam` hoặc `RoleplayScenario`.
+- `UserCourseActivityProgress` lưu trạng thái activity-level để practice/exam cũng có progress trong lộ trình.
+- `Lesson` vẫn giữ `courseId`, `unitId`, `practiceExerciseSetId`, `examId` để backward compatibility trong giai đoạn chuyển đổi.
 - Course detail API trả cả `units` grouped và `lessons` phẳng để các màn hình cũ tiếp tục chạy.
+- Course activity API (`GET /api/courses/:id/activities`) là contract ưu tiên cho student course detail mới.
 
 ### Practice
 

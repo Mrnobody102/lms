@@ -135,6 +135,12 @@ describe('PracticeService', () => {
           answers: [],
         }),
       },
+      courseActivity: {
+        findFirst: vi.fn().mockResolvedValue(null),
+      },
+      userCourseActivityProgress: {
+        upsert: vi.fn(),
+      },
     };
     const learningAccess = {
       ensureCourseAccess: vi.fn().mockResolvedValue(undefined),
@@ -209,6 +215,12 @@ describe('PracticeService', () => {
           totalPoints: 1,
           answers: [],
         }),
+      },
+      courseActivity: {
+        findFirst: vi.fn().mockResolvedValue(null),
+      },
+      userCourseActivityProgress: {
+        upsert: vi.fn(),
       },
     };
     const learningAccess = {

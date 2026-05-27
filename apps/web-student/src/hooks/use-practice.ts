@@ -17,6 +17,22 @@ export function usePracticeExerciseSets(
   });
 }
 
+export function usePracticeRecommendations(
+  params?: {
+    courseId?: string;
+    unitId?: string;
+    skill?: string;
+  },
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: ['practice-recommendations', params],
+    queryFn: () => practiceApi.getRecommendations(params),
+    enabled,
+    staleTime: 30 * 1000,
+  });
+}
+
 export function usePracticeExerciseSet(id: string, enabled = true) {
   return useQuery({
     queryKey: ['practice-exercise-set', id],

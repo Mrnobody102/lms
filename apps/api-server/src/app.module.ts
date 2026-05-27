@@ -45,6 +45,7 @@ import { CohortModule } from './cohort/cohort.module';
 import { DiscussionModule } from './discussion/discussion.module';
 import { RoleplayModule } from './roleplay/roleplay.module';
 import { NotificationModule } from './notification/notification.module';
+import { StudentModule } from './student/student.module';
 
 @Module({
   imports: [
@@ -125,6 +126,7 @@ import { NotificationModule } from './notification/notification.module';
     MarketplaceModule,
     JobsModule,
     NotificationModule,
+    StudentModule,
   ],
   controllers: [],
   providers: [

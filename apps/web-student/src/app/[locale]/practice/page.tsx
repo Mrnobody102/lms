@@ -3,24 +3,40 @@
 import {
   ArrowRight,
   BookOpen,
-  CheckCircle2,
   Dumbbell,
   FileQuestion,
   History,
+  Layers3,
   Loader2,
-  MessageSquare,
+  RefreshCcw,
   X,
 } from 'lucide-react';
-import { ReactNode, useMemo } from 'react';
+import type { LucideIcon } from 'lucide-react';
+import { useMemo } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { AuthRequiredPanel } from '@/components/auth/auth-required-panel';
 import { StudentNav } from '@/components/layout/student-nav';
 import { useAuthStore } from '@/features/auth/auth.store';
-import { usePracticeAttempts, usePracticeExerciseSets } from '@/hooks/use-practice';
+import { useCourse, useCourses } from '@/hooks/use-courses';
+import {
+  usePracticeAttempts,
+  usePracticeExerciseSets,
+  usePracticeRecommendations,
+} from '@/hooks/use-practice';
+import { useCustomCards, useReviewQueue } from '@/hooks/use-srs';
 import { useSkills } from '@/hooks/use-skills';
-import { getPracticeAttemptStats, type PracticeAttemptSummary } from '@/lib/practice-api';
+import {
+  getPracticeAttemptStats,
+  type PracticeAttemptSummary,
+  type PracticeExerciseSetSummary,
+  type PracticeRecommendation,
+} from '@/lib/practice-api';
 import { Link, usePathname, useRouter } from '@/navigation';
+
+type PracticeTab = 'recommended' | 'sets' | 'review' | 'vocabulary' | 'history';
+
+const VALID_TABS: PracticeTab[] = ['recommended', 'sets', 'review', 'vocabulary', 'history'];
 
 export default function PracticePage() {
   const t = useTranslations('Student');
@@ -29,7 +45,14 @@ export default function PracticePage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { isAuthenticated, isInitialized } = useAuthStore();
-  const skillFilter = searchParams.get('skill');
+
+  const tabParam = searchParams.get('tab');
+  const activeTab: PracticeTab = VALID_TABS.includes(tabParam as PracticeTab)
+    ? (tabParam as PracticeTab)
+    : 'recommended';
+  const courseId = searchParams.get('courseId') ?? undefined;
+  const unitId = searchParams.get('unitId') ?? undefined;
+  const skillFilter = searchParams.get('skill') ?? undefined;
   const selectedSkills = useMemo(
     () =>
       (skillFilter ?? '')
@@ -38,65 +61,67 @@ export default function PracticePage() {
         .filter(Boolean),
     [skillFilter],
   );
+
+  const { data: courseData } = useCourses({ limit: 100 }, isAuthenticated);
+  const courses = courseData?.data ?? [];
+  const { data: selectedCourse } = useCourse(courseId ?? '', isAuthenticated && Boolean(courseId));
   const { data: skills = [] } = useSkills(isAuthenticated);
+  const filters = { courseId, unitId, skill: skillFilter };
+  const {
+    data: recommendations = [],
+    isLoading: recommendationsLoading,
+    isError: recommendationsError,
+  } = usePracticeRecommendations(filters, isAuthenticated);
   const {
     data: exerciseSets = [],
-    isLoading,
-    isError,
-  } = usePracticeExerciseSets(skillFilter ? { skill: skillFilter } : undefined, isAuthenticated);
-  const { data: attempts = [], isError: isAttemptsError } = usePracticeAttempts(
-    { limit: 5 },
+    isLoading: setsLoading,
+    isError: setsError,
+  } = usePracticeExerciseSets(filters, isAuthenticated);
+  const { data: attempts = [], isLoading: attemptsLoading } = usePracticeAttempts(
+    { courseId, limit: 8 },
     isAuthenticated,
   );
-  const overview = useMemo(
-    () => buildPracticeOverview(exerciseSets, attempts),
-    [attempts, exerciseSets],
+  const { data: reviewQueue = [], isLoading: reviewLoading } = useReviewQueue(
+    skillFilter,
+    isAuthenticated,
   );
+  const { data: customCards = [], isLoading: customCardsLoading } = useCustomCards(isAuthenticated);
 
-  const updateSkills = (next: string[]) => {
+  const updateQuery = (updates: Record<string, string | undefined>) => {
     const params = new URLSearchParams(Array.from(searchParams.entries()));
-    if (next.length > 0) {
-      params.set('skill', next.join(','));
-    } else {
-      params.delete('skill');
-    }
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value) {
+        params.set(key, value);
+      } else {
+        params.delete(key);
+      }
+    });
     const query = params.toString();
     router.replace((query ? `${pathname}?${query}` : pathname) as never);
   };
 
   const toggleSkill = (code: string) => {
-    if (selectedSkills.includes(code)) {
-      updateSkills(selectedSkills.filter((s) => s !== code));
-    } else {
-      updateSkills([...selectedSkills, code]);
-    }
+    const next = selectedSkills.includes(code)
+      ? selectedSkills.filter((skill) => skill !== code)
+      : [...selectedSkills, code];
+    updateQuery({ skill: next.length > 0 ? next.join(',') : undefined });
   };
-
-  const clearSkills = () => updateSkills([]);
-
-  const activeSkillLabels = selectedSkills
-    .map((code) => {
-      const found = skills.find((s) => s.code === code);
-      if (!found) return code;
-      return locale.startsWith('vi') && found.nameVi ? found.nameVi : found.name;
-    })
-    .join(', ');
 
   return (
     <div className="min-h-screen bg-background font-sans">
       <StudentNav showLinks />
 
-      <main className="mx-auto max-w-7xl px-6 py-10">
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {isInitialized && !isAuthenticated ? (
           <AuthRequiredPanel returnTo="/practice" />
         ) : (
           <>
-            <header className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <header className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
                 <p className="text-sm font-semibold text-primary">{t('practice.badge')}</p>
-                <h1 className="mt-1 text-3xl font-bold tracking-tight">{t('practice.title')}</h1>
+                <h1 className="mt-1 text-3xl font-bold tracking-tight">{t('practice.hubTitle')}</h1>
                 <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-                  {t('practice.subtitle')}
+                  {t('practice.hubSubtitle')}
                 </p>
               </div>
               <Link
@@ -108,209 +133,320 @@ export default function PracticePage() {
               </Link>
             </header>
 
-            {skills.length > 0 ? (
-              <div className="mb-6 flex flex-wrap items-center gap-2">
-                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {t('practice.skillFilterLabel')}
-                </span>
+            <section className="mb-6 rounded-md border bg-card p-4">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+                <label className="flex flex-1 flex-col gap-1 text-sm font-medium">
+                  <span>{t('practice.filters.course')}</span>
+                  <select
+                    value={courseId ?? ''}
+                    onChange={(event) =>
+                      updateQuery({
+                        courseId: event.target.value || undefined,
+                        unitId: undefined,
+                      })
+                    }
+                    className="h-10 rounded-md border bg-background px-3 text-sm"
+                  >
+                    <option value="">{t('practice.filters.allCourses')}</option>
+                    {courses.map((course) => (
+                      <option key={course.id} value={course.id}>
+                        {course.title}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-1 flex-col gap-1 text-sm font-medium">
+                  <span>{t('practice.filters.unit')}</span>
+                  <select
+                    value={unitId ?? ''}
+                    onChange={(event) => updateQuery({ unitId: event.target.value || undefined })}
+                    disabled={!selectedCourse?.units?.length}
+                    className="h-10 rounded-md border bg-background px-3 text-sm disabled:opacity-60"
+                  >
+                    <option value="">{t('practice.filters.allUnits')}</option>
+                    {(selectedCourse?.units ?? []).map((unit) => (
+                      <option key={unit.id} value={unit.id}>
+                        {unit.title}
+                      </option>
+                    ))}
+                  </select>
+                </label>
                 <button
                   type="button"
-                  onClick={clearSkills}
+                  onClick={() =>
+                    updateQuery({ courseId: undefined, unitId: undefined, skill: undefined })
+                  }
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-md border px-3 text-sm font-medium hover:bg-muted"
+                >
+                  <X className="h-4 w-4" />
+                  {t('practice.filters.clear')}
+                </button>
+              </div>
+
+              {skills.length > 0 ? (
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-medium uppercase text-muted-foreground">
+                    {t('practice.skillFilterLabel')}
+                  </span>
+                  {skills.map((skill) => {
+                    const label =
+                      locale.startsWith('vi') && skill.nameVi ? skill.nameVi : skill.name;
+                    const isActive = selectedSkills.includes(skill.code);
+                    return (
+                      <button
+                        key={skill.id}
+                        type="button"
+                        onClick={() => toggleSkill(skill.code)}
+                        aria-pressed={isActive}
+                        className={
+                          'rounded-full border px-3 py-1 text-xs transition ' +
+                          (isActive
+                            ? 'border-primary bg-primary text-primary-foreground'
+                            : 'border-input hover:bg-muted')
+                        }
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </section>
+
+            <div className="mb-6 flex gap-2 overflow-x-auto pb-1">
+              {VALID_TABS.map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => updateQuery({ tab })}
                   className={
-                    'rounded-full border px-3 py-1 text-xs transition ' +
-                    (selectedSkills.length === 0
+                    'h-10 shrink-0 rounded-md border px-4 text-sm font-medium transition ' +
+                    (activeTab === tab
                       ? 'border-primary bg-primary text-primary-foreground'
-                      : 'border-input hover:bg-muted')
+                      : 'hover:bg-muted')
                   }
                 >
-                  {t('practice.skillFilterAll')}
+                  {t(`practice.tabs.${tab}`)}
                 </button>
-                {skills.map((skill) => {
-                  const label = locale.startsWith('vi') && skill.nameVi ? skill.nameVi : skill.name;
-                  const isActive = selectedSkills.includes(skill.code);
-                  return (
-                    <button
-                      key={skill.id}
-                      type="button"
-                      onClick={() => toggleSkill(skill.code)}
-                      aria-pressed={isActive}
-                      className={
-                        'rounded-full border px-3 py-1 text-xs transition ' +
-                        (isActive
-                          ? 'border-primary bg-primary text-primary-foreground'
-                          : 'border-input hover:bg-muted')
-                      }
-                      style={
-                        isActive && skill.color
-                          ? {
-                              backgroundColor: skill.color,
-                              borderColor: skill.color,
-                              color: '#fff',
-                            }
-                          : undefined
-                      }
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-                {selectedSkills.length > 0 ? (
-                  <button
-                    type="button"
-                    onClick={clearSkills}
-                    className="inline-flex items-center gap-1 rounded-full border border-input px-3 py-1 text-xs hover:bg-muted"
-                  >
-                    <X className="h-3 w-3" />
-                    {t('practice.skillFilterClear')}
-                  </button>
-                ) : null}
-              </div>
+              ))}
+            </div>
+
+            {activeTab === 'recommended' ? (
+              <RecommendationView
+                items={recommendations}
+                loading={recommendationsLoading}
+                error={recommendationsError}
+              />
             ) : null}
-
-            {!isInitialized || isLoading ? (
-              <div className="flex items-center gap-2 rounded-md border p-4 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                {t('practice.loading')}
-              </div>
-            ) : isError ? (
-              <div className="rounded-md border border-destructive/20 bg-destructive/5 p-5 text-sm text-destructive">
-                {t('practice.loadError')}
-              </div>
-            ) : exerciseSets.length === 0 ? (
-              <section className="rounded-md border border-dashed p-8 text-center">
-                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-primary/10 text-primary">
-                  <Dumbbell className="h-5 w-5" />
-                </div>
-                <h2 className="text-lg font-semibold">
-                  {selectedSkills.length > 0
-                    ? t('practice.emptySkillTitle')
-                    : t('practice.emptyTitle')}
-                </h2>
-                <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-                  {selectedSkills.length > 0
-                    ? t('practice.emptySkillDesc', { skill: activeSkillLabels })
-                    : t('practice.emptyDesc')}
-                </p>
-                {selectedSkills.length > 0 ? (
-                  <button
-                    type="button"
-                    onClick={clearSkills}
-                    className="mt-4 inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs hover:bg-muted"
-                  >
-                    <X className="h-3 w-3" />
-                    {t('practice.skillFilterClear')}
-                  </button>
-                ) : null}
-              </section>
-            ) : (
-              <div className="space-y-10">
-                <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-                  <OverviewMetric
-                    icon={<BookOpen className="h-5 w-5" />}
-                    label={t('practice.publishedSets')}
-                    value={t('practice.publishedSetsValue', { count: exerciseSets.length })}
-                  />
-                  <OverviewMetric
-                    icon={<FileQuestion className="h-5 w-5" />}
-                    label={t('practice.totalQuestions')}
-                    value={t('practice.totalQuestionsValue', { count: overview.totalQuestions })}
-                  />
-                  <OverviewMetric
-                    icon={<History className="h-5 w-5" />}
-                    label={t('practice.recentAttempts')}
-                    value={t('practice.recentAttemptValue', { count: attempts.length })}
-                  />
-                  <OverviewMetric
-                    icon={<CheckCircle2 className="h-5 w-5" />}
-                    label={t('practice.averageAccuracy')}
-                    value={t('practice.averageAccuracyValue', { value: overview.averageAccuracy })}
-                  />
-                  <OverviewMetric
-                    icon={<MessageSquare className="h-5 w-5" />}
-                    label={t('practice.aiReviewSummary')}
-                    value={t('practice.aiReviewSummaryValue', {
-                      reviewed: overview.aiReviewedCount,
-                      pending: overview.aiPendingCount,
-                    })}
-                  />
-                </section>
-
-                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                  {exerciseSets.map((set) => (
-                    <article
-                      key={set.id}
-                      className="flex min-h-[220px] flex-col rounded-md border bg-card p-5 transition-colors hover:border-primary/40"
-                    >
-                      <div className="mb-4 flex items-start justify-between gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-primary">
-                          <FileQuestion className="h-5 w-5" />
-                        </div>
-                        <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground">
-                          {t('practice.questionCount', { count: set._count?.questions ?? 0 })}
-                        </span>
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <h2 className="line-clamp-2 text-base font-semibold">{set.title}</h2>
-                        <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
-                          {set.description || t('practice.noDescription')}
-                        </p>
-                        <div className="mt-4 flex flex-wrap gap-2 text-xs text-muted-foreground">
-                          <span className="rounded-md border px-2 py-1">
-                            {set.course?.title ?? t('practice.courseFallback')}
-                          </span>
-                          {set.unit?.title && (
-                            <span className="rounded-md border px-2 py-1">{set.unit.title}</span>
-                          )}
-                        </div>
-                      </div>
-
-                      <Link
-                        href={`/practice/${set.id}`}
-                        className="mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90"
-                      >
-                        {t('practice.start')}
-                        <ArrowRight className="h-4 w-4" />
-                      </Link>
-                    </article>
-                  ))}
-                </div>
-
-                <section className="rounded-md border bg-card p-6">
-                  <div className="mb-5 flex items-start gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-primary">
-                      <History className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h2 className="text-lg font-semibold">{t('practice.recentAttempts')}</h2>
-                      <p className="text-sm text-muted-foreground">
-                        {t('practice.recentAttemptsDesc')}
-                      </p>
-                    </div>
-                  </div>
-
-                  {isAttemptsError ? (
-                    <div className="rounded-md border border-destructive/20 bg-destructive/5 p-5 text-sm text-destructive">
-                      {t('practice.attemptsLoadError')}
-                    </div>
-                  ) : attempts.length === 0 ? (
-                    <div className="rounded-md border border-dashed p-5 text-sm text-muted-foreground">
-                      {t('practice.noAttempts')}
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {attempts.map((attempt) => (
-                        <PracticeAttemptRow key={attempt.id} attempt={attempt} locale={locale} />
-                      ))}
-                    </div>
-                  )}
-                </section>
-              </div>
-            )}
+            {activeTab === 'sets' ? (
+              <ExerciseSetView items={exerciseSets} loading={setsLoading} error={setsError} />
+            ) : null}
+            {activeTab === 'review' ? (
+              <ReviewView queueCount={reviewQueue.length} loading={reviewLoading} />
+            ) : null}
+            {activeTab === 'vocabulary' ? (
+              <VocabularyView cardCount={customCards.length} loading={customCardsLoading} />
+            ) : null}
+            {activeTab === 'history' ? (
+              <HistoryView attempts={attempts} loading={attemptsLoading} locale={locale} />
+            ) : null}
           </>
         )}
       </main>
     </div>
+  );
+}
+
+function RecommendationView({
+  items,
+  loading,
+  error,
+}: {
+  items: PracticeRecommendation[];
+  loading: boolean;
+  error: boolean;
+}) {
+  const t = useTranslations('Student');
+
+  if (loading) return <LoadingLine label={t('practice.loading')} />;
+  if (error) return <ErrorBox label={t('practice.loadError')} />;
+  if (items.length === 0)
+    return <EmptyBox title={t('practice.emptyTitle')} desc={t('practice.emptyDesc')} />;
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      {items.map((item) => (
+        <PracticeCard key={item.id} item={item} reason={item.recommendationReason} />
+      ))}
+    </div>
+  );
+}
+
+function ExerciseSetView({
+  items,
+  loading,
+  error,
+}: {
+  items: PracticeExerciseSetSummary[];
+  loading: boolean;
+  error: boolean;
+}) {
+  const t = useTranslations('Student');
+
+  if (loading) return <LoadingLine label={t('practice.loading')} />;
+  if (error) return <ErrorBox label={t('practice.loadError')} />;
+  if (items.length === 0)
+    return <EmptyBox title={t('practice.emptyTitle')} desc={t('practice.emptyDesc')} />;
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      {items.map((item) => (
+        <PracticeCard key={item.id} item={item} />
+      ))}
+    </div>
+  );
+}
+
+function ReviewView({ queueCount, loading }: { queueCount: number; loading: boolean }) {
+  const t = useTranslations('Student');
+
+  if (loading) return <LoadingLine label={t('srs.loading')} />;
+
+  return (
+    <section className="rounded-md border bg-card p-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <IconFrame icon={RefreshCcw} />
+          <div>
+            <h2 className="text-lg font-semibold">{t('practice.reviewTabTitle')}</h2>
+            <p className="text-sm text-muted-foreground">
+              {queueCount > 0
+                ? t('srs.dailyReviewSubtitle', { count: queueCount })
+                : t('srs.dailyReviewEmptyDesc')}
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/review"
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90"
+        >
+          {t('srs.dailyReviewCta')}
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+function VocabularyView({ cardCount, loading }: { cardCount: number; loading: boolean }) {
+  const t = useTranslations('Student');
+
+  if (loading) return <LoadingLine label={t('srs.customCards.loading')} />;
+
+  return (
+    <section className="rounded-md border bg-card p-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <IconFrame icon={Layers3} />
+          <div>
+            <h2 className="text-lg font-semibold">{t('srs.customCards.title')}</h2>
+            <p className="text-sm text-muted-foreground">
+              {t('practice.vocabularyTabDesc', { count: cardCount })}
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/vocabulary"
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90"
+        >
+          {t('srs.customCards.managerTitle')}
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+function HistoryView({
+  attempts,
+  loading,
+  locale,
+}: {
+  attempts: PracticeAttemptSummary[];
+  loading: boolean;
+  locale: string;
+}) {
+  const t = useTranslations('Student');
+
+  if (loading) return <LoadingLine label={t('practice.loading')} />;
+  if (attempts.length === 0) {
+    return <EmptyBox title={t('practice.recentAttempts')} desc={t('practice.noAttempts')} />;
+  }
+
+  return (
+    <section className="rounded-md border bg-card p-5">
+      <div className="mb-4 flex items-start gap-3">
+        <IconFrame icon={History} />
+        <div>
+          <h2 className="text-lg font-semibold">{t('practice.recentAttempts')}</h2>
+          <p className="text-sm text-muted-foreground">{t('practice.recentAttemptsDesc')}</p>
+        </div>
+      </div>
+      <div className="space-y-3">
+        {attempts.map((attempt) => (
+          <PracticeAttemptRow key={attempt.id} attempt={attempt} locale={locale} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function PracticeCard({
+  item,
+  reason,
+}: {
+  item: PracticeExerciseSetSummary | PracticeRecommendation;
+  reason?: string;
+}) {
+  const t = useTranslations('Student');
+
+  return (
+    <article className="flex min-h-[220px] flex-col rounded-md border bg-card p-5 transition-colors hover:border-primary/40">
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <IconFrame icon={FileQuestion} />
+        <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+          {t('practice.questionCount', { count: item._count?.questions ?? 0 })}
+        </span>
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          {reason ? (
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+              {t(`practice.recommendationReason.${reason}`)}
+            </span>
+          ) : null}
+        </div>
+        <h2 className="mt-2 line-clamp-2 text-base font-semibold">{item.title}</h2>
+        <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
+          {item.description || t('practice.noDescription')}
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2 text-xs text-muted-foreground">
+          <span className="rounded-md border px-2 py-1">
+            {item.course?.title ?? t('practice.courseFallback')}
+          </span>
+          {item.unit?.title ? (
+            <span className="rounded-md border px-2 py-1">{item.unit.title}</span>
+          ) : null}
+        </div>
+      </div>
+      <Link
+        href={`/practice/${item.id}`}
+        className="mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90"
+      >
+        {t('practice.start')}
+        <ArrowRight className="h-4 w-4" />
+      </Link>
+    </article>
   );
 }
 
@@ -344,22 +480,14 @@ function PracticeAttemptRow({
         </div>
         <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
           <span className="rounded-md border px-2 py-1">{attempt.exerciseSet.course.title}</span>
-          {attempt.exerciseSet.unit?.title && (
+          {attempt.exerciseSet.unit?.title ? (
             <span className="rounded-md border px-2 py-1">{attempt.exerciseSet.unit.title}</span>
-          )}
+          ) : null}
           <span className="rounded-md border px-2 py-1">
             {t('practice.attemptSubmittedAtValue', {
               value: formatDateTime(attempt.submittedAt, locale),
             })}
           </span>
-          {stats.aiAnsweredCount > 0 && (
-            <span className="rounded-md border px-2 py-1">
-              {t('practice.aiReviewSummaryValue', {
-                reviewed: stats.aiReviewedCount,
-                pending: stats.aiPendingCount,
-              })}
-            </span>
-          )}
         </div>
       </div>
 
@@ -374,17 +502,40 @@ function PracticeAttemptRow({
   );
 }
 
-function OverviewMetric({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+function LoadingLine({ label }: { label: string }) {
   return (
-    <article className="rounded-md border bg-card p-4">
-      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-primary">
-        {icon}
+    <div className="flex items-center gap-2 rounded-md border p-4 text-sm text-muted-foreground">
+      <Loader2 className="h-4 w-4 animate-spin" />
+      {label}
+    </div>
+  );
+}
+
+function ErrorBox({ label }: { label: string }) {
+  return (
+    <div className="rounded-md border border-destructive/20 bg-destructive/5 p-5 text-sm text-destructive">
+      {label}
+    </div>
+  );
+}
+
+function EmptyBox({ title, desc }: { title: string; desc: string }) {
+  return (
+    <section className="rounded-md border border-dashed p-8 text-center">
+      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-primary/10 text-primary">
+        <Dumbbell className="h-5 w-5" />
       </div>
-      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-        {label}
-      </p>
-      <p className="mt-2 text-lg font-semibold leading-tight">{value}</p>
-    </article>
+      <h2 className="text-lg font-semibold">{title}</h2>
+      <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">{desc}</p>
+    </section>
+  );
+}
+
+function IconFrame({ icon: Icon }: { icon: LucideIcon }) {
+  return (
+    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+      <Icon className="h-5 w-5" />
+    </span>
   );
 }
 
@@ -393,35 +544,4 @@ function formatDateTime(value: string, locale: string) {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(value));
-}
-
-type PracticeOverviewAttempt = {
-  score: number;
-  totalPoints: number;
-  stats?: PracticeAttemptSummary['stats'];
-};
-
-function buildPracticeOverview(
-  exerciseSets: Array<{ _count?: { questions: number } }>,
-  attempts: PracticeOverviewAttempt[],
-) {
-  const totalQuestions = exerciseSets.reduce((sum, set) => sum + (set._count?.questions ?? 0), 0);
-  const totalScore = attempts.reduce((sum, attempt) => sum + attempt.score, 0);
-  const totalPoints = attempts.reduce((sum, attempt) => sum + Math.max(attempt.totalPoints, 0), 0);
-  const averageAccuracy = totalPoints > 0 ? Math.round((totalScore / totalPoints) * 100) : 0;
-  const aiReviewedCount = attempts.reduce(
-    (sum, attempt) => sum + getPracticeAttemptStats(attempt).aiReviewedCount,
-    0,
-  );
-  const aiPendingCount = attempts.reduce(
-    (sum, attempt) => sum + getPracticeAttemptStats(attempt).aiPendingCount,
-    0,
-  );
-
-  return {
-    totalQuestions,
-    averageAccuracy,
-    aiReviewedCount,
-    aiPendingCount,
-  };
 }

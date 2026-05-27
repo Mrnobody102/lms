@@ -158,6 +158,13 @@ describe('ExamService', () => {
           answers: [],
         }),
       },
+      courseActivity: {
+        findFirst: vi.fn().mockResolvedValue(null),
+      },
+      userCourseActivityProgress: {
+        findUnique: vi.fn(),
+        upsert: vi.fn(),
+      },
     };
     const learningAccess = {
       ensureCourseAccess: vi.fn().mockResolvedValue(undefined),
@@ -313,6 +320,13 @@ describe('ExamService', () => {
           createdAt: startedAt,
         }),
         create: vi.fn(),
+      },
+      courseActivity: {
+        findFirst: vi.fn().mockResolvedValue(null),
+      },
+      userCourseActivityProgress: {
+        findUnique: vi.fn(),
+        upsert: vi.fn(),
       },
     };
     const learningAccess = {
