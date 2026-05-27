@@ -17,12 +17,22 @@ import {
   useRecordLessonActivity,
   useUpdateProgress,
 } from '../../../../hooks/use-progress';
-import { LearningActivityType, ProgressStatus } from '../../../../lib/progress-api';
+import {
+  LearningActivityType,
+  ProgressStatus,
+  type UserLessonProgress,
+} from '../../../../lib/progress-api';
+
+type CompletionFeedback = { kind: 'success' | 'error'; message: string };
 
 export default function LessonPage() {
   const t = useTranslations('Student');
   const { isAuthenticated, isInitialized } = useAuthStore();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [optimisticCompletedLessonId, setOptimisticCompletedLessonId] = useState<string | null>(
+    null,
+  );
+  const [completionFeedback, setCompletionFeedback] = useState<CompletionFeedback | null>(null);
 
   useEffect(() => {
     const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
@@ -93,6 +103,11 @@ export default function LessonPage() {
     });
   }, [canLoadProtectedLesson, currentLesson, recordLessonActivity]);
 
+  useEffect(() => {
+    setOptimisticCompletedLessonId(null);
+    setCompletionFeedback(null);
+  }, [currentLesson?.id]);
+
   if (isInitialized && !isAuthenticated) {
     return (
       <div className="h-screen bg-background">
@@ -134,19 +149,46 @@ export default function LessonPage() {
     currentIndex >= 0 && currentIndex < (course.lessons?.length ?? 0) - 1
       ? (course.lessons?.[currentIndex + 1] ?? null)
       : null;
-  const isCompleted = progress.some(
+  const serverCompleted = progress.some(
     (p) => p.lessonId === currentLesson.id && p.status === ProgressStatus.COMPLETED,
   );
+  const isOptimisticallyCompleted = optimisticCompletedLessonId === currentLesson.id;
+  const isCompleted = serverCompleted || isOptimisticallyCompleted;
+  const displayProgress: UserLessonProgress[] =
+    isOptimisticallyCompleted && !serverCompleted
+      ? [
+          ...progress,
+          {
+            id: `optimistic-${currentLesson.id}`,
+            lessonId: currentLesson.id,
+            status: ProgressStatus.COMPLETED,
+            updatedAt: new Date().toISOString(),
+          },
+        ]
+      : progress;
 
   const handleComplete = () => {
-    if (isCompleted) {
+    if (isCompleted || updateProgress.isPending) {
       return;
     }
 
-    updateProgress.mutate({
-      lessonId: currentLesson.id,
-      status: ProgressStatus.COMPLETED,
-    });
+    setOptimisticCompletedLessonId(currentLesson.id);
+    setCompletionFeedback(null);
+    updateProgress.mutate(
+      {
+        lessonId: currentLesson.id,
+        status: ProgressStatus.COMPLETED,
+      },
+      {
+        onSuccess: () => {
+          setCompletionFeedback({ kind: 'success', message: t('lesson.progressSaved') });
+        },
+        onError: () => {
+          setOptimisticCompletedLessonId(null);
+          setCompletionFeedback({ kind: 'error', message: t('lesson.progressSaveError') });
+        },
+      },
+    );
   };
 
   return (
@@ -165,7 +207,22 @@ export default function LessonPage() {
             nextLesson={nextLesson}
             onComplete={handleComplete}
             isCompleted={isCompleted}
+            isCompleting={updateProgress.isPending}
           />
+          {completionFeedback ? (
+            <div className="mx-auto mb-4 w-full max-w-5xl px-4 sm:px-6 lg:px-10">
+              <div
+                role="status"
+                className={`rounded-md border px-4 py-3 text-sm font-medium ${
+                  completionFeedback.kind === 'success'
+                    ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                    : 'border-destructive/20 bg-destructive/10 text-destructive'
+                }`}
+              >
+                {completionFeedback.message}
+              </div>
+            </div>
+          ) : null}
           <div className="mx-auto mb-10 w-full max-w-5xl px-4 sm:px-6 lg:px-10">
             <CourseCertificatePanel courseId={currentLesson.courseId} />
           </div>
@@ -175,7 +232,7 @@ export default function LessonPage() {
         <LessonSidebar
           course={course}
           currentLesson={currentLesson}
-          progress={progress}
+          progress={displayProgress}
           isSidebarOpen={isSidebarOpen}
           onClose={handleCloseSidebar}
         />

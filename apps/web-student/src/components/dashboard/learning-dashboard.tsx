@@ -165,7 +165,7 @@ function PrimaryTaskCard({ task }: { task: TodayTask }) {
 
   return (
     <section className="rounded-md border bg-primary p-5 text-primary-foreground">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
         <div className="flex min-w-0 items-start gap-4">
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-primary-foreground/15">
             {renderTaskIcon(task.type, 'h-6 w-6')}
@@ -180,7 +180,7 @@ function PrimaryTaskCard({ task }: { task: TodayTask }) {
         </div>
         <Link
           href={task.href}
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-background px-4 text-sm font-semibold text-foreground hover:bg-background/90"
+          className="inline-flex h-12 min-w-[8rem] shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md bg-background px-5 text-sm font-semibold text-foreground hover:bg-background/90"
         >
           {getTaskCta(task.type, t)}
           <ArrowRight className="h-4 w-4" />

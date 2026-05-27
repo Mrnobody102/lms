@@ -102,33 +102,7 @@ export function TextContent({ content, title, duration, onComplete }: TextConten
 
       {/* Article body */}
       <div className="rounded-2xl bg-card border border-border shadow-sm overflow-hidden">
-        <div
-          className={`
-            prose prose-base dark:prose-invert max-w-none p-6 sm:p-8 lg:p-10
-            prose-headings:font-black prose-headings:tracking-tight
-            prose-h2:text-xl prose-h2:border-b prose-h2:pb-3 prose-h2:mb-5 prose-h2:border-border
-            prose-h3:text-base prose-h3:mt-6 prose-h3:mb-3
-            prose-table:w-full prose-table:border-collapse
-            prose-thead:bg-muted/60
-            prose-th:border prose-th:border-border prose-th:px-4 prose-th:py-2.5 prose-th:text-left prose-th:text-sm prose-th:font-bold
-            prose-td:border prose-td:border-border prose-td:px-4 prose-td:py-2.5 prose-td:text-sm
-            prose-tr:even:bg-muted/20
-            prose-ul:space-y-1.5 prose-li:text-sm
-            prose-blockquote:border-l-4 prose-blockquote:border-primary/40 prose-blockquote:bg-primary/5 prose-blockquote:rounded-r-xl prose-blockquote:py-2 prose-blockquote:not-italic
-            prose-p:text-muted-foreground prose-p:leading-relaxed
-            prose-strong:text-foreground prose-strong:font-bold
-            prose-a:text-primary prose-a:font-semibold prose-a:underline-offset-4 hover:prose-a:underline
-            prose-img:rounded-xl prose-img:border prose-img:border-border prose-img:shadow-sm
-            prose-figure:my-7 prose-figcaption:mt-2 prose-figcaption:text-center prose-figcaption:text-xs prose-figcaption:text-muted-foreground
-            prose-code:rounded prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:text-foreground prose-code:before:content-[''] prose-code:after:content-['']
-            prose-pre:rounded-xl prose-pre:border prose-pre:border-border prose-pre:bg-muted prose-pre:text-foreground
-            prose-hr:border-border prose-hr:my-8
-            prose-mark:rounded prose-mark:bg-yellow-200/70 prose-mark:px-1 dark:prose-mark:bg-yellow-500/25 dark:prose-mark:text-yellow-100
-            [&_aside]:my-6 [&_aside]:rounded-xl [&_aside]:border [&_aside]:border-primary/20 [&_aside]:bg-primary/5 [&_aside]:p-4 [&_aside]:text-sm
-            [&_[data-lesson-diagram]]:my-6 [&_[data-lesson-diagram]]:rounded-xl [&_[data-lesson-diagram]]:border [&_[data-lesson-diagram]]:border-border [&_[data-lesson-diagram]]:bg-muted/30 [&_[data-lesson-diagram]]:p-5
-            [&_[data-lesson-diagram]_ol]:mb-0 [&_[data-lesson-diagram]_ul]:mb-0
-          `}
-        >
+        <div className="lesson-rich-content p-6 sm:p-8 lg:p-10">
           {content ? (
             <>
               <div dangerouslySetInnerHTML={{ __html: safeContent }} />

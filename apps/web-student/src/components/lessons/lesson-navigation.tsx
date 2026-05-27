@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronLeft, ChevronRight, CheckCircle2, Lock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle2, Loader2, Lock } from 'lucide-react';
 import { Link } from '../../navigation';
 import { useTranslations } from 'next-intl';
 import { Lesson } from '../../lib/course-api';
@@ -10,6 +10,7 @@ interface LessonNavigationProps {
   nextLesson: Lesson | null;
   onComplete: () => void;
   isCompleted: boolean;
+  isCompleting?: boolean;
 }
 
 export function LessonNavigation({
@@ -17,6 +18,7 @@ export function LessonNavigation({
   nextLesson,
   onComplete,
   isCompleted,
+  isCompleting = false,
 }: LessonNavigationProps) {
   const t = useTranslations('Student');
 
@@ -47,28 +49,36 @@ export function LessonNavigation({
         {/* Complete button */}
         <button
           onClick={onComplete}
-          disabled={isCompleted}
-          className={`group relative flex items-center justify-center gap-2 overflow-hidden rounded-xl px-5 py-2 text-sm font-bold shadow-lg transition-all active:scale-95 ${
+          disabled={isCompleted || isCompleting}
+          className={`group relative flex min-w-[12rem] items-center justify-center gap-2 overflow-hidden rounded-xl px-5 py-2 text-sm font-bold shadow-lg transition-all active:scale-95 ${
             isCompleted
-              ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 cursor-default shadow-none'
+              ? 'cursor-default border border-emerald-500/20 bg-emerald-500/10 text-emerald-500 shadow-none'
               : 'bg-emerald-500 text-white shadow-emerald-500/30 hover:bg-emerald-600'
-          }`}
+          } ${isCompleting ? 'cursor-wait opacity-80' : ''}`}
         >
-          {!isCompleted && (
-            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+          {!isCompleted && !isCompleting ? (
+            <div className="absolute inset-0 translate-y-full bg-white/20 transition-transform duration-300 group-hover:translate-y-0" />
+          ) : null}
+          {isCompleting ? (
+            <Loader2 className="relative z-10 h-4 w-4 animate-spin" />
+          ) : (
+            <CheckCircle2
+              className={`relative z-10 h-4 w-4 ${!isCompleted ? 'transition-transform group-hover:scale-110' : ''}`}
+            />
           )}
-          <CheckCircle2
-            className={`relative z-10 h-4 w-4 ${!isCompleted && 'transition-transform group-hover:scale-110'}`}
-          />
           <span className="relative z-10">
-            {isCompleted ? t('lesson.completed') : t('lesson.complete')}
+            {isCompleting
+              ? t('lesson.savingProgress')
+              : isCompleted
+                ? t('lesson.completed')
+                : t('lesson.complete')}
           </span>
         </button>
 
         {/* Next – only clickable after completing */}
         <div className="flex-shrink-0">
           {nextLesson ? (
-            isCompleted ? (
+            isCompleted && !isCompleting ? (
               <Link
                 href={`/lessons/${nextLesson.id}`}
                 className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/30 transition-all hover:opacity-90 hover:translate-x-0.5 active:scale-95"
