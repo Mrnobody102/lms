@@ -58,6 +58,7 @@ pnpm --filter super-portal dev
 | Web Student  | `http://localhost:3100`          |
 | Web Admin    | `http://localhost:3101`          |
 | Super Portal | `http://localhost:3102`          |
+| Web Sales    | `http://localhost:3103`          |
 | API          | `http://localhost:4000/api`      |
 | Swagger      | `http://localhost:4000/api/docs` |
 
@@ -131,6 +132,7 @@ curl -X POST http://localhost:4000/api/auth/logout \
 | `PORT`                        | Port API server                                                                  |
 | `APP_PUBLIC_URL`              | Public API host cho log/runbook; local dev có thể bỏ trống                       |
 | `NEXT_PUBLIC_WEB_STUDENT_URL` | Public Web Student host dùng cho reset-password links                            |
+| `NEXT_PUBLIC_WEB_SALES_URL`   | Public Web Sales host dùng để student guest link sang danh mục khóa học          |
 | `NODE_ENV`                    | `development` hoặc `production`                                                  |
 | `CORS_ORIGINS`                | Exact frontend origins, phân tách bằng dấu phẩy; production bắt buộc             |
 | `REDIS_URL`                   | URL `redis://` hoặc `rediss://`; production readiness bắt buộc                   |

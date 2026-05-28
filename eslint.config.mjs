@@ -11,6 +11,7 @@ const rootDir = dirname(fileURLToPath(import.meta.url));
 const nextFiles = [
   'apps/web-admin/**/*.{js,jsx,ts,tsx}',
   'apps/web-student/**/*.{js,jsx,ts,tsx}',
+  'apps/web-sales/**/*.{js,jsx,ts,tsx}',
   'apps/super-portal/**/*.{js,jsx,ts,tsx}',
 ];
 const backendAndPackageFiles = ['apps/api-server/**/*.ts', 'packages/**/*.{ts,tsx}'];

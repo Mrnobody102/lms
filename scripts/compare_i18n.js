@@ -6,6 +6,7 @@ const path = require('path');
 const APPS = [
   { name: 'web-admin', root: 'apps/web-admin' },
   { name: 'web-student', root: 'apps/web-student' },
+  { name: 'web-sales', root: 'apps/web-sales' },
   { name: 'super-portal', root: 'apps/super-portal' },
 ];
 

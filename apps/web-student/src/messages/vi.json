@@ -77,6 +77,21 @@
       "description": "Nội dung học tập chỉ hiển thị sau khi đăng nhập. Vui lòng đăng nhập để tiếp tục.",
       "loginCta": "Đi đến trang đăng nhập"
     },
+    "guestHome": {
+      "badge": "Cổng học viên",
+      "title": "Đăng nhập để tiếp tục học",
+      "subtitle": "Mở các khóa đã được cấp quyền, học tiếp bài phù hợp và theo dõi luyện tập, ôn tập, kiểm tra, chứng chỉ tại một nơi.",
+      "loginCta": "Đăng nhập",
+      "activationCta": "Kích hoạt mã",
+      "salesCta": "Xem khóa học",
+      "panelTitle": "Sau khi đăng nhập, bạn có thể",
+      "benefitDashboard": "Xem bảng hôm nay",
+      "benefitDashboardDesc": "Biết bài nên học tiếp, ôn tập đến hạn, bài thi đang mở và kỹ năng còn yếu.",
+      "benefitPractice": "Luyện tập và ôn tập",
+      "benefitPracticeDesc": "Tiếp tục bài luyện, SRS, roleplay và nhận phản hồi AI theo khóa học.",
+      "benefitProgress": "Theo dõi tiến độ",
+      "benefitProgressDesc": "Theo dõi hoàn thành, chứng chỉ và đúng nội dung cần học tiếp."
+    },
     "nav": {
       "courses": "Khóa học",
       "vocab": "Từ vựng",

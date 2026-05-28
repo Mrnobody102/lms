@@ -8,13 +8,16 @@ FROM base AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_WEB_SALES_URL
 ARG NEXT_PUBLIC_TENANT_ID
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_WEB_SALES_URL=$NEXT_PUBLIC_WEB_SALES_URL
 ENV NEXT_PUBLIC_TENANT_ID=$NEXT_PUBLIC_TENANT_ID
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 COPY apps/api-server/package.json ./apps/api-server/package.json
 COPY apps/web-admin/package.json ./apps/web-admin/package.json
 COPY apps/web-student/package.json ./apps/web-student/package.json
+COPY apps/web-sales/package.json ./apps/web-sales/package.json
 COPY apps/super-portal/package.json ./apps/super-portal/package.json
 COPY packages/api-client/package.json ./packages/api-client/package.json
 COPY packages/database/package.json ./packages/database/package.json

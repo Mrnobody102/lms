@@ -40,6 +40,7 @@ import { StorageModule } from './storage/storage.module';
 import { MediaModule } from './media/media.module';
 import { JobsModule } from './jobs/jobs.module';
 import { MarketplaceModule } from './marketplace/marketplace.module';
+import { PublicCatalogModule } from './public-catalog/public-catalog.module';
 
 import { CohortModule } from './cohort/cohort.module';
 import { DiscussionModule } from './discussion/discussion.module';
@@ -124,6 +125,7 @@ import { StudentModule } from './student/student.module';
     StorageModule,
     MediaModule,
     MarketplaceModule,
+    PublicCatalogModule,
     JobsModule,
     NotificationModule,
     StudentModule,

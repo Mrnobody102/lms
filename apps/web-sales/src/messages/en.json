@@ -1,0 +1,75 @@
+{
+  "Sales": {
+    "common": {
+      "errorTitle": "Something went wrong",
+      "retry": "Try again"
+    },
+    "home": {
+      "badge": "Public course catalog",
+      "title": "Courses built for measurable learning progress",
+      "subtitle": "Explore published courses, preview the learning path, and sign in to continue with your enrolled content.",
+      "viewCourses": "View courses",
+      "studentLogin": "Student login",
+      "heroImageAlt": "Students learning in a modern classroom",
+      "valuePath": "Clear learning paths",
+      "valuePathDesc": "Preview the course structure before opening your student portal.",
+      "valuePractice": "Practice-ready content",
+      "valuePracticeDesc": "Courses connect lessons, practice, checks, and review in one flow.",
+      "valueProgress": "Progress tracking",
+      "valueProgressDesc": "After activation, students continue from the right item every time.",
+      "courseEyebrow": "Featured",
+      "featuredTitle": "Published courses",
+      "featuredSubtitle": "Browse the latest courses available for this learning center.",
+      "allCourses": "All courses",
+      "loadError": "Could not load published courses right now.",
+      "emptyCourses": "No public courses have been published yet."
+    },
+    "courses": {
+      "backHome": "Back home",
+      "eyebrow": "Catalog",
+      "title": "All published courses",
+      "subtitle": "Find the course that matches your current level, then sign in to start learning.",
+      "searchPlaceholder": "Search courses",
+      "search": "Search",
+      "loadError": "Could not load courses right now.",
+      "empty": "No public courses are available yet.",
+      "emptySearch": "No courses match this search.",
+      "resultCount": "{count, plural, =0 {No courses} one {# course} other {# courses}}",
+      "previous": "Previous",
+      "next": "Next",
+      "pageCount": "Page {page} of {totalPages}"
+    },
+    "courseCard": {
+      "published": "Published",
+      "noDescription": "Course details are being updated.",
+      "lessons": "{count, plural, =0 {No lessons} one {# lesson} other {# lessons}}",
+      "units": "{count, plural, =0 {No units} one {# unit} other {# units}}",
+      "duration": "{minutes} min",
+      "viewDetail": "View details"
+    },
+    "detail": {
+      "backToCourses": "Back to courses",
+      "loadErrorTitle": "Course unavailable",
+      "loadError": "This course is not published or could not be loaded.",
+      "lessons": "Lessons",
+      "units": "Units",
+      "duration": "Duration",
+      "durationValue": "{minutes} min",
+      "curriculumEyebrow": "Preview",
+      "curriculum": "Course curriculum",
+      "curriculumDesc": "Only public lesson titles and estimated duration are shown here. Learning content opens after login.",
+      "lessonCount": "{count, plural, =0 {No lessons} one {# lesson} other {# lessons}}",
+      "ungrouped": "Other lessons",
+      "emptyCurriculum": "The public curriculum preview is being updated.",
+      "noLessons": "No public lessons in this unit yet.",
+      "minuteValue": "{minutes} min",
+      "ctaTitle": "Ready to learn?",
+      "ctaDesc": "Sign in with your student account or activate a code issued by your center.",
+      "loginCta": "Login to study",
+      "activationCta": "Activate course",
+      "benefitAccess": "Open enrolled lessons in the student portal.",
+      "benefitPractice": "Continue practice, review, exams, and roleplay.",
+      "benefitProgress": "Track completion and next recommended work."
+    }
+  }
+}

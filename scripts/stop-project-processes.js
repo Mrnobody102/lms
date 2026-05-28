@@ -5,7 +5,7 @@ const { spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-const DEFAULT_PORTS = [3000, 3001, 3002, 3100, 3101, 3102, 4000];
+const DEFAULT_PORTS = [3000, 3001, 3002, 3100, 3101, 3102, 3103, 4000];
 const repoRoot = path.resolve(__dirname, '..').toLowerCase();
 const stopped = new Set();
 

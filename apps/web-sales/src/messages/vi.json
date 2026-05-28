@@ -1,0 +1,75 @@
+{
+  "Sales": {
+    "common": {
+      "errorTitle": "Có lỗi xảy ra",
+      "retry": "Thử lại"
+    },
+    "home": {
+      "badge": "Danh mục khóa học công khai",
+      "title": "Khóa học được xây dựng để thấy rõ tiến bộ",
+      "subtitle": "Khám phá các khóa đã xuất bản, xem trước lộ trình học và đăng nhập để tiếp tục nội dung đã được cấp quyền.",
+      "viewCourses": "Xem khóa học",
+      "studentLogin": "Đăng nhập học viên",
+      "heroImageAlt": "Học viên học trong lớp học hiện đại",
+      "valuePath": "Lộ trình rõ ràng",
+      "valuePathDesc": "Xem trước cấu trúc khóa học trước khi mở cổng học viên.",
+      "valuePractice": "Sẵn sàng luyện tập",
+      "valuePracticeDesc": "Khóa học kết nối bài học, luyện tập, kiểm tra và ôn tập trong một luồng.",
+      "valueProgress": "Theo dõi tiến độ",
+      "valueProgressDesc": "Sau khi kích hoạt, học viên luôn tiếp tục đúng nội dung cần học.",
+      "courseEyebrow": "Nổi bật",
+      "featuredTitle": "Khóa học đã xuất bản",
+      "featuredSubtitle": "Xem các khóa mới nhất đang mở tại trung tâm này.",
+      "allCourses": "Tất cả khóa học",
+      "loadError": "Không thể tải khóa học đã xuất bản lúc này.",
+      "emptyCourses": "Chưa có khóa học công khai nào được xuất bản."
+    },
+    "courses": {
+      "backHome": "Về trang chủ",
+      "eyebrow": "Danh mục",
+      "title": "Tất cả khóa học đã xuất bản",
+      "subtitle": "Tìm khóa phù hợp với trình độ hiện tại, sau đó đăng nhập để bắt đầu học.",
+      "searchPlaceholder": "Tìm khóa học",
+      "search": "Tìm",
+      "loadError": "Không thể tải khóa học lúc này.",
+      "empty": "Chưa có khóa học công khai nào.",
+      "emptySearch": "Không có khóa học khớp tìm kiếm này.",
+      "resultCount": "{count, plural, =0 {Chưa có khóa học} one {# khóa học} other {# khóa học}}",
+      "previous": "Trước",
+      "next": "Tiếp",
+      "pageCount": "Trang {page}/{totalPages}"
+    },
+    "courseCard": {
+      "published": "Đã xuất bản",
+      "noDescription": "Thông tin khóa học đang được cập nhật.",
+      "lessons": "{count, plural, =0 {Chưa có bài học} one {# bài học} other {# bài học}}",
+      "units": "{count, plural, =0 {Chưa có unit} one {# unit} other {# unit}}",
+      "duration": "{minutes} phút",
+      "viewDetail": "Xem chi tiết"
+    },
+    "detail": {
+      "backToCourses": "Quay lại khóa học",
+      "loadErrorTitle": "Khóa học không khả dụng",
+      "loadError": "Khóa học này chưa được xuất bản hoặc không thể tải.",
+      "lessons": "Bài học",
+      "units": "Unit",
+      "duration": "Thời lượng",
+      "durationValue": "{minutes} phút",
+      "curriculumEyebrow": "Xem trước",
+      "curriculum": "Nội dung khóa học",
+      "curriculumDesc": "Trang này chỉ hiển thị tiêu đề bài học và thời lượng dự kiến. Nội dung học mở sau khi đăng nhập.",
+      "lessonCount": "{count, plural, =0 {Chưa có bài học} one {# bài học} other {# bài học}}",
+      "ungrouped": "Bài học khác",
+      "emptyCurriculum": "Phần xem trước nội dung đang được cập nhật.",
+      "noLessons": "Unit này chưa có bài học công khai.",
+      "minuteValue": "{minutes} phút",
+      "ctaTitle": "Sẵn sàng học?",
+      "ctaDesc": "Đăng nhập bằng tài khoản học viên hoặc kích hoạt mã do trung tâm cấp.",
+      "loginCta": "Đăng nhập để học",
+      "activationCta": "Kích hoạt khóa học",
+      "benefitAccess": "Mở các bài học đã được cấp quyền trong cổng học viên.",
+      "benefitPractice": "Tiếp tục luyện tập, ôn tập, kiểm tra và roleplay.",
+      "benefitProgress": "Theo dõi tiến độ và việc cần học tiếp theo."
+    }
+  }
+}

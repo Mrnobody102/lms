@@ -43,6 +43,7 @@ export function buildContentSecurityPolicy(
       'http://localhost:3100',
       'http://localhost:3101',
       'http://localhost:3102',
+      'http://localhost:3103',
       'http://127.0.0.1:4000',
       'http://127.0.0.1:3000',
       'http://127.0.0.1:3001',
@@ -50,6 +51,7 @@ export function buildContentSecurityPolicy(
       'http://127.0.0.1:3100',
       'http://127.0.0.1:3101',
       'http://127.0.0.1:3102',
+      'http://127.0.0.1:3103',
       'ws://localhost:4000',
       'ws://localhost:3000',
       'ws://localhost:3001',
@@ -57,6 +59,7 @@ export function buildContentSecurityPolicy(
       'ws://localhost:3100',
       'ws://localhost:3101',
       'ws://localhost:3102',
+      'ws://localhost:3103',
       'ws://127.0.0.1:4000',
       'ws://127.0.0.1:3000',
       'ws://127.0.0.1:3001',
@@ -64,6 +67,7 @@ export function buildContentSecurityPolicy(
       'ws://127.0.0.1:3100',
       'ws://127.0.0.1:3101',
       'ws://127.0.0.1:3102',
+      'ws://127.0.0.1:3103',
     ].forEach((source) => allowedConnectSources.add(source));
   }
 

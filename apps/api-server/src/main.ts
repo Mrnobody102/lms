@@ -53,9 +53,11 @@ function getCorsOrigins(): string[] {
       'http://localhost:3100',
       'http://localhost:3101',
       'http://localhost:3102',
+      'http://localhost:3103',
       'http://127.0.0.1:3100',
       'http://127.0.0.1:3101',
       'http://127.0.0.1:3102',
+      'http://127.0.0.1:3103',
       ...configuredOrigins,
     ]),
   ];

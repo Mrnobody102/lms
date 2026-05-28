@@ -55,6 +55,7 @@ services:
       dockerfile: apps/web-student/Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?Set NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_WEB_SALES_URL: ${NEXT_PUBLIC_WEB_SALES_URL:?Set NEXT_PUBLIC_WEB_SALES_URL}
         NEXT_PUBLIC_TENANT_ID: ${NEXT_PUBLIC_TENANT_ID:-}
     ports:
       - '3000:3000'
@@ -62,6 +63,29 @@ services:
     environment:
       NODE_ENV: production
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?Set NEXT_PUBLIC_API_URL}
+      NEXT_PUBLIC_WEB_SALES_URL: ${NEXT_PUBLIC_WEB_SALES_URL:?Set NEXT_PUBLIC_WEB_SALES_URL}
+      NEXT_PUBLIC_TENANT_ID: ${NEXT_PUBLIC_TENANT_ID:-}
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - lms_network
+
+  web-sales:
+    build:
+      context: ../../
+      dockerfile: apps/web-sales/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?Set NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_WEB_STUDENT_URL: ${NEXT_PUBLIC_WEB_STUDENT_URL:?Set NEXT_PUBLIC_WEB_STUDENT_URL}
+        NEXT_PUBLIC_TENANT_ID: ${NEXT_PUBLIC_TENANT_ID:-}
+    ports:
+      - '3003:3000'
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?Set NEXT_PUBLIC_API_URL}
+      NEXT_PUBLIC_WEB_STUDENT_URL: ${NEXT_PUBLIC_WEB_STUDENT_URL:?Set NEXT_PUBLIC_WEB_STUDENT_URL}
       NEXT_PUBLIC_TENANT_ID: ${NEXT_PUBLIC_TENANT_ID:-}
     depends_on:
       api:

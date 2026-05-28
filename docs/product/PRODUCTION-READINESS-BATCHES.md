@@ -189,6 +189,19 @@ Next recommended slice:
 
 ## Latest Completed Slice
 
+- Split the public course sales experience out of `web-student` into the new
+  `web-sales` app on port `3103`.
+- Added unauthenticated public catalog API routes for published tenant courses:
+  `GET /api/public/courses` and `GET /api/public/courses/:id`.
+- Kept tenant isolation on public catalog reads through `TenantMiddleware` and
+  restricted responses to marketing-safe course/unit/lesson preview fields.
+- Replaced the student guest home with a short login-first entry screen linking
+  to login, activation, and the new sales catalog.
+- Wired `web-sales` into build, dev, Docker, production compose, i18n checks,
+  production readiness checks, CORS defaults, docs, and E2E smoke.
+
+## Previous Completed Slice
+
 - Replaced PowerShell-only port cleanup in the root E2E flow with a
   cross-platform Node script while keeping the existing PowerShell helper for
   Windows fallback.

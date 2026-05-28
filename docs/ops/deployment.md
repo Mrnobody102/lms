@@ -67,6 +67,7 @@ Ví dụ:
 - `https://student.example.com`
 - `https://admin.example.com`
 - `https://portal.example.com`
+- `https://courses.example.com`
 
 Env tương ứng:
 
@@ -74,7 +75,8 @@ Env tương ứng:
 APP_PUBLIC_URL=https://api.example.com
 NEXT_PUBLIC_API_URL=https://api.example.com
 NEXT_PUBLIC_WEB_STUDENT_URL=https://student.example.com
-CORS_ORIGINS=https://student.example.com,https://admin.example.com,https://portal.example.com
+NEXT_PUBLIC_WEB_SALES_URL=https://courses.example.com
+CORS_ORIGINS=https://student.example.com,https://admin.example.com,https://portal.example.com,https://courses.example.com
 AUTH_COOKIE_DOMAIN=.example.com
 AUTH_COOKIE_SAME_SITE=lax
 TRUST_PROXY=true

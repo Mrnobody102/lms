@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = process.cwd();
-const WEB_APPS = ['web-student', 'web-admin', 'super-portal'];
+const WEB_APPS = ['web-student', 'web-sales', 'web-admin', 'super-portal'];
 const errors = [];
 
 function read(relativePath) {

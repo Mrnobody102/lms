@@ -12,6 +12,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 COPY apps/api-server/package.json ./apps/api-server/package.json
 COPY apps/web-admin/package.json ./apps/web-admin/package.json
 COPY apps/web-student/package.json ./apps/web-student/package.json
+COPY apps/web-sales/package.json ./apps/web-sales/package.json
 COPY apps/super-portal/package.json ./apps/super-portal/package.json
 COPY packages/api-client/package.json ./packages/api-client/package.json
 COPY packages/database/package.json ./packages/database/package.json

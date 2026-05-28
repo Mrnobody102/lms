@@ -1,11 +1,12 @@
-/* global console, process, require */
+/* global URL, console, process, require */
 
 const fs = require('fs');
 const path = require('path');
 
 const ROOT = process.cwd();
 const DEFAULT_ENV_FILE = '.env.production';
-const PLACEHOLDER_PATTERN = /(change[_-]?me|your[_-]?secure|local[_-]?build|localhost|test[_-]?jwt|dev[_-]?jwt)/i;
+const PLACEHOLDER_PATTERN =
+  /(change[_-]?me|your[_-]?secure|local[_-]?build|localhost|test[_-]?jwt|dev[_-]?jwt)/i;
 
 function parseArgs(argv) {
   const result = { file: null };
@@ -108,7 +109,9 @@ function assertOrigins(env, errors) {
   assertRequired(env, 'CORS_ORIGINS', errors);
   if (!isPresent(env, 'CORS_ORIGINS')) return;
 
-  const origins = env.CORS_ORIGINS.split(',').map((origin) => origin.trim()).filter(Boolean);
+  const origins = env.CORS_ORIGINS.split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
   if (origins.length === 0) {
     errors.push('CORS_ORIGINS must contain at least one exact origin');
     return;
@@ -165,6 +168,7 @@ assertOrigins(env, errors);
 assertOptionalOrigin(env, 'NEXT_PUBLIC_API_URL', errors);
 assertOptionalOrigin(env, 'APP_PUBLIC_URL', errors);
 assertOptionalOrigin(env, 'NEXT_PUBLIC_WEB_STUDENT_URL', errors);
+assertOptionalOrigin(env, 'NEXT_PUBLIC_WEB_SALES_URL', errors);
 assertGooglePair(env, errors);
 
 if (isPresent(env, 'AUTH_COOKIE_SAME_SITE')) {

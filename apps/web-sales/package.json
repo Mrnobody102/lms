@@ -1,0 +1,39 @@
+{
+  "name": "web-sales",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --webpack -p 3103",
+    "build": "next build --webpack",
+    "start": "next start",
+    "lint": "eslint \"src/**/*.{ts,tsx}\" \"e2e/**/*.ts\"",
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test --project=chromium --workers=1",
+    "test:e2e:all": "playwright test"
+  },
+  "dependencies": {
+    "@repo/api-client": "workspace:*",
+    "@repo/shared": "workspace:*",
+    "@repo/ui": "workspace:*",
+    "axios": "^1.15.2",
+    "lucide-react": "^0.330.0",
+    "next": "16.2.4",
+    "next-intl": "^4.10.1",
+    "react": "^18",
+    "react-dom": "^18"
+  },
+  "devDependencies": {
+    "@alloc/quick-lru": "^5.2.0",
+    "@playwright/test": "^1.57.0",
+    "@repo/typescript-config": "workspace:*",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "autoprefixer": "^10.0.1",
+    "eslint": "9.39.2",
+    "eslint-config-next": "16.2.4",
+    "postcss": "^8.5.12",
+    "tailwindcss": "^3.3.0",
+    "typescript": "^5"
+  }
+}

@@ -77,6 +77,21 @@
       "description": "Learning content is only available after login. Please sign in to continue.",
       "loginCta": "Go to login"
     },
+    "guestHome": {
+      "badge": "Student portal",
+      "title": "Sign in to continue learning",
+      "subtitle": "Open your enrolled courses, resume the next lesson, and track practice, review, exams, and certificates from one place.",
+      "loginCta": "Login",
+      "activationCta": "Activate code",
+      "salesCta": "View courses",
+      "panelTitle": "After login, you can access",
+      "benefitDashboard": "Today dashboard",
+      "benefitDashboardDesc": "See the next best lesson, due review, active exams, and weak skills.",
+      "benefitPractice": "Practice and review",
+      "benefitPracticeDesc": "Continue exercises, SRS review, roleplay, and AI feedback tied to your courses.",
+      "benefitProgress": "Course progress",
+      "benefitProgressDesc": "Track completion, certificates, and the exact item to resume."
+    },
     "nav": {
       "courses": "Courses",
       "vocab": "Vocabulary",

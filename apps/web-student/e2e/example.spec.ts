@@ -570,6 +570,23 @@ test('student can register and return to login', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Login Now' })).toBeVisible();
 });
 
+test('guest sees a concise student portal entry instead of the sales landing', async ({ page }) => {
+  await installStudentApiMocks(page);
+
+  await page.goto('/en');
+
+  await expect(page.getByRole('heading', { name: 'Sign in to continue learning' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Login' })).toHaveAttribute('href', '/en/login');
+  await expect(page.getByRole('link', { name: 'Activate code' })).toHaveAttribute(
+    'href',
+    '/en/activation',
+  );
+  await expect(page.getByRole('link', { name: 'View courses' })).toHaveAttribute(
+    'href',
+    'http://localhost:3103/en/courses',
+  );
+});
+
 test('student can login, open a lesson, and mark it completed', async ({ page }) => {
   await installStudentApiMocks(page);
 
