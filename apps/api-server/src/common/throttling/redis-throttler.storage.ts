@@ -17,9 +17,7 @@ export class RedisThrottlerStorage implements OnModuleDestroy {
     const redisUrl = configService.get<string>('REDIS_URL');
     if (redisUrl) {
       this.redis = new Redis(redisUrl, {
-        lazyConnect: true,
-        maxRetriesPerRequest: 1,
-        enableOfflineQueue: false,
+        maxRetriesPerRequest: 3,
       });
     }
   }
@@ -33,10 +31,6 @@ export class RedisThrottlerStorage implements OnModuleDestroy {
   ): Promise<ThrottlerStorageRecord> {
     if (!this.redis) {
       throw new Error('REDIS_URL is required for RedisThrottlerStorage');
-    }
-
-    if (this.redis.status === 'wait') {
-      await this.redis.connect();
     }
 
     const namespacedKey = `throttle:${throttlerName}:${key}`;
