@@ -70,18 +70,22 @@ export function StudentNav({ showLinks = false }: StudentNavProps) {
 
   return (
     <header className="sticky top-0 z-40 border-b bg-card/80 backdrop-blur-md transition-colors duration-300">
-      <nav className="flex items-center justify-between gap-2 px-4 py-3 sm:px-6">
-        <Link href="/" className="flex min-w-0 shrink-0 items-center gap-2">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary font-bold text-primary-foreground shadow-lg shadow-primary/20">
-            L
-          </div>
-          <span className="hidden truncate text-base font-bold tracking-tight sm:inline sm:text-lg">
-            LMS Learning
-          </span>
-        </Link>
+      <nav className="relative flex items-center justify-between gap-2 px-4 py-3 sm:px-6">
+        {/* Left side */}
+        <div className="flex flex-1 items-center justify-start min-w-0">
+          <Link href="/" className="flex shrink-0 items-center gap-2">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary font-bold text-primary-foreground shadow-lg shadow-primary/20">
+              L
+            </div>
+            <span className="hidden truncate text-base font-bold tracking-tight sm:inline sm:text-lg">
+              LMS Learning
+            </span>
+          </Link>
+        </div>
 
+        {/* Center Menu */}
         {shouldShowLinks && (
-          <div className="hidden min-w-0 flex-1 justify-center gap-1 text-sm font-medium text-muted-foreground lg:flex">
+          <div className="hidden lg:flex shrink-0 justify-center gap-1 text-sm font-medium text-muted-foreground absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
             {mainItems.map((item) => (
               <Link
                 key={item.href}
@@ -95,7 +99,8 @@ export function StudentNav({ showLinks = false }: StudentNavProps) {
           </div>
         )}
 
-        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+        {/* Right side */}
+        <div className="flex flex-1 items-center justify-end gap-1.5 sm:gap-2 min-w-0">
           {shouldShowLinks && (
             <div className="flex items-center lg:hidden">
               <Sheet>
@@ -116,7 +121,6 @@ export function StudentNav({ showLinks = false }: StudentNavProps) {
                   <SheetTitle className="text-left font-bold tracking-tight">
                     {t('nav.menu')}
                   </SheetTitle>
-
                   <MobileGroup items={mainItems} isActive={isActive} t={t} />
                 </SheetContent>
               </Sheet>
@@ -129,15 +133,13 @@ export function StudentNav({ showLinks = false }: StudentNavProps) {
             <div className="w-20 h-8 animate-pulse bg-muted rounded-lg" />
           ) : isAuthenticated ? (
             <div className="flex items-center gap-1.5">
+              <NotificationBell />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <div className="flex items-center gap-1.5 cursor-pointer rounded-lg hover:bg-muted p-1 pr-2">
+                  <div className="flex items-center cursor-pointer rounded-lg hover:bg-muted p-1">
                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
                       <UserIcon className="w-4 h-4" />
                     </div>
-                    <p className="text-sm font-medium hidden 2xl:block max-w-[100px] truncate">
-                      {user?.fullName}
-                    </p>
                   </div>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-52">
@@ -165,19 +167,16 @@ export function StudentNav({ showLinks = false }: StudentNavProps) {
                       <span>{t('nav.settings')}</span>
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onSelect={() => void logout()}
+                    className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer flex items-center gap-2 w-full"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>{t('cta.logout')}</span>
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <NotificationBell />
-              <button
-                onClick={() => {
-                  void logout();
-                }}
-                className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-destructive transition-all rounded-lg hover:bg-destructive/5"
-                aria-label={t('cta.logout')}
-                title={t('cta.logout')}
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
             </div>
           ) : (
             <div className="flex items-center gap-1.5 sm:gap-2">

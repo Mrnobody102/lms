@@ -212,6 +212,7 @@ export default function LessonPage() {
             onComplete={handleComplete}
             isCompleted={isCompleted}
             isCompleting={updateProgress.isPending}
+            lessonType={currentLesson.type}
           />
           {completionFeedback ? (
             <div className="mx-auto mb-4 w-full max-w-5xl px-4 sm:px-6 lg:px-10">

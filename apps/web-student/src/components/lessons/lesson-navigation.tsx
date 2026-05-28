@@ -11,6 +11,7 @@ interface LessonNavigationProps {
   onComplete: () => void;
   isCompleted: boolean;
   isCompleting?: boolean;
+  lessonType?: string;
 }
 
 export function LessonNavigation({
@@ -19,6 +20,7 @@ export function LessonNavigation({
   onComplete,
   isCompleted,
   isCompleting = false,
+  lessonType,
 }: LessonNavigationProps) {
   const t = useTranslations('Student');
 
@@ -47,33 +49,37 @@ export function LessonNavigation({
         </div>
 
         {/* Complete button */}
-        <button
-          onClick={onComplete}
-          disabled={isCompleted || isCompleting}
-          className={`group relative flex min-w-[12rem] items-center justify-center gap-2 overflow-hidden rounded-xl px-5 py-2 text-sm font-bold shadow-lg transition-all active:scale-95 ${
-            isCompleted
-              ? 'cursor-default border border-emerald-500/20 bg-emerald-500/10 text-emerald-500 shadow-none'
-              : 'bg-emerald-500 text-white shadow-emerald-500/30 hover:bg-emerald-600'
-          } ${isCompleting ? 'cursor-wait opacity-80' : ''}`}
-        >
-          {!isCompleted && !isCompleting ? (
-            <div className="absolute inset-0 translate-y-full bg-white/20 transition-transform duration-300 group-hover:translate-y-0" />
-          ) : null}
-          {isCompleting ? (
-            <Loader2 className="relative z-10 h-4 w-4 animate-spin" />
-          ) : (
-            <CheckCircle2
-              className={`relative z-10 h-4 w-4 ${!isCompleted ? 'transition-transform group-hover:scale-110' : ''}`}
-            />
-          )}
-          <span className="relative z-10">
-            {isCompleting
-              ? t('lesson.savingProgress')
-              : isCompleted
-                ? t('lesson.completed')
-                : t('lesson.complete')}
-          </span>
-        </button>
+        {(lessonType !== 'practice' && lessonType !== 'exam') || isCompleted ? (
+          <button
+            onClick={onComplete}
+            disabled={isCompleted || isCompleting}
+            className={`group relative flex min-w-[12rem] items-center justify-center gap-2 overflow-hidden rounded-xl px-5 py-2 text-sm font-bold shadow-lg transition-all active:scale-95 ${
+              isCompleted
+                ? 'cursor-default border border-emerald-500/20 bg-emerald-500/10 text-emerald-500 shadow-none'
+                : 'bg-emerald-500 text-white shadow-emerald-500/30 hover:bg-emerald-600'
+            } ${isCompleting ? 'cursor-wait opacity-80' : ''}`}
+          >
+            {!isCompleted && !isCompleting ? (
+              <div className="absolute inset-0 translate-y-full bg-white/20 transition-transform duration-300 group-hover:translate-y-0" />
+            ) : null}
+            {isCompleting ? (
+              <Loader2 className="relative z-10 h-4 w-4 animate-spin" />
+            ) : (
+              <CheckCircle2
+                className={`relative z-10 h-4 w-4 ${!isCompleted ? 'transition-transform group-hover:scale-110' : ''}`}
+              />
+            )}
+            <span className="relative z-10">
+              {isCompleting
+                ? t('lesson.savingProgress')
+                : isCompleted
+                  ? t('lesson.completed')
+                  : t('lesson.complete')}
+            </span>
+          </button>
+        ) : (
+          <div className="flex-1" />
+        )}
 
         {/* Next – only clickable after completing */}
         <div className="flex-shrink-0">
