@@ -3,6 +3,7 @@
 import { FormEvent, useState } from 'react';
 import { CheckCircle2, Edit3, Loader2, MessageSquare, Save, Send, Trash2, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import {
   useCreateDiscussionReply,
   useCreateDiscussionThread,
@@ -232,12 +233,6 @@ function ThreadCard({
     setIsEditingThread(false);
   };
 
-  const confirmDeleteThread = () => {
-    if (window.confirm(t('discussion.deleteThreadConfirm'))) {
-      onThreadDelete();
-    }
-  };
-
   return (
     <article className="rounded-md border bg-background p-4">
       <div className="flex items-start justify-between gap-4">
@@ -319,20 +314,26 @@ function ThreadCard({
             </button>
           ) : null}
           {canDeleteThread ? (
-            <button
-              type="button"
-              onClick={confirmDeleteThread}
-              disabled={deleting}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md border text-destructive hover:bg-destructive/10 disabled:opacity-60"
-              aria-label={t('discussion.deleteThread')}
-              title={t('discussion.deleteThread')}
+            <ConfirmDialog
+              description={t('discussion.deleteThreadConfirm')}
+              confirmLabel={t('common.delete')}
+              destructive
+              onConfirm={onThreadDelete}
             >
-              {deleting ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Trash2 className="h-3.5 w-3.5" />
-              )}
-            </button>
+              <button
+                type="button"
+                disabled={deleting}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md border text-destructive hover:bg-destructive/10 disabled:opacity-60"
+                aria-label={t('discussion.deleteThread')}
+                title={t('discussion.deleteThread')}
+              >
+                {deleting ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Trash2 className="h-3.5 w-3.5" />
+                )}
+              </button>
+            </ConfirmDialog>
           ) : null}
         </div>
       </div>
@@ -404,12 +405,6 @@ function ReplyRow({
     setIsEditingReply(false);
   };
 
-  const confirmDeleteReply = () => {
-    if (window.confirm(t('discussion.deleteReplyConfirm'))) {
-      onReplyDelete(reply.id);
-    }
-  };
-
   return (
     <div>
       <div className="flex items-start justify-between gap-3">
@@ -467,20 +462,26 @@ function ReplyRow({
               </button>
             ) : null}
             {canDelete ? (
-              <button
-                type="button"
-                onClick={confirmDeleteReply}
-                disabled={deleting}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-md border text-destructive hover:bg-destructive/10 disabled:opacity-60"
-                aria-label={t('discussion.deleteReply')}
-                title={t('discussion.deleteReply')}
+              <ConfirmDialog
+                description={t('discussion.deleteReplyConfirm')}
+                confirmLabel={t('common.delete')}
+                destructive
+                onConfirm={() => onReplyDelete(reply.id)}
               >
-                {deleting ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Trash2 className="h-3.5 w-3.5" />
-                )}
-              </button>
+                <button
+                  type="button"
+                  disabled={deleting}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border text-destructive hover:bg-destructive/10 disabled:opacity-60"
+                  aria-label={t('discussion.deleteReply')}
+                  title={t('discussion.deleteReply')}
+                >
+                  {deleting ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-3.5 w-3.5" />
+                  )}
+                </button>
+              </ConfirmDialog>
             ) : null}
           </div>
         ) : null}

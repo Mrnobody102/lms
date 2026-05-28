@@ -22,6 +22,7 @@ import {
   PackageSearch,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/features/auth/auth.store';
 import { cn } from '@/lib/utils';
 import { Link, usePathname, useRouter } from '@/navigation';
@@ -33,6 +34,20 @@ export function AdminSidebar() {
   const router = useRouter();
   const { user, logout } = useAuthStore();
   const { theme, setTheme } = useTheme();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(min-width: 768px)');
+    const closeOnDesktop = () => {
+      if (mediaQuery.matches) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    closeOnDesktop();
+    mediaQuery.addEventListener('change', closeOnDesktop);
+    return () => mediaQuery.removeEventListener('change', closeOnDesktop);
+  }, []);
 
   const menuItems = [
     { name: t('dashboard'), icon: LayoutDashboard, href: '/' },
@@ -155,7 +170,7 @@ export function AdminSidebar() {
       {/* Mobile Top Bar */}
       <div className="md:hidden sticky top-0 z-40 flex h-14 w-full items-center justify-between border-b border-border bg-card px-4">
         <div className="flex items-center gap-2">
-          <Sheet>
+          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <SheetTrigger asChild>
               <button className="-ml-2 p-2 text-muted-foreground hover:text-foreground transition-colors">
                 <Menu className="h-5 w-5" />

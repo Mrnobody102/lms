@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { AdminHeader } from '@/components/layout/admin-header';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
+import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { useMarketplaceItems, useSubscribeMarketplaceItem } from '@/hooks/use-marketplace';
 import { Button, Separator, Skeleton, Alert, AlertDescription, Input } from '@/components/ui';
 import { AlertCircle, Search, PackageSearch, CheckCircle2 } from 'lucide-react';
@@ -24,12 +25,6 @@ export default function MarketplaceExplorePage() {
   );
 
   const errorMessage = error instanceof Error ? error.message : error ? String(error) : null;
-
-  const handleSubscribe = (id: string) => {
-    if (confirm(t('marketplace.subscribeConfirm'))) {
-      subscribeMutation.mutate({ id });
-    }
-  };
 
   return (
     <AuthGuard>
@@ -137,13 +132,18 @@ export default function MarketplaceExplorePage() {
                               {t('marketplace.subscribed')}
                             </Button>
                           ) : (
-                            <Button
-                              className="w-full rounded-lg"
-                              onClick={() => handleSubscribe(item.id)}
-                              disabled={subscribeMutation.isPending}
+                            <ConfirmDialog
+                              description={t('marketplace.subscribeConfirm')}
+                              confirmLabel={t('marketplace.subscribeCta')}
+                              onConfirm={() => subscribeMutation.mutate({ id: item.id })}
                             >
-                              {t('marketplace.subscribeCta')}
-                            </Button>
+                              <Button
+                                className="w-full rounded-lg"
+                                disabled={subscribeMutation.isPending}
+                              >
+                                {t('marketplace.subscribeCta')}
+                              </Button>
+                            </ConfirmDialog>
                           )}
                         </div>
                       </div>

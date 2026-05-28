@@ -1,5 +1,12 @@
 {
   "Student": {
+    "common": {
+      "confirmTitle": "Xác nhận thao tác",
+      "confirm": "Xác nhận",
+      "cancel": "Hủy",
+      "delete": "Xóa",
+      "serverError": "Máy chủ đang gặp lỗi. Vui lòng thử lại sau."
+    },
     "landing": {
       "nav": {
         "home": "Trang chủ",
@@ -363,6 +370,7 @@
       "explanation": "Giải thích",
       "questionUnavailable": "Không thể tải nội dung câu hỏi. Câu hỏi có thể đã bị xóa.",
       "showAnswer": "Xem đáp án",
+      "reviewSubmitError": "Không thể lưu kết quả ôn tập. Hãy thử lại.",
       "grade": {
         "again": "Quên",
         "hard": "Khó",
@@ -830,6 +838,7 @@
       "answerRequired": "Hãy trả lời tất cả câu hỏi trước khi nộp bài.",
       "unansweredQuestionsValue": "(Câu chưa trả lời: {value})",
       "submitError": "Không thể nộp bài luyện tập này.",
+      "progressUpdateError": "Bài luyện đã được nộp, nhưng tiến độ bài học chưa được cập nhật. Hãy thử quay lại bài học và bấm hoàn thành nếu cần.",
       "multipleChoice": "Trắc nghiệm",
       "fillBlank": "Điền đáp án",
       "matching": "Nối cặp",
@@ -930,6 +939,7 @@
       "expiredMessage": "Đã hết thời gian làm bài. Hãy bắt đầu lại lần làm mới để làm tiếp.",
       "expiredSubmitError": "Lần làm này đã hết thời gian.",
       "submitError": "Không thể nộp bài kiểm tra này.",
+      "progressUpdateError": "Bài kiểm tra đã được nộp, nhưng tiến độ bài học chưa được cập nhật. Hãy thử quay lại bài học và bấm hoàn thành nếu cần.",
       "multipleChoice": "Trắc nghiệm",
       "fillBlank": "Điền đáp án",
       "matching": "Nối cặp",

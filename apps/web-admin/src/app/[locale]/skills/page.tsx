@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { AdminHeader } from '@/components/layout/admin-header';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
+import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import {
   Alert,
   AlertDescription,
@@ -22,6 +23,7 @@ import {
 } from '@/components/ui';
 import { AlertCircle, Edit2, Plus, Sparkles, Trash2 } from 'lucide-react';
 import { EmptyState, ErrorState, LoadingState } from '@repo/ui';
+import toast from 'react-hot-toast';
 import { useCreateSkill, useDeleteSkill, useSkills, useUpdateSkill } from '@/hooks/use-skills';
 import type { Skill } from '@/lib/skill-api';
 
@@ -121,11 +123,10 @@ export default function SkillsPage() {
   };
 
   const handleDelete = async (skill: Skill) => {
-    if (!window.confirm(t('skills.confirmDelete', { code: skill.code }))) return;
     try {
       await deleteSkill.mutateAsync(skill.id);
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : t('skills.errorDelete'));
+      toast.error(err instanceof Error ? err.message : t('skills.errorDelete'));
     }
   };
 
@@ -197,14 +198,15 @@ export default function SkillsPage() {
                       <Button variant="ghost" size="icon" onClick={() => openEdit(skill)}>
                         <Edit2 className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(skill)}
-                        disabled={deleteSkill.isPending}
+                      <ConfirmDialog
+                        description={t('skills.confirmDelete', { code: skill.code })}
+                        destructive
+                        onConfirm={() => void handleDelete(skill)}
                       >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                        <Button variant="ghost" size="icon" disabled={deleteSkill.isPending}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </ConfirmDialog>
                     </div>
                   </div>
                 ))}

@@ -15,6 +15,7 @@ import { SocraticTutorPanel } from '@/components/practice/socratic-tutor-panel';
 import { useAuthStore } from '@/features/auth/auth.store';
 import { usePracticeExerciseSet, useSubmitPracticeAttempt } from '@/hooks/use-practice';
 import { useUpdateProgress } from '@/hooks/use-progress';
+import { getApiErrorMessage } from '@/lib/api-error';
 import { getReturnLessonHref, withReturnLessonId } from '@/lib/lesson-return';
 import {
   PracticeAnswerFeedback,
@@ -92,14 +93,21 @@ export default function PracticeAttemptPage() {
         onSuccess: (data) => {
           setResult(data);
           if (returnLessonId) {
-            updateProgress.mutate({
-              lessonId: returnLessonId,
-              status: ProgressStatus.COMPLETED,
-            });
+            updateProgress.mutate(
+              {
+                lessonId: returnLessonId,
+                status: ProgressStatus.COMPLETED,
+              },
+              {
+                onError: (error) =>
+                  setMessage(getApiErrorMessage(error, t('practice.progressUpdateError'))),
+              },
+            );
           }
           window.scrollTo({ top: 0, behavior: 'smooth' });
         },
-        onError: () => setMessage(t('practice.submitError')),
+        onError: (error) =>
+          setMessage(getApiErrorMessage(error, t('practice.submitError'), t('common.serverError'))),
       },
     );
   };

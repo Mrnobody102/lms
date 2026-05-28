@@ -1,5 +1,12 @@
 {
   "Student": {
+    "common": {
+      "confirmTitle": "Confirm action",
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "serverError": "The server is having trouble. Please try again later."
+    },
     "landing": {
       "nav": {
         "home": "Home",
@@ -363,6 +370,7 @@
       "explanation": "Explanation",
       "questionUnavailable": "Question content could not be loaded. It may have been deleted.",
       "showAnswer": "Show answer",
+      "reviewSubmitError": "Cannot save this review result. Please try again.",
       "grade": {
         "again": "Again",
         "hard": "Hard",
@@ -830,6 +838,7 @@
       "answerRequired": "Answer every question before submitting.",
       "unansweredQuestionsValue": "(Unanswered questions: {value})",
       "submitError": "Cannot submit this practice attempt.",
+      "progressUpdateError": "The practice attempt was submitted, but lesson progress was not updated. Return to the lesson and mark it complete if needed.",
       "multipleChoice": "Multiple choice",
       "fillBlank": "Fill blank",
       "matching": "Matching",
@@ -930,6 +939,7 @@
       "expiredMessage": "This attempt has run out of time. Start a new attempt to continue.",
       "expiredSubmitError": "This exam attempt has already expired.",
       "submitError": "Cannot submit this exam attempt.",
+      "progressUpdateError": "The exam attempt was submitted, but lesson progress was not updated. Return to the lesson and mark it complete if needed.",
       "multipleChoice": "Multiple choice",
       "fillBlank": "Fill blank",
       "matching": "Matching",

@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button, Input } from '@repo/ui';
 import { Bot, CheckCircle2, Send, User } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import {
   useGetRoleplaySession,
   useSendMessage,
@@ -45,12 +46,6 @@ export function ChatInterface({ sessionId }: { sessionId: string }) {
     setInput('');
   };
 
-  const handleComplete = () => {
-    if (confirm(t('roleplay.confirmComplete'))) {
-      completeSession(sessionId);
-    }
-  };
-
   const isCompleted = session.status === 'COMPLETED';
 
   return (
@@ -65,10 +60,16 @@ export function ChatInterface({ sessionId }: { sessionId: string }) {
           </p>
         </div>
         {!isCompleted && (
-          <Button variant="outline" size="sm" onClick={handleComplete} disabled={isCompleting}>
-            {isCompleting ? t('roleplay.evaluating') : t('roleplay.endConversation')}
-            {!isCompleting && <CheckCircle2 className="w-4 h-4 ml-2" />}
-          </Button>
+          <ConfirmDialog
+            description={t('roleplay.confirmComplete')}
+            confirmLabel={t('roleplay.endConversation')}
+            onConfirm={() => completeSession(sessionId)}
+          >
+            <Button variant="outline" size="sm" disabled={isCompleting}>
+              {isCompleting ? t('roleplay.evaluating') : t('roleplay.endConversation')}
+              {!isCompleting && <CheckCircle2 className="w-4 h-4 ml-2" />}
+            </Button>
+          </ConfirmDialog>
         )}
       </div>
 

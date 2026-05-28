@@ -10,6 +10,7 @@ import { CohortModal } from '@/components/cohorts/cohort-modal';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
 import { AdminHeader } from '@/components/layout/admin-header';
+import { ConfirmDialog } from '@/components/common/confirm-dialog';
 
 export default function CohortsPage() {
   const t = useTranslations('Admin');
@@ -25,12 +26,6 @@ export default function CohortsPage() {
   const handleCreate = () => {
     setEditingCohort(null);
     setIsModalOpen(true);
-  };
-
-  const handleDelete = (id: string) => {
-    if (confirm(t('common.confirmDelete'))) {
-      deleteCohort.mutate(id);
-    }
   };
 
   return (
@@ -88,14 +83,19 @@ export default function CohortsPage() {
                       <Button variant="ghost" size="icon" onClick={() => handleEdit(cohort)}>
                         <Pencil className="w-4 h-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
-                        onClick={() => handleDelete(cohort.id)}
+                      <ConfirmDialog
+                        description={t('common.confirmDelete')}
+                        destructive
+                        onConfirm={() => deleteCohort.mutate(cohort.id)}
                       >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </ConfirmDialog>
                     </div>
                   </div>
                 ))}

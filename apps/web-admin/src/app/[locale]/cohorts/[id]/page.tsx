@@ -6,8 +6,10 @@ import { useTranslations } from 'next-intl';
 import { Users, UserPlus, ArrowLeft, Trash2, GraduationCap } from 'lucide-react';
 import { Link } from '@/navigation';
 import { Button, Input } from '@repo/ui';
+import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { useCohortMembers, useCohorts } from '@/hooks/use-cohorts';
 import { useCourses } from '@/hooks/use-courses';
+import toast from 'react-hot-toast';
 
 export default function CohortDetailsPage() {
   const t = useTranslations('Admin');
@@ -41,22 +43,18 @@ export default function CohortDetailsPage() {
   };
 
   const handleRemoveMember = async (userId: string) => {
-    if (confirm(t('common.confirmDelete'))) {
-      await removeMember.mutateAsync(userId);
-    }
+    await removeMember.mutateAsync(userId);
   };
 
   const handleEnrollCourse = async () => {
     if (!selectedCourse) return;
-    if (confirm(t('cohorts.confirmEnroll'))) {
-      try {
-        await enrollCourse.mutateAsync(selectedCourse);
-        setSelectedCourse('');
-        alert(t('cohorts.enrollSuccess'));
-      } catch (err) {
-        console.error('Failed to enroll', err);
-        alert(t('cohorts.enrollError'));
-      }
+    try {
+      await enrollCourse.mutateAsync(selectedCourse);
+      setSelectedCourse('');
+      toast.success(t('cohorts.enrollSuccess'));
+    } catch (err) {
+      console.error('Failed to enroll', err);
+      toast.error(t('cohorts.enrollError'));
     }
   };
 
@@ -94,13 +92,17 @@ export default function CohortDetailsPage() {
                   </option>
                 ))}
               </select>
-              <Button
-                className="w-full"
-                disabled={!selectedCourse || enrollCourse.isPending || members.length === 0}
-                onClick={handleEnrollCourse}
+              <ConfirmDialog
+                description={t('cohorts.confirmEnroll')}
+                onConfirm={() => void handleEnrollCourse()}
               >
-                {enrollCourse.isPending ? t('common.loading') : t('cohorts.enrollBtn')}
-              </Button>
+                <Button
+                  className="w-full"
+                  disabled={!selectedCourse || enrollCourse.isPending || members.length === 0}
+                >
+                  {enrollCourse.isPending ? t('common.loading') : t('cohorts.enrollBtn')}
+                </Button>
+              </ConfirmDialog>
             </div>
           </div>
         </div>
@@ -160,15 +162,20 @@ export default function CohortDetailsPage() {
                         <div className="text-xs text-muted-foreground hidden sm:block">
                           Joined {new Date(member.joinedAt).toLocaleDateString()}
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
-                          onClick={() => handleRemoveMember(member.user.id)}
-                          disabled={removeMember.isPending}
+                        <ConfirmDialog
+                          description={t('common.confirmDelete')}
+                          destructive
+                          onConfirm={() => void handleRemoveMember(member.user.id)}
                         >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                            disabled={removeMember.isPending}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </ConfirmDialog>
                       </div>
                     </li>
                   ))}

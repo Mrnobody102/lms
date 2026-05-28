@@ -5,10 +5,12 @@ import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
+import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { Button, Input, Skeleton, Alert, AlertDescription, Badge } from '@/components/ui';
 import { ArrowLeft, Loader2, Plus, Edit2, Trash2, Layers, BookOpen } from 'lucide-react';
 import { Link } from '@/navigation';
 import { useProgram, useCreateLevel, useDeleteLevel } from '@/hooks/use-programs';
+import toast from 'react-hot-toast';
 
 export default function ProgramDetailPage() {
   const t = useTranslations('Admin');
@@ -38,7 +40,7 @@ export default function ProgramDetailPage() {
       setIsAddingLevel(false);
     } catch (err) {
       console.error(err);
-      alert(t('errorCreatingLevel'));
+      toast.error(t('errorCreatingLevel'));
     }
   };
 
@@ -150,19 +152,20 @@ export default function ProgramDetailPage() {
                           </p>
                         </div>
                         <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-muted-foreground hover:text-destructive"
-                            onClick={() => {
-                              if (window.confirm(t('confirmDeleteLevel'))) {
-                                deleteLevel.mutate({ programId, levelId: level.id });
-                              }
-                            }}
-                            disabled={deleteLevel.isPending}
+                          <ConfirmDialog
+                            description={t('confirmDeleteLevel')}
+                            destructive
+                            onConfirm={() => deleteLevel.mutate({ programId, levelId: level.id })}
                           >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-muted-foreground hover:text-destructive"
+                              disabled={deleteLevel.isPending}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </ConfirmDialog>
                         </div>
                       </div>
                     ))}

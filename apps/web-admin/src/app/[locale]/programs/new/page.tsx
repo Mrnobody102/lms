@@ -9,6 +9,7 @@ import { AuthGuard } from '@/components/layout/auth-guard';
 import { Button, Input, Label } from '@/components/ui';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Link } from '@/navigation';
+import toast from 'react-hot-toast';
 
 export default function NewProgramPage() {
   const t = useTranslations('Admin');
@@ -29,7 +30,7 @@ export default function NewProgramPage() {
       router.push('/programs');
     } catch (error) {
       console.error('Failed to create program:', error);
-      alert(t('errorCreatingProgram'));
+      toast.error(t('errorCreatingProgram'));
     }
   };
 

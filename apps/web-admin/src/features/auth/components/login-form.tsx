@@ -19,6 +19,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const displayError = error ?? null;
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,22 +111,24 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
         )}
       </button>
 
-      <div className="space-y-3">
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-          <span className="h-px flex-1 bg-border" />
-          {t('auth.orContinueWith')}
-          <span className="h-px flex-1 bg-border" />
+      {googleClientId ? (
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <span className="h-px flex-1 bg-border" />
+            {t('auth.orContinueWith')}
+            <span className="h-px flex-1 bg-border" />
+          </div>
+          <GoogleSignInButton
+            clientId={googleClientId}
+            locale={locale}
+            label={t('auth.googleLogin')}
+            loadingLabel={t('auth.loggingIn')}
+            disabledLabel={t('auth.googleNotConfigured')}
+            disabled={loading}
+            onCredential={handleGoogleCredential}
+          />
         </div>
-        <GoogleSignInButton
-          clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}
-          locale={locale}
-          label={t('auth.googleLogin')}
-          loadingLabel={t('auth.loggingIn')}
-          disabledLabel={t('auth.googleNotConfigured')}
-          disabled={loading}
-          onCredential={handleGoogleCredential}
-        />
-      </div>
+      ) : null}
     </form>
   );
 }

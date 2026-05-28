@@ -105,18 +105,22 @@ export default function CourseDetailPage() {
   const totalLessons = allLessons.length;
   const completionPercentage =
     totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
-  const state = getCourseProgressState({
+  const continueLesson = getContinueLesson(allLessons, progressMap);
+  const firstLesson = allLessons[0] ?? null;
+  const courseProgressSummary = {
     course: { id: course.id, title: course.title, totalDuration: course.totalDuration },
     totalLessons,
     completedLessons,
     activitySessions: 0,
     completionPercentage,
-    lastActivityAt: progress.at(-1)?.updatedAt ?? null,
+    lastActivityAt: getLatestProgressAt(progress),
     lastAccessedLesson: null,
-    continueLesson: getContinueLesson(allLessons, progressMap),
-  });
-  const continueLesson = getContinueLesson(allLessons, progressMap);
-  const firstLesson = allLessons[0] ?? null;
+    continueLesson,
+  };
+  const state = getCourseProgressState(courseProgressSummary);
+  const primaryLessonHref = firstLesson
+    ? getCourseProgressHref(courseProgressSummary, firstLesson.id)
+    : null;
   const publishedPracticeSets = practiceSets.filter((set) => set.isPublished);
   const publishedExams = exams.filter((item) => item.isPublished);
   const practiceSet = publishedPracticeSets[0] ?? null;
@@ -197,29 +201,19 @@ export default function CourseDetailPage() {
               </div>
 
               <div className="mt-6 flex flex-wrap gap-3">
-                <Link
-                  href={getCourseProgressHref(
-                    {
-                      course: {
-                        id: course.id,
-                        title: course.title,
-                        totalDuration: course.totalDuration,
-                      },
-                      totalLessons,
-                      completedLessons,
-                      activitySessions: 0,
-                      completionPercentage,
-                      lastActivityAt: progress.at(-1)?.updatedAt ?? null,
-                      lastAccessedLesson: null,
-                      continueLesson,
-                    },
-                    firstLesson?.id,
-                  )}
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90"
-                >
-                  <PlayCircle className="h-4 w-4" />
-                  {continueLesson ? t('courses.continueCourse') : t('courses.startCourse')}
-                </Link>
+                {primaryLessonHref && (
+                  <Link
+                    href={primaryLessonHref}
+                    className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90"
+                  >
+                    <PlayCircle className="h-4 w-4" />
+                    {state === 'completed'
+                      ? t('courses.reviewCourse')
+                      : continueLesson
+                        ? t('courses.continueCourse')
+                        : t('courses.startCourse')}
+                  </Link>
+                )}
                 <Link
                   href="/practice"
                   className="inline-flex h-10 items-center justify-center gap-2 rounded-md border px-4 text-sm font-medium hover:bg-muted"
@@ -654,5 +648,17 @@ function buildLessonGroups(course: Course, ungroupedLabel: string) {
 }
 
 function getContinueLesson(lessons: Lesson[], progressMap: Map<string, { lessonId: string }>) {
-  return lessons.find((lesson) => !progressMap.has(lesson.id)) ?? lessons[0] ?? null;
+  return lessons.find((lesson) => !progressMap.has(lesson.id)) ?? null;
+}
+
+function getLatestProgressAt(progress: Array<{ updatedAt: string }>) {
+  const latest = progress.reduce<number | null>((currentLatest, item) => {
+    const timestamp = new Date(item.updatedAt).getTime();
+    if (!Number.isFinite(timestamp)) {
+      return currentLatest;
+    }
+    return currentLatest === null ? timestamp : Math.max(currentLatest, timestamp);
+  }, null);
+
+  return latest === null ? null : new Date(latest).toISOString();
 }

@@ -9,6 +9,7 @@ import { AuthGuard } from '@/components/layout/auth-guard';
 import { Button, Input, Label, Skeleton, Alert, AlertDescription } from '@/components/ui';
 import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
 import { Link } from '@/navigation';
+import toast from 'react-hot-toast';
 
 export default function EditProgramPage() {
   const t = useTranslations('Admin');
@@ -39,7 +40,7 @@ export default function EditProgramPage() {
       router.push(`/programs/${programId}`);
     } catch (error) {
       console.error('Failed to update program:', error);
-      alert(t('errorUpdatingProgram'));
+      toast.error(t('errorUpdatingProgram'));
     }
   };
 

@@ -3,6 +3,7 @@
 import {
   ArrowRight,
   BookOpen,
+  ChevronDown,
   Dumbbell,
   FileQuestion,
   History,
@@ -133,50 +134,60 @@ export default function PracticePage() {
               </Link>
             </header>
 
-            <section className="mb-6 rounded-md border bg-card p-4">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
-                <label className="flex flex-1 flex-col gap-1 text-sm font-medium">
-                  <span>{t('practice.filters.course')}</span>
-                  <select
-                    value={courseId ?? ''}
-                    onChange={(event) =>
-                      updateQuery({
-                        courseId: event.target.value || undefined,
-                        unitId: undefined,
-                      })
-                    }
-                    className="h-10 rounded-md border bg-background px-3 text-sm"
-                  >
-                    <option value="">{t('practice.filters.allCourses')}</option>
-                    {courses.map((course) => (
-                      <option key={course.id} value={course.id}>
-                        {course.title}
-                      </option>
-                    ))}
-                  </select>
+            <section className="mb-6 rounded-md border bg-card p-5">
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end">
+                <label className="flex min-w-0 flex-col gap-2 text-sm font-medium">
+                  <span className="text-xs font-semibold uppercase text-muted-foreground">
+                    {t('practice.filters.course')}
+                  </span>
+                  <div className="relative">
+                    <select
+                      value={courseId ?? ''}
+                      onChange={(event) =>
+                        updateQuery({
+                          courseId: event.target.value || undefined,
+                          unitId: undefined,
+                        })
+                      }
+                      className="h-12 w-full appearance-none rounded-md border border-input bg-background px-4 pr-10 text-sm font-medium text-foreground shadow-sm outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
+                    >
+                      <option value="">{t('practice.filters.allCourses')}</option>
+                      {courses.map((course) => (
+                        <option key={course.id} value={course.id}>
+                          {course.title}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  </div>
                 </label>
-                <label className="flex flex-1 flex-col gap-1 text-sm font-medium">
-                  <span>{t('practice.filters.unit')}</span>
-                  <select
-                    value={unitId ?? ''}
-                    onChange={(event) => updateQuery({ unitId: event.target.value || undefined })}
-                    disabled={!selectedCourse?.units?.length}
-                    className="h-10 rounded-md border bg-background px-3 text-sm disabled:opacity-60"
-                  >
-                    <option value="">{t('practice.filters.allUnits')}</option>
-                    {(selectedCourse?.units ?? []).map((unit) => (
-                      <option key={unit.id} value={unit.id}>
-                        {unit.title}
-                      </option>
-                    ))}
-                  </select>
+                <label className="flex min-w-0 flex-col gap-2 text-sm font-medium">
+                  <span className="text-xs font-semibold uppercase text-muted-foreground">
+                    {t('practice.filters.unit')}
+                  </span>
+                  <div className="relative">
+                    <select
+                      value={unitId ?? ''}
+                      onChange={(event) => updateQuery({ unitId: event.target.value || undefined })}
+                      disabled={!selectedCourse?.units?.length}
+                      className="h-12 w-full appearance-none rounded-md border border-input bg-background px-4 pr-10 text-sm font-medium text-foreground shadow-sm outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-primary/10 disabled:cursor-not-allowed disabled:bg-muted/40 disabled:text-muted-foreground"
+                    >
+                      <option value="">{t('practice.filters.allUnits')}</option>
+                      {(selectedCourse?.units ?? []).map((unit) => (
+                        <option key={unit.id} value={unit.id}>
+                          {unit.title}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  </div>
                 </label>
                 <button
                   type="button"
                   onClick={() =>
                     updateQuery({ courseId: undefined, unitId: undefined, skill: undefined })
                   }
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-md border px-3 text-sm font-medium hover:bg-muted"
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-md border px-4 text-sm font-semibold hover:bg-muted"
                 >
                   <X className="h-4 w-4" />
                   {t('practice.filters.clear')}

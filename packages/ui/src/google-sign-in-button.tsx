@@ -62,7 +62,6 @@ export function GoogleSignInButton({
   locale,
   label,
   loadingLabel,
-  disabledLabel,
   disabled = false,
   onCredential,
   onError,
@@ -140,7 +139,11 @@ export function GoogleSignInButton({
     });
   }, [clientId, disabled, locale, scriptReady]);
 
-  if (!clientId || disabled) {
+  if (!clientId) {
+    return null;
+  }
+
+  if (disabled) {
     return (
       <button
         type="button"
@@ -150,7 +153,7 @@ export function GoogleSignInButton({
           className,
         )}
       >
-        {disabledLabel}
+        {loading ? loadingLabel : label}
       </button>
     );
   }

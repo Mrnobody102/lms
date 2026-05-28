@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { AdminHeader } from '@/components/layout/admin-header';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
+import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { usePrograms, useDeleteProgram } from '@/hooks/use-programs';
 import { Button, Input, Separator, Skeleton, Alert, AlertDescription } from '@/components/ui';
 import { FolderTree, AlertCircle, Search, Edit2, Trash2, Layers } from 'lucide-react';
@@ -101,19 +102,20 @@ export default function ProgramsPage() {
                             <Edit2 className="w-4 h-4" />
                           </Button>
                         </Link>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          onClick={() => {
-                            if (window.confirm(t('confirmDeleteProgram'))) {
-                              deleteProgram.mutate(program.id);
-                            }
-                          }}
-                          disabled={deleteProgram.isPending}
+                        <ConfirmDialog
+                          description={t('confirmDeleteProgram')}
+                          destructive
+                          onConfirm={() => deleteProgram.mutate(program.id)}
                         >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            disabled={deleteProgram.isPending}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </ConfirmDialog>
                       </div>
                     </div>
                     <div className="flex-1">

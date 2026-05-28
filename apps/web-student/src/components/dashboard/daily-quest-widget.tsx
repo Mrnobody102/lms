@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Flame, Loader2, PlayCircle, Sparkles } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Flame, Loader2, PlayCircle, Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useDailyQuest } from '../../hooks/use-daily-quest';
 import { DailyQuestModal } from './daily-quest-modal';
@@ -11,10 +11,15 @@ export function DailyQuestWidget() {
   const t = useTranslations('Student');
   const [isOpen, setIsOpen] = useState(false);
   const [questions, setQuestions] = useState<GeneratedPracticeQuestion[] | null>(null);
+  const [feedback, setFeedback] = useState<{
+    type: 'error' | 'success';
+    message: string;
+  } | null>(null);
 
   const { mutate: generateQuest, isPending } = useDailyQuest();
 
   const handleStartQuest = () => {
+    setFeedback(null);
     if (questions) {
       setIsOpen(true);
       return;
@@ -28,7 +33,10 @@ export function DailyQuestWidget() {
           setIsOpen(true);
         },
         onError: (error: unknown) => {
-          alert(getErrorMessage(error, t('dailyQuest.generateError')));
+          setFeedback({
+            type: 'error',
+            message: getErrorMessage(error, t('dailyQuest.generateError')),
+          });
         },
       },
     );
@@ -74,6 +82,24 @@ export function DailyQuestWidget() {
             )}
           </button>
         </div>
+
+        {feedback && (
+          <div
+            className={`relative z-10 mt-4 flex items-start gap-2 rounded-md border px-3 py-2 text-sm ${
+              feedback.type === 'error'
+                ? 'border-destructive/20 bg-destructive/5 text-destructive'
+                : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+            }`}
+            role={feedback.type === 'error' ? 'alert' : 'status'}
+          >
+            {feedback.type === 'error' ? (
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            ) : (
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+            )}
+            <span>{feedback.message}</span>
+          </div>
+        )}
       </div>
 
       {isOpen && questions && (
@@ -82,9 +108,8 @@ export function DailyQuestWidget() {
           onClose={() => setIsOpen(false)}
           onComplete={() => {
             setIsOpen(false);
-            setQuestions(null); // Reset after complete
-            alert(t('dailyQuest.completed'));
-            // Will trigger refetch summary internally
+            setQuestions(null);
+            setFeedback({ type: 'success', message: t('dailyQuest.completed') });
           }}
         />
       )}

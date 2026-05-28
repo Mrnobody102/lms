@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { ArrowLeft, BrainCircuit, Pencil, Plus, Trash2 } from 'lucide-react';
 import { AuthRequiredPanel } from '@/components/auth/auth-required-panel';
+import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { StudentNav } from '@/components/layout/student-nav';
 import { SrsStatsChart } from '@/components/srs/srs-stats-chart';
 import { useAuthStore } from '@/features/auth/auth.store';
@@ -52,12 +53,6 @@ export default function CustomCardsPage() {
     });
     setEditingCardId(card.id);
     setIsFormOpen(true);
-  };
-
-  const handleDelete = (id: string) => {
-    if (confirm(t('deleteConfirm'))) {
-      deleteCard.mutate(id);
-    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -172,13 +167,21 @@ export default function CustomCardsPage() {
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
-                        <button
-                          onClick={() => handleDelete(card.id)}
-                          className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-500/10 rounded-md transition-colors"
-                          title={t('delete')}
+                        <ConfirmDialog
+                          description={t('deleteConfirm')}
+                          confirmLabel={t('delete')}
+                          cancelLabel={t('cancel')}
+                          destructive
+                          onConfirm={() => deleteCard.mutate(card.id)}
                         >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                          <button
+                            type="button"
+                            className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-500/10 rounded-md transition-colors"
+                            title={t('delete')}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </ConfirmDialog>
                       </div>
                     </div>
                   );

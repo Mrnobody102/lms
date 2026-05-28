@@ -22,6 +22,7 @@ import {
   ProgressStatus,
   type UserLessonProgress,
 } from '../../../../lib/progress-api';
+import { getApiErrorMessage } from '@/lib/api-error';
 
 type CompletionFeedback = { kind: 'success' | 'error'; message: string };
 
@@ -183,9 +184,16 @@ export default function LessonPage() {
         onSuccess: () => {
           setCompletionFeedback({ kind: 'success', message: t('lesson.progressSaved') });
         },
-        onError: () => {
+        onError: (error) => {
           setOptimisticCompletedLessonId(null);
-          setCompletionFeedback({ kind: 'error', message: t('lesson.progressSaveError') });
+          setCompletionFeedback({
+            kind: 'error',
+            message: getApiErrorMessage(
+              error,
+              t('lesson.progressSaveError'),
+              t('common.serverError'),
+            ),
+          });
         },
       },
     );

@@ -1,14 +1,24 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import DOMPurify from 'dompurify';
+import { AlertCircle, ArrowRight, BrainCircuit, CheckCircle2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { BrainCircuit, CheckCircle2, ArrowRight } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { AuthRequiredPanel } from '@/components/auth/auth-required-panel';
-import { useReviewQueue, useSubmitReview } from '@/hooks/use-srs';
-import { Link } from '@/navigation';
 import { StudentNav } from '@/components/layout/student-nav';
 import { AudioPromptPlayer } from '@/components/practice/audio-prompt-player';
 import { useAuthStore } from '@/features/auth/auth.store';
+import { useReviewQueue, useSubmitReview } from '@/hooks/use-srs';
+import { Link } from '@/navigation';
+
+function sanitizeReviewHtml(content: string) {
+  return DOMPurify.sanitize(content, {
+    USE_PROFILES: { html: true },
+    FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed'],
+    FORBID_ATTR: ['style'],
+    ADD_ATTR: ['target', 'rel'],
+  });
+}
 
 export default function ReviewPage() {
   const t = useTranslations('Student.srs');
@@ -16,6 +26,7 @@ export default function ReviewPage() {
   const { data: queue, isLoading } = useReviewQueue(undefined, isAuthenticated);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
   const startTimeRef = useRef(0);
   const { mutate: submitReview, isPending } = useSubmitReview();
 
@@ -73,6 +84,7 @@ export default function ReviewPage() {
 
   const handleGrade = (grade: 'AGAIN' | 'HARD' | 'GOOD' | 'EASY') => {
     const durationMs = Date.now() - startTimeRef.current;
+    setMessage(null);
     submitReview(
       { cardId: currentCard.cardId, grade, durationMs },
       {
@@ -80,6 +92,7 @@ export default function ReviewPage() {
           setShowAnswer(false);
           setCurrentIndex((i) => i + 1);
         },
+        onError: () => setMessage(t('reviewSubmitError')),
       },
     );
   };
@@ -102,6 +115,16 @@ export default function ReviewPage() {
 
       <main className="flex-1 overflow-auto bg-muted/10">
         <div className="mx-auto max-w-3xl px-6 py-12">
+          {message && (
+            <div
+              className="mb-5 flex items-start gap-2 rounded-md border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive"
+              role="alert"
+            >
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{message}</span>
+            </div>
+          )}
+
           {question ? (
             <div className="rounded-xl border bg-card shadow-sm overflow-hidden mb-8">
               <div className="p-8 border-b">
@@ -109,8 +132,8 @@ export default function ReviewPage() {
                   {t('reviewQuestionPrompt')} • {currentCard.skillCodes.join(', ')}
                 </div>
                 <div
-                  className="text-xl font-medium leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: question.prompt }}
+                  className="lesson-rich-content text-xl font-medium leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: sanitizeReviewHtml(question.prompt) }}
                 />
                 {question.audioMediaAsset?.url ? (
                   <div className="mt-6">
@@ -149,8 +172,10 @@ export default function ReviewPage() {
                         {t('explanation')}
                       </p>
                       <div
-                        className="text-sm text-foreground/80 leading-relaxed"
-                        dangerouslySetInnerHTML={{ __html: question.explanation }}
+                        className="lesson-rich-content text-sm text-foreground/80 leading-relaxed"
+                        dangerouslySetInnerHTML={{
+                          __html: sanitizeReviewHtml(question.explanation),
+                        }}
                       />
                     </div>
                   )}

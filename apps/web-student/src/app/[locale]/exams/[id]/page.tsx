@@ -16,6 +16,7 @@ import {
   ExamAttemptResult,
   ExamQuestion,
 } from '@/lib/exam-api';
+import { getApiErrorMessage } from '@/lib/api-error';
 import { getReturnLessonHref, withReturnLessonId } from '@/lib/lesson-return';
 import { ProgressStatus } from '@/lib/progress-api';
 import { Link } from '@/navigation';
@@ -145,10 +146,16 @@ export default function ExamAttemptPage() {
           setAttempt(data.attempt);
           setRemainingMs(0);
           if (returnLessonId) {
-            updateProgress.mutate({
-              lessonId: returnLessonId,
-              status: ProgressStatus.COMPLETED,
-            });
+            updateProgress.mutate(
+              {
+                lessonId: returnLessonId,
+                status: ProgressStatus.COMPLETED,
+              },
+              {
+                onError: (error) =>
+                  setMessage(getApiErrorMessage(error, t('exam.progressUpdateError'))),
+              },
+            );
           }
           window.scrollTo({ top: 0, behavior: 'smooth' });
         },
