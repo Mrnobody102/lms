@@ -32,6 +32,7 @@ export function MicroCardContent({ lessonId, content, onComplete }: MicroCardCon
   const viewedCardsRef = useRef<Set<string>>(new Set());
   const flippedCardsRef = useRef<Set<string>>(new Set());
   const completedRef = useRef(false);
+  const lastCompletedCardKeyRef = useRef<string | null>(null);
   const [flippedCards, setFlippedCards] = useState<Record<number, boolean>>({});
   const [completedCards, setCompletedCards] = useState<Set<string>>(new Set());
   const [activeIndex, setActiveIndex] = useState(0);
@@ -42,6 +43,21 @@ export function MicroCardContent({ lessonId, content, onComplete }: MicroCardCon
   useEffect(() => {
     trackEventRef.current = trackEvent.mutate;
   }, [trackEvent.mutate]);
+
+  useEffect(() => {
+    if (cards.length === 0 || completedCards.size < cards.length || completedRef.current) {
+      return;
+    }
+
+    completedRef.current = true;
+    const fallbackIndex = cards.length - 1;
+    const fallbackKey = getCardKey(cards[fallbackIndex], fallbackIndex);
+    trackEventRef.current({
+      cardKey: lastCompletedCardKeyRef.current ?? fallbackKey,
+      eventType: 'MICRO_CARD_COMPLETED',
+    });
+    onComplete?.();
+  }, [cards, completedCards.size, onComplete]);
 
   useEffect(() => {
     if (cards.length === 0 || !lessonId) {
@@ -144,11 +160,9 @@ export function MicroCardContent({ lessonId, content, onComplete }: MicroCardCon
                   trackEvent.mutate({ cardKey: key, eventType: 'MICRO_CARD_FLIPPED' });
                   setCompletedCards((current) => {
                     const next = new Set(current);
-                    next.add(key);
-                    if (next.size === cards.length && !completedRef.current) {
-                      completedRef.current = true;
-                      trackEvent.mutate({ cardKey: key, eventType: 'MICRO_CARD_COMPLETED' });
-                      onComplete?.();
+                    if (!next.has(key)) {
+                      next.add(key);
+                      lastCompletedCardKeyRef.current = key;
                     }
                     return next;
                   });

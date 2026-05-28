@@ -118,4 +118,26 @@ describe('createApiClient', () => {
     });
     expect(calls).toEqual(['/users/me', '/auth/refresh', '/users/me']);
   });
+
+  it('does not redirect when skipped request and refresh are both unauthorized', async () => {
+    const api = createApiClient({ baseURL: '/api' });
+    const calls: string[] = [];
+
+    api.defaults.adapter = async (config) => {
+      const requestConfig: InternalAxiosRequestConfig = {
+        ...config,
+        headers: AxiosHeaders.from(config.headers),
+      };
+      const url = requestConfig.url ?? '';
+      calls.push(url);
+      return rejectWithStatus(requestConfig, 401);
+    };
+
+    await expect(api.get('/users/me', { skipUnauthorizedRedirect: true })).rejects.toThrow(
+      'Request failed',
+    );
+
+    expect(calls).toEqual(['/users/me', '/auth/refresh']);
+    expect(window.location.assign).not.toHaveBeenCalled();
+  });
 });

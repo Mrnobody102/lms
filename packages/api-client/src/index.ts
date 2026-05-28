@@ -198,7 +198,9 @@ export function createApiClient(config: ApiClientConfig = {}): AxiosInstance {
         isRefreshing = true;
 
         try {
-          await api.post('/auth/refresh');
+          await api.post('/auth/refresh', null, {
+            skipUnauthorizedRedirect: axiosError.config?.skipUnauthorizedRedirect,
+          });
           processQueue(null);
           return api(originalRequest);
         } catch (refreshError) {

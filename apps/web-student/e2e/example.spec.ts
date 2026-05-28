@@ -196,6 +196,17 @@ async function installStudentApiMocks(page: Page) {
       return json(200, { user: currentUser });
     }
 
+    if (path.endsWith('/api/auth/refresh') && method === 'POST') {
+      if (!currentUser) {
+        return json(401, {
+          statusCode: 401,
+          message: 'Invalid or missing authentication token',
+        });
+      }
+
+      return json(200, { user: currentUser });
+    }
+
     if (path.endsWith('/api/auth/logout') && method === 'POST') {
       currentUser = null;
       progress = [];
@@ -300,6 +311,58 @@ async function installStudentApiMocks(page: Page) {
       });
     }
 
+    if (path.endsWith('/api/student/today') && method === 'GET') {
+      const completedLessons = progress.filter((item) => item.status === 'COMPLETED').length;
+      const latestActivity = activities[0] ?? null;
+      const completionPercentage = Math.round((completedLessons / course.lessons.length) * 100);
+      const primaryTask = {
+        id: 'task-continue-course',
+        type: 'CONTINUE_COURSE',
+        title: course.lessons[0].title,
+        subtitle: course.title,
+        href: `/lessons/${course.lessons[0].id}`,
+        priority: 1,
+        dueAt: null,
+        meta: {
+          courseId: course.id,
+          lessonId: course.lessons[0].id,
+        },
+      };
+
+      return json(200, {
+        primaryTask,
+        tasks: [primaryTask],
+        courses: [
+          {
+            course: {
+              id: course.id,
+              title: course.title,
+              totalDuration: course.totalDuration,
+            },
+            totalLessons: course.lessons.length,
+            completedLessons,
+            completionPercentage,
+            lastActivityAt: latestActivity?.occurredAt ?? null,
+            continueLesson: {
+              id: course.lessons[0].id,
+              title: course.lessons[0].title,
+              courseId: course.id,
+              duration: course.lessons[0].duration,
+            },
+          },
+        ],
+        srsDue: {
+          dueNow: 0,
+          dueToday: 0,
+          total: 0,
+        },
+        recentFeedback: {
+          practice: [],
+          exams: [],
+        },
+      });
+    }
+
     if (path.endsWith('/api/progress/performance') && method === 'GET') {
       return json(200, {
         accuracyByUnit: [],
@@ -313,6 +376,14 @@ async function installStudentApiMocks(page: Page) {
         dueToday: 0,
         total: 0,
       });
+    }
+
+    if (path.endsWith('/api/srs/queue') && method === 'GET') {
+      return json(200, []);
+    }
+
+    if (path.endsWith('/api/srs/cards/custom') && method === 'GET') {
+      return json(200, []);
     }
 
     if (path.endsWith('/api/skills') && method === 'GET') {
@@ -405,6 +476,18 @@ async function installStudentApiMocks(page: Page) {
       ]);
     }
 
+    if (path.endsWith('/api/practice/recommendations') && method === 'GET') {
+      return json(200, [
+        {
+          ...practiceSet,
+          skillTags: aiPracticeQuestion.skillTags,
+          latestAttempt: null,
+          recommendationReason: 'NEW_PRACTICE',
+          _count: { questions: 1, attempts: hasPracticeAttempt ? 1 : 0 },
+        },
+      ]);
+    }
+
     if (path.endsWith('/api/practice/exercise-sets/practice-set-1') && method === 'GET') {
       return json(200, {
         ...practiceSet,
@@ -475,9 +558,9 @@ test('student can register and return to login', async ({ page }) => {
 
   await page.goto('/en/register');
   await waitForHydratedForm(page);
-  await page.locator('input[type="text"]').fill('Student User');
-  await page.locator('input[type="email"]').fill('student@example.com');
-  await page.locator('input[type="password"]').fill('Student@123');
+  await page.getByPlaceholder('e.g. Nguyen Van A').fill('Student User');
+  await page.getByPlaceholder('email@example.com').fill('student@example.com');
+  await page.getByPlaceholder('e.g. Huyen@123').fill('Student@123');
   await page.getByRole('button', { name: 'Create Learning Account' }).click();
 
   await expect(page).toHaveURL(/\/en\/login\?registered=1$/, { timeout: navigationTimeout });
@@ -518,14 +601,14 @@ test('student can view the learning dashboard summary', async ({ page }) => {
   await expect(page).toHaveURL(/\/en\/courses$/, { timeout: navigationTimeout });
   await page.goto('/en');
 
-  await expect(page.getByRole('heading', { name: 'Continue your course' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'What to do next' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: 'Continue: Lesson 1' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'IELTS Foundations' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Resume lesson' })).toBeVisible();
-  await expect(page.getByText('0 sessions')).toBeVisible();
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Continue your course' })).toBeVisible({
+  await expect(page.getByRole('heading', { name: 'What to do next' })).toBeVisible({
     timeout: navigationTimeout,
   });
 });
@@ -540,7 +623,7 @@ test('student can submit AI practice and review AI feedback', async ({ page }) =
   await page.getByRole('button', { name: 'Login Now' }).click();
 
   await expect(page).toHaveURL(/\/en\/courses$/, { timeout: navigationTimeout });
-  await page.goto('/en/practice');
+  await page.goto('/en/practice?tab=sets');
   await expect(page.getByRole('heading', { name: 'AI speaking practice' })).toBeVisible();
 
   await page.getByRole('link', { name: 'Start practice' }).click();

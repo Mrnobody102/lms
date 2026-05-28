@@ -112,7 +112,10 @@ requireIncludes('apps/api-server/src/main.ts', [
 requireIncludes('apps/api-server/src/config/env.validation.ts', [
   { label: 'production CORS requirement', value: 'CORS_ORIGINS is required in production' },
   { label: 'production Redis requirement', value: 'REDIS_URL is required in production' },
-  { label: 'production reset secret requirement', value: 'JWT_RESET_SECRET is required in production' },
+  {
+    label: 'production reset secret requirement',
+    value: 'JWT_RESET_SECRET is required in production',
+  },
   { label: 'tenant header production flag', value: 'ALLOW_TENANT_HEADER_IN_PRODUCTION' },
   { label: 'auth cookie same-site config', value: 'AUTH_COOKIE_SAME_SITE' },
 ]);
@@ -133,7 +136,7 @@ requireIncludes('apps/api-server/src/common/middleware/csrf.middleware.ts', [
 requireIncludes('packages/api-client/src/index.ts', [
   { label: 'browser same-origin API base URL', value: "return '/api'" },
   { label: 'credentialed browser requests', value: 'withCredentials: true' },
-  { label: 'refresh-token retry flow', value: "api.post('/auth/refresh')" },
+  { label: 'refresh-token retry flow', value: "api.post('/auth/refresh'" },
   { label: 'legacy token cleanup', value: 'LEGACY_AUTH_STORAGE_KEYS.token' },
 ]);
 
@@ -150,10 +153,7 @@ requireIncludes('package.json', [
 
 const tokenStoragePattern =
   /localStorage\.(setItem|getItem)\(\s*['"`](token|access_token|refresh_token)['"`]/;
-for (const file of [
-  ...walk(path.join(ROOT, 'apps')),
-  ...walk(path.join(ROOT, 'packages')),
-]) {
+for (const file of [...walk(path.join(ROOT, 'apps')), ...walk(path.join(ROOT, 'packages'))]) {
   const relative = path.relative(ROOT, file).split(path.sep).join('/');
   if (relative.endsWith('.spec.ts') || relative.endsWith('.test.ts')) continue;
   const source = fs.readFileSync(file, 'utf8');

@@ -35,6 +35,7 @@ const mockScenario = {
 };
 
 async function installRoleplayApiMocks(page: Page) {
+  let isSessionCompleted = false;
   const corsHeaders = {
     'access-control-allow-origin': 'http://127.0.0.1:3100',
     'access-control-allow-credentials': 'true',
@@ -128,6 +129,15 @@ async function installRoleplayApiMocks(page: Page) {
       return json(200, {
         ...mockSession,
         id: path.endsWith('/session-2') ? 'session-2' : mockSession.id,
+        status: isSessionCompleted ? 'COMPLETED' : 'IN_PROGRESS',
+        score: isSessionCompleted ? 85 : undefined,
+        feedback: isSessionCompleted
+          ? {
+              grammar: 'Good grammar',
+              vocabulary: 'Appropriate word choice',
+              overall: 'A pleasant conversation.',
+            }
+          : undefined,
         messages: [
           {
             id: 'msg-1',
@@ -175,6 +185,7 @@ async function installRoleplayApiMocks(page: Page) {
       path.endsWith('/complete') &&
       method === 'POST'
     ) {
+      isSessionCompleted = true;
       return json(201, {
         ...mockSession,
         status: 'COMPLETED',
@@ -226,8 +237,8 @@ test('student can view roleplay dashboard and interact with chat', async ({ page
   ).toBeVisible();
 
   // End conversation
-  page.on('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: 'End Conversation' }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'End Conversation' }).click();
 
   // Check feedback
   await expect(page.getByRole('heading', { name: 'Final Evaluation' })).toBeVisible();
