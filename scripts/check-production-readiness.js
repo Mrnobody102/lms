@@ -149,7 +149,12 @@ requireIncludes('packages/shared/src/security/csp.ts', [
 requireIncludes('package.json', [
   { label: 'tenant scope audit script', value: '"check:tenant-scope"' },
   { label: 'production env preflight script', value: '"check:production-env"' },
+  { label: 'read-only data integrity script', value: '"check:data-integrity"' },
+  { label: 'cross-platform port cleanup script', value: 'node scripts/stop-project-processes.js' },
 ]);
+
+requireFile('scripts/stop-project-processes.js');
+requireFile('scripts/check-data-integrity.js');
 
 const tokenStoragePattern =
   /localStorage\.(setItem|getItem)\(\s*['"`](token|access_token|refresh_token)['"`]/;

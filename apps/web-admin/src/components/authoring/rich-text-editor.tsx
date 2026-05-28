@@ -4,10 +4,12 @@ import {
   type ChangeEvent,
   type ClipboardEvent,
   type ComponentType,
+  type FormEvent,
   type KeyboardEvent,
   useCallback,
   useEffect,
   useRef,
+  useState,
 } from 'react';
 import {
   Bold,
@@ -29,6 +31,18 @@ import {
   Table2,
   Undo2,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  Label,
+} from '@/components/ui';
 
 interface RichTextEditorProps {
   value: string;
@@ -43,6 +57,8 @@ interface ToolbarButton {
   value?: string;
   title: string;
 }
+
+type InsertDialogMode = 'link' | 'image' | 'table';
 
 const TOOLBAR_BUTTONS: ToolbarButton[] = [
   { icon: Bold, command: 'bold', title: 'Bold (Ctrl+B)' },
@@ -62,9 +78,16 @@ export function RichTextEditor({
   placeholder,
   minHeight = '12rem',
 }: RichTextEditorProps) {
+  const t = useTranslations('Admin.richTextEditor');
   const editorRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isInternalChange = useRef(false);
+  const savedSelectionRef = useRef<Range | null>(null);
+  const [dialogMode, setDialogMode] = useState<InsertDialogMode | null>(null);
+  const [urlValue, setUrlValue] = useState('');
+  const [rowValue, setRowValue] = useState('3');
+  const [columnValue, setColumnValue] = useState('3');
+  const [dialogError, setDialogError] = useState<string | null>(null);
 
   // Sync external value → DOM (only when value changes from outside)
   useEffect(() => {
@@ -77,6 +100,7 @@ export function RichTextEditor({
 
   const execCommand = useCallback(
     (command: string, val?: string) => {
+      restoreSelection(savedSelectionRef.current);
       editorRef.current?.focus();
       document.execCommand(command, false, val);
       // Fire onChange with updated HTML
@@ -101,6 +125,7 @@ export function RichTextEditor({
 
   const insertHtml = useCallback(
     (html: string) => {
+      restoreSelection(savedSelectionRef.current);
       editorRef.current?.focus();
       document.execCommand('insertHTML', false, html);
       syncFromDom();
@@ -108,32 +133,70 @@ export function RichTextEditor({
     [syncFromDom],
   );
 
-  const handleInsertLink = useCallback(() => {
-    const url = window.prompt('Enter URL:');
-    if (!url) return;
-    const safeUrl = sanitizeUrl(url);
-    if (safeUrl) execCommand('createLink', safeUrl);
-  }, [execCommand]);
+  const openInsertDialog = useCallback((mode: InsertDialogMode) => {
+    savedSelectionRef.current = captureSelection();
+    setUrlValue('');
+    setRowValue('3');
+    setColumnValue('3');
+    setDialogError(null);
+    setDialogMode(mode);
+  }, []);
 
-  const handleInsertImage = useCallback(() => {
-    const url = window.prompt('Image URL:');
-    if (!url) return;
-    const safeUrl = sanitizeUrl(url);
-    if (!safeUrl) return;
+  const closeInsertDialog = useCallback(() => {
+    setDialogMode(null);
+    setDialogError(null);
+  }, []);
 
-    insertHtml(
-      `<figure><img src="${escapeAttribute(safeUrl)}" alt="" /><figcaption><br></figcaption></figure>`,
-    );
-  }, [insertHtml]);
+  const handleInsertTable = useCallback(
+    (rowsValue: string, columnsValue: string) => {
+      const rows = parsePositiveInteger(rowsValue, 3);
+      const columns = parsePositiveInteger(columnsValue, 3);
+      const cells = Array.from({ length: columns }, () => '<td><br></td>').join('');
+      const body = Array.from({ length: rows }, () => `<tr>${cells}</tr>`).join('');
 
-  const handleInsertTable = useCallback(() => {
-    const rows = parsePositiveInteger(window.prompt('Rows:', '3'), 3);
-    const columns = parsePositiveInteger(window.prompt('Columns:', '3'), 3);
-    const cells = Array.from({ length: columns }, () => '<td><br></td>').join('');
-    const body = Array.from({ length: rows }, () => `<tr>${cells}</tr>`).join('');
+      insertHtml(`<table><tbody>${body}</tbody></table><p><br></p>`);
+    },
+    [insertHtml],
+  );
 
-    insertHtml(`<table><tbody>${body}</tbody></table><p><br></p>`);
-  }, [insertHtml]);
+  const handleInsertSubmit = useCallback(
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+
+      if (dialogMode === 'link' || dialogMode === 'image') {
+        const safeUrl = sanitizeUrl(urlValue);
+        if (!safeUrl) {
+          setDialogError(t('invalidUrl'));
+          return;
+        }
+
+        if (dialogMode === 'link') {
+          execCommand('createLink', safeUrl);
+        } else {
+          insertHtml(
+            `<figure><img src="${escapeAttribute(safeUrl)}" alt="" /><figcaption><br></figcaption></figure>`,
+          );
+        }
+      }
+
+      if (dialogMode === 'table') {
+        handleInsertTable(rowValue, columnValue);
+      }
+
+      closeInsertDialog();
+    },
+    [
+      closeInsertDialog,
+      dialogMode,
+      execCommand,
+      handleInsertTable,
+      insertHtml,
+      rowValue,
+      columnValue,
+      t,
+      urlValue,
+    ],
+  );
 
   const handleInsertCallout = useCallback(() => {
     insertHtml(
@@ -217,7 +280,7 @@ export function RichTextEditor({
           title="Insert table"
           onMouseDown={(e) => {
             e.preventDefault();
-            handleInsertTable();
+            openInsertDialog('table');
           }}
           className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         >
@@ -228,7 +291,7 @@ export function RichTextEditor({
           title="Insert image"
           onMouseDown={(e) => {
             e.preventDefault();
-            handleInsertImage();
+            openInsertDialog('image');
           }}
           className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         >
@@ -239,7 +302,7 @@ export function RichTextEditor({
           title="Insert Link"
           onMouseDown={(e) => {
             e.preventDefault();
-            handleInsertLink();
+            openInsertDialog('link');
           }}
           className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         >
@@ -331,6 +394,77 @@ export function RichTextEditor({
         className="hidden"
         onChange={(event) => void handleImportFile(event)}
       />
+      <Dialog open={dialogMode !== null} onOpenChange={(open) => !open && closeInsertDialog()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {dialogMode === 'link'
+                ? t('insertLinkTitle')
+                : dialogMode === 'image'
+                  ? t('insertImageTitle')
+                  : t('insertTableTitle')}
+            </DialogTitle>
+            <DialogDescription>
+              {dialogMode === 'table' ? t('insertTableDescription') : t('insertUrlDescription')}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleInsertSubmit} className="space-y-4">
+            {dialogMode === 'table' ? (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="rich-text-table-rows">{t('rowsLabel')}</Label>
+                  <Input
+                    id="rich-text-table-rows"
+                    type="number"
+                    min={1}
+                    max={12}
+                    value={rowValue}
+                    onChange={(event) => setRowValue(event.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="rich-text-table-columns">{t('columnsLabel')}</Label>
+                  <Input
+                    id="rich-text-table-columns"
+                    type="number"
+                    min={1}
+                    max={12}
+                    value={columnValue}
+                    onChange={(event) => setColumnValue(event.target.value)}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="rich-text-url">
+                  {dialogMode === 'image' ? t('imageUrlLabel') : t('linkUrlLabel')}
+                </Label>
+                <Input
+                  id="rich-text-url"
+                  type="url"
+                  value={urlValue}
+                  onChange={(event) => {
+                    setUrlValue(event.target.value);
+                    setDialogError(null);
+                  }}
+                  placeholder="https://example.com"
+                />
+              </div>
+            )}
+            {dialogError ? (
+              <p className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
+                {dialogError}
+              </p>
+            ) : null}
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={closeInsertDialog}>
+                {t('cancel')}
+              </Button>
+              <Button type="submit">{t('insert')}</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Editable area */}
       <div className="relative">
@@ -371,6 +505,29 @@ export function RichTextEditor({
       </div>
     </div>
   );
+}
+
+function captureSelection() {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) {
+    return null;
+  }
+
+  return selection.getRangeAt(0).cloneRange();
+}
+
+function restoreSelection(range: Range | null) {
+  if (!range) {
+    return;
+  }
+
+  const selection = window.getSelection();
+  if (!selection) {
+    return;
+  }
+
+  selection.removeAllRanges();
+  selection.addRange(range);
 }
 
 function parsePositiveInteger(value: string | null, fallback: number) {

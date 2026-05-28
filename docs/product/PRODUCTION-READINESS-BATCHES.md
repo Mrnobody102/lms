@@ -186,3 +186,19 @@ Next recommended slice:
    routes.
 4. Add read-only data integrity checks for orphan progress, enrollment, and
    tenant relation consistency.
+
+## Latest Completed Slice
+
+- Replaced PowerShell-only port cleanup in the root E2E flow with a
+  cross-platform Node script while keeping the existing PowerShell helper for
+  Windows fallback.
+- Removed native browser prompts from the admin rich text editor. Link, image,
+  and table insertion now use the shared dialog/input/button primitives with
+  synchronized English and Vietnamese strings.
+- Added `pnpm run check:data-integrity`, a read-only Prisma integrity check for
+  tenant-scoped enrollment, progress, learning activity, practice, and exam
+  relationships.
+- Extended production readiness checks so the release contract fails if the
+  cross-platform port cleanup or data integrity script is missing.
+- Verified the root `pnpm run test:e2e` flow now runs through all three portals
+  from Linux.

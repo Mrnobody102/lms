@@ -2,7 +2,7 @@
   "name": "lms-platform",
   "private": true,
   "scripts": {
-    "ports:free": "powershell -ExecutionPolicy Bypass -File ./scripts/stop-project-processes.ps1",
+    "ports:free": "node scripts/stop-project-processes.js",
     "build": "turbo run build --concurrency=1 --filter=api-server --filter=web-admin --filter=web-student --filter=super-portal --filter=@repo/database",
     "build:stable": "pnpm run ports:free && turbo run build --concurrency=1 --filter=api-server --filter=web-admin --filter=web-student --filter=super-portal --filter=@repo/database",
     "typecheck": "turbo run typecheck",
@@ -11,6 +11,7 @@
     "check:tenant-scope": "node scripts/check-tenant-scope.js",
     "check:production": "node scripts/check-production-readiness.js",
     "check:production-env": "node scripts/check-production-env.js",
+    "check:data-integrity": "node scripts/check-data-integrity.js",
     "check:contracts": "pnpm run check:i18n && pnpm run check:api-contracts && pnpm run check:production && pnpm run check:tenant-scope",
     "build:verify": "pnpm run typecheck && pnpm test && pnpm lint && pnpm run build:stable",
     "smoke:api": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-api.ps1",
