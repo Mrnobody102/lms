@@ -191,9 +191,13 @@ export class ProgressService {
       },
       update: {
         status: shouldKeepCompleted ? CourseActivityProgressStatus.COMPLETED : input.status,
-        completedAt: shouldKeepCompleted ? existing?.completedAt : (input.completedAt ?? undefined),
-        lastAccessedAt: input.lastAccessedAt ?? undefined,
-        scorePercent: input.scorePercent ?? undefined,
+        completedAt: shouldKeepCompleted
+          ? existing?.completedAt
+          : input.completedAt !== undefined
+            ? input.completedAt
+            : undefined,
+        lastAccessedAt: input.lastAccessedAt !== undefined ? input.lastAccessedAt : undefined,
+        scorePercent: input.scorePercent !== undefined ? input.scorePercent : undefined,
       },
       create: {
         tenantId: input.tenantId,

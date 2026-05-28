@@ -894,9 +894,17 @@ export class ExamService {
       },
       update: {
         status: keepCompleted ? CourseActivityProgressStatus.COMPLETED : input.status,
-        lastAccessedAt: input.lastAccessedAt,
-        completedAt: keepCompleted ? existing?.completedAt : (input.completedAt ?? undefined),
-        scorePercent: keepCompleted ? existing?.scorePercent : (input.scorePercent ?? undefined),
+        lastAccessedAt: input.lastAccessedAt !== undefined ? input.lastAccessedAt : undefined,
+        completedAt: keepCompleted
+          ? existing?.completedAt
+          : input.completedAt !== undefined
+            ? input.completedAt
+            : undefined,
+        scorePercent: keepCompleted
+          ? existing?.scorePercent
+          : input.scorePercent !== undefined
+            ? input.scorePercent
+            : undefined,
       },
       create: {
         tenantId: input.tenantId,

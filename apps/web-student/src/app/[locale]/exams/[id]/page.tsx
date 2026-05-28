@@ -114,7 +114,7 @@ export default function ExamAttemptPage() {
         }
         setShowValidationErrors(false);
       },
-      onError: () => setMessage(t('exam.startError')),
+      onError: (error) => setMessage(getApiErrorMessage(error, t('exam.startError'))),
     });
   };
 

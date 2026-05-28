@@ -188,11 +188,7 @@ export default function LessonPage() {
           setOptimisticCompletedLessonId(null);
           setCompletionFeedback({
             kind: 'error',
-            message: getApiErrorMessage(
-              error,
-              t('lesson.progressSaveError'),
-              t('common.serverError'),
-            ),
+            message: getApiErrorMessage(error, t('lesson.progressSaveError')),
           });
         },
       },

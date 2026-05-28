@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import { PaginationControls } from '@repo/ui';
 import { DraftPreviewCard } from '@/components/authoring/draft-preview-card';
@@ -52,7 +53,6 @@ import type {
 } from '@/lib/practice-api';
 import { Link } from '@/navigation';
 import {
-  AlertCircle,
   BookOpen,
   CheckCircle2,
   Copy,
@@ -105,7 +105,7 @@ export default function AdminPracticePage() {
   const [exerciseSetBulkAction, setExerciseSetBulkAction] = useState<
     'publish' | 'unpublish' | 'delete' | null
   >(null);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
   const [aiGenerationModalOpen, setAiGenerationModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<
     'questions' | 'question-editor' | 'sets' | 'set-editor' | 'review-queue'
@@ -223,12 +223,6 @@ export default function AdminPracticePage() {
     setSelectedQuestionIds(editingExerciseSet.questions.map((item) => item.question.id));
   }, [editingExerciseSet, editingExerciseSetId]);
 
-  useEffect(() => {
-    if (!message) return;
-    const timer = window.setTimeout(() => setMessage(null), 4000);
-    return () => window.clearTimeout(timer);
-  }, [message]);
-
   const resetQuestionDraft = () => {
     setActiveTab('questions');
     setEditingQuestionId(null);
@@ -255,22 +249,22 @@ export default function AdminPracticePage() {
   const handleSubmitQuestion = (event: FormEvent) => {
     event.preventDefault();
     if (!questionDraft.checks.course || !questionDraft.checks.prompt || !correctAnswer.trim()) {
-      setMessage({ type: 'error', text: t('practiceRequiredFields') });
+      toast.error(t('practiceRequiredFields'));
       return;
     }
 
     if (!questionDraft.checks.options) {
-      setMessage({ type: 'error', text: t('practiceOptionsRequired') });
+      toast.error(t('practiceOptionsRequired'));
       return;
     }
 
     if (questionType === 'MULTIPLE_CHOICE' && !questionDraft.correctAnswerIsNumeric) {
-      setMessage({ type: 'error', text: t('practiceCorrectAnswerIndexRequired') });
+      toast.error(t('practiceCorrectAnswerIndexRequired'));
       return;
     }
 
     if (!questionDraft.checks.correctAnswer) {
-      setMessage({ type: 'error', text: t('practiceCorrectAnswerIndexRangeRequired') });
+      toast.error(t('practiceCorrectAnswerIndexRangeRequired'));
       return;
     }
 
@@ -308,18 +302,14 @@ export default function AdminPracticePage() {
     mutation
       .then(() => {
         resetQuestionDraft();
-        setMessage({
-          type: 'success',
-          text: editingQuestionId ? t('practiceQuestionUpdated') : t('practiceQuestionCreated'),
-        });
+        toast.success(
+          editingQuestionId ? t('practiceQuestionUpdated') : t('practiceQuestionCreated'),
+        );
       })
       .catch(() =>
-        setMessage({
-          type: 'error',
-          text: editingQuestionId
-            ? t('practiceQuestionUpdateError')
-            : t('practiceQuestionCreateError'),
-        }),
+        toast.error(
+          editingQuestionId ? t('practiceQuestionUpdateError') : t('practiceQuestionCreateError'),
+        ),
       );
   };
 
@@ -336,8 +326,8 @@ export default function AdminPracticePage() {
         skillTags: question.skillTags,
       },
       {
-        onSuccess: () => setMessage({ type: 'success', text: t('practiceQuestionDuplicated') }),
-        onError: () => setMessage({ type: 'error', text: t('practiceQuestionDuplicateError') }),
+        onSuccess: () => toast.success(t('practiceQuestionDuplicated')),
+        onError: () => toast.error(t('practiceQuestionDuplicateError')),
       },
     );
   };
@@ -359,7 +349,7 @@ export default function AdminPracticePage() {
     setAudioMediaAssetId(question.audioMediaAssetId ?? null);
     setAudioUrl(question.audioMediaAsset?.url ?? null);
     setAudioReplayLimit(question.audioReplayLimit ?? null);
-    setMessage({ type: 'success', text: t('practiceQuestionLoadedDraft') });
+    toast.success(t('practiceQuestionLoadedDraft'));
   };
 
   const handleUseQuestionAsDraft = (question: PracticeQuestion) => {
@@ -377,7 +367,7 @@ export default function AdminPracticePage() {
     setAudioMediaAssetId(question.audioMediaAssetId ?? null);
     setAudioUrl(question.audioMediaAsset?.url ?? null);
     setAudioReplayLimit(question.audioReplayLimit ?? null);
-    setMessage({ type: 'success', text: t('practiceQuestionLoadedDraft') });
+    toast.success(t('practiceQuestionLoadedDraft'));
   };
 
   const handleDeleteQuestion = (question: PracticeQuestion) => {
@@ -393,12 +383,9 @@ export default function AdminPracticePage() {
       if (editingQuestionId && ids.includes(editingQuestionId)) resetQuestionDraft();
       setSelectedQuestionIds([]);
       setQuestionBulkDeleteOpen(false);
-      setMessage({
-        type: 'success',
-        text: t('bulkQuestionsDeleted', { count: ids.length }),
-      });
+      toast.success(t('bulkQuestionsDeleted', { count: ids.length }));
     } catch {
-      setMessage({ type: 'error', text: t('bulkQuestionDeleteError') });
+      toast.error(t('bulkQuestionDeleteError'));
     } finally {
       setQuestionBulkAction(null);
     }
@@ -425,7 +412,7 @@ export default function AdminPracticePage() {
       !exerciseSetDraft.checks.title ||
       selectedQuestionIds.length === 0
     ) {
-      setMessage({ type: 'error', text: t('practiceSetRequiredFields') });
+      toast.error(t('practiceSetRequiredFields'));
       return;
     }
 
@@ -451,16 +438,12 @@ export default function AdminPracticePage() {
     mutation
       .then(() => {
         resetExerciseSetDraft();
-        setMessage({
-          type: 'success',
-          text: editingExerciseSetId ? t('practiceSetUpdated') : t('practiceSetCreated'),
-        });
+        toast.success(editingExerciseSetId ? t('practiceSetUpdated') : t('practiceSetCreated'));
       })
       .catch(() =>
-        setMessage({
-          type: 'error',
-          text: editingExerciseSetId ? t('practiceSetUpdateError') : t('practiceSetCreateError'),
-        }),
+        toast.error(
+          editingExerciseSetId ? t('practiceSetUpdateError') : t('practiceSetCreateError'),
+        ),
       );
   };
 
@@ -503,11 +486,8 @@ export default function AdminPracticePage() {
       { id: set.id, payload: { isPublished: nextPublished } },
       {
         onSuccess: () =>
-          setMessage({
-            type: 'success',
-            text: nextPublished ? t('practiceSetPublished') : t('practiceSetUnpublished'),
-          }),
-        onError: () => setMessage({ type: 'error', text: t('practiceSetPublishUpdateError') }),
+          toast.success(nextPublished ? t('practiceSetPublished') : t('practiceSetUnpublished')),
+        onError: () => toast.error(t('practiceSetPublishUpdateError')),
       },
     );
   };
@@ -523,14 +503,13 @@ export default function AdminPracticePage() {
         ),
       );
       setSelectedExerciseSetIds([]);
-      setMessage({
-        type: 'success',
-        text: nextPublished
+      toast.success(
+        nextPublished
           ? t('bulkPracticeSetsPublished', { count: ids.length })
           : t('bulkPracticeSetsUnpublished', { count: ids.length }),
-      });
+      );
     } catch {
-      setMessage({ type: 'error', text: t('bulkPracticeSetUpdateError') });
+      toast.error(t('bulkPracticeSetUpdateError'));
     } finally {
       setExerciseSetBulkAction(null);
     }
@@ -545,12 +524,9 @@ export default function AdminPracticePage() {
       if (editingExerciseSetId && ids.includes(editingExerciseSetId)) resetExerciseSetDraft();
       setSelectedExerciseSetIds([]);
       setExerciseSetBulkDeleteOpen(false);
-      setMessage({
-        type: 'success',
-        text: t('bulkPracticeSetsDeleted', { count: ids.length }),
-      });
+      toast.success(t('bulkPracticeSetsDeleted', { count: ids.length }));
     } catch {
-      setMessage({ type: 'error', text: t('bulkPracticeSetDeleteError') });
+      toast.error(t('bulkPracticeSetDeleteError'));
     } finally {
       setExerciseSetBulkAction(null);
     }
@@ -558,15 +534,15 @@ export default function AdminPracticePage() {
 
   const handleApproveQuestion = (id: string) => {
     approveQuestion.mutate(id, {
-      onSuccess: () => setMessage({ type: 'success', text: t('practiceQuestionUpdated') }),
-      onError: () => setMessage({ type: 'error', text: t('practiceQuestionUpdateError') }),
+      onSuccess: () => toast.success(t('practiceQuestionUpdated')),
+      onError: () => toast.error(t('practiceQuestionUpdateError')),
     });
   };
 
   const handleRejectQuestion = (id: string) => {
     rejectQuestion.mutate(id, {
-      onSuccess: () => setMessage({ type: 'success', text: t('practiceQuestionUpdated') }),
-      onError: () => setMessage({ type: 'error', text: t('practiceQuestionUpdateError') }),
+      onSuccess: () => toast.success(t('practiceQuestionUpdated')),
+      onError: () => toast.error(t('practiceQuestionUpdateError')),
     });
   };
 
@@ -576,9 +552,9 @@ export default function AdminPracticePage() {
     bulkApproveQuestions.mutate(selectedReviewIds, {
       onSuccess: () => {
         setSelectedReviewIds([]);
-        setMessage({ type: 'success', text: t('practiceQuestionUpdated') });
+        toast.success(t('practiceQuestionUpdated'));
       },
-      onError: () => setMessage({ type: 'error', text: t('practiceQuestionUpdateError') }),
+      onError: () => toast.error(t('practiceQuestionUpdateError')),
       onSettled: () => setReviewBulkAction(null),
     });
   };
@@ -589,9 +565,9 @@ export default function AdminPracticePage() {
     bulkRejectQuestions.mutate(selectedReviewIds, {
       onSuccess: () => {
         setSelectedReviewIds([]);
-        setMessage({ type: 'success', text: t('practiceQuestionUpdated') });
+        toast.success(t('practiceQuestionUpdated'));
       },
-      onError: () => setMessage({ type: 'error', text: t('practiceQuestionUpdateError') }),
+      onError: () => toast.error(t('practiceQuestionUpdateError')),
       onSettled: () => setReviewBulkAction(null),
     });
   };
@@ -612,23 +588,6 @@ export default function AdminPracticePage() {
                 </Link>
               </Button>
             </div>
-
-            {message && (
-              <div
-                className={`mb-4 flex items-center gap-2 rounded-lg border p-3 text-sm ${
-                  message.type === 'success'
-                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950 dark:border-emerald-800 dark:text-emerald-400'
-                    : 'bg-destructive/5 border-destructive/20 text-destructive'
-                }`}
-              >
-                {message.type === 'success' ? (
-                  <CheckCircle2 className="h-4 w-4 shrink-0" />
-                ) : (
-                  <AlertCircle className="h-4 w-4 shrink-0" />
-                )}
-                {message.text}
-              </div>
-            )}
 
             <div className="mb-6 grid gap-4 lg:grid-cols-2">
               <div className="space-y-1.5">
@@ -1660,9 +1619,9 @@ export default function AdminPracticePage() {
               onSuccess: () => {
                 if (editingQuestionId === questionToDelete.id) resetQuestionDraft();
                 setQuestionToDelete(null);
-                setMessage({ type: 'success', text: t('practiceQuestionDeleted') });
+                toast.success(t('practiceQuestionDeleted'));
               },
-              onError: () => setMessage({ type: 'error', text: t('practiceQuestionDeleteError') }),
+              onError: () => toast.error(t('practiceQuestionDeleteError')),
             });
           }}
         />
@@ -1682,9 +1641,9 @@ export default function AdminPracticePage() {
               onSuccess: () => {
                 if (editingExerciseSetId === exerciseSetToDelete.id) resetExerciseSetDraft();
                 setExerciseSetToDelete(null);
-                setMessage({ type: 'success', text: t('practiceSetDeleted') });
+                toast.success(t('practiceSetDeleted'));
               },
-              onError: () => setMessage({ type: 'error', text: t('practiceSetDeleteError') }),
+              onError: () => toast.error(t('practiceSetDeleteError')),
             });
           }}
         />
@@ -1717,8 +1676,8 @@ export default function AdminPracticePage() {
         onOpenChange={setAiGenerationModalOpen}
         courseId={courseId}
         unitId={unitId || undefined}
-        onError={(msg) => setMessage({ type: 'error', text: msg })}
-        onSuccess={(msg) => setMessage({ type: 'success', text: msg })}
+        onError={(msg) => toast.error(msg)}
+        onSuccess={(msg) => toast.success(msg)}
         onGenerated={() => {
           // Questions are now saved by the backend in PENDING_REVIEW state.
           // They will appear in the Review Queue.

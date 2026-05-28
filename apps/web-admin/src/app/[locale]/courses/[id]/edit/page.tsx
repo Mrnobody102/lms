@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
 import { DraftPreviewCard } from '@/components/authoring/draft-preview-card';
@@ -44,10 +45,9 @@ import {
 } from '@/lib/course-api';
 import { Button, Alert, AlertDescription, Badge, Label } from '@/components/ui';
 import {
+  AlertCircle,
   ArrowLeft,
   ExternalLink,
-  AlertCircle,
-  CheckCircle2,
   Loader2,
   Save,
   Settings,
@@ -86,7 +86,6 @@ export default function CourseEditorPage() {
   const [showAddLesson, setShowAddLesson] = useState(false);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [localTitle, setLocalTitle] = useState('');
   const [localLevelId, setLocalLevelId] = useState<string>('');
   const [localAiEnabled, setLocalAiEnabled] = useState(false);
@@ -112,8 +111,11 @@ export default function CourseEditorPage() {
     key: string,
     values?: Record<string, string | number>,
   ) => {
-    setMessage({ type, text: t(key, values) });
-    setTimeout(() => setMessage(null), 4000);
+    if (type === 'success') {
+      toast.success(t(key, values));
+    } else {
+      toast.error(t(key, values));
+    }
   };
 
   const handleUpdateCourse = () => {
@@ -624,24 +626,6 @@ export default function CourseEditorPage() {
           </div>
 
           <div className="p-6 lg:p-8 max-w-6xl mx-auto pb-24">
-            {/* Toast */}
-            {message && (
-              <div
-                className={`mb-6 flex items-center gap-2 p-3 rounded-lg border text-sm animate-in fade-in slide-in-from-top-2 ${
-                  message.type === 'success'
-                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950 dark:border-emerald-800 dark:text-emerald-400'
-                    : 'bg-destructive/5 border-destructive/20 text-destructive'
-                }`}
-              >
-                {message.type === 'success' ? (
-                  <CheckCircle2 className="w-4 h-4 shrink-0" />
-                ) : (
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                )}
-                {message.text}
-              </div>
-            )}
-
             {/* Curriculum Tab */}
             <div
               className={`transition-all duration-300 animate-in fade-in ${activeTab === 'curriculum' ? 'block' : 'hidden'}`}
