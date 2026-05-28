@@ -162,7 +162,8 @@
     },
     "nav": {
       "docs": "Documentation",
-      "logout": "Logout"
+      "logout": "Logout",
+      "menu": "Menu"
     }
   },
   "Auth": {

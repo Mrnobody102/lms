@@ -29,7 +29,7 @@ export function ContactFooter() {
                 </div>
                 <div>
                   <h4 className="text-white font-semibold mb-1">{t('landing.contact.address')}</h4>
-                  <p className="text-slate-400">123 Learning Street, Tech District, City</p>
+                  <p className="text-slate-400">{t('landing.contact.addressValue')}</p>
                 </div>
               </div>
 
@@ -39,7 +39,7 @@ export function ContactFooter() {
                 </div>
                 <div>
                   <h4 className="text-white font-semibold mb-1">{t('landing.contact.phone')}</h4>
-                  <p className="text-slate-400">1900 1234 - 0987 654 321</p>
+                  <p className="text-slate-400">{t('landing.contact.phoneValue')}</p>
                 </div>
               </div>
 
@@ -49,7 +49,7 @@ export function ContactFooter() {
                 </div>
                 <div>
                   <h4 className="text-white font-semibold mb-1">{t('landing.contact.email')}</h4>
-                  <p className="text-slate-400">hello@lms-platform.com</p>
+                  <p className="text-slate-400">{t('landing.contact.emailValue')}</p>
                 </div>
               </div>
             </div>
@@ -75,7 +75,7 @@ export function ContactFooter() {
                 <input
                   type="tel"
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-                  placeholder="0987xxx"
+                  placeholder={t('landing.contact.phoneExample')}
                 />
               </div>
 
@@ -95,9 +95,9 @@ export function ContactFooter() {
             <div className="flex h-6 w-6 items-center justify-center rounded bg-gradient-to-br from-primary to-orange-500 font-bold text-white text-xs">
               L
             </div>
-            <span className="font-semibold text-slate-300">LMS Learning Platform</span>
+            <span className="font-semibold text-slate-300">{t('landing.contact.brandName')}</span>
           </div>
-          <p>&copy; 2026 LMS Platform. All rights reserved.</p>
+          <p>{t('landing.contact.copyright')}</p>
         </div>
       </div>
     </footer>

@@ -25,6 +25,7 @@ export interface AuthState {
   clearError: () => void;
   setUser: (user: AuthUser | null) => void;
   setTenantId: (tenantId: string | null) => void;
+  setMessages: (messages: { loginError?: string; registerError?: string }) => void;
 }
 
 export interface CreateAuthStoreOptions {
@@ -72,7 +73,7 @@ function extractErrorMsg(err: unknown, fallback: string): string {
 export function createAuthStore(options: CreateAuthStoreOptions) {
   const { api, persistUser = true, checkAuthTimeoutMs = 4000, messages = {} } = options;
 
-  const {
+  let {
     loginError = 'Login failed. Please check your credentials.',
     registerError = 'Registration failed. Please try again.',
   } = messages;
@@ -136,6 +137,11 @@ export function createAuthStore(options: CreateAuthStoreOptions) {
       error: null,
 
       clearError: () => set({ error: null }),
+
+      setMessages: (newMessages: { loginError?: string; registerError?: string }) => {
+        if (newMessages.loginError) loginError = newMessages.loginError;
+        if (newMessages.registerError) registerError = newMessages.registerError;
+      },
 
       setUser: (user: AuthUser | null) => {
         persistAuthUser(user);

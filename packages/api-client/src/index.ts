@@ -56,7 +56,7 @@ function getDefaultBaseUrl(): string {
     throw new Error('NEXT_PUBLIC_API_URL is required in production');
   }
 
-  return 'http://localhost:4000/api';
+  return 'http://127.0.0.1:4000/api';
 }
 
 function readCookie(name: string): string | undefined {

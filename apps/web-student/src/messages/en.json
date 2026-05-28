@@ -13,7 +13,8 @@
         "highlights": "Highlights",
         "courses": "Courses",
         "team": "Our Team",
-        "contact": "Contact"
+        "contact": "Contact",
+        "menuTitle": "Menu"
       },
       "stats": {
         "students": "Students",
@@ -51,7 +52,13 @@
         "nameExample": "Jane Smith",
         "phonePlaceholder": "Phone Number",
         "emailPlaceholder": "Email Address",
-        "submit": "Submit Request"
+        "submit": "Submit Request",
+        "addressValue": "123 Learning Street, Tech District, City",
+        "phoneValue": "1900 1234 - 0987 654 321",
+        "emailValue": "hello@lms-platform.com",
+        "phoneExample": "0987xxx",
+        "brandName": "LMS Learning Platform",
+        "copyright": "© 2026 LMS Platform. All rights reserved."
       }
     },
     "activation": {
@@ -614,6 +621,9 @@
       "backToLogin": "Back to Login",
       "resetSuccess": "Password reset successful!",
       "resetSuccessDesc": "Your password has been changed. You can now log in with your new password.",
+      "invalidResetToken": "Invalid or missing reset token.",
+      "passwordMismatch": "Passwords do not match.",
+      "invalidResetLink": "Invalid reset link. The link may be broken or expired.",
       "forgotEmailSent": "Link sent!",
       "forgotEmailSentDesc": "If your email exists in our system, you will receive a reset link shortly.",
       "resetting": "Resetting password...",

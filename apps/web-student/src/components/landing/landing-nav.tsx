@@ -39,7 +39,7 @@ export function LandingNav() {
             L
           </div>
           <span className="hidden truncate text-lg font-extrabold tracking-tight sm:inline bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
-            LMS Learning
+            {t('landing.contact.brandName')}
           </span>
         </Link>
 
@@ -70,7 +70,9 @@ export function LandingNav() {
                 </button>
               </SheetTrigger>
               <SheetContent side="left" className="w-[280px] p-6 sm:w-[350px]">
-                <SheetTitle className="text-left font-bold tracking-tight mb-6">Menu</SheetTitle>
+                <SheetTitle className="text-left font-bold tracking-tight mb-6">
+                  {t('landing.nav.menuTitle')}
+                </SheetTitle>
                 <div className="flex flex-col gap-4 text-base font-medium">
                   {anchorLinks.map((item) => (
                     <a

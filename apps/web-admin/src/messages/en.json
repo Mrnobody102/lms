@@ -52,7 +52,8 @@
       "loading": "Loading...",
       "none": "None",
       "required": "This field is required",
-      "save": "Save Changes"
+      "save": "Save Changes",
+      "menu": "Menu"
     },
     "reports": {
       "navLabel": "Reports",
@@ -291,6 +292,9 @@
       "backToLogin": "Back to Login",
       "resetSuccess": "Reset successful!",
       "resetSuccessDesc": "Admin password has been changed. Please log in again.",
+      "invalidResetToken": "Invalid or missing reset token.",
+      "passwordMismatch": "Passwords do not match.",
+      "invalidResetLink": "Invalid reset link. The link may be broken or expired.",
       "forgotEmailSent": "Link sent!",
       "forgotEmailSentDesc": "Check your inbox for the password reset link.",
       "resetting": "Resetting...",

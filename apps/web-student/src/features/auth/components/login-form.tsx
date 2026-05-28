@@ -14,7 +14,7 @@ interface LoginFormProps {
 export function LoginForm({ onSuccess }: LoginFormProps) {
   const t = useTranslations('Student');
   const locale = useLocale();
-  const { login, loginWithGoogle, loading, error, clearError } = useAuthStore();
+  const { login, loginWithGoogle, loading, error, clearError, setMessages } = useAuthStore();
   const displayError = error ?? null;
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
   const [email, setEmail] = useState('');
@@ -27,6 +27,13 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   useEffect(() => {
     setIsHydrated(true);
   }, []);
+
+  useEffect(() => {
+    setMessages({
+      loginError: t('auth.loginError'),
+      registerError: t('auth.registerError'),
+    });
+  }, [t, setMessages]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

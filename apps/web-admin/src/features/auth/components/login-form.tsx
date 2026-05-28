@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuthStore } from '../auth.store';
 import { Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
@@ -14,12 +14,18 @@ interface LoginFormProps {
 export function LoginForm({ onSuccess }: LoginFormProps) {
   const t = useTranslations('Admin');
   const locale = useLocale();
-  const { login, loginWithGoogle, loading, error, clearError } = useAuthStore();
+  const { login, loginWithGoogle, loading, error, clearError, setMessages } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const displayError = error ?? null;
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+
+  useEffect(() => {
+    setMessages({
+      loginError: t('auth.loginError'),
+    });
+  }, [t, setMessages]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

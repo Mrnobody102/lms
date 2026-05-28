@@ -162,7 +162,8 @@
     },
     "nav": {
       "docs": "Tài liệu",
-      "logout": "Đăng xuất"
+      "logout": "Đăng xuất",
+      "menu": "Danh mục"
     }
   },
   "Auth": {

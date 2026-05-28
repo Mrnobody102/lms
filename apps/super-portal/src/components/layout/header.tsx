@@ -28,7 +28,9 @@ export function Header() {
               </button>
             </SheetTrigger>
             <SheetContent side="left" className="w-[280px] p-6 flex flex-col gap-6">
-              <SheetTitle className="text-left font-bold tracking-tight">Menu</SheetTitle>
+              <SheetTitle className="text-left font-bold tracking-tight">
+                {t('nav.menu')}
+              </SheetTitle>
               <div className="flex flex-col gap-4 text-sm font-medium mt-4">
                 <button className="text-left text-muted-foreground hover:text-primary transition-colors py-2 border-b">
                   {t('nav.docs')}

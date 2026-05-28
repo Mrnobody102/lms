@@ -52,7 +52,8 @@
       "loading": "Đang tải...",
       "none": "Không có",
       "required": "Trường này là bắt buộc",
-      "save": "Lưu thay đổi"
+      "save": "Lưu thay đổi",
+      "menu": "Danh mục"
     },
     "reports": {
       "navLabel": "Báo cáo",
@@ -290,7 +291,10 @@
       "sendResetLink": "Gửi liên kết đặt lại",
       "backToLogin": "Quay lại đăng nhập",
       "resetSuccess": "Đặt lại thành công!",
-      "resetSuccessDesc": "Mật khẩu admin đã được thay đổi. Hãy đăng nhập lại.",
+      "resetSuccessDesc": "Mật khẩu quản trị viên đã được thay đổi. Vui lòng đăng nhập lại.",
+      "invalidResetToken": "Mã đặt lại không hợp lệ hoặc bị thiếu.",
+      "passwordMismatch": "Mật khẩu không khớp.",
+      "invalidResetLink": "Liên kết không hợp lệ. Liên kết này có thể đã hỏng hoặc hết hạn.",
       "forgotEmailSent": "Đã gửi liên kết!",
       "forgotEmailSentDesc": "Kiểm tra hòm thư của bạn để lấy liên kết đặt lại mật khẩu.",
       "resetting": "Đang đặt lại...",

@@ -181,7 +181,7 @@ export function AdminSidebar() {
               className="w-[280px] p-0 flex flex-col"
               aria-describedby={undefined}
             >
-              <SheetTitle className="sr-only">Menu</SheetTitle>
+              <SheetTitle className="sr-only">{t('common.menu')}</SheetTitle>
               {sidebarContent}
             </SheetContent>
           </Sheet>

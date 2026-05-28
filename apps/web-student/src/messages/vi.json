@@ -13,7 +13,8 @@
         "highlights": "Điểm nổi bật",
         "courses": "Khóa học",
         "team": "Đội ngũ",
-        "contact": "Liên hệ"
+        "contact": "Liên hệ",
+        "menuTitle": "Menu"
       },
       "stats": {
         "students": "Học viên",
@@ -51,7 +52,13 @@
         "nameExample": "Nguyễn Văn A",
         "phonePlaceholder": "Số điện thoại",
         "emailPlaceholder": "Email",
-        "submit": "Gửi yêu cầu"
+        "submit": "Gửi yêu cầu",
+        "addressValue": "123 Learning Street, Tech District, City",
+        "phoneValue": "1900 1234 - 0987 654 321",
+        "emailValue": "hello@lms-platform.com",
+        "phoneExample": "0987xxx",
+        "brandName": "LMS Learning Platform",
+        "copyright": "© 2026 LMS Platform. All rights reserved."
       }
     },
     "activation": {
@@ -613,8 +620,11 @@
       "sendResetLink": "Gửi liên kết đặt lại",
       "backToLogin": "Quay lại đăng nhập",
       "resetSuccess": "Đặt lại mật khẩu thành công!",
-      "resetSuccessDesc": "Mật khẩu của bạn đã được thay đổi. Bây giờ bạn có thể đăng nhập bằng mật khẩu mới.",
-      "forgotEmailSent": "Liên kết đã được gửi!",
+      "resetSuccessDesc": "Mật khẩu của bạn đã được thay đổi. Bạn có thể đăng nhập bằng mật khẩu mới.",
+      "invalidResetToken": "Mã đặt lại không hợp lệ hoặc bị thiếu.",
+      "passwordMismatch": "Mật khẩu không khớp.",
+      "invalidResetLink": "Liên kết không hợp lệ. Liên kết này có thể đã hỏng hoặc hết hạn.",
+      "forgotEmailSent": "Đã gửi link!",
       "forgotEmailSentDesc": "Nếu email của bạn tồn tại trong hệ thống, bạn sẽ sớm nhận được liên kết đặt lại mật khẩu.",
       "resetting": "Đang đặt lại mật khẩu...",
       "sendingLink": "Đang gửi liên kết...",

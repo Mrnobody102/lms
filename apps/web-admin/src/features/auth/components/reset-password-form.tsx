@@ -27,12 +27,12 @@ export function ResetPasswordForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) {
-      setError('Invalid or missing reset token.');
+      setError(t('auth.invalidResetToken'));
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+      setError(t('auth.passwordMismatch'));
       return;
     }
 
@@ -48,7 +48,7 @@ export function ResetPasswordForm() {
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string | string[] } } };
       const msg = axiosErr.response?.data?.message;
-      setError(Array.isArray(msg) ? msg[0] : (msg ?? 'Something went wrong. Please try again.'));
+      setError(Array.isArray(msg) ? msg[0] : (msg ?? t('errorBoundary.unexpected')));
     } finally {
       setLoading(false);
     }
@@ -77,7 +77,7 @@ export function ResetPasswordForm() {
     return (
       <div className="flex items-center gap-2.5 p-4 bg-destructive/10 border border-destructive/20 rounded-xl text-destructive font-medium text-sm">
         <AlertCircle className="w-5 h-5 shrink-0" />
-        <span>Invalid reset link. The link may be broken or expired.</span>
+        <span>{t('auth.invalidResetLink')}</span>
       </div>
     );
   }
