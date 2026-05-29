@@ -29,12 +29,16 @@ describe('RoleplayScenarioService', () => {
     };
     const service = new RoleplayScenarioService(prisma as never, learningAccess as never);
 
-    await service.create('tenant-1', {
-      courseId: 'course-1',
-      systemPrompt: 'Stay in character.',
-      title: 'Restaurant',
-      unitId: 'unit-1',
-    });
+    await service.create(
+      'tenant-1',
+      { id: 'admin-1', role: Role.ADMIN },
+      {
+        courseId: 'course-1',
+        systemPrompt: 'Stay in character.',
+        title: 'Restaurant',
+        unitId: 'unit-1',
+      },
+    );
 
     expect(prisma.course.findFirst).toHaveBeenCalledWith({
       where: { id: 'course-1', tenantId: 'tenant-1', deletedAt: null },

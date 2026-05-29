@@ -41,7 +41,7 @@ export class MarketplaceController {
 
   @Post('items')
   @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Publish a course or media asset as a marketplace item' })
   createItem(@Body() dto: CreateMarketplaceItemDto, @Request() req: AuthenticatedRequest) {
     return this.marketplaceService.createItem(getScopedTenantId(req), dto);
@@ -49,7 +49,7 @@ export class MarketplaceController {
 
   @Get('my-items')
   @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'List marketplace items owned by the current tenant' })
   listOwnerItems(@Query() query: MarketplaceQueryDto, @Request() req: AuthenticatedRequest) {
     return this.marketplaceService.listOwnerItems(getScopedTenantId(req), query);
@@ -63,7 +63,7 @@ export class MarketplaceController {
 
   @Get('revenue-report')
   @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Revenue and usage report for resources owned by this tenant' })
   getRevenueReport(
     @Query() query: MarketplaceReportQueryDto,
@@ -80,7 +80,7 @@ export class MarketplaceController {
 
   @Patch('items/:id')
   @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Update a marketplace item owned by the current tenant' })
   updateItem(
     @Param('id', ParseUUIDPipe) id: string,

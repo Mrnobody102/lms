@@ -54,7 +54,7 @@ export class PracticeController {
   generateAiQuestions(@Body() dto: GeneratePracticeDto, @Request() req: AuthenticatedRequest) {
     return this.aiQuestionGenerationService.createJobAndGenerate(
       getScopedTenantId(req),
-      req.user.id,
+      req.user,
       dto,
     );
   }
@@ -69,7 +69,7 @@ export class PracticeController {
   ) {
     return this.aiQuestionGenerationService.createJobAndGenerate(
       getScopedTenantId(req),
-      req.user.id,
+      req.user,
       dto,
     );
   }
@@ -82,7 +82,7 @@ export class PracticeController {
     @Query() query: AiGenerationJobQueryDto,
     @Request() req: AuthenticatedRequest,
   ) {
-    return this.aiQuestionGenerationService.listJobs(getScopedTenantId(req), query);
+    return this.aiQuestionGenerationService.listJobs(getScopedTenantId(req), req.user, query);
   }
 
   @Get('ai-generations/:id')
@@ -90,7 +90,7 @@ export class PracticeController {
   @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
   @ApiOperation({ summary: 'Get an AI question generation job with drafts' })
   getAiGenerationJob(@Param('id', ParseUUIDPipe) id: string, @Request() req: AuthenticatedRequest) {
-    return this.aiQuestionGenerationService.getJob(getScopedTenantId(req), id);
+    return this.aiQuestionGenerationService.getJob(getScopedTenantId(req), id, req.user);
   }
 
   @Post('ai-drafts/bulk-approve')
@@ -104,7 +104,7 @@ export class PracticeController {
     return this.aiQuestionGenerationService.bulkApproveDrafts(
       getScopedTenantId(req),
       dto.ids,
-      req.user.id,
+      req.user,
     );
   }
 
@@ -123,7 +123,7 @@ export class PracticeController {
     return this.aiQuestionGenerationService.bulkRejectDrafts(
       getScopedTenantId(req),
       dto.ids,
-      req.user.id,
+      req.user,
       dto.rejectionReason,
     );
   }
@@ -137,7 +137,7 @@ export class PracticeController {
     @Body() dto: UpdateAiQuestionDraftDto,
     @Request() req: AuthenticatedRequest,
   ) {
-    return this.aiQuestionGenerationService.updateDraft(getScopedTenantId(req), id, dto);
+    return this.aiQuestionGenerationService.updateDraft(getScopedTenantId(req), id, req.user, dto);
   }
 
   @Post('ai-drafts/:id/approve')
@@ -145,7 +145,7 @@ export class PracticeController {
   @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
   @ApiOperation({ summary: 'Approve an AI generated question draft' })
   approveAiDraft(@Param('id', ParseUUIDPipe) id: string, @Request() req: AuthenticatedRequest) {
-    return this.aiQuestionGenerationService.approveDraft(getScopedTenantId(req), id, req.user.id);
+    return this.aiQuestionGenerationService.approveDraft(getScopedTenantId(req), id, req.user);
   }
 
   @Post('ai-drafts/:id/reject')
@@ -160,7 +160,7 @@ export class PracticeController {
     return this.aiQuestionGenerationService.rejectDraft(
       getScopedTenantId(req),
       id,
-      req.user.id,
+      req.user,
       dto.rejectionReason,
     );
   }

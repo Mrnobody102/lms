@@ -4,9 +4,11 @@ import {
   AiGenerationJobStatus,
   Prisma,
   QuestionReviewStatus,
+  Role,
 } from '@repo/database';
 import { AiService } from '../ai/ai.service';
 import { GeneratedPracticeQuestion } from '../ai/interfaces/ai-provider.interface';
+import { LearningAccessService } from '../common/services/learning-access.service';
 import { PrismaService } from '../common/services/prisma.service';
 import { normalizeQuestionPayload } from '../common/utils/answer-validation.util';
 import { AiGenerationJobQueryDto } from './dto/ai-generation-job-query.dto';
@@ -15,25 +17,32 @@ import { UpdateAiQuestionDraftDto } from './dto/update-ai-question-draft.dto';
 
 const PRACTICE_AI_PROMPT_VERSION = 'practice-ai-v1';
 
+interface PracticeAiActor {
+  id: string;
+  role: Role;
+}
+
 @Injectable()
 export class AiQuestionGenerationService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly aiService: AiService,
+    private readonly learningAccess: LearningAccessService,
   ) {}
 
   async createJobAndGenerate(
     tenantId: string,
-    requestedById: string,
+    user: PracticeAiActor,
     dto: CreateAiQuestionGenerationJobDto,
   ) {
+    await this.learningAccess.ensureAuthoringCourseAccess(dto.courseId, tenantId, user);
     await this.ensureCourse(tenantId, dto.courseId);
     await this.ensureUnit(tenantId, dto.courseId, dto.unitId);
 
     const job = await this.prisma.aiQuestionGenerationJob.create({
       data: {
         tenantId,
-        requestedById,
+        requestedById: user.id,
         courseId: dto.courseId,
         unitId: dto.unitId,
         topic: dto.topic,
@@ -49,7 +58,7 @@ export class AiQuestionGenerationService {
     });
 
     try {
-      const generated = await this.aiService.generatePracticeQuestions(tenantId, requestedById, {
+      const generated = await this.aiService.generatePracticeQuestions(tenantId, user.id, {
         topic: dto.topic,
         context: dto.context,
         count: dto.count,
@@ -79,7 +88,7 @@ export class AiQuestionGenerationService {
         });
       });
 
-      return this.getJob(tenantId, job.id);
+      return this.getJob(tenantId, job.id, user);
     } catch (error) {
       await this.prisma.aiQuestionGenerationJob.update({
         where: { id_tenantId: { id: job.id, tenantId } },
@@ -94,7 +103,7 @@ export class AiQuestionGenerationService {
     }
   }
 
-  async listJobs(tenantId: string, query: AiGenerationJobQueryDto) {
+  async listJobs(tenantId: string, user: PracticeAiActor, query: AiGenerationJobQueryDto) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
     const where: Prisma.AiQuestionGenerationJobWhereInput = {
@@ -103,6 +112,11 @@ export class AiQuestionGenerationService {
       courseId: query.courseId,
       unitId: query.unitId,
     };
+
+    // Instructors only see generation jobs for courses they are assigned to.
+    if (user.role === Role.INSTRUCTOR) {
+      where.course = this.learningAccess.courseWhere(tenantId, user, query.courseId);
+    }
 
     const [data, total] = await Promise.all([
       this.prisma.aiQuestionGenerationJob.findMany({
@@ -130,7 +144,7 @@ export class AiQuestionGenerationService {
     };
   }
 
-  async getJob(tenantId: string, id: string) {
+  async getJob(tenantId: string, id: string, user: PracticeAiActor) {
     const job = await this.prisma.aiQuestionGenerationJob.findFirst({
       where: { id, tenantId },
       include: {
@@ -144,11 +158,18 @@ export class AiQuestionGenerationService {
       throw new NotFoundException(`AI generation job with ID ${id} not found`);
     }
 
+    await this.learningAccess.ensureAuthoringCourseAccess(job.courseId, tenantId, user);
+
     return job;
   }
 
-  async updateDraft(tenantId: string, id: string, dto: UpdateAiQuestionDraftDto) {
-    const draft = await this.getDraft(tenantId, id);
+  async updateDraft(
+    tenantId: string,
+    id: string,
+    user: PracticeAiActor,
+    dto: UpdateAiQuestionDraftDto,
+  ) {
+    const draft = await this.getDraft(tenantId, id, user);
     this.ensurePendingDraft(draft.reviewStatus);
 
     const normalized = normalizeQuestionPayload({
@@ -175,8 +196,8 @@ export class AiQuestionGenerationService {
     });
   }
 
-  async approveDraft(tenantId: string, id: string, reviewedById: string) {
-    const draft = await this.getDraft(tenantId, id);
+  async approveDraft(tenantId: string, id: string, user: PracticeAiActor) {
+    const draft = await this.getDraft(tenantId, id, user);
     this.ensurePendingDraft(draft.reviewStatus);
 
     const normalized = normalizeQuestionPayload({
@@ -209,7 +230,7 @@ export class AiQuestionGenerationService {
         where: { id_tenantId: { id, tenantId } },
         data: {
           reviewStatus: AiDraftReviewStatus.APPROVED,
-          reviewedById,
+          reviewedById: user.id,
           reviewedAt: new Date(),
           approvedQuestionId: question.id,
         },
@@ -217,24 +238,24 @@ export class AiQuestionGenerationService {
     });
   }
 
-  async rejectDraft(tenantId: string, id: string, reviewedById: string, rejectionReason: string) {
-    const draft = await this.getDraft(tenantId, id);
+  async rejectDraft(tenantId: string, id: string, user: PracticeAiActor, rejectionReason: string) {
+    const draft = await this.getDraft(tenantId, id, user);
     this.ensurePendingDraft(draft.reviewStatus);
 
     return this.prisma.aiGeneratedQuestionDraft.update({
       where: { id_tenantId: { id, tenantId } },
       data: {
         reviewStatus: AiDraftReviewStatus.REJECTED,
-        reviewedById,
+        reviewedById: user.id,
         reviewedAt: new Date(),
         rejectionReason,
       },
     });
   }
 
-  async bulkApproveDrafts(tenantId: string, ids: string[], reviewedById: string) {
+  async bulkApproveDrafts(tenantId: string, ids: string[], user: PracticeAiActor) {
     const results = await Promise.allSettled(
-      ids.map((id) => this.approveDraft(tenantId, id, reviewedById)),
+      ids.map((id) => this.approveDraft(tenantId, id, user)),
     );
 
     return {
@@ -246,9 +267,18 @@ export class AiQuestionGenerationService {
   async bulkRejectDrafts(
     tenantId: string,
     ids: string[],
-    reviewedById: string,
+    user: PracticeAiActor,
     rejectionReason: string,
   ) {
+    // Instructors may only reject drafts within their assigned courses; reuse
+    // the per-draft access gate so the bulk path can't widen their scope.
+    if (user.role === Role.INSTRUCTOR) {
+      const results = await Promise.allSettled(
+        ids.map((id) => this.rejectDraft(tenantId, id, user, rejectionReason)),
+      );
+      return { rejected: results.filter((result) => result.status === 'fulfilled').length };
+    }
+
     const result = await this.prisma.aiGeneratedQuestionDraft.updateMany({
       where: {
         id: { in: ids },
@@ -257,7 +287,7 @@ export class AiQuestionGenerationService {
       },
       data: {
         reviewStatus: AiDraftReviewStatus.REJECTED,
-        reviewedById,
+        reviewedById: user.id,
         reviewedAt: new Date(),
         rejectionReason,
       },
@@ -266,7 +296,7 @@ export class AiQuestionGenerationService {
     return { rejected: result.count };
   }
 
-  private async getDraft(tenantId: string, id: string) {
+  private async getDraft(tenantId: string, id: string, user: PracticeAiActor) {
     const draft = await this.prisma.aiGeneratedQuestionDraft.findFirst({
       where: { id, tenantId },
     });
@@ -274,6 +304,8 @@ export class AiQuestionGenerationService {
     if (!draft) {
       throw new NotFoundException(`AI generated question draft with ID ${id} not found`);
     }
+
+    await this.learningAccess.ensureAuthoringCourseAccess(draft.courseId, tenantId, user);
 
     return draft;
   }

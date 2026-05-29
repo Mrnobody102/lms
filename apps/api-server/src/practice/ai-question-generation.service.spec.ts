@@ -4,6 +4,7 @@ import {
   AiGenerationJobStatus,
   PracticeQuestionType,
   QuestionReviewStatus,
+  Role,
 } from '@repo/database';
 import { describe, expect, it, vi } from 'vitest';
 import { AiQuestionGenerationService } from './ai-question-generation.service';
@@ -51,15 +52,24 @@ describe('AiQuestionGenerationService', () => {
       },
       $transaction: vi.fn((callback) => callback(tx)),
     };
-    const service = new AiQuestionGenerationService(prisma as never, aiService as never);
+    const learningAccess = { ensureAuthoringCourseAccess: vi.fn() };
+    const service = new AiQuestionGenerationService(
+      prisma as never,
+      aiService as never,
+      learningAccess as never,
+    );
 
-    const result = await service.createJobAndGenerate('tenant-1', 'admin-1', {
-      courseId: 'course-1',
-      topic: 'Greetings',
-      count: 1,
-      questionType: PracticeQuestionType.MULTIPLE_CHOICE,
-      skillTags: ['VOCABULARY'],
-    });
+    const result = await service.createJobAndGenerate(
+      'tenant-1',
+      { id: 'admin-1', role: Role.ADMIN },
+      {
+        courseId: 'course-1',
+        topic: 'Greetings',
+        count: 1,
+        questionType: PracticeQuestionType.MULTIPLE_CHOICE,
+        skillTags: ['VOCABULARY'],
+      },
+    );
 
     expect(prisma.course.findFirst).toHaveBeenCalledWith({
       where: { id: 'course-1', tenantId: 'tenant-1', deletedAt: null },
@@ -120,15 +130,24 @@ describe('AiQuestionGenerationService', () => {
       },
       $transaction: vi.fn(),
     };
-    const service = new AiQuestionGenerationService(prisma as never, aiService as never);
+    const learningAccess = { ensureAuthoringCourseAccess: vi.fn() };
+    const service = new AiQuestionGenerationService(
+      prisma as never,
+      aiService as never,
+      learningAccess as never,
+    );
 
     await expect(
-      service.createJobAndGenerate('tenant-1', 'admin-1', {
-        courseId: 'course-1',
-        topic: 'Malformed',
-        count: 1,
-        questionType: PracticeQuestionType.MULTIPLE_CHOICE,
-      }),
+      service.createJobAndGenerate(
+        'tenant-1',
+        { id: 'admin-1', role: Role.ADMIN },
+        {
+          courseId: 'course-1',
+          topic: 'Malformed',
+          count: 1,
+          questionType: PracticeQuestionType.MULTIPLE_CHOICE,
+        },
+      ),
     ).rejects.toBeInstanceOf(BadRequestException);
 
     expect(prisma.aiQuestionGenerationJob.update).toHaveBeenCalledWith(
@@ -167,12 +186,14 @@ describe('AiQuestionGenerationService', () => {
       },
       $transaction: vi.fn((callback) => callback(tx)),
     };
+    const learningAccess = { ensureAuthoringCourseAccess: vi.fn() };
     const service = new AiQuestionGenerationService(
       prisma as never,
       createAiServiceStub() as never,
+      learningAccess as never,
     );
 
-    await service.approveDraft('tenant-1', 'draft-1', 'admin-1');
+    await service.approveDraft('tenant-1', 'draft-1', { id: 'admin-1', role: Role.ADMIN });
 
     expect(prisma.aiGeneratedQuestionDraft.findFirst).toHaveBeenCalledWith({
       where: { id: 'draft-1', tenantId: 'tenant-1' },
@@ -203,14 +224,16 @@ describe('AiQuestionGenerationService', () => {
         findFirst: vi.fn().mockResolvedValue(null),
       },
     };
+    const learningAccess = { ensureAuthoringCourseAccess: vi.fn() };
     const service = new AiQuestionGenerationService(
       prisma as never,
       createAiServiceStub() as never,
+      learningAccess as never,
     );
 
-    await expect(service.approveDraft('tenant-2', 'draft-1', 'admin-1')).rejects.toBeInstanceOf(
-      NotFoundException,
-    );
+    await expect(
+      service.approveDraft('tenant-2', 'draft-1', { id: 'admin-1', role: Role.ADMIN }),
+    ).rejects.toBeInstanceOf(NotFoundException);
     expect(prisma.aiGeneratedQuestionDraft.findFirst).toHaveBeenCalledWith({
       where: { id: 'draft-1', tenantId: 'tenant-2' },
     });

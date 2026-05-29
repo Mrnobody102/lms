@@ -42,7 +42,7 @@ export class RoleplayController {
   @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
   @ApiOperation({ summary: 'Create a roleplay scenario' })
   createScenario(@Request() req: AuthenticatedRequest, @Body() dto: CreateRoleplayScenarioDto) {
-    return this.scenarioService.create(getScopedTenantId(req), dto);
+    return this.scenarioService.create(getScopedTenantId(req), req.user, dto);
   }
 
   @Get('scenarios')
@@ -50,7 +50,7 @@ export class RoleplayController {
   @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
   @ApiOperation({ summary: 'List roleplay scenarios for admin review' })
   listScenarios(@Request() req: AuthenticatedRequest, @Query() query: RoleplayScenarioQueryDto) {
-    return this.scenarioService.list(getScopedTenantId(req), query);
+    return this.scenarioService.list(getScopedTenantId(req), req.user, query);
   }
 
   @Get('scenarios/available')
@@ -67,7 +67,7 @@ export class RoleplayController {
   @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
   @ApiOperation({ summary: 'Get a roleplay scenario' })
   getScenario(@Request() req: AuthenticatedRequest, @Param('id', ParseUUIDPipe) id: string) {
-    return this.scenarioService.get(getScopedTenantId(req), id);
+    return this.scenarioService.get(getScopedTenantId(req), id, req.user);
   }
 
   @Patch('scenarios/:id')
@@ -79,7 +79,7 @@ export class RoleplayController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateRoleplayScenarioDto,
   ) {
-    return this.scenarioService.update(getScopedTenantId(req), id, dto);
+    return this.scenarioService.update(getScopedTenantId(req), id, req.user, dto);
   }
 
   @Delete('scenarios/:id')
@@ -87,7 +87,7 @@ export class RoleplayController {
   @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
   @ApiOperation({ summary: 'Delete a roleplay scenario' })
   deleteScenario(@Request() req: AuthenticatedRequest, @Param('id', ParseUUIDPipe) id: string) {
-    return this.scenarioService.softDelete(getScopedTenantId(req), id);
+    return this.scenarioService.softDelete(getScopedTenantId(req), id, req.user);
   }
 
   @Post('scenarios/:id/publish')
@@ -95,7 +95,7 @@ export class RoleplayController {
   @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
   @ApiOperation({ summary: 'Publish a roleplay scenario' })
   publishScenario(@Request() req: AuthenticatedRequest, @Param('id', ParseUUIDPipe) id: string) {
-    return this.scenarioService.setPublished(getScopedTenantId(req), id, true);
+    return this.scenarioService.setPublished(getScopedTenantId(req), id, true, req.user);
   }
 
   @Post('scenarios/:id/unpublish')
@@ -103,7 +103,7 @@ export class RoleplayController {
   @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
   @ApiOperation({ summary: 'Unpublish a roleplay scenario' })
   unpublishScenario(@Request() req: AuthenticatedRequest, @Param('id', ParseUUIDPipe) id: string) {
-    return this.scenarioService.setPublished(getScopedTenantId(req), id, false);
+    return this.scenarioService.setPublished(getScopedTenantId(req), id, false, req.user);
   }
 
   @Post('sessions')

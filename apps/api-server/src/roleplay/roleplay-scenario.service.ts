@@ -6,6 +6,11 @@ import { CreateRoleplayScenarioDto } from './dto/create-roleplay-scenario.dto';
 import { RoleplayScenarioQueryDto } from './dto/roleplay-scenario-query.dto';
 import { UpdateRoleplayScenarioDto } from './dto/update-roleplay-scenario.dto';
 
+interface ScenarioActor {
+  id: string;
+  role: Role;
+}
+
 @Injectable()
 export class RoleplayScenarioService {
   constructor(
@@ -13,7 +18,8 @@ export class RoleplayScenarioService {
     private readonly learningAccess: LearningAccessService,
   ) {}
 
-  async create(tenantId: string, dto: CreateRoleplayScenarioDto) {
+  async create(tenantId: string, user: ScenarioActor, dto: CreateRoleplayScenarioDto) {
+    await this.learningAccess.ensureAuthoringCourseAccess(dto.courseId, tenantId, user);
     await this.ensureCourse(tenantId, dto.courseId);
     await this.ensureUnit(tenantId, dto.courseId, dto.unitId);
 
@@ -36,7 +42,7 @@ export class RoleplayScenarioService {
     });
   }
 
-  async list(tenantId: string, query: RoleplayScenarioQueryDto) {
+  async list(tenantId: string, user: ScenarioActor, query: RoleplayScenarioQueryDto) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
     const where: Prisma.RoleplayScenarioWhereInput = {
@@ -47,6 +53,11 @@ export class RoleplayScenarioService {
       mode: query.mode,
       isPublished: query.isPublished,
     };
+
+    // Instructors only see scenarios attached to courses they are assigned to.
+    if (user.role === Role.INSTRUCTOR) {
+      where.course = this.learningAccess.courseWhere(tenantId, user, query.courseId);
+    }
 
     const [data, total] = await Promise.all([
       this.prisma.roleplayScenario.findMany({
@@ -74,7 +85,7 @@ export class RoleplayScenarioService {
     };
   }
 
-  async get(tenantId: string, id: string) {
+  async get(tenantId: string, id: string, user?: ScenarioActor) {
     const scenario = await this.prisma.roleplayScenario.findFirst({
       where: { id, tenantId, deletedAt: null },
       include: {
@@ -88,12 +99,19 @@ export class RoleplayScenarioService {
       throw new NotFoundException(`Roleplay scenario with ID ${id} not found`);
     }
 
+    if (user) {
+      await this.learningAccess.ensureAuthoringCourseAccess(scenario.courseId, tenantId, user);
+    }
+
     return scenario;
   }
 
-  async update(tenantId: string, id: string, dto: UpdateRoleplayScenarioDto) {
-    const scenario = await this.get(tenantId, id);
+  async update(tenantId: string, id: string, user: ScenarioActor, dto: UpdateRoleplayScenarioDto) {
+    const scenario = await this.get(tenantId, id, user);
     const courseId = dto.courseId ?? scenario.courseId;
+    // When moving the scenario to a different course, the instructor must also
+    // be assigned to the destination course.
+    await this.learningAccess.ensureAuthoringCourseAccess(courseId, tenantId, user);
     await this.ensureCourse(tenantId, courseId);
     await this.ensureUnit(
       tenantId,
@@ -120,8 +138,8 @@ export class RoleplayScenarioService {
     });
   }
 
-  async softDelete(tenantId: string, id: string) {
-    await this.get(tenantId, id);
+  async softDelete(tenantId: string, id: string, user: ScenarioActor) {
+    await this.get(tenantId, id, user);
     return this.prisma.roleplayScenario.update({
       where: { id_tenantId: { id, tenantId } },
       data: {
@@ -131,8 +149,8 @@ export class RoleplayScenarioService {
     });
   }
 
-  async setPublished(tenantId: string, id: string, isPublished: boolean) {
-    await this.get(tenantId, id);
+  async setPublished(tenantId: string, id: string, isPublished: boolean, user: ScenarioActor) {
+    await this.get(tenantId, id, user);
     return this.prisma.roleplayScenario.update({
       where: { id_tenantId: { id, tenantId } },
       data: { isPublished },
