@@ -394,7 +394,7 @@ export default function AdminStudentsPage() {
                             className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-input bg-background px-3 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
                           >
                             <ExternalLink className="h-3.5 w-3.5" />
-                            Chi tiết
+                            {t('common.details')}
                           </Link>
                           <Button
                             type="button"

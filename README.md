@@ -1,29 +1,27 @@
-# LMS Platform — Multi-tenant SaaS Learning Management System
+# LMS Platform — Next-Gen Multi-tenant Education Platform
 
-A production-grade, **multi-tenant SaaS LMS** built for language schools, training centers, and online academies. Think _Shopify for Education_: one platform, unlimited tenants, each with their own branding, courses, and students.
+A state-of-the-art, **multi-tenant SaaS Learning Management System** built for language schools, training centers, and online academies. Designed with a _"Shopify for Education"_ philosophy: one powerful unified platform, limitless tenants, and complete isolation for branding, curriculums, and student data.
+
+---
+
+## 🌟 Outstanding Features
+
+- **Hybrid AI-Enhanced Learning**: Fuses traditional course foundations (lessons, quizzes, practice) with evidence-based learning science (spaced repetition, mastery tracking).
+- **AI Conversation Roleplay**: Revolutionary scenario-based dialogue sessions to immerse students in real-world scenarios.
+- **Enterprise Multi-Tenancy**: Built on a shared-database model where all tenants share the same robust codebase but are cryptographically isolated at every query layer.
+- **Strict Production Security**:
+  - Zero `localStorage` token leakage — exclusively uses `HttpOnly` cookie-based JWTs with `SameSite: Lax` for seamless cross-site mobile support.
+  - Complete CSRF double-submit protection.
+- **Flawless i18n Support**: Full bilingual support (Vietnamese & English) rigorously tested by automated contract checks.
+- **Bulletproof Reliability**: E2E tested with Playwright in isolated browser contexts with stateful authentication mocking.
 
 ---
 
 ## Table of Contents
 
 - [Overview](#overview)
-- [Key Features](#key-features)
 - [Architecture](#architecture)
 - [Tech Stack](#tech-stack)
-- [Apps & Portals](#apps--portals)
-- [Getting Started](#getting-started)
-- [Environment Variables](#environment-variables)
-- [Testing](#testing)
-- [Documentation](#documentation)
-- [Security Notes](#security-notes)
-
----
-
-## Overview
-
-LMS Platform is a **monorepo** built with `pnpm` + `Turborepo`, consisting of a NestJS API server and four Next.js frontends. It follows a **shared-database multi-tenancy** model — all tenants share the same codebase and database, isolated by `tenantId` at every query and policy layer.
-
-The product direction is **Hybrid AI-Enhanced Learning**: traditional course/lesson/practice/exam foundations combined with evidence-based learning science (spaced repetition, mastery-based progression, adaptive sequencing) and AI features (in-context tutor, AI-generated practice, conversation roleplay).
 
 ---
 

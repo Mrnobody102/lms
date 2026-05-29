@@ -55,7 +55,7 @@ export default function StudentDetailPage() {
             {isLoading ? (
               <LoadingState title={t('loading')} className="rounded-xl border" />
             ) : isError || !student ? (
-              <ErrorState title="Không tìm thấy học viên" />
+              <ErrorState title={t('notFoundStudent')} />
             ) : (
               <div className="space-y-6">
                 {/* Header card */}
@@ -67,7 +67,7 @@ export default function StudentDetailPage() {
                       </div>
                       <div>
                         <h1 className="text-2xl font-bold tracking-tight">
-                          {student.fullName || '(Chưa có tên)'}
+                          {student.fullName || t('common.unnamed')}
                         </h1>
                         <p className="text-sm text-muted-foreground">{student.email}</p>
                         <div className="mt-2">
@@ -130,7 +130,7 @@ export default function StudentDetailPage() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <InfoCard icon={Mail} label="Email" value={student.email} />
                   {student.phoneNumber && (
-                    <InfoCard icon={Phone} label="Số điện thoại" value={student.phoneNumber} />
+                    <InfoCard icon={Phone} label={t('phoneNumber')} value={student.phoneNumber} />
                   )}
                   <InfoCard
                     icon={Calendar}
@@ -140,7 +140,7 @@ export default function StudentDetailPage() {
                   {student.updatedAt && (
                     <InfoCard
                       icon={Calendar}
-                      label="Cập nhật lần cuối"
+                      label={t('lastUpdated')}
                       value={formatDate(student.updatedAt)}
                     />
                   )}
@@ -149,7 +149,7 @@ export default function StudentDetailPage() {
                 {/* ID / meta */}
                 <div className="rounded-xl border bg-muted/20 p-4">
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-                    Thông tin hệ thống
+                    {t('systemInfo')}
                   </p>
                   <dl className="space-y-1.5">
                     <div className="flex gap-3 text-sm">
@@ -157,7 +157,7 @@ export default function StudentDetailPage() {
                       <dd className="font-mono text-xs break-all">{student.id}</dd>
                     </div>
                     <div className="flex gap-3 text-sm">
-                      <dt className="w-24 shrink-0 text-muted-foreground">Vai trò</dt>
+                      <dt className="w-24 shrink-0 text-muted-foreground">{t('role')}</dt>
                       <dd>{student.role}</dd>
                     </div>
                   </dl>

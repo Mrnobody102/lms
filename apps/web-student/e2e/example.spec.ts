@@ -48,7 +48,7 @@ const aiPracticeQuestion = {
 };
 
 async function installStudentApiMocks(page: Page) {
-  let currentUser: typeof studentUser | null = null;
+  let isLoggedIn = false;
   let hasPracticeAttempt = false;
   let latestPracticeAnswer = 'Ni Hao';
   let progress = [] as Array<{
@@ -166,49 +166,35 @@ async function installStudentApiMocks(page: Page) {
     }
 
     if (path.endsWith('/api/users/me') && method === 'GET') {
-      if (!currentUser) {
-        return json(401, {
-          statusCode: 401,
-          message: 'Invalid or missing authentication token',
-        });
+      if (isLoggedIn) {
+        return json(200, studentUser);
       }
-
-      return json(200, currentUser);
+      return json(401, { message: 'Unauthorized' });
     }
 
     if (path.endsWith('/api/auth/register') && method === 'POST') {
-      const payload = request.postDataJSON() as {
-        email: string;
-        fullName: string;
-      };
-
-      currentUser = {
-        ...studentUser,
-        email: payload.email,
-        fullName: payload.fullName,
-      };
-
-      return json(201, { user: currentUser });
+      isLoggedIn = true;
+      return json(201, { user: studentUser });
     }
 
     if (path.endsWith('/api/auth/login') && method === 'POST') {
-      currentUser = { ...studentUser };
-      return json(200, { user: currentUser });
+      isLoggedIn = true;
+      return json(200, { user: studentUser });
     }
 
     if (path.endsWith('/api/auth/refresh') && method === 'POST') {
-      if (!currentUser) {
+      if (!isLoggedIn) {
         return json(401, {
           statusCode: 401,
           message: 'Invalid or missing authentication token',
         });
       }
 
-      return json(200, { user: currentUser });
+      return json(200, { user: studentUser });
     }
 
     if (path.endsWith('/api/auth/logout') && method === 'POST') {
-      currentUser = null;
+      isLoggedIn = false;
       progress = [];
       activities = [];
 

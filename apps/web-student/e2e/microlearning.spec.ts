@@ -39,6 +39,7 @@ const course = {
 
 async function installMicrolearningMocks(page: Page) {
   let addToReviewCount = 0;
+  let isLoggedIn = false;
   const corsHeaders = {
     'access-control-allow-origin': 'http://127.0.0.1:3100',
     'access-control-allow-credentials': 'true',
@@ -63,10 +64,14 @@ async function installMicrolearningMocks(page: Page) {
     }
 
     if (path.endsWith('/api/users/me') && method === 'GET') {
-      return json(200, studentUser);
+      if (isLoggedIn) {
+        return json(200, studentUser);
+      }
+      return json(401, { message: 'Unauthorized' });
     }
 
     if (path.endsWith('/api/auth/login') && method === 'POST') {
+      isLoggedIn = true;
       return json(200, { user: studentUser });
     }
 

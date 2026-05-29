@@ -1,6 +1,10 @@
+'use client';
+
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 export default function NotFound() {
+  const t = useTranslations('Admin');
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-6">
       <div className="max-w-md w-full text-center">
@@ -35,11 +39,11 @@ export default function NotFound() {
         </div>
 
         {/* Text */}
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Trang không tồn tại</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">{t('pageNotFound')}</h1>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-          Đường dẫn bạn truy cập không tồn tại hoặc đã bị di chuyển.
+          {t('pageNotFoundDesc')}
           <br />
-          Hãy kiểm tra lại URL hoặc quay về trang chủ.
+          {t('pageNotFoundDesc2')}
         </p>
 
         {/* Actions */}
@@ -62,7 +66,7 @@ export default function NotFound() {
               />
               <polyline points="9 22 9 12 15 12 15 22" />
             </svg>
-            Về trang chủ
+            {t('backToHome')}
           </Link>
           <button
             type="button"
@@ -78,14 +82,12 @@ export default function NotFound() {
             >
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            Quay lại
+            {t('goBack')}
           </button>
         </div>
 
         {/* Footer hint */}
-        <p className="mt-10 text-xs text-muted-foreground/60">
-          LMS Admin Portal &nbsp;·&nbsp; Mã lỗi 404
-        </p>
+        <p className="mt-10 text-xs text-muted-foreground/60">{t('error404Footer')}</p>
       </div>
     </div>
   );

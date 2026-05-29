@@ -210,7 +210,7 @@ export function LessonEditor({
               href={`/courses/${courseId}/edit`}
               className="hover:text-foreground transition-colors truncate max-w-[120px]"
             >
-              Giáo trình
+              {t('curriculumTab')}
             </Link>
             <span>/</span>
             <span className="text-foreground font-medium truncate">
@@ -234,12 +234,12 @@ export function LessonEditor({
             {saveSuccess ? (
               <span className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
                 <CheckCircle2 className="h-3.5 w-3.5" />
-                Đã lưu
+                {t('saved')}
               </span>
             ) : isDirty && isReady ? (
               <span className="flex items-center gap-1.5 text-xs text-amber-500 font-medium">
                 <div className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
-                Chưa lưu
+                {t('unsaved')}
               </span>
             ) : null}
           </div>
@@ -268,7 +268,7 @@ export function LessonEditor({
               ) : (
                 <Save className="h-3.5 w-3.5" />
               )}
-              {saving ? 'Đang lưu...' : t('save')}
+              {saving ? t('saving') : t('save')}
             </Button>
           </div>
         </div>
@@ -377,14 +377,14 @@ export function LessonEditor({
                   <p
                     className={`text-xs font-medium ${isReady ? 'text-emerald-700 dark:text-emerald-400' : 'text-muted-foreground'}`}
                   >
-                    {isReady ? 'Bài học đã sẵn sàng lưu' : 'Cần điền đầy đủ nội dung'}
+                    {isReady ? t('lessonReadyToSave') : t('lessonNeedsContent')}
                   </p>
                   {!title.trim() && (
-                    <p className="text-xs text-muted-foreground mt-1">· Chưa có tiêu đề</p>
+                    <p className="text-xs text-muted-foreground mt-1">{t('lessonMissingTitle')}</p>
                   )}
                   {!isReady && title.trim() && (
                     <p className="text-xs text-muted-foreground mt-1">
-                      · Cần thêm nội dung bài học
+                      {t('lessonNeedsMoreContent')}
                     </p>
                   )}
                 </div>
@@ -417,7 +417,7 @@ export function LessonEditor({
             {title ? (
               <span className="text-sm font-medium text-foreground truncate">{title}</span>
             ) : (
-              <span className="text-sm text-muted-foreground italic">Chưa có tiêu đề...</span>
+              <span className="text-sm text-muted-foreground italic">{t('noTitleYet')}</span>
             )}
           </div>
 
