@@ -288,7 +288,7 @@ export default function ExamAttemptPage() {
                           question={question}
                           value={answers[question.id] ?? ''}
                           feedback={feedback}
-                          disabled={Boolean(result)}
+                          disabled={Boolean(result) || submitAttempt.isPending}
                           showError={
                             showValidationErrors &&
                             !isQuestionAnswered(question, answers[question.id])
