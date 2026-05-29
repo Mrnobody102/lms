@@ -1,127 +1,292 @@
-# LMS Platform - Nền Tảng Giáo Dục Đa Người Thuê (Multi-tenant SaaS)
+# LMS Platform — Multi-tenant SaaS Learning Management System
 
-Chào mừng bạn đến với **LMS Platform**, một giải pháp **SaaS (Software-as-a-Service)** cho phép triển khai hàng loạt các website đào tạo trực tuyến.
+A production-grade, **multi-tenant SaaS LMS** built for language schools, training centers, and online academies. Think _Shopify for Education_: one platform, unlimited tenants, each with their own branding, courses, and students.
 
-Dự án được thiết kế để phục vụ **đa dạng mô hình giáo dục**, từ trung tâm ngoại ngữ (Tiếng Anh, Trung, Nhật...), trung tâm kỹ năng mềm, đến các trường học online.
+---
 
-## Mục Lục
+## Table of Contents
 
-- [Tầm Nhìn Sản Phẩm](#tầm-nhìn-sản-phẩm)
-- [Các Ứng Dụng (Apps)](#các-ứng-dụng-apps)
-- [Tính Năng Nổi Bật](#tính-năng-nổi-bật)
-- [Tài liệu Dự án](#tài-liệu-dự-án)
-- [Cài đặt](#cài-đặt)
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [Architecture](#architecture)
+- [Tech Stack](#tech-stack)
+- [Apps & Portals](#apps--portals)
+- [Getting Started](#getting-started)
+- [Environment Variables](#environment-variables)
+- [Testing](#testing)
+- [Documentation](#documentation)
+- [Security Notes](#security-notes)
 
-## Tầm Nhìn Sản Phẩm
+---
 
-Xây dựng một "Shopify cho Giáo Dục". Bạn là người sở hữu nền tảng (Platform Owner), và khách hàng của bạn là các Chủ trung tâm giáo dục. Họ thuê nền tảng của bạn để tạo website dạy học riêng cho họ.
+## Overview
 
-- **Multi-tenant**: Mỗi trung tâm có dữ liệu, giao diện, và học viên riêng biệt.
-- **Scalable**: Một source code duy nhất phục vụ hàng ngàn trung tâm.
-- **Modular**: Các tính năng chuyên sâu (như Luyện viết chữ viết, Code Editor) được thiết kế dạng module, có thể bật/tắt tùy nhu cầu của từng trung tâm.
+LMS Platform is a **monorepo** built with `pnpm` + `Turborepo`, consisting of a NestJS API server and four Next.js frontends. It follows a **shared-database multi-tenancy** model — all tenants share the same codebase and database, isolated by `tenantId` at every query and policy layer.
 
-## Các Ứng Dụng (Apps)
+The product direction is **Hybrid AI-Enhanced Learning**: traditional course/lesson/practice/exam foundations combined with evidence-based learning science (spaced repetition, mastery-based progression, adaptive sequencing) and AI features (in-context tutor, AI-generated practice, conversation roleplay).
 
-Hệ thống bao gồm 4 ứng dụng chính trong Monorepo:
+---
 
-1. **`super-portal` (Super Admin)**: Dành cho BẠN. Nơi quản lý toàn bộ hệ thống, tạo tenant mới, thu phí dịch vụ.
-2. **`web-admin` (Center Admin)**: Dành cho KHÁCH HÀNG (Chủ trung tâm). Nơi họ upload khóa học, quản lý học viên của riêng họ.
-3. **`web-student` (Learning App)**: Dành cho HỌC VIÊN. Giao diện học tập, tự động thay đổi logo/màu sắc theo trung tâm mà họ đang truy cập.
-4. **`api-server`**: Backend trung tâm xử lý logic cho toàn bộ hệ thống.
+## Key Features
 
-## Tính Năng Nổi Bật
+### 🎓 Learning Experience (Student Portal)
 
-- **Dynamic Branding**: Giao diện White-label, tự động thích ứng theo thương hiệu của Tenant.
-- **Flexible Content**: Hỗ trợ Video, Text, Quiz, Flashcard... phù hợp nhiều loại hình đào tạo.
-- **High Performance**: Sử dụng Next.js & NestJS tối ưu hóa cho tải cao.
+| Feature                                                                | Status        |
+| ---------------------------------------------------------------------- | ------------- |
+| Course catalog with enrollment-based access                            | ✅ Production |
+| Structured learning: Program → Level → Course → Unit → Lesson          | ✅ Production |
+| Lesson types: Video, Text, Quiz, Micro-card, Practice, Exam            | ✅ Production |
+| Learning dashboard: continue learning, daily streak, activity calendar | ✅ Production |
+| Spaced Repetition System (SRS) — SM-2 algorithm, daily review queue    | ✅ Production |
+| Practice engine: multiple choice, fill-in-blank, matching, ordering    | ✅ Production |
+| Listening comprehension: audio prompt with replay limit                | ✅ Production |
+| Exam engine: timed, resume-able, auto-graded with section navigation   | ✅ Production |
+| AI In-Context Tutor: explains mistakes in practice/exam review         | ✅ Production |
+| AI Conversation Roleplay: scenario-based dialogue sessions             | ✅ MVP        |
+| Skill Mastery tracking with EWMA-based scoring                         | ✅ Production |
+| Certificates upon course completion                                    | ✅ Production |
+| Discussion threads per lesson                                          | ✅ Production |
+| Google Sign-In (OAuth 2.0 with ID token verification)                  | ✅ Production |
+| i18n: Vietnamese & English                                             | ✅ Production |
 
-## Tài liệu Dự án
+### 🛠️ Admin Portal (Center Owner)
 
-- [Tổng quan Kiến trúc (Architecture)](docs/ARCHITECTURE.md)
-- [Công nghệ Sử dụng (Tech Stack)](docs/tech-stack.md)
-- [Phân tích Chuyên sâu (Tech Analysis)](docs/tech-analysis.md)
-- [Hướng dẫn Database & Migrations](docs/guides/database-guide.md)
-- [Hướng dẫn Kiểm thử (Testing Guide)](docs/guides/testing.md)
-- [Danh sách Tính năng (Features)](docs/product/features.md)
-- [Kế hoạch Phát triển (Plan)](docs/product/PLAN.md)
-- [Backlog Kỹ thuật](docs/product/ENGINEERING-BACKLOG.md)
-- [Hướng dẫn Triển khai (Deployment)](docs/ops/deployment.md)
-- [Xem nhanh (Quick Start)](docs/quick-start.md)
-- [API Documentation](docs/api-documentation.md)
+| Feature                                                           | Status        |
+| ----------------------------------------------------------------- | ------------- |
+| Course/Unit/Lesson CRUD with full-page lesson editor              | ✅ Production |
+| Question bank management (practice & exam)                        | ✅ Production |
+| Student management: enroll/unenroll, bulk operations, detail view | ✅ Production |
+| Activation codes & license entitlements                           | ✅ Production |
+| Cohort management                                                 | ✅ Production |
+| Reporting: drill-down Program → Level → Course → Unit → Skill     | ✅ Production |
+| Time-series activity trends & CSV export                          | ✅ Production |
+| Student risk flags & cohort comparison                            | ✅ Production |
+| AI-generated question draft review queue                          | ✅ MVP        |
+| Instructor assignments per course                                 | ✅ Production |
+| Marketplace for sharing/subscribing to content                    | ✅ MVP        |
+| Notification system                                               | ✅ Production |
 
-## Production Readiness Snapshot
+### 🌐 Super Admin Portal (Platform Owner)
 
-- Browser auth is cookie-first with CSRF protection for state-changing requests.
-- Tenant isolation is enforced in auth guards, explicit service-layer policy, and tenant-scoped database constraints for learning records.
-- Frontend tenant headers are local/dev hints by default; production should resolve tenants from domain/subdomain.
-- Package manifests avoid `"latest"` so CI and deployments use reproducible dependency versions.
-- MCP stays opt-in; tenant-scoped MCP data tools require `MCP_TENANT_ID` and should stay disabled unless the deployment intentionally exposes them.
+| Feature                                           | Status        |
+| ------------------------------------------------- | ------------- |
+| Tenant lifecycle management                       | ✅ MVP        |
+| Platform-level user identity (GlobalUserIdentity) | ✅ Production |
+| Audit logs                                        | ✅ Production |
 
-## Cài đặt
+### 🔒 Security & Infrastructure
 
-### 1. Yêu Cầu Tiên Quyết
+- **Cookie-first auth** with `HttpOnly` JWT cookies — no `localStorage` tokens
+- **CSRF double-submit** protection for all state-changing requests
+- **Tenant isolation** enforced at auth guards, service policy, and DB constraints
+- **Rate limiting** via Redis-backed throttler (configurable per endpoint)
+- **Token versioning** — password change invalidates all existing sessions
+- **Production tenant resolution** from domain/subdomain, not client headers
+- **MCP server** (opt-in) with API key auth and tenant scoping
+- **Audit logging** for sensitive admin actions
 
-- **Node.js**: Phiên bản >= 20.9.0 (khuyến nghị Node 20 LTS; `.nvmrc` pin 20.19.5)
-- **pnpm**: Cài đặt bằng `npm install -g pnpm`
-- **Docker**: Cần để chạy Database (PostgreSQL) và Redis.
+---
 
-### 2. Cài Đặt
+## Architecture
+
+```
+┌─────────────┐    HTTPS     ┌────────────────────────────────┐
+│    Browser   ├─────────────▶   CDN / Reverse Proxy           │
+└─────────────┘              └────┬────────┬────────┬──────────┘
+                                  │        │        │
+                         web-student  web-admin  super-portal
+                                  │        │        │
+                                  └────────┴────────┘
+                                           │ REST + HttpOnly Cookie
+                                    ┌──────▼──────┐
+                                    │  api-server  │
+                                    │   (NestJS)   │
+                                    └──────┬───────┘
+                                    ┌──────┴───────┐
+                               PostgreSQL        Redis
+                           (source of truth)  (throttle/cache)
+```
+
+**Multi-tenancy model**: Shared database, tenant-scoped at every layer.
+
+- Auth guards inject `tenantId` from verified request context
+- Service layer uses `LearningAccessService` for enrollment + tenant policy
+- DB constraints enforce tenant-scoped uniqueness on all learning relations
+
+---
+
+## Tech Stack
+
+| Layer        | Technology                                                            |
+| ------------ | --------------------------------------------------------------------- |
+| **Monorepo** | pnpm 9 + Turborepo                                                    |
+| **Backend**  | NestJS (modular), Prisma ORM, PostgreSQL, Redis                       |
+| **Frontend** | Next.js 15 (App Router), React, Tailwind CSS, Zustand, React Query v5 |
+| **Auth**     | JWT (HttpOnly cookie), CSRF tokens, Google OAuth 2.0                  |
+| **AI**       | Pluggable AI gateway (Google Gemini / custom endpoint)                |
+| **Media**    | S3-compatible storage, presigned uploads, BullMQ job queue            |
+| **Testing**  | Vitest (unit), Playwright (E2E)                                       |
+| **CI/CD**    | GitHub Actions, Docker, Vercel                                        |
+| **Language** | TypeScript (strict mode, no `any`)                                    |
+
+---
+
+## Apps & Portals
+
+| App            | Port          | Description                    |
+| -------------- | ------------- | ------------------------------ |
+| `web-student`  | 3100          | Student-facing learning portal |
+| `web-admin`    | 3101          | Center owner admin portal      |
+| `super-portal` | 3102          | Platform super admin           |
+| `web-sales`    | 3103          | Public course sales page       |
+| `api-server`   | 4000          | Central REST API               |
+| Swagger UI     | 4000/api/docs | Interactive API docs           |
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- **Node.js** ≥ 20.9.0 (use `.nvmrc` — pinned to 20.19.5)
+- **pnpm** — `npm install -g pnpm`
+- **Docker** — for PostgreSQL and Redis
+
+### Install
 
 ```bash
-# Cài đặt toàn bộ dependencies trong monorepo
 pnpm install
 ```
 
-### 3. Cấu Hình Môi Trường
-
-- Khởi động hạ tầng (Database & Redis) bằng Docker:
-  ```bash
-  pnpm db:up
-  ```
-- Đồng bộ Schema Database:
-  ```bash
-  pnpm db:migrate
-  ```
-- Tạo dữ liệu mẫu (tài khoản demo, tenant mẫu):
-  ```bash
-  pnpm db:seed
-  ```
-
-### 4. Chạy Development
-
-Khởi động toàn bộ hệ thống (Frontend + Backend):
+### Configure Environment
 
 ```bash
+# Copy the example env file and fill in your values
+cp .env.example .env
+```
+
+See [Environment Variables](#environment-variables) for required fields.
+
+### Start Infrastructure
+
+```bash
+# Start PostgreSQL + Redis via Docker
+pnpm db:up
+
+# Run database migrations
+pnpm db:migrate
+
+# Seed demo data (tenant, admin account, sample courses)
+pnpm db:seed
+```
+
+### Run in Development
+
+```bash
+# Start all apps concurrently
 pnpm dev
 ```
 
-Truy cập các ứng dụng:
+Access the apps:
 
-| App              | URL                              |
-| ---------------- | -------------------------------- |
-| Web Student      | `http://localhost:3100`          |
-| Web Admin        | `http://localhost:3101`          |
-| Super Portal     | `http://localhost:3102`          |
-| API Server       | `http://localhost:4000`          |
-| Swagger API Docs | `http://localhost:4000/api/docs` |
+| App            | URL                            |
+| -------------- | ------------------------------ |
+| Student Portal | http://localhost:3100          |
+| Admin Portal   | http://localhost:3101          |
+| Super Portal   | http://localhost:3102          |
+| Sales Page     | http://localhost:3103          |
+| API Server     | http://localhost:4000          |
+| Swagger Docs   | http://localhost:4000/api/docs |
 
-### 5. Testing
+---
 
-Hệ thống hỗ trợ 2 loại testing:
+## Environment Variables
 
-**Unit Test** (Vitest) cho Packages:
+Copy `.env.example` to `.env` and configure the following:
+
+| Variable                       | Required | Description                               |
+| ------------------------------ | -------- | ----------------------------------------- |
+| `DATABASE_URL`                 | ✅       | PostgreSQL connection string              |
+| `REDIS_URL`                    | ✅       | Redis connection string                   |
+| `JWT_SECRET`                   | ✅       | Min 32 chars, used for access tokens      |
+| `JWT_RESET_SECRET`             | ✅       | Separate secret for password reset tokens |
+| `PORT`                         | ✅       | API server port (default: 4000)           |
+| `CORS_ORIGINS`                 | ✅       | Comma-separated allowed origins           |
+| `GOOGLE_CLIENT_ID`             | ⚠️       | Required for Google login                 |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | ⚠️       | Required on student frontend              |
+| `AI_PROVIDER`                  | Optional | `off` (default), or configure AI gateway  |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | Optional | For Gemini-powered AI features            |
+| `MCP_ENABLED`                  | Optional | Enable MCP server (default: `false`)      |
+| `MAIL_ENABLED`                 | Optional | Enable email sending (default: `false`)   |
+
+> **Never commit your `.env` file.** It is listed in `.gitignore`.
+
+---
+
+## Testing
+
+### Unit Tests (Vitest)
 
 ```bash
-pnpm test --filter @repo/shared # Test logic
-pnpm test --filter @repo/ui     # Test components
+pnpm test --filter @repo/shared   # Test shared logic
+pnpm test --filter @repo/ui       # Test UI components
 ```
 
-**End-to-End Test** (Playwright) cho Apps:
+### Integration Tests
 
 ```bash
-# Cài đặt browsers cho lần đầu
+pnpm --filter api-server test
+```
+
+### End-to-End Tests (Playwright)
+
+```bash
+# Install browsers (first time)
 pnpm run playwright:install:chromium
 
-# Chạy E2E test cho Web Student
+# Run E2E tests for student portal
 pnpm --filter web-student test:e2e
 ```
+
+### Validate Before Committing
+
+```bash
+pnpm lint
+pnpm run typecheck
+pnpm run test
+```
+
+---
+
+## Documentation
+
+| Document                                        | Description                                |
+| ----------------------------------------------- | ------------------------------------------ |
+| [Architecture Overview](docs/ARCHITECTURE.md)   | System boundaries, tenant model, auth flow |
+| [Tech Stack](docs/tech-stack.md)                | Detailed technology choices and rationale  |
+| [API Documentation](docs/api-documentation.md)  | Standardized API contracts                 |
+| [Database Guide](docs/guides/database-guide.md) | Prisma usage, migrations, seeding          |
+| [Testing Guide](docs/guides/testing.md)         | Testing strategy and patterns              |
+| [Feature List](docs/product/features.md)        | Complete feature inventory with status     |
+| [Product Roadmap](docs/product/PLAN.md)         | Development phases and backlog             |
+| [Deployment Guide](docs/ops/deployment.md)      | Production deployment with Docker          |
+| [Quick Start](docs/quick-start.md)              | Fastest path to a running system           |
+| [Contributing](CONTRIBUTING.md)                 | Code standards, PR workflow                |
+
+---
+
+## Security Notes
+
+- **Secrets** are loaded from environment variables only — no hardcoded credentials in source code
+- **`.env` is gitignored** — only `.env.example` (with placeholder values) is committed
+- **Browser auth** uses `HttpOnly` cookies with CSRF protection — tokens are never in `localStorage`
+- **Tenant headers** (`x-tenant-id`) are treated as dev hints only; production resolves tenant from verified domain/origin
+- **Rate limiting** is enabled via Redis throttler — configure `THROTTLER_TTL` and `THROTTLER_LIMIT`
+- **MCP server** is disabled by default (`MCP_ENABLED=false`) and requires a 32+ char API key when enabled
+- **`ALLOW_TENANT_HEADER_IN_PRODUCTION`** must remain `false` in production deployments
+
+---
+
+## License
+
+Private — All rights reserved.
