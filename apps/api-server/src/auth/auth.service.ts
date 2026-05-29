@@ -279,7 +279,16 @@ export class AuthService {
       throw this.invalidCredentials();
     }
 
-    const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
+    let isPasswordValid = false;
+    try {
+      isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
+    } catch (error) {
+      this.logger.error(
+        `Failed to compare passwords (possibly corrupted hash) for user: ${user.id}`,
+        error,
+      );
+      throw this.invalidCredentials();
+    }
 
     if (!isPasswordValid) {
       this.logger.warn(`Login failed - invalid password: id=${user.id}`);
