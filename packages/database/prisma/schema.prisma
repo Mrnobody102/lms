@@ -203,13 +203,14 @@ enum CourseActivityProgressStatus {
 }
 
 model Tenant {
-  id                               String                     @id @default(uuid())
+  id                               String                       @id @default(uuid())
   name                             String
-  slug                             String                     @unique // Ví dụ: "trung-tam-a"
-  domain                           String?                    @unique // Custom domain sau này
+  slug                             String                       @unique // Ví dụ: "trung-tam-a"
+  domain                           String?                      @unique // Custom domain sau này
   settings                         Json // Lưu logo, màu sắc, config
   users                            User[]
   courses                          Course[]
+  courseInstructorAssignments      CourseInstructorAssignment[]
   units                            CourseUnit[]
   lessons                          Lesson[]
   enrollments                      CourseEnrollment[]
@@ -243,42 +244,57 @@ model Tenant {
   courseCertificates               CourseCertificate[]
   courseActivities                 CourseActivity[]
   courseActivityProgress           UserCourseActivityProgress[]
-  marketplaceItems                 MarketplaceItem[]          @relation("MarketplaceItemOwnerTenant")
-  marketplaceSubscriptions         ResourceSubscription[]     @relation("MarketplaceSubscriberTenant")
-  marketplaceProvidedSubscriptions ResourceSubscription[]     @relation("MarketplaceProviderTenant")
-  marketplaceUsageAsProvider       MarketplaceUsageEvent[]    @relation("MarketplaceUsageProviderTenant")
-  marketplaceUsageAsSubscriber     MarketplaceUsageEvent[]    @relation("MarketplaceUsageSubscriberTenant")
+  marketplaceItems                 MarketplaceItem[]            @relation("MarketplaceItemOwnerTenant")
+  marketplaceSubscriptions         ResourceSubscription[]       @relation("MarketplaceSubscriberTenant")
+  marketplaceProvidedSubscriptions ResourceSubscription[]       @relation("MarketplaceProviderTenant")
+  marketplaceUsageAsProvider       MarketplaceUsageEvent[]      @relation("MarketplaceUsageProviderTenant")
+  marketplaceUsageAsSubscriber     MarketplaceUsageEvent[]      @relation("MarketplaceUsageSubscriberTenant")
   videoEngagementEvents            VideoEngagementEvent[]
   adaptiveLearningPathItems        AdaptiveLearningPathItem[]
-  isActive                         Boolean                    @default(true)
-  createdAt                        DateTime                   @default(now())
-  updatedAt                        DateTime                   @default(now()) @updatedAt
+  isActive                         Boolean                      @default(true)
+  createdAt                        DateTime                     @default(now())
+  updatedAt                        DateTime                     @default(now()) @updatedAt
   Notification                     Notification[]
 
   @@index([isActive])
 }
 
+model GlobalUserIdentity {
+  id              String   @id @default(uuid())
+  normalizedEmail String   @unique
+  displayName     String?
+  phoneNumber     String?
+  users           User[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([normalizedEmail])
+}
+
 model User {
-  id                                String                     @id @default(uuid())
+  id                                String                       @id @default(uuid())
   email                             String
   password                          String
   googleSubject                     String?
-  googleEmailVerified               Boolean                    @default(false)
+  googleEmailVerified               Boolean                      @default(false)
   fullName                          String
   phoneNumber                       String?
   avatarUrl                         String?
-  role                              Role                       @default(STUDENT)
-  isActive                          Boolean                    @default(true)
+  role                              Role                         @default(STUDENT)
+  isActive                          Boolean                      @default(true)
   deletedAt                         DateTime?
-  tokenVersion                      Int                        @default(0)
+  tokenVersion                      Int                          @default(0)
   passwordResetTokenHash            String?
   passwordResetExpiresAt            DateTime?
-  failedLoginAttempts               Int                        @default(0)
+  failedLoginAttempts               Int                          @default(0)
   lockoutUntil                      DateTime?
+  globalIdentityId                  String?
+  globalIdentity                    GlobalUserIdentity?          @relation(fields: [globalIdentityId], references: [id], onDelete: SetNull)
   tenantId                          String
-  tenant                            Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant                            Tenant                       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   progress                          UserLessonProgress[]
   enrollments                       CourseEnrollment[]
+  instructorCourseAssignments       CourseInstructorAssignment[]
   activities                        LearningActivity[]
   practiceAttempts                  PracticeAttempt[]
   examAttempts                      ExamAttempt[]
@@ -291,8 +307,8 @@ model User {
   reviewLogs                        ReviewLog[]
   aiUsageQuotas                     AiUsageQuota[]
   mediaAssets                       MediaAsset[]
-  requestedAiQuestionGenerationJobs AiQuestionGenerationJob[]  @relation("AiQuestionGenerationJobRequestedBy")
-  reviewedAiQuestionDrafts          AiGeneratedQuestionDraft[] @relation("AiGeneratedQuestionDraftReviewedBy")
+  requestedAiQuestionGenerationJobs AiQuestionGenerationJob[]    @relation("AiQuestionGenerationJobRequestedBy")
+  reviewedAiQuestionDrafts          AiGeneratedQuestionDraft[]   @relation("AiGeneratedQuestionDraftReviewedBy")
   cohortMemberships                 CohortMembership[]
   roleplaySessions                  RoleplaySession[]
   studentRiskSnapshots              StudentRiskSnapshot[]
@@ -302,11 +318,11 @@ model User {
   courseActivityProgress            UserCourseActivityProgress[]
   videoEngagementEvents             VideoEngagementEvent[]
   adaptiveLearningPathItems         AdaptiveLearningPathItem[]
-  createdAt                         DateTime                   @default(now())
-  updatedAt                         DateTime                   @updatedAt
+  createdAt                         DateTime                     @default(now())
+  updatedAt                         DateTime                     @updatedAt
   Notification                      Notification[]
-  currentStreak                     Int                        @default(0)
-  longestStreak                     Int                        @default(0)
+  currentStreak                     Int                          @default(0)
+  longestStreak                     Int                          @default(0)
   lastActiveDate                    DateTime?
 
   @@unique([tenantId, email])
@@ -315,6 +331,7 @@ model User {
   @@index([tenantId, role])
   @@index([tenantId, isActive])
   @@index([tenantId, deletedAt])
+  @@index([globalIdentityId])
 }
 
 model RefreshToken {
@@ -352,20 +369,21 @@ model AuditLog {
 }
 
 model Course {
-  id                        String                     @id @default(uuid())
+  id                        String                       @id @default(uuid())
   title                     String
   slug                      String? // SEO-friendly slug
   description               String?
   coverImageUrl             String? // URL to the course cover/thumbnail image
-  isActive                  Boolean                    @default(true)
+  isActive                  Boolean                      @default(true)
   deletedAt                 DateTime?
   tenantId                  String
-  tenant                    Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant                    Tenant                       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   levelId                   String?
-  level                     Level?                     @relation(fields: [levelId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
+  level                     Level?                       @relation(fields: [levelId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
   units                     CourseUnit[]
   lessons                   Lesson[]
   enrollments               CourseEnrollment[]
+  instructorAssignments     CourseInstructorAssignment[]
   activities                LearningActivity[]
   questions                 PracticeQuestion[]
   aiQuestionGenerationJobs  AiQuestionGenerationJob[]
@@ -378,10 +396,10 @@ model Course {
   courseCertificates        CourseCertificate[]
   adaptiveLearningPathItems AdaptiveLearningPathItem[]
   courseActivities          CourseActivity[]
-  totalDuration             Int                        @default(0)
+  totalDuration             Int                          @default(0)
   aiSettings                Json?
-  createdAt                 DateTime                   @default(now())
-  updatedAt                 DateTime                   @updatedAt
+  createdAt                 DateTime                     @default(now())
+  updatedAt                 DateTime                     @updatedAt
   activationCodes           ActivationCode[]
 
   @@unique([tenantId, slug])
@@ -526,6 +544,25 @@ model CourseEnrollment {
   @@index([tenantId, status])
   @@index([courseId])
   @@index([userId])
+}
+
+model CourseInstructorAssignment {
+  id           String   @id @default(uuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  courseId     String
+  course       Course   @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  instructorId String
+  instructor   User     @relation(fields: [instructorId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  assignedById String?
+  assignedAt   DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([id, tenantId])
+  @@unique([tenantId, courseId, instructorId])
+  @@index([tenantId, courseId])
+  @@index([tenantId, instructorId])
 }
 
 model LearningActivity {

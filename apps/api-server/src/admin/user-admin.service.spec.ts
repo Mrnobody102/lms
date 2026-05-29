@@ -1,4 +1,4 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Role } from '@repo/database';
 import { describe, expect, it, vi } from 'vitest';
 import { UserAdminService } from './user-admin.service';
@@ -21,6 +21,91 @@ function makeCurrentUser(overrides: Partial<AuthenticatedUser> = {}): Authentica
 }
 
 describe('UserAdminService', () => {
+  it('should create instructor accounts inside the admin tenant', async () => {
+    const prisma = {
+      globalUserIdentity: {
+        upsert: vi.fn().mockResolvedValue({ id: 'identity-1' }),
+      },
+      user: {
+        findFirst: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue({
+          id: 'instructor-1',
+          email: 'teacher@example.com',
+          fullName: 'Teacher One',
+          role: Role.INSTRUCTOR,
+          globalIdentityId: 'identity-1',
+          tenantId: 'tenant-1',
+          isActive: true,
+        }),
+      },
+    };
+
+    const service = new UserAdminService(prisma as never);
+    const result = await service.createInstructor(makeCurrentUser(), 'tenant-1', {
+      email: ' Teacher@Example.com ',
+      password: 'Password@123',
+      fullName: 'Teacher One',
+    });
+
+    expect(prisma.user.findFirst).toHaveBeenCalledWith({
+      where: {
+        tenantId: 'tenant-1',
+        email: {
+          equals: 'teacher@example.com',
+          mode: 'insensitive',
+        },
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+    expect(prisma.user.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          email: 'teacher@example.com',
+          fullName: 'Teacher One',
+          globalIdentityId: 'identity-1',
+          tenantId: 'tenant-1',
+          role: Role.INSTRUCTOR,
+        }),
+      }),
+    );
+    expect(prisma.globalUserIdentity.upsert).toHaveBeenCalledWith({
+      where: { normalizedEmail: 'teacher@example.com' },
+      update: { displayName: 'Teacher One' },
+      create: {
+        normalizedEmail: 'teacher@example.com',
+        displayName: 'Teacher One',
+        phoneNumber: undefined,
+      },
+      select: { id: true },
+    });
+    expect(result).toEqual(expect.objectContaining({ role: Role.INSTRUCTOR }));
+  });
+
+  it('should reject duplicate instructor email in a tenant', async () => {
+    const prisma = {
+      globalUserIdentity: {
+        upsert: vi.fn(),
+      },
+      user: {
+        findFirst: vi.fn().mockResolvedValue({ id: 'existing-user' }),
+        create: vi.fn(),
+      },
+    };
+
+    const service = new UserAdminService(prisma as never);
+
+    await expect(
+      service.createInstructor(makeCurrentUser(), 'tenant-1', {
+        email: 'teacher@example.com',
+        password: 'Password@123',
+        fullName: 'Teacher One',
+      }),
+    ).rejects.toBeInstanceOf(ConflictException);
+    expect(prisma.globalUserIdentity.upsert).not.toHaveBeenCalled();
+    expect(prisma.user.create).not.toHaveBeenCalled();
+  });
+
   it('should combine search, status, role, and cohort filters in the user list', async () => {
     const prisma = {
       user: {

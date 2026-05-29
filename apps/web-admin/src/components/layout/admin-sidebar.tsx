@@ -49,7 +49,7 @@ export function AdminSidebar() {
     return () => mediaQuery.removeEventListener('change', closeOnDesktop);
   }, []);
 
-  const menuItems = [
+  const fullMenuItems = [
     { name: t('dashboard'), icon: LayoutDashboard, href: '/' },
     { name: t('students'), icon: Users, href: '/students' },
     { name: t('cohorts.navLabel'), icon: Users, href: '/cohorts' },
@@ -67,6 +67,11 @@ export function AdminSidebar() {
     { name: t('schedule'), icon: Calendar, href: '/schedule' },
     { name: t('settingsLabel'), icon: Settings, href: '/settings' },
   ];
+  const instructorMenuItems = [
+    { name: t('courses'), icon: BookOpen, href: '/courses' },
+    { name: t('settingsLabel'), icon: Settings, href: '/settings' },
+  ];
+  const menuItems = user?.role === 'INSTRUCTOR' ? instructorMenuItems : fullMenuItems;
 
   const isActive = (href: string) => {
     if (href === '/' && pathname === '/') return true;

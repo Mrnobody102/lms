@@ -205,6 +205,127 @@ describe('CourseService', () => {
     ]);
   });
 
+  it('should scope instructor enrollment reports to assigned courses', async () => {
+    const prisma = {
+      course: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: 'course-1',
+          title: 'IELTS Foundations',
+          lessons: [],
+          enrollments: [],
+        }),
+      },
+      userLessonProgress: {
+        findMany: vi.fn(),
+      },
+      learningActivity: {
+        findMany: vi.fn(),
+      },
+    };
+
+    const learningAccess = {
+      courseWhere: vi.fn().mockReturnValue({
+        tenantId: 'tenant-1',
+        id: 'course-1',
+        instructorAssignments: {
+          some: {
+            tenantId: 'tenant-1',
+            instructorId: 'instructor-1',
+          },
+        },
+      }),
+    };
+
+    const service = new CourseService(
+      prisma as never,
+      learningAccess as never,
+      createAuditLogStub() as never,
+    );
+
+    await service.getEnrollmentReport('course-1', 'tenant-1', {
+      id: 'instructor-1',
+      role: Role.INSTRUCTOR,
+    });
+
+    expect(learningAccess.courseWhere).toHaveBeenCalledWith(
+      'tenant-1',
+      { id: 'instructor-1', role: Role.INSTRUCTOR },
+      'course-1',
+      { includeInactive: true },
+    );
+    expect(prisma.course.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          instructorAssignments: {
+            some: {
+              tenantId: 'tenant-1',
+              instructorId: 'instructor-1',
+            },
+          },
+        }),
+      }),
+    );
+  });
+
+  it('should assign only active instructors in the course tenant', async () => {
+    const prisma = {
+      course: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: 'course-1',
+          title: 'IELTS Foundations',
+        }),
+      },
+      user: {
+        findFirst: vi.fn().mockResolvedValue({ id: 'instructor-1' }),
+      },
+      courseInstructorAssignment: {
+        upsert: vi.fn().mockResolvedValue({
+          id: 'assignment-1',
+          courseId: 'course-1',
+          instructorId: 'instructor-1',
+        }),
+      },
+    };
+    const learningAccess = {
+      courseWhere: vi.fn().mockReturnValue({ tenantId: 'tenant-1', id: 'course-1' }),
+    };
+    const service = new CourseService(
+      prisma as never,
+      learningAccess as never,
+      createAuditLogStub() as never,
+    );
+
+    await service.assignInstructor('course-1', 'tenant-1', 'instructor-1', 'admin-1');
+
+    expect(prisma.user.findFirst).toHaveBeenCalledWith({
+      where: {
+        id: 'instructor-1',
+        tenantId: 'tenant-1',
+        role: Role.INSTRUCTOR,
+        deletedAt: null,
+        isActive: true,
+      },
+      select: { id: true },
+    });
+    expect(prisma.courseInstructorAssignment.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          tenantId_courseId_instructorId: {
+            tenantId: 'tenant-1',
+            courseId: 'course-1',
+            instructorId: 'instructor-1',
+          },
+        },
+        create: expect.objectContaining({
+          tenantId: 'tenant-1',
+          courseId: 'course-1',
+          instructorId: 'instructor-1',
+          assignedById: 'admin-1',
+        }),
+      }),
+    );
+  });
+
   it('should bulk enroll active students in one transaction', async () => {
     const upsertEnrollment = vi.fn(
       (args: {

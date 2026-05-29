@@ -14,6 +14,7 @@ import {
 } from '@/components/ui';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useAuthStore } from '@/features/auth/auth.store';
 import { Link } from '@/navigation';
 import { useToggleCourseStatus } from '@/hooks/use-courses';
 import Image from 'next/image';
@@ -26,6 +27,7 @@ interface CourseCardProps {
 
 export function CourseCard({ course, onDelete, deleting }: CourseCardProps) {
   const t = useTranslations('Admin');
+  const { user } = useAuthStore();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const toggleStatus = useToggleCourseStatus();
   const lessonCount = course._count?.lessons ?? course.lessons?.length ?? 0;
@@ -34,6 +36,7 @@ export function CourseCard({ course, onDelete, deleting }: CourseCardProps) {
   const previewUrl =
     studentBaseUrl && firstLessonId ? `${studentBaseUrl}/vi/lessons/${firstLessonId}` : null;
   const isActive = course.isActive !== false; // default true if undefined
+  const canManageCourse = user?.role !== 'INSTRUCTOR';
 
   const handleToggleStatus = () => {
     toggleStatus.mutate({ id: course.id, isActive: !isActive });
@@ -66,64 +69,66 @@ export function CourseCard({ course, onDelete, deleting }: CourseCardProps) {
             <Badge variant={isActive ? 'success' : 'outline'} className="text-xs shrink-0">
               {isActive ? t('published') : t('draft')}
             </Badge>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <MoreHorizontal className="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
-                  <Link
-                    href={`/courses/${course.id}/edit`}
-                    className="flex items-center gap-2 cursor-pointer"
+            {canManageCourse && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
-                    <Edit2 className="w-4 h-4" />
-                    {t('edit')}
-                  </Link>
-                </DropdownMenuItem>
-                {previewUrl && (
+                    <MoreHorizontal className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
                   <DropdownMenuItem asChild>
-                    <a
-                      href={previewUrl}
-                      target="_blank"
-                      rel="noreferrer"
+                    <Link
+                      href={`/courses/${course.id}/edit`}
                       className="flex items-center gap-2 cursor-pointer"
                     >
-                      <Eye className="w-4 h-4" />
-                      {t('preview')}
-                    </a>
+                      <Edit2 className="w-4 h-4" />
+                      {t('edit')}
+                    </Link>
                   </DropdownMenuItem>
-                )}
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  onSelect={handleToggleStatus}
-                  disabled={toggleStatus.isPending}
-                >
-                  {isActive ? (
-                    <>
-                      <EyeOff className="w-4 h-4" /> {t('unpublishCourse')}
-                    </>
-                  ) : (
-                    <>
-                      <Globe className="w-4 h-4" /> {t('publishCourse')}
-                    </>
+                  {previewUrl && (
+                    <DropdownMenuItem asChild>
+                      <a
+                        href={previewUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <Eye className="w-4 h-4" />
+                        {t('preview')}
+                      </a>
+                    </DropdownMenuItem>
                   )}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="text-destructive focus:text-destructive cursor-pointer"
-                  onSelect={() => setShowDeleteConfirm(true)}
-                >
-                  <Trash2 className="w-4 h-4" />
-                  {t('deleteCourse')}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onSelect={handleToggleStatus}
+                    disabled={toggleStatus.isPending}
+                  >
+                    {isActive ? (
+                      <>
+                        <EyeOff className="w-4 h-4" /> {t('unpublishCourse')}
+                      </>
+                    ) : (
+                      <>
+                        <Globe className="w-4 h-4" /> {t('publishCourse')}
+                      </>
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive cursor-pointer"
+                    onSelect={() => setShowDeleteConfirm(true)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    {t('deleteCourse')}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
 
           {/* Title */}
@@ -156,7 +161,7 @@ export function CourseCard({ course, onDelete, deleting }: CourseCardProps) {
       </div>
 
       {/* Delete Confirmation */}
-      {showDeleteConfirm && (
+      {canManageCourse && showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div
             className="fixed inset-0 cursor-pointer bg-black/50 backdrop-blur-sm"

@@ -44,6 +44,15 @@ export class LearningAccessService {
       };
     }
 
+    if (user?.role === Role.INSTRUCTOR) {
+      where.instructorAssignments = {
+        some: {
+          instructorId: user.id,
+          tenantId,
+        },
+      };
+    }
+
     return where;
   }
 

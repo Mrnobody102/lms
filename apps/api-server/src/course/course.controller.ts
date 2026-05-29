@@ -23,6 +23,7 @@ import { UserAgent } from '../auth/decorators/user-agent.decorator';
 import { getScopedTenantId } from '../common/utils/tenant-request.util';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
 import { CourseService } from './course.service';
+import { AssignInstructorDto } from './dto/assign-instructor.dto';
 import { BulkEnrollmentDto } from './dto/bulk-enrollment.dto';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
@@ -96,13 +97,50 @@ export class CourseController {
 
   @Get(':id/report')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
   @ApiOperation({ summary: 'Get enrollment progress report for a course' })
   getEnrollmentReport(
     @Param('id', ParseUUIDPipe) id: string,
     @Request() req: AuthenticatedRequest,
   ) {
-    return this.courseService.getEnrollmentReport(id, getScopedTenantId(req));
+    return this.courseService.getEnrollmentReport(id, getScopedTenantId(req), req.user);
+  }
+
+  @Get(':id/instructors')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'List instructors assigned to a course' })
+  listInstructors(@Param('id', ParseUUIDPipe) id: string, @Request() req: AuthenticatedRequest) {
+    return this.courseService.listInstructors(id, getScopedTenantId(req));
+  }
+
+  @Post(':id/instructors')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Assign an instructor to a course' })
+  assignInstructor(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() assignInstructorDto: AssignInstructorDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.courseService.assignInstructor(
+      id,
+      getScopedTenantId(req),
+      assignInstructorDto.instructorId,
+      req.user.id,
+    );
+  }
+
+  @Delete(':id/instructors/:instructorId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Remove an instructor from a course' })
+  removeInstructor(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('instructorId', ParseUUIDPipe) instructorId: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.courseService.removeInstructor(id, getScopedTenantId(req), instructorId);
   }
 
   @Post(':id/units')

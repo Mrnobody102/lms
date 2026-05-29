@@ -21,6 +21,9 @@ describe('AuthService', () => {
     tenant: {
       findFirst: ReturnType<typeof vi.fn>;
     };
+    globalUserIdentity: {
+      upsert: ReturnType<typeof vi.fn>;
+    };
     refreshToken: {
       create: ReturnType<typeof vi.fn>;
       updateMany: ReturnType<typeof vi.fn>;
@@ -44,6 +47,9 @@ describe('AuthService', () => {
       },
       tenant: {
         findFirst: vi.fn(),
+      },
+      globalUserIdentity: {
+        upsert: vi.fn().mockResolvedValue({ id: 'identity-1' }),
       },
       refreshToken: {
         create: vi.fn(),
@@ -146,10 +152,21 @@ describe('AuthService', () => {
           data: expect.objectContaining({
             email: 'student@example.com',
             password: 'hashed-password',
+            globalIdentityId: 'identity-1',
             tenantId: 'tenant-1',
           }),
         }),
       );
+      expect(prisma.globalUserIdentity.upsert).toHaveBeenCalledWith({
+        where: { normalizedEmail: 'student@example.com' },
+        update: { displayName: 'Student User' },
+        create: {
+          normalizedEmail: 'student@example.com',
+          displayName: 'Student User',
+          phoneNumber: undefined,
+        },
+        select: { id: true },
+      });
       expect(jwtService.sign).not.toHaveBeenCalled();
       expect(response.cookie).not.toHaveBeenCalled();
       expect(prisma.refreshToken.create).not.toHaveBeenCalled();

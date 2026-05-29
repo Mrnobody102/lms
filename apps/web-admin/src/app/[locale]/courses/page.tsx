@@ -12,11 +12,13 @@ import { Button, Input, Separator, Skeleton, Alert, AlertDescription } from '@/c
 import { BookOpen, AlertCircle, Search } from 'lucide-react';
 import { Link } from '@/navigation';
 import { useDebounce } from '@/hooks/use-debounce';
+import { useAuthStore } from '@/features/auth/auth.store';
 
 const COURSES_PAGE_SIZE = 12;
 
 export default function CoursesPage() {
   const t = useTranslations('Admin');
+  const { user } = useAuthStore();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'published' | 'draft'>('all');
   const [page, setPage] = useState(1);
@@ -52,7 +54,7 @@ export default function CoursesPage() {
             <AdminHeader
               title={t('courses')}
               description={t('courseManagement')}
-              showCreateCourse={true}
+              showCreateCourse={user?.role !== 'INSTRUCTOR'}
             />
 
             {/* Search & Filter Bar */}

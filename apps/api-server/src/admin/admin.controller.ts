@@ -5,7 +5,9 @@ import {
   Param,
   ParseUUIDPipe,
   Patch,
+  Post,
   Query,
+  Request,
   UseGuards,
 } from '@nestjs/common';
 import { Role } from '@repo/database';
@@ -14,8 +16,13 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { AuthenticatedUser } from '../common/interfaces/authenticated-request.interface';
+import {
+  AuthenticatedRequest,
+  AuthenticatedUser,
+} from '../common/interfaces/authenticated-request.interface';
+import { getScopedTenantId } from '../common/utils/tenant-request.util';
 import { AdminUserQueryDto } from './dto/admin-user-query.dto';
+import { CreateInstructorDto } from './dto/create-instructor.dto';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
 
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
@@ -35,6 +42,21 @@ export class AdminController {
   @ApiResponse({ status: 403, description: 'Forbidden' })
   async getUserList(@CurrentUser() user: AuthenticatedUser, @Query() query: AdminUserQueryDto) {
     return this.userAdminService.getUserList(user, query);
+  }
+
+  @Post('instructors')
+  @ApiOperation({ summary: 'Create an instructor account in the current tenant' })
+  @ApiResponse({ status: 201, description: 'Instructor created successfully' })
+  async createInstructor(
+    @CurrentUser() user: AuthenticatedUser,
+    @Request() req: AuthenticatedRequest,
+    @Body() createInstructorDto: CreateInstructorDto,
+  ) {
+    return this.userAdminService.createInstructor(
+      user,
+      getScopedTenantId(req),
+      createInstructorDto,
+    );
   }
 
   @Get(':id')

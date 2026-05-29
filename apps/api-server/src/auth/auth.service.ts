@@ -96,12 +96,27 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(registerDto.password, 12);
 
     try {
+      const identity = await this.prisma.globalUserIdentity.upsert({
+        where: { normalizedEmail: email },
+        update: {
+          displayName: registerDto.fullName,
+          ...(registerDto.phoneNumber ? { phoneNumber: registerDto.phoneNumber } : {}),
+        },
+        create: {
+          normalizedEmail: email,
+          displayName: registerDto.fullName,
+          phoneNumber: registerDto.phoneNumber,
+        },
+        select: { id: true },
+      });
+
       const createdUser = await this.prisma.user.create({
         data: {
           email,
           password: hashedPassword,
           fullName: registerDto.fullName,
           phoneNumber: registerDto.phoneNumber,
+          globalIdentityId: identity.id,
           tenantId,
         },
         select: {

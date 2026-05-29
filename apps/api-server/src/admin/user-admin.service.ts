@@ -1,13 +1,91 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  ConflictException,
+} from '@nestjs/common';
 import { Prisma, Role } from '@repo/database';
+import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../common/services/prisma.service';
 import { AdminUserQueryDto } from './dto/admin-user-query.dto';
+import { CreateInstructorDto } from './dto/create-instructor.dto';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
 import { AuthenticatedUser } from '../common/interfaces/authenticated-request.interface';
 
 @Injectable()
 export class UserAdminService {
   constructor(private prisma: PrismaService) {}
+
+  async createInstructor(
+    currentUser: AuthenticatedUser,
+    tenantId: string,
+    createInstructorDto: CreateInstructorDto,
+  ) {
+    if (currentUser.role === Role.ADMIN && currentUser.tenantId !== tenantId) {
+      throw new ForbiddenException('You can only create instructors in your tenant');
+    }
+
+    const email = createInstructorDto.email.trim().toLowerCase();
+    const existingUser = await this.prisma.user.findFirst({
+      where: {
+        tenantId,
+        email: {
+          equals: email,
+          mode: 'insensitive',
+        },
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+
+    if (existingUser) {
+      throw new ConflictException('Email already registered in this tenant');
+    }
+
+    const hashedPassword = await bcrypt.hash(createInstructorDto.password, 12);
+    const identity = await this.prisma.globalUserIdentity.upsert({
+      where: { normalizedEmail: email },
+      update: {
+        displayName: createInstructorDto.fullName,
+        ...(createInstructorDto.phoneNumber
+          ? { phoneNumber: createInstructorDto.phoneNumber }
+          : {}),
+      },
+      create: {
+        normalizedEmail: email,
+        displayName: createInstructorDto.fullName,
+        phoneNumber: createInstructorDto.phoneNumber,
+      },
+      select: { id: true },
+    });
+
+    return this.prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        fullName: createInstructorDto.fullName,
+        phoneNumber: createInstructorDto.phoneNumber,
+        globalIdentityId: identity.id,
+        tenantId,
+        role: Role.INSTRUCTOR,
+        ...(createInstructorDto.isActive !== undefined
+          ? { isActive: createInstructorDto.isActive }
+          : {}),
+      },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        phoneNumber: true,
+        avatarUrl: true,
+        role: true,
+        isActive: true,
+        tenantId: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
 
   async getUserList(currentUser: AuthenticatedUser, query: AdminUserQueryDto) {
     const { page = 1, limit = 10, email, search, role, isActive, cohortId } = query;

@@ -114,6 +114,11 @@ export interface EnrollmentAuditContext {
   userAgent?: string;
 }
 
+interface CourseAccessUser {
+  id: string;
+  role: Role;
+}
+
 @Injectable()
 export class CourseService {
   private readonly logger = new Logger(CourseService.name);
@@ -273,6 +278,21 @@ export class CourseService {
           },
         },
         orderBy: { enrolledAt: 'desc' },
+      };
+      include.instructorAssignments = {
+        where: { tenantId },
+        include: {
+          instructor: {
+            select: {
+              id: true,
+              email: true,
+              fullName: true,
+              avatarUrl: true,
+              isActive: true,
+            },
+          },
+        },
+        orderBy: { assignedAt: 'desc' },
       };
     }
 
@@ -526,6 +546,107 @@ export class CourseService {
       where: { id_tenantId: { id, tenantId } },
       data: { isActive },
     });
+  }
+
+  async listInstructors(courseId: string, tenantId: string) {
+    await this.findOne(courseId, tenantId, undefined, { includeInactive: true });
+
+    return this.prisma.courseInstructorAssignment.findMany({
+      where: { courseId, tenantId },
+      include: {
+        instructor: {
+          select: {
+            id: true,
+            email: true,
+            fullName: true,
+            phoneNumber: true,
+            avatarUrl: true,
+            isActive: true,
+          },
+        },
+      },
+      orderBy: { assignedAt: 'desc' },
+    });
+  }
+
+  async assignInstructor(
+    courseId: string,
+    tenantId: string,
+    instructorId: string,
+    assignedById?: string,
+  ) {
+    await this.findOne(courseId, tenantId, undefined, { includeInactive: true });
+
+    const instructor = await this.prisma.user.findFirst({
+      where: {
+        id: instructorId,
+        tenantId,
+        role: Role.INSTRUCTOR,
+        deletedAt: null,
+        isActive: true,
+      },
+      select: { id: true },
+    });
+
+    if (!instructor) {
+      throw new BadRequestException('Active instructor not found in this tenant');
+    }
+
+    return this.prisma.courseInstructorAssignment.upsert({
+      where: {
+        tenantId_courseId_instructorId: {
+          tenantId,
+          courseId,
+          instructorId,
+        },
+      },
+      update: {
+        assignedById,
+      },
+      create: {
+        tenantId,
+        courseId,
+        instructorId,
+        assignedById,
+      },
+      include: {
+        instructor: {
+          select: {
+            id: true,
+            email: true,
+            fullName: true,
+            phoneNumber: true,
+            avatarUrl: true,
+            isActive: true,
+          },
+        },
+      },
+    });
+  }
+
+  async removeInstructor(courseId: string, tenantId: string, instructorId: string) {
+    await this.findOne(courseId, tenantId, undefined, { includeInactive: true });
+
+    const assignment = await this.prisma.courseInstructorAssignment.findUnique({
+      where: {
+        tenantId_courseId_instructorId: {
+          tenantId,
+          courseId,
+          instructorId,
+        },
+      },
+      select: { id: true },
+    });
+
+    if (!assignment) {
+      throw new NotFoundException('Instructor assignment not found in this tenant');
+    }
+
+    await this.prisma.courseInstructorAssignment.delete({
+      where: { tenantId_courseId_instructorId: { tenantId, courseId, instructorId } },
+    });
+
+    return { success: true };
   }
 
   async enrollStudent(
@@ -906,9 +1027,9 @@ export class CourseService {
     return baseUrl ? `${baseUrl}/vi/courses/${courseId}` : `/courses/${courseId}`;
   }
 
-  async getEnrollmentReport(courseId: string, tenantId: string) {
+  async getEnrollmentReport(courseId: string, tenantId: string, user?: CourseAccessUser) {
     const course = await this.prisma.course.findFirst({
-      where: this.learningAccess.courseWhere(tenantId, undefined, courseId, {
+      where: this.learningAccess.courseWhere(tenantId, user, courseId, {
         includeInactive: true,
       }),
       select: {

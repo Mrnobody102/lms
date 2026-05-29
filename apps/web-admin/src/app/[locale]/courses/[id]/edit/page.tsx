@@ -30,6 +30,7 @@ import { LessonList } from '@/features/courses/lesson-list';
 import { CourseStats } from '@/features/courses/course-stats';
 import { CourseReportPanel } from '@/features/courses/course-report-panel';
 import { EnrollmentPanel } from '@/features/courses/enrollment-panel';
+import { useAuthStore } from '@/features/auth/auth.store';
 import {
   createEmptyMicroCardDraft,
   isLessonDraftReady,
@@ -60,6 +61,7 @@ const EMPTY_ARRAY: never[] = [];
 
 export default function CourseEditorPage() {
   const t = useTranslations('Admin');
+  const { user } = useAuthStore();
   const params = useParams();
   const router = useRouter();
   const courseId = params.id as string;
@@ -90,6 +92,13 @@ export default function CourseEditorPage() {
 
   const toggleCourseStatus = useToggleCourseStatus();
   const courseIsActive = course?.isActive !== false;
+  const canManageCourse = user?.role !== 'INSTRUCTOR';
+
+  useEffect(() => {
+    if (!canManageCourse) {
+      setActiveTab('students');
+    }
+  }, [canManageCourse]);
 
   useEffect(() => {
     if (!course) return;
@@ -484,7 +493,8 @@ export default function CourseEditorPage() {
                     <input
                       value={localTitle}
                       onChange={(e) => setLocalTitle(e.target.value)}
-                      onBlur={handleUpdateCourse}
+                      onBlur={canManageCourse ? handleUpdateCourse : undefined}
+                      readOnly={!canManageCourse}
                       className="text-2xl font-bold bg-transparent border-none outline-none focus:ring-2 focus:ring-primary/20 rounded px-2 -ml-2 transition-all w-full sm:w-auto sm:min-w-[300px] sm:max-w-md truncate"
                       placeholder={t('courseName')}
                     />
@@ -516,62 +526,70 @@ export default function CourseEditorPage() {
                       </Button>
                     </a>
                   )}
-                  <Button
-                    variant={courseIsActive ? 'outline' : 'default'}
-                    onClick={handleToggleStatus}
-                    disabled={toggleCourseStatus.isPending}
-                    size="sm"
-                    className="gap-1.5 rounded-full shadow-sm"
-                  >
-                    {toggleCourseStatus.isPending ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : courseIsActive ? (
-                      <EyeOff className="w-4 h-4" />
-                    ) : (
-                      <Globe className="w-4 h-4" />
-                    )}
-                    {courseIsActive ? t('unpublishCourse') : t('publishCourse')}
-                  </Button>
-                  <Button
-                    onClick={handleUpdateCourse}
-                    disabled={updateCourse.isPending}
-                    size="sm"
-                    className="gap-1.5 rounded-full shadow-sm"
-                  >
-                    {updateCourse.isPending ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Save className="w-4 h-4" />
-                    )}
-                    {t('save')}
-                  </Button>
+                  {canManageCourse && (
+                    <>
+                      <Button
+                        variant={courseIsActive ? 'outline' : 'default'}
+                        onClick={handleToggleStatus}
+                        disabled={toggleCourseStatus.isPending}
+                        size="sm"
+                        className="gap-1.5 rounded-full shadow-sm"
+                      >
+                        {toggleCourseStatus.isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : courseIsActive ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Globe className="w-4 h-4" />
+                        )}
+                        {courseIsActive ? t('unpublishCourse') : t('publishCourse')}
+                      </Button>
+                      <Button
+                        onClick={handleUpdateCourse}
+                        disabled={updateCourse.isPending}
+                        size="sm"
+                        className="gap-1.5 rounded-full shadow-sm"
+                      >
+                        {updateCourse.isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Save className="w-4 h-4" />
+                        )}
+                        {t('save')}
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
 
               {/* Tabs */}
               <div className="flex items-center gap-8 overflow-x-auto no-scrollbar">
-                <button
-                  onClick={() => setActiveTab('curriculum')}
-                  className={`flex items-center gap-2 pb-3 text-sm font-medium transition-all border-b-2 whitespace-nowrap ${
-                    activeTab === 'curriculum'
-                      ? 'border-primary text-foreground'
-                      : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30'
-                  }`}
-                >
-                  <BookOpen className="w-4 h-4" />
-                  {t('curriculumTab')}
-                </button>
-                <button
-                  onClick={() => setActiveTab('settings')}
-                  className={`flex items-center gap-2 pb-3 text-sm font-medium transition-all border-b-2 whitespace-nowrap ${
-                    activeTab === 'settings'
-                      ? 'border-primary text-foreground'
-                      : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30'
-                  }`}
-                >
-                  <Settings className="w-4 h-4" />
-                  {t('settingsTab')}
-                </button>
+                {canManageCourse && (
+                  <>
+                    <button
+                      onClick={() => setActiveTab('curriculum')}
+                      className={`flex items-center gap-2 pb-3 text-sm font-medium transition-all border-b-2 whitespace-nowrap ${
+                        activeTab === 'curriculum'
+                          ? 'border-primary text-foreground'
+                          : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30'
+                      }`}
+                    >
+                      <BookOpen className="w-4 h-4" />
+                      {t('curriculumTab')}
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('settings')}
+                      className={`flex items-center gap-2 pb-3 text-sm font-medium transition-all border-b-2 whitespace-nowrap ${
+                        activeTab === 'settings'
+                          ? 'border-primary text-foreground'
+                          : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30'
+                      }`}
+                    >
+                      <Settings className="w-4 h-4" />
+                      {t('settingsTab')}
+                    </button>
+                  </>
+                )}
                 <button
                   onClick={() => setActiveTab('students')}
                   className={`flex items-center gap-2 pb-3 text-sm font-medium transition-all border-b-2 whitespace-nowrap ${
@@ -732,7 +750,7 @@ export default function CourseEditorPage() {
             <div
               className={`transition-all duration-300 animate-in fade-in ${activeTab === 'students' ? 'block' : 'hidden'}`}
             >
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className={`grid grid-cols-1 gap-6 ${canManageCourse ? 'lg:grid-cols-2' : ''}`}>
                 <div className="space-y-6">
                   <div className="bg-card border rounded-2xl shadow-sm p-6">
                     <CourseStats lessons={lessons} />
@@ -741,22 +759,24 @@ export default function CourseEditorPage() {
                     <CourseReportPanel report={report} loading={reportLoading} />
                   </div>
                 </div>
-                <div>
-                  <div className="bg-card border rounded-2xl shadow-sm p-6 h-full">
-                    <EnrollmentPanel
-                      courseId={courseId}
-                      enrollments={enrollments}
-                      enrolling={enrollStudent.isPending}
-                      unenrolling={unenrollStudent.isPending}
-                      bulkEnrolling={bulkEnrollStudents.isPending}
-                      bulkUnenrolling={bulkUnenrollStudents.isPending}
-                      onEnroll={handleEnrollStudent}
-                      onUnenroll={handleUnenrollStudent}
-                      onBulkEnroll={handleBulkEnrollStudents}
-                      onBulkUnenroll={handleBulkUnenrollStudents}
-                    />
+                {canManageCourse && (
+                  <div>
+                    <div className="bg-card border rounded-2xl shadow-sm p-6 h-full">
+                      <EnrollmentPanel
+                        courseId={courseId}
+                        enrollments={enrollments}
+                        enrolling={enrollStudent.isPending}
+                        unenrolling={unenrollStudent.isPending}
+                        bulkEnrolling={bulkEnrollStudents.isPending}
+                        bulkUnenrolling={bulkUnenrollStudents.isPending}
+                        onEnroll={handleEnrollStudent}
+                        onUnenroll={handleUnenrollStudent}
+                        onBulkEnroll={handleBulkEnrollStudents}
+                        onBulkUnenroll={handleBulkUnenrollStudents}
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </div>

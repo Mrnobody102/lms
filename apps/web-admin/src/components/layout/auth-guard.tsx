@@ -17,13 +17,19 @@ export function AuthGuard({ children, loaderMessage = 'Loading...' }: AuthGuardP
     if (isInitialized) {
       if (!isAuthenticated) {
         router.push('/login');
-      } else if (user && user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
+      } else if (
+        user &&
+        user.role !== 'ADMIN' &&
+        user.role !== 'SUPER_ADMIN' &&
+        user.role !== 'INSTRUCTOR'
+      ) {
         router.push('/login?error=unauthorized');
       }
     }
   }, [isInitialized, isAuthenticated, user, router]);
 
-  const isAuthorized = user && (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN');
+  const isAuthorized =
+    user && (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN' || user.role === 'INSTRUCTOR');
 
   if (!isInitialized || !isAuthenticated || !isAuthorized) {
     return (
