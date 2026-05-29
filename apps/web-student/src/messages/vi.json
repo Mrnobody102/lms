@@ -443,7 +443,20 @@
         "saveSuccess": "Đã lưu thẻ thành công.",
         "deleteSuccess": "Đã xóa thẻ thành công.",
         "managerTitle": "Quản lý thẻ cá nhân",
-        "loading": "Đang tải thẻ cá nhân..."
+        "loading": "Đang tải thẻ cá nhân...",
+        "generateBulk": "Tạo bộ thẻ bằng AI",
+        "bulkGenerateTitle": "Tạo bộ thẻ hàng loạt bằng AI",
+        "bulkGenerateTopic": "Chủ đề",
+        "bulkGenerateTopicPlaceholder": "Ví dụ: Từ vựng IELTS, Gia vị truyền thống...",
+        "bulkGenerateCount": "Số lượng thẻ",
+        "bulkGenerateCountHelp": "Tối đa 20 thẻ",
+        "bulkGenerateContext": "Ngôn ngữ / Bối cảnh",
+        "bulkGenerateContextPlaceholder": "Ví dụ: Giải thích bằng tiếng Việt",
+        "bulkGenerateStart": "Bắt đầu sinh thẻ",
+        "bulkGenerateGenerating": "Đang sinh thẻ...",
+        "bulkGenerateError": "Lỗi khi sinh thẻ hàng loạt.",
+        "bulkGeneratePreview": "Xem trước kết quả",
+        "bulkGenerateSaveAll": "Lưu tất cả"
       },
       "stats": {
         "title": "Hoạt động ôn tập (30 ngày gần nhất)",

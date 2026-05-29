@@ -19,3 +19,29 @@ export class GenerateFlashcardDto {
   @MaxLength(500)
   context?: string;
 }
+
+export class GenerateFlashcardsBulkDto {
+  @ApiProperty({
+    description: 'The topic for the flashcards',
+    example: 'Vietnamese traditional spices',
+  })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  topic: string;
+
+  @ApiProperty({
+    description: 'The number of flashcards to generate',
+    example: 5,
+  })
+  @IsNotEmpty()
+  count: number;
+
+  @ApiPropertyOptional({
+    description: 'Optional context to help the AI understand the usage',
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(500)
+  context?: string;
+}

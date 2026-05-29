@@ -7,6 +7,7 @@ import {
   GeneratePracticeOptions,
   GeneratedPracticeQuestion,
   GenerateFlashcardOptions,
+  GenerateFlashcardsBulkOptions,
 } from '../interfaces/ai-provider.interface';
 
 interface GeneratedMultipleChoiceQuestion {
@@ -305,6 +306,68 @@ Context/Reference material: ${context || 'None'}`;
     } catch (error) {
       this.logger.error('Error generating flashcard from Gemini', error);
       throw new Error('Failed to generate flashcard from AI provider.');
+    }
+  }
+
+  async generateFlashcardsBulk(
+    options: GenerateFlashcardsBulkOptions,
+  ): Promise<{ front: string; back: string; phonetics: string; example: string }[]> {
+    try {
+      if (!isGeminiConfigured()) {
+        throw new Error('Gemini provider is not configured');
+      }
+
+      const { topic, count, context } = options;
+
+      const systemPrompt = `You are an expert language teacher and instructional designer.
+Your task is to generate exactly ${count} flashcards about the topic: "${topic}".
+Each flashcard must contain:
+1. "front": The vocabulary word or phrase.
+2. "back": A clear, concise explanation/definition (in Vietnamese if "front" is English, or English if "front" is Vietnamese).
+3. "phonetics": The IPA transcription of the word/phrase.
+4. "example": A short, natural example sentence using the vocabulary word correctly.
+
+Ensure the output is accurate, educational, and suitable for the learners.
+Context/Reference material: ${context || 'None'}`;
+
+      const bulkFlashcardSchema = jsonSchema<{
+        cards: { front: string; back: string; phonetics: string; example: string }[];
+      }>({
+        type: 'object',
+        additionalProperties: false,
+        required: ['cards'],
+        properties: {
+          cards: {
+            type: 'array',
+            minItems: count,
+            maxItems: count,
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['front', 'back', 'phonetics', 'example'],
+              properties: {
+                front: { type: 'string', description: 'Vocabulary word or phrase' },
+                back: { type: 'string', description: 'Explanation or definition' },
+                phonetics: { type: 'string', description: 'IPA phonetics' },
+                example: { type: 'string', description: 'Example sentence' },
+              },
+            },
+          },
+        },
+      });
+
+      const { object } = await generateObject({
+        model: google('gemini-1.5-flash'),
+        system: systemPrompt,
+        prompt: `Please generate the ${count} flashcards for topic: "${topic}".`,
+        schema: bulkFlashcardSchema,
+        temperature: 0.5,
+      });
+
+      return object.cards;
+    } catch (error) {
+      this.logger.error('Error generating bulk flashcards from Gemini', error);
+      throw new Error('Failed to generate bulk flashcards from AI provider.');
     }
   }
 

@@ -11,6 +11,7 @@ import {
   Wand2,
   Loader2,
   AlertCircle,
+  Sparkles,
 } from 'lucide-react';
 import { AuthRequiredPanel } from '@/components/auth/auth-required-panel';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
@@ -47,6 +48,14 @@ export default function CustomCardsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+
+  const [isBulkOpen, setIsBulkOpen] = useState(false);
+  const [bulkData, setBulkData] = useState({ topic: '', count: 5, context: '' });
+  const [bulkPreviewCards, setBulkPreviewCards] = useState<
+    { front: string; back: string; phonetics: string; example: string }[]
+  >([]);
+  const [isBulkGenerating, setIsBulkGenerating] = useState(false);
+  const [isBulkSaving, setIsBulkSaving] = useState(false);
 
   const resetForm = () => {
     setFormData({ front: '', back: '', phonetics: '', example: '', skillCode: '' });
@@ -119,6 +128,58 @@ export default function CustomCardsPage() {
     }
   };
 
+  const handleBulkGenerate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bulkData.topic.trim()) {
+      setApiError(t('bulkGenerateTopicPlaceholder'));
+      return;
+    }
+    setApiError(null);
+    setIsBulkGenerating(true);
+    setBulkPreviewCards([]);
+    try {
+      const res = await api.post('/ai/generate-flashcards-bulk', {
+        topic: bulkData.topic.trim(),
+        count: bulkData.count,
+        context: bulkData.context.trim() || undefined,
+      });
+      setBulkPreviewCards(
+        res.data as { front: string; back: string; phonetics: string; example: string }[],
+      );
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      setApiError(error.response?.data?.message || error.message || t('bulkGenerateError'));
+    } finally {
+      setIsBulkGenerating(false);
+    }
+  };
+
+  const handleBulkSave = async () => {
+    setIsBulkSaving(true);
+    try {
+      await Promise.all(
+        bulkPreviewCards.map((card) =>
+          createCard.mutateAsync({
+            customContent: {
+              front: card.front,
+              back: card.back,
+              phonetics: card.phonetics,
+              example: card.example,
+            },
+            skillCodes: [],
+          }),
+        ),
+      );
+      setBulkPreviewCards([]);
+      setBulkData({ topic: '', count: 5, context: '' });
+      setIsBulkOpen(false);
+    } catch (_error) {
+      setApiError(t('reviewSubmitError'));
+    } finally {
+      setIsBulkSaving(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background font-sans flex flex-col">
       <StudentNav showLinks />
@@ -143,13 +204,22 @@ export default function CustomCardsPage() {
                 </h1>
                 <p className="text-muted-foreground mt-2">{t('description')}</p>
               </div>
-              <button
-                onClick={() => setIsFormOpen(true)}
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity"
-              >
-                <Plus className="h-4 w-4" />
-                {t('addCard')}
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setIsBulkOpen(true)}
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-primary/20 bg-primary/10 px-4 text-sm font-semibold text-primary hover:bg-primary/20 transition-colors"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  {t('generateBulk')}
+                </button>
+                <button
+                  onClick={() => setIsFormOpen(true)}
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity"
+                >
+                  <Plus className="h-4 w-4" />
+                  {t('addCard')}
+                </button>
+              </div>
             </div>
 
             <div className="mb-8">
@@ -329,6 +399,210 @@ export default function CustomCardsPage() {
                       </button>
                     </div>
                   </form>
+                </div>
+              </div>
+            )}
+
+            {isBulkOpen && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-4 py-6 backdrop-blur-sm">
+                <div
+                  role="dialog"
+                  aria-modal="true"
+                  className="max-h-[calc(100vh-3rem)] w-full max-w-4xl overflow-y-auto rounded-lg border bg-card p-6 shadow-xl animate-in fade-in zoom-in-95"
+                >
+                  <h2 className="mb-4 text-lg font-bold flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                    {t('bulkGenerateTitle')}
+                  </h2>
+
+                  {apiError && (
+                    <div className="mb-4 flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      {apiError}
+                    </div>
+                  )}
+
+                  {!bulkPreviewCards.length ? (
+                    <form onSubmit={handleBulkGenerate} className="space-y-4">
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                          <label className="mb-1 block text-sm font-medium">
+                            {t('bulkGenerateTopic')}
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={bulkData.topic}
+                            onChange={(e) => setBulkData({ ...bulkData, topic: e.target.value })}
+                            className="w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                            placeholder={t('bulkGenerateTopicPlaceholder')}
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-sm font-medium">
+                            {t('bulkGenerateCount')}
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="number"
+                              min="1"
+                              max="20"
+                              required
+                              value={bulkData.count}
+                              onChange={(e) =>
+                                setBulkData({ ...bulkData, count: parseInt(e.target.value) || 5 })
+                              }
+                              className="w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                            />
+                            <span className="absolute right-3 top-2 text-xs text-muted-foreground">
+                              {t('bulkGenerateCountHelp')}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-sm font-medium">
+                          {t('bulkGenerateContext')}
+                        </label>
+                        <input
+                          type="text"
+                          value={bulkData.context}
+                          onChange={(e) => setBulkData({ ...bulkData, context: e.target.value })}
+                          className="w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                          placeholder={t('bulkGenerateContextPlaceholder')}
+                        />
+                      </div>
+                      <div className="mt-6 flex justify-end gap-3 border-t pt-4">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsBulkOpen(false);
+                            setApiError(null);
+                          }}
+                          className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
+                        >
+                          {t('cancel')}
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={isBulkGenerating}
+                          className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                        >
+                          {isBulkGenerating ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Wand2 className="h-4 w-4" />
+                          )}
+                          {isBulkGenerating ? t('bulkGenerateGenerating') : t('bulkGenerateStart')}
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold">
+                          {t('bulkGeneratePreview')} ({bulkPreviewCards.length})
+                        </h3>
+                        <button
+                          onClick={() => setBulkPreviewCards([])}
+                          className="text-sm text-muted-foreground hover:text-foreground"
+                        >
+                          {t('cancel')}
+                        </button>
+                      </div>
+                      <div className="grid gap-3 max-h-[50vh] overflow-y-auto pr-2">
+                        {bulkPreviewCards.map((card, idx) => (
+                          <div key={idx} className="rounded-lg border p-3 bg-muted/30">
+                            <div className="grid grid-cols-2 gap-3 mb-2">
+                              <div>
+                                <label className="text-xs font-medium text-muted-foreground">
+                                  Front
+                                </label>
+                                <input
+                                  type="text"
+                                  value={card.front}
+                                  onChange={(e) => {
+                                    const newCards = [...bulkPreviewCards];
+                                    newCards[idx].front = e.target.value;
+                                    setBulkPreviewCards(newCards);
+                                  }}
+                                  className="w-full rounded bg-background border px-2 py-1 text-sm font-medium"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-xs font-medium text-muted-foreground">
+                                  Back
+                                </label>
+                                <input
+                                  type="text"
+                                  value={card.back}
+                                  onChange={(e) => {
+                                    const newCards = [...bulkPreviewCards];
+                                    newCards[idx].back = e.target.value;
+                                    setBulkPreviewCards(newCards);
+                                  }}
+                                  className="w-full rounded bg-background border px-2 py-1 text-sm"
+                                />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="text-xs font-medium text-muted-foreground">
+                                  Phonetics
+                                </label>
+                                <input
+                                  type="text"
+                                  value={card.phonetics}
+                                  onChange={(e) => {
+                                    const newCards = [...bulkPreviewCards];
+                                    newCards[idx].phonetics = e.target.value;
+                                    setBulkPreviewCards(newCards);
+                                  }}
+                                  className="w-full rounded bg-background border px-2 py-1 text-sm text-primary"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-xs font-medium text-muted-foreground">
+                                  Example
+                                </label>
+                                <input
+                                  type="text"
+                                  value={card.example}
+                                  onChange={(e) => {
+                                    const newCards = [...bulkPreviewCards];
+                                    newCards[idx].example = e.target.value;
+                                    setBulkPreviewCards(newCards);
+                                  }}
+                                  className="w-full rounded bg-background border px-2 py-1 text-xs italic"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-6 flex justify-end gap-3 border-t pt-4">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsBulkOpen(false);
+                            setBulkPreviewCards([]);
+                          }}
+                          className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
+                        >
+                          {t('cancel')}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleBulkSave}
+                          disabled={isBulkSaving}
+                          className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                        >
+                          {isBulkSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+                          {t('bulkGenerateSaveAll')}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

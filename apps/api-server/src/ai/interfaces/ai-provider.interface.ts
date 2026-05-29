@@ -31,6 +31,12 @@ export interface GenerateFlashcardOptions {
   context?: string;
 }
 
+export interface GenerateFlashcardsBulkOptions {
+  topic: string;
+  count: number;
+  context?: string;
+}
+
 export const AI_PROVIDER_TOKEN = 'AI_PROVIDER_TOKEN';
 
 export interface IAiProvider {
@@ -50,6 +56,13 @@ export interface IAiProvider {
   generateFlashcard(
     options: GenerateFlashcardOptions,
   ): Promise<{ back: string; phonetics: string; example: string }>;
+
+  /**
+   * Generates multiple flashcards based on a topic.
+   */
+  generateFlashcardsBulk(
+    options: GenerateFlashcardsBulkOptions,
+  ): Promise<{ front: string; back: string; phonetics: string; example: string }[]>;
 
   /**
    * Chat interface for Roleplay Session.

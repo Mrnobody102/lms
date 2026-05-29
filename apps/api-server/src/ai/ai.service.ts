@@ -99,6 +99,20 @@ export class AiService {
     return this.aiProvider.generateFlashcard({ front, context });
   }
 
+  async generateFlashcardsBulk(
+    tenantId: string,
+    userId: string,
+    topic: string,
+    count: number,
+    context?: string,
+  ) {
+    await this.consumeQuota(tenantId, userId);
+    // Limit count to max 20 to prevent abuse
+    const safeCount = Math.min(Math.max(1, count), 20);
+
+    return this.aiProvider.generateFlashcardsBulk({ topic, count: safeCount, context });
+  }
+
   async generateDailyQuest(
     tenantId: string,
     userId: string,

@@ -15,7 +15,7 @@ import { getScopedTenantId } from '../common/utils/tenant-request.util';
 import { PrismaService } from '../common/services/prisma.service';
 import { SocraticChatDto } from './dto/socratic-chat.dto';
 import { GenerateDailyQuestDto } from './dto/generate-daily-quest.dto';
-import { GenerateFlashcardDto } from './dto/generate-flashcard.dto';
+import { GenerateFlashcardDto, GenerateFlashcardsBulkDto } from './dto/generate-flashcard.dto';
 
 @Controller('ai')
 @UseGuards(JwtAuthGuard)
@@ -184,6 +184,24 @@ Ask one guiding question at a time. Be concise, friendly, and encouraging.`;
     const userId = req.user.id;
 
     const result = await this.aiService.generateFlashcard(tenantId, userId, dto.front, dto.context);
+    return result;
+  }
+
+  @Post('generate-flashcards-bulk')
+  async generateFlashcardsBulk(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: GenerateFlashcardsBulkDto,
+  ) {
+    const tenantId = getScopedTenantId(req);
+    const userId = req.user.id;
+
+    const result = await this.aiService.generateFlashcardsBulk(
+      tenantId,
+      userId,
+      dto.topic,
+      dto.count,
+      dto.context,
+    );
     return result;
   }
 }
