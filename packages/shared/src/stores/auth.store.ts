@@ -93,7 +93,12 @@ function extractErrorMsg(err: unknown, fallback: string): string {
   if (!msg && data?.success === false) return fallback;
   const rawMsg = Array.isArray(msg) ? msg[0] : (msg ?? fallback);
   const status = axiosErr.response?.status;
-  if (status && status >= 500) return `Lỗi hệ thống (${status}). Vui lòng thử lại sau.`;
+  if (status && status >= 500) {
+    if (typeof rawMsg === 'string' && rawMsg.startsWith('[DEBUG 500]')) {
+      return rawMsg;
+    }
+    return `Lỗi hệ thống (${status}). Vui lòng thử lại sau.`;
+  }
   return sanitizeServerMessage(rawMsg, fallback);
 }
 
