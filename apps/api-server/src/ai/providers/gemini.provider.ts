@@ -195,7 +195,8 @@ Please explain why the student's answer is incorrect and clarify the concept.`;
       return text;
     } catch (error) {
       this.logger.error('Error generating explanation from Gemini', error);
-      throw new Error('Failed to generate explanation from AI provider.');
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to generate explanation from AI provider: ${message}`);
     }
   }
 
@@ -258,7 +259,8 @@ ${context || 'None'}
       }
     } catch (error) {
       this.logger.error('Error generating practice questions from Gemini', error);
-      throw new Error('Failed to generate practice questions from AI provider.');
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to generate practice questions from AI provider: ${message}`);
     }
   }
 
@@ -305,7 +307,8 @@ Context/Reference material: ${context || 'None'}`;
       return object;
     } catch (error) {
       this.logger.error('Error generating flashcard from Gemini', error);
-      throw new Error('Failed to generate flashcard from AI provider.');
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to generate flashcard from AI provider: ${message}`);
     }
   }
 
@@ -367,7 +370,8 @@ Context/Reference material: ${context || 'None'}`;
       return object.cards;
     } catch (error) {
       this.logger.error('Error generating bulk flashcards from Gemini', error);
-      throw new Error('Failed to generate bulk flashcards from AI provider.');
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to generate bulk flashcards from AI provider: ${message}`);
     }
   }
 
@@ -386,7 +390,8 @@ Context/Reference material: ${context || 'None'}`;
       return text;
     } catch (error) {
       this.logger.error('Error in chatRoleplay', error);
-      throw new Error('Failed to generate chat response from AI provider.');
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to generate chat response from AI provider: ${message}`);
     }
   }
 
@@ -419,7 +424,8 @@ Feedback should contain at least:
       return object;
     } catch (error) {
       this.logger.error('Error in evaluateRoleplaySession', error);
-      throw new Error('Failed to evaluate roleplay session.');
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to evaluate roleplay session: ${message}`);
     }
   }
 }
