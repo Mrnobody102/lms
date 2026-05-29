@@ -1,8 +1,9 @@
 'use client';
 
+import { useEffect } from 'react';
 import { LogIn } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Link } from '@/navigation';
+import { Link, useRouter } from '@/navigation';
 
 interface AuthRequiredPanelProps {
   returnTo: string;
@@ -10,6 +11,16 @@ interface AuthRequiredPanelProps {
 
 export function AuthRequiredPanel({ returnTo }: AuthRequiredPanelProps) {
   const t = useTranslations('Student.authRequired');
+  const router = useRouter();
+
+  useEffect(() => {
+    // Automatically redirect to login page when this panel is shown
+    const timeout = setTimeout(() => {
+      router.push(`/login?returnUrl=${encodeURIComponent(returnTo)}`);
+    }, 500); // Small delay to avoid flashing and let state settle
+
+    return () => clearTimeout(timeout);
+  }, [router, returnTo]);
 
   return (
     <section className="mx-auto flex max-w-xl flex-col items-center justify-center rounded-md border border-dashed bg-card px-6 py-12 text-center">
