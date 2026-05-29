@@ -2,7 +2,16 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { ArrowLeft, BrainCircuit, Pencil, Plus, Trash2 } from 'lucide-react';
+import {
+  ArrowLeft,
+  BrainCircuit,
+  Pencil,
+  Plus,
+  Trash2,
+  Wand2,
+  Loader2,
+  AlertCircle,
+} from 'lucide-react';
 import { AuthRequiredPanel } from '@/components/auth/auth-required-panel';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { StudentNav } from '@/components/layout/student-nav';
@@ -15,6 +24,7 @@ import {
   useUpdateCustomCard,
 } from '@/hooks/use-srs';
 import type { ReviewCard } from '@/lib/srs-api';
+import { defaultApiClient as api } from '@repo/api-client';
 import { Link } from '@/navigation';
 
 export default function CustomCardsPage() {
@@ -35,11 +45,14 @@ export default function CustomCardsPage() {
   });
 
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const resetForm = () => {
     setFormData({ front: '', back: '', phonetics: '', example: '', skillCode: '' });
     setEditingCardId(null);
     setIsFormOpen(false);
+    setApiError(null);
   };
 
   const handleEdit = (card: ReviewCard) => {
@@ -53,6 +66,31 @@ export default function CustomCardsPage() {
     });
     setEditingCardId(card.id);
     setIsFormOpen(true);
+    setApiError(null);
+  };
+
+  const handleGenerateAI = async () => {
+    if (!formData.front.trim()) {
+      setApiError(t('frontRequiredForAI'));
+      return;
+    }
+    setApiError(null);
+    setIsGenerating(true);
+    try {
+      const res = await api.post('/ai/generate-flashcard', { front: formData.front.trim() });
+      const data = res.data as { back: string; phonetics: string; example: string };
+      setFormData((prev) => ({
+        ...prev,
+        back: data.back || prev.back,
+        phonetics: data.phonetics || prev.phonetics,
+        example: data.example || prev.example,
+      }));
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      setApiError(error.response?.data?.message || error.message || t('aiGenerateError'));
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -199,10 +237,31 @@ export default function CustomCardsPage() {
                   <h2 className="mb-4 text-lg font-bold">
                     {editingCardId ? t('edit') : t('addCard')}
                   </h2>
+                  {apiError && (
+                    <div className="mb-4 flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      {apiError}
+                    </div>
+                  )}
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div>
-                        <label className="mb-1 block text-sm font-medium">{t('front')}</label>
+                        <div className="mb-1 flex items-center justify-between">
+                          <label className="block text-sm font-medium">{t('front')}</label>
+                          <button
+                            type="button"
+                            onClick={handleGenerateAI}
+                            disabled={isGenerating || !formData.front.trim()}
+                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 disabled:opacity-50"
+                          >
+                            {isGenerating ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Wand2 className="h-3 w-3" />
+                            )}
+                            {t('generateAI')}
+                          </button>
+                        </div>
                         <input
                           type="text"
                           required
@@ -263,7 +322,7 @@ export default function CustomCardsPage() {
                       </button>
                       <button
                         type="submit"
-                        disabled={createCard.isPending || updateCard.isPending}
+                        disabled={createCard.isPending || updateCard.isPending || isGenerating}
                         className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
                       >
                         {t('save')}

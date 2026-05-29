@@ -26,6 +26,11 @@ export interface GeneratedPracticeQuestion {
   skillTags: string[];
 }
 
+export interface GenerateFlashcardOptions {
+  front: string;
+  context?: string;
+}
+
 export const AI_PROVIDER_TOKEN = 'AI_PROVIDER_TOKEN';
 
 export interface IAiProvider {
@@ -38,6 +43,13 @@ export interface IAiProvider {
    * Generates practice questions based on a topic or context.
    */
   generatePracticeQuestions(options: GeneratePracticeOptions): Promise<GeneratedPracticeQuestion[]>;
+
+  /**
+   * Generates a flashcard based on a prompt.
+   */
+  generateFlashcard(
+    options: GenerateFlashcardOptions,
+  ): Promise<{ back: string; phonetics: string; example: string }>;
 
   /**
    * Chat interface for Roleplay Session.

@@ -6,6 +6,7 @@ import {
   GenerateExplanationOptions,
   GeneratePracticeOptions,
   GeneratedPracticeQuestion,
+  GenerateFlashcardOptions,
 } from '../interfaces/ai-provider.interface';
 
 interface GeneratedMultipleChoiceQuestion {
@@ -257,6 +258,53 @@ ${context || 'None'}
     } catch (error) {
       this.logger.error('Error generating practice questions from Gemini', error);
       throw new Error('Failed to generate practice questions from AI provider.');
+    }
+  }
+
+  async generateFlashcard(
+    options: GenerateFlashcardOptions,
+  ): Promise<{ back: string; phonetics: string; example: string }> {
+    try {
+      if (!isGeminiConfigured()) {
+        throw new Error('Gemini provider is not configured');
+      }
+
+      const { front, context } = options;
+
+      const systemPrompt = `You are an expert language teacher and lexicographer.
+The user will provide a vocabulary word or phrase (in any language).
+Your task is to generate flashcard data for this vocabulary.
+You must provide:
+1. "back": A clear, concise explanation/definition. If the input is in Vietnamese, provide the explanation/translation in English. If the input is in English, provide the explanation/translation in Vietnamese. Keep it under 2 sentences.
+2. "phonetics": The IPA transcription of the word/phrase (if applicable).
+3. "example": A short, natural example sentence using the vocabulary word correctly (in the target language).
+
+Ensure the output is accurate, educational, and formatting is plain text.
+Context/Reference material: ${context || 'None'}`;
+
+      const flashcardSchema = jsonSchema<{ back: string; phonetics: string; example: string }>({
+        type: 'object',
+        additionalProperties: false,
+        required: ['back', 'phonetics', 'example'],
+        properties: {
+          back: { type: 'string', description: 'Vietnamese explanation or definition' },
+          phonetics: { type: 'string', description: 'IPA phonetics' },
+          example: { type: 'string', description: 'English example sentence' },
+        },
+      });
+
+      const { object } = await generateObject({
+        model: google('gemini-1.5-flash'),
+        system: systemPrompt,
+        prompt: `Vocabulary: "${front}"\nPlease generate the flashcard data.`,
+        schema: flashcardSchema,
+        temperature: 0.3,
+      });
+
+      return object;
+    } catch (error) {
+      this.logger.error('Error generating flashcard from Gemini', error);
+      throw new Error('Failed to generate flashcard from AI provider.');
     }
   }
 

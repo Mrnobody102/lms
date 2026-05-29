@@ -89,6 +89,16 @@ export class AiService {
     return this.aiProvider.generatePracticeQuestions(options);
   }
 
+  async generateFlashcard(
+    tenantId: string,
+    userId: string,
+    front: string,
+    context?: string,
+  ): Promise<{ back: string; phonetics: string; example: string }> {
+    await this.consumeQuota(tenantId, userId);
+    return this.aiProvider.generateFlashcard({ front, context });
+  }
+
   async generateDailyQuest(
     tenantId: string,
     userId: string,

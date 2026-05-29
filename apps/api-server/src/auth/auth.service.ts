@@ -263,6 +263,22 @@ export class AuthService {
       throw this.invalidCredentials();
     }
 
+    if (!user.password) {
+      this.logger.warn(
+        `Login failed - user has no password (e.g. Google login only): id=${user.id}`,
+      );
+      await this.auditLog.log({
+        userId: user.id,
+        tenantId,
+        action: AuditAction.LOGIN_FAILURE,
+        status: AuditStatus.FAILURE,
+        ipAddress,
+        userAgent,
+        metadata: { reason: 'No password set for user' },
+      });
+      throw this.invalidCredentials();
+    }
+
     const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
 
     if (!isPasswordValid) {

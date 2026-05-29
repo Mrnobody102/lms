@@ -79,15 +79,21 @@ function sanitizeServerMessage(msg: string, fallback: string): string {
 
 function extractErrorMsg(err: unknown, fallback: string): string {
   const axiosErr = err as {
-    response?: { status?: number; data?: { message?: string | string[]; success?: boolean } };
+    response?: {
+      status?: number;
+      data?: { message?: string | string[]; success?: boolean };
+    };
+    message?: string;
   };
+  if (!axiosErr.response) {
+    return axiosErr.message || fallback;
+  }
   const data = axiosErr.response?.data;
   const msg = data?.message;
   if (!msg && data?.success === false) return fallback;
   const rawMsg = Array.isArray(msg) ? msg[0] : (msg ?? fallback);
-  // 5xx errors should always use the generic fallback
   const status = axiosErr.response?.status;
-  if (status && status >= 500) return fallback;
+  if (status && status >= 500) return `Lỗi hệ thống (${status}). Vui lòng thử lại sau.`;
   return sanitizeServerMessage(rawMsg, fallback);
 }
 
