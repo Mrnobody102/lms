@@ -60,14 +60,35 @@ function getHttpStatus(err: unknown): number | undefined {
   return axiosErr.response?.status;
 }
 
+// Internal error patterns that should NOT be shown verbatim to end users
+const INTERNAL_ERROR_PATTERNS = [
+  /tenant context/i,
+  /invalid or inactive tenant/i,
+  /tenant mismatch/i,
+  /token.*revoked/i,
+  /token.*version/i,
+  /internal server error/i,
+];
+
+function sanitizeServerMessage(msg: string, fallback: string): string {
+  if (INTERNAL_ERROR_PATTERNS.some((pattern) => pattern.test(msg))) {
+    return fallback;
+  }
+  return msg;
+}
+
 function extractErrorMsg(err: unknown, fallback: string): string {
   const axiosErr = err as {
-    response?: { data?: { message?: string | string[]; success?: boolean } };
+    response?: { status?: number; data?: { message?: string | string[]; success?: boolean } };
   };
   const data = axiosErr.response?.data;
   const msg = data?.message;
   if (!msg && data?.success === false) return fallback;
-  return Array.isArray(msg) ? msg[0] : (msg ?? fallback);
+  const rawMsg = Array.isArray(msg) ? msg[0] : (msg ?? fallback);
+  // 5xx errors should always use the generic fallback
+  const status = axiosErr.response?.status;
+  if (status && status >= 500) return fallback;
+  return sanitizeServerMessage(rawMsg, fallback);
 }
 
 export function createAuthStore(options: CreateAuthStoreOptions) {

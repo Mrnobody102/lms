@@ -7,7 +7,7 @@ const nextConfig = {
   transpilePackages: ['@repo/shared', '@repo/ui', '@repo/api-client'],
   output: 'standalone',
   skipTrailingSlashRedirect: true,
-  allowedDevOrigins: ['127.0.0.1', '100.117.44.38'],
+  allowedDevOrigins: ['127.0.0.1'],
   async rewrites() {
     return [
       {

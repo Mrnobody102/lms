@@ -14,7 +14,8 @@ export default function Error({
   const t = useTranslations('Student');
 
   useEffect(() => {
-    console.error(error);
+    // Log only the digest to avoid leaking stack traces in production
+    if (process.env.NODE_ENV === 'development') console.error(error);
   }, [error]);
 
   return (

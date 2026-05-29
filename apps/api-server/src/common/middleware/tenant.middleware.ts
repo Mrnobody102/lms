@@ -22,7 +22,7 @@ export class TenantMiddleware implements NestMiddleware {
     const nodeEnv = this.configService?.get<string>('NODE_ENV') ?? process.env.NODE_ENV;
     const tenantHints = extractTenantHints(req, {
       allowTenantHeaderInProduction:
-        this.configService?.get<boolean>('ALLOW_TENANT_HEADER_IN_PRODUCTION') ?? true,
+        this.configService?.get<boolean>('ALLOW_TENANT_HEADER_IN_PRODUCTION') ?? false,
       allowedOrigins,
       nodeEnv,
     });
