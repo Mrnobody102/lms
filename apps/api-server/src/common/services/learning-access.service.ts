@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { EnrollmentStatus, Prisma, Role } from '@repo/database';
 import { PrismaService } from './prisma.service';
 
@@ -70,7 +70,7 @@ export class LearningAccessService {
       where.id = lessonId;
     }
 
-    if (user?.role === Role.STUDENT) {
+    if (user?.role === Role.STUDENT || user?.role === Role.INSTRUCTOR) {
       where.course = this.courseWhere(tenantId, user);
     }
 
@@ -86,5 +86,29 @@ export class LearningAccessService {
     if (!course) {
       throw new NotFoundException(`Course with ID ${courseId} not found in this tenant`);
     }
+  }
+
+  /**
+   * Authoring gate for instructors. Content that targets a specific course must
+   * belong to a course the instructor is assigned to; tenant-wide content
+   * (courseId = null) is reserved for ADMIN/SUPER_ADMIN. ADMIN/SUPER_ADMIN pass
+   * through (still tenant-scoped by the caller).
+   */
+  async ensureAuthoringCourseAccess(
+    courseId: string | null | undefined,
+    tenantId: string,
+    user: LearningAccessUser,
+  ) {
+    if (user.role !== Role.INSTRUCTOR) {
+      return;
+    }
+
+    if (!courseId) {
+      throw new ForbiddenException(
+        'Instructors can only manage content within their assigned courses',
+      );
+    }
+
+    await this.ensureCourseAccess(courseId, tenantId, user);
   }
 }
