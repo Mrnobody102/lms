@@ -875,19 +875,51 @@ export class AuthService {
   }): Promise<LoginUserRecord> {
     const randomPasswordHash = await bcrypt.hash(randomBytes(48).toString('hex'), 12);
 
-    return this.prisma.user.create({
-      data: {
-        email: options.email,
-        password: randomPasswordHash,
-        googleSubject: options.googleSubject,
-        googleEmailVerified: options.googleEmailVerified,
-        fullName: options.fullName,
-        avatarUrl: options.avatarUrl,
-        tenantId: options.tenantId,
-        role: Role.STUDENT,
+    const identity = await this.prisma.globalUserIdentity.upsert({
+      where: { normalizedEmail: options.email },
+      update: { displayName: options.fullName },
+      create: {
+        normalizedEmail: options.email,
+        displayName: options.fullName,
       },
-      select: this.userWithAuthFieldsSelect(),
+      select: { id: true },
     });
+
+    try {
+      return await this.prisma.user.create({
+        data: {
+          email: options.email,
+          password: randomPasswordHash,
+          googleSubject: options.googleSubject,
+          googleEmailVerified: options.googleEmailVerified,
+          fullName: options.fullName,
+          avatarUrl: options.avatarUrl,
+          globalIdentityId: identity.id,
+          tenantId: options.tenantId,
+          role: Role.STUDENT,
+        },
+        select: this.userWithAuthFieldsSelect(),
+      });
+    } catch (error: unknown) {
+      // Two concurrent Google logins for the same new account can race on the
+      // unique [tenantId, email] / [tenantId, googleSubject] constraints. Fall
+      // back to the record the other request created instead of throwing 500.
+      if (this.isUniqueConstraintError(error)) {
+        const existing = await this.prisma.user.findFirst({
+          where: {
+            tenantId: options.tenantId,
+            email: { equals: options.email, mode: 'insensitive' },
+            deletedAt: null,
+          },
+          select: this.userWithAuthFieldsSelect(),
+        });
+
+        if (existing) {
+          return existing;
+        }
+      }
+      throw error;
+    }
   }
 
   private async linkGoogleAccount(

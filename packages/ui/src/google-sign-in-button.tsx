@@ -72,6 +72,7 @@ export function GoogleSignInButton({
   const onErrorRef = useRef(onError);
   const [scriptReady, setScriptReady] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [containerWidth, setContainerWidth] = useState(0);
 
   useEffect(() => {
     onCredentialRef.current = onCredential;
@@ -106,6 +107,22 @@ export function GoogleSignInButton({
   }, [clientId]);
 
   useEffect(() => {
+    const container = containerRef.current;
+    if (!container || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width ?? 0;
+      if (width > 0) {
+        setContainerWidth(width);
+      }
+    });
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
     if (!clientId || !scriptReady || !containerRef.current || disabled) {
       return;
     }
@@ -128,16 +145,20 @@ export function GoogleSignInButton({
       auto_select: false,
       cancel_on_tap_outside: true,
     });
+    // GIS renderButton only accepts a pixel width (max 400, no percentages),
+    // so we mirror the actual container width and clamp it to stay responsive
+    // on narrow viewports.
+    const width = containerWidth > 0 ? Math.min(Math.round(containerWidth), 400) : undefined;
     window.google?.accounts?.id.renderButton(container, {
       type: 'standard',
       theme: 'outline',
       size: 'large',
       shape: 'rectangular',
       text: 'continue_with',
-      width: 320,
+      width,
       locale,
     });
-  }, [clientId, disabled, locale, scriptReady]);
+  }, [clientId, disabled, locale, scriptReady, containerWidth]);
 
   if (!clientId) {
     return null;
@@ -160,7 +181,7 @@ export function GoogleSignInButton({
 
   return (
     <div className={cn('relative flex min-h-11 w-full justify-center', className)}>
-      <div ref={containerRef} aria-label={label} />
+      <div ref={containerRef} aria-label={label} className="flex w-full justify-center" />
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-background/80 text-sm font-medium text-muted-foreground backdrop-blur-sm">
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />

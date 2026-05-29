@@ -83,7 +83,7 @@ export const envSchema = z
     CORS_ORIGINS: commaSeparatedUrlSchema.optional(),
     TRUST_PROXY: trustProxySchema,
     ALLOW_TENANT_HEADER_IN_PRODUCTION: booleanEnvSchema.default(false),
-    AUTH_COOKIE_SAME_SITE: z.enum(['lax', 'strict', 'none']).default('lax'),
+    AUTH_COOKIE_SAME_SITE: z.enum(['lax', 'strict', 'none']).default('none'),
     AUTH_COOKIE_DOMAIN: z.string().optional(),
     GOOGLE_CLIENT_ID: z.string().optional(),
     GOOGLE_CLIENT_IDS: z.string().optional(),

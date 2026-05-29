@@ -484,7 +484,13 @@ describe('AuthService', () => {
             googleEmailVerified: true,
             role: 'STUDENT',
             tenantId: 'tenant-1',
+            globalIdentityId: 'identity-1',
           }),
+        }),
+      );
+      expect(prisma.globalUserIdentity.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { normalizedEmail: 'student@example.com' },
         }),
       );
       expect(result.user).toEqual(

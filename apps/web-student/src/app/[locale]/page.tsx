@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import { ArrowRight, BookOpenCheck, KeyRound, LogIn, ShieldCheck } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
+import { ThemeToggle, LanguageToggle } from '@repo/ui';
 import { Link } from '../../navigation';
 import { useAuthStore } from '../../features/auth/auth.store';
 
@@ -35,9 +36,13 @@ function GuestStudentHome() {
   );
 
   return (
-    <main className="min-h-screen bg-background font-sans">
+    <main className="min-h-screen bg-background font-sans relative">
+      <header className="absolute top-0 w-full p-6 flex justify-end gap-3 z-10">
+        <ThemeToggle label={t('themeToggle')} />
+        <LanguageToggle />
+      </header>
       <section className="mx-auto flex min-h-screen max-w-6xl flex-col justify-center px-6 py-16">
-        <div className="grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
+        <div className="grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-center mt-12 lg:mt-0">
           <div>
             <div className="mb-5 inline-flex items-center gap-2 rounded-md border bg-card px-3 py-1.5 text-sm font-semibold text-primary">
               <ShieldCheck className="h-4 w-4" />
@@ -65,6 +70,8 @@ function GuestStudentHome() {
               </Link>
               <a
                 href={`${salesBaseUrl}/${locale}/courses`}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-md border px-5 text-sm font-semibold hover:bg-muted"
               >
                 {t('salesCta')}
