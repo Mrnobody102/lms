@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { AdminHeader } from '@/components/layout/admin-header';
@@ -13,6 +14,7 @@ import { EmptyState, ErrorState, LoadingState, PaginationControls } from '@repo/
 import {
   AlertCircle,
   CheckCircle2,
+  ExternalLink,
   Loader2,
   Search,
   UserCheck2,
@@ -175,8 +177,8 @@ export default function AdminStudentsPage() {
               {t('studentsFound', { count: total })}
             </div>
 
-            <div className="mb-4 grid gap-3 lg:grid-cols-[minmax(220px,1fr)_minmax(220px,0.7fr)_220px_auto_auto]">
-              <div className="flex h-10 items-center rounded-md border border-input bg-background text-foreground shadow-sm transition-all focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10">
+            <div className="mb-4 flex flex-wrap items-center gap-3">
+              <div className="flex h-10 min-w-[200px] flex-1 items-center rounded-md border border-input bg-background text-foreground shadow-sm transition-all focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10">
                 <Search className="ml-3.5 h-4 w-4 shrink-0 text-muted-foreground pointer-events-none" />
                 <Input
                   value={search}
@@ -195,7 +197,7 @@ export default function AdminStudentsPage() {
                   setSelectedStudentIds([]);
                 }}
                 placeholder={t('filterByEmail')}
-                className="h-10 rounded-md"
+                className="h-10 min-w-[180px] rounded-md"
               />
               <select
                 value={cohortId}
@@ -212,7 +214,7 @@ export default function AdminStudentsPage() {
                   </option>
                 ))}
               </select>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex items-center gap-2">
                 {filterItems.map((filter) => (
                   <button
                     key={filter.key}
@@ -222,7 +224,7 @@ export default function AdminStudentsPage() {
                       setPage(1);
                       setSelectedStudentIds([]);
                     }}
-                    className={`inline-flex h-10 items-center justify-center rounded-lg border px-4 text-sm font-medium transition-colors ${
+                    className={`inline-flex h-10 items-center justify-center whitespace-nowrap rounded-lg border px-4 text-sm font-medium transition-colors ${
                       statusFilter === filter.key
                         ? 'border-primary bg-primary text-primary-foreground'
                         : 'border-input bg-background hover:bg-accent hover:text-accent-foreground'
@@ -333,12 +335,12 @@ export default function AdminStudentsPage() {
               />
             ) : (
               <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
-                <div className="min-w-[760px]">
-                  <div className="grid grid-cols-[3rem_minmax(0,1.1fr)_140px_160px_180px] gap-4 border-b bg-muted/30 px-5 py-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground items-center">
+                <div className="min-w-[780px]">
+                  <div className="grid grid-cols-[3rem_minmax(0,1.2fr)_130px_minmax(0,0.8fr)_220px] gap-4 border-b bg-muted/30 px-5 py-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground items-center">
                     <span className="flex justify-center">{t('selectItem')}</span>
                     <span>{t('students')}</span>
                     <span>{t('status')}</span>
-                    <span>{t('tenant')}</span>
+                    <span>{t('allCohorts')}</span>
                     <span>{t('actions')}</span>
                   </div>
 
@@ -346,7 +348,7 @@ export default function AdminStudentsPage() {
                     {visibleStudents.map((student) => (
                       <div
                         key={student.id}
-                        className="grid grid-cols-[3rem_minmax(0,1.1fr)_140px_160px_180px] gap-4 px-5 py-4 hover:bg-muted/50 transition-colors items-center"
+                        className="grid grid-cols-[3rem_minmax(0,1.2fr)_130px_minmax(0,0.8fr)_220px] gap-4 px-5 py-4 hover:bg-muted/50 transition-colors items-center"
                       >
                         <div className="flex justify-center">
                           <input
@@ -381,11 +383,19 @@ export default function AdminStudentsPage() {
                           </Badge>
                         </div>
 
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          {student.tenant?.name || student.tenantId}
+                        {/* Cohort column — placeholder since API doesn't return cohort list per student yet */}
+                        <div className="min-w-0 text-xs text-muted-foreground">
+                          <span className="truncate block">{t('allCohorts')}</span>
                         </div>
 
-                        <div className="flex items-center">
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`/students/${student.id}`}
+                            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-input bg-background px-3 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                            Chi tiết
+                          </Link>
                           <Button
                             type="button"
                             size="sm"

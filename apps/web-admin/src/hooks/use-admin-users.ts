@@ -32,6 +32,15 @@ export function useStudents(params?: {
   });
 }
 
+export function useStudentDetail(userId: string) {
+  return useQuery({
+    queryKey: ['admin-student-detail', userId],
+    queryFn: () => adminUserApi.getStudentById(userId),
+    enabled: Boolean(userId),
+    staleTime: 60 * 1000,
+  });
+}
+
 export function useUpdateStudentStatus() {
   const queryClient = useQueryClient();
 

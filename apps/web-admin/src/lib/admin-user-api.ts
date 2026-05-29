@@ -4,6 +4,8 @@ export interface AdminUser {
   id: string;
   email: string;
   fullName: string | null;
+  phoneNumber?: string | null;
+  avatarUrl?: string | null;
   role: 'SUPER_ADMIN' | 'ADMIN' | 'INSTRUCTOR' | 'STUDENT';
   isActive: boolean;
   tenantId: string;
@@ -89,6 +91,10 @@ export const adminUserApi = {
         },
       })
       .then((r) => r.data as PaginatedResponse<AdminUser>);
+  },
+
+  getStudentById(userId: string) {
+    return api.get(`/admin/users/${userId}`).then((r) => r.data as AdminUser);
   },
 
   updateUserStatus(userId: string, isActive: boolean) {
