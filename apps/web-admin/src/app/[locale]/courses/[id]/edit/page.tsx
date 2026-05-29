@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { DraftPreviewCard } from '@/components/authoring/draft-preview-card';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
@@ -13,8 +13,6 @@ import {
   useBulkEnrollStudents,
   useBulkUnenrollStudents,
   useUpdateCourse,
-  useCreateLesson,
-  useUpdateLesson,
   useDeleteLesson,
   useEnrollStudent,
   useUnenrollStudent,
@@ -24,11 +22,11 @@ import {
   useToggleCourseStatus,
   useReorderUnits,
   useReorderLessons,
+  useCreateLesson,
+  useUpdateLesson,
 } from '@/hooks/use-courses';
 import { usePrograms } from '@/hooks/use-programs';
 import { LessonList } from '@/features/courses/lesson-list';
-import { AddLessonDialog } from '@/features/courses/add-lesson-form';
-import { EditLessonDialog } from '@/features/courses/edit-lesson-form';
 import { CourseStats } from '@/features/courses/course-stats';
 import { CourseReportPanel } from '@/features/courses/course-report-panel';
 import { EnrollmentPanel } from '@/features/courses/enrollment-panel';
@@ -63,6 +61,7 @@ const EMPTY_ARRAY: never[] = [];
 export default function CourseEditorPage() {
   const t = useTranslations('Admin');
   const params = useParams();
+  const router = useRouter();
   const courseId = params.id as string;
 
   const { data: course, isLoading } = useCourse(courseId);
@@ -83,9 +82,6 @@ export default function CourseEditorPage() {
   const reorderLessons = useReorderLessons();
 
   const [activeTab, setActiveTab] = useState<'curriculum' | 'settings' | 'students'>('curriculum');
-  const [showAddLesson, setShowAddLesson] = useState(false);
-  const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
-  const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
   const [localTitle, setLocalTitle] = useState('');
   const [localLevelId, setLocalLevelId] = useState<string>('');
   const [localAiEnabled, setLocalAiEnabled] = useState(false);
@@ -148,27 +144,13 @@ export default function CourseEditorPage() {
     );
   };
 
-  const handleAddLesson = (data: Partial<Lesson>): Promise<boolean> => {
-    return new Promise((resolve) => {
-      createLesson.mutate(
-        { courseId, data },
-        {
-          onSuccess: () => {
-            showMsg('success', 'lessonAdded');
-            resolve(true);
-          },
-          onError: () => {
-            showMsg('error', 'lessonAddError');
-            resolve(false);
-          },
-        },
-      );
-    });
+  const handleAddLessonClick = (unitId?: string | null) => {
+    const query = unitId ? `?unitId=${unitId}` : '';
+    router.push(`/courses/${courseId}/lessons/new${query}`);
   };
 
-  const handleAddLessonClick = (unitId?: string | null) => {
-    setSelectedUnitId(unitId ?? null);
-    setShowAddLesson(true);
+  const handleEditLessonClick = (lesson: Lesson) => {
+    router.push(`/courses/${courseId}/lessons/${lesson.id}/edit`);
   };
 
   const handleDuplicateLesson = async (lesson: Lesson): Promise<void> => {
@@ -240,26 +222,6 @@ export default function CourseEditorPage() {
 
   const getLessonPreviewUrl = (lesson: Lesson) =>
     studentBaseUrl ? `${studentBaseUrl}/vi/lessons/${lesson.id}` : null;
-
-  const handleUpdateLesson = (data: Partial<Lesson>): Promise<boolean> => {
-    if (!editingLesson) return Promise.resolve(false);
-    return new Promise((resolve) => {
-      updateLesson.mutate(
-        { id: editingLesson.id, data, courseId },
-        {
-          onSuccess: () => {
-            setEditingLesson(null);
-            showMsg('success', 'lessonUpdated');
-            resolve(true);
-          },
-          onError: () => {
-            showMsg('error', 'lessonUpdateError');
-            resolve(false);
-          },
-        },
-      );
-    });
-  };
 
   const handleDeleteLesson = (lessonId: string) => {
     deleteLesson.mutate(
@@ -634,7 +596,7 @@ export default function CourseEditorPage() {
                 <LessonList
                   lessons={lessons}
                   units={units}
-                  onEdit={(lesson) => setEditingLesson(lesson)}
+                  onEdit={handleEditLessonClick}
                   onDelete={handleDeleteLesson}
                   onAddClick={handleAddLessonClick}
                   onAddUnit={handleAddUnit}
@@ -799,28 +761,6 @@ export default function CourseEditorPage() {
             </div>
           </div>
         </main>
-
-        <AddLessonDialog
-          courseId={courseId}
-          existingLessonsCount={lessons.length}
-          units={units}
-          selectedUnitId={selectedUnitId}
-          onSubmit={handleAddLesson}
-          open={showAddLesson}
-          onOpenChange={setShowAddLesson}
-          saving={createLesson.isPending}
-        />
-        <EditLessonDialog
-          courseId={courseId}
-          lesson={editingLesson}
-          units={units}
-          onSubmit={handleUpdateLesson}
-          open={!!editingLesson}
-          onOpenChange={(open) => {
-            if (!open) setEditingLesson(null);
-          }}
-          saving={updateLesson.isPending}
-        />
       </div>
     </AuthGuard>
   );
