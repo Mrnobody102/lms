@@ -213,21 +213,9 @@ export class StudentTodayService {
         title: true,
         totalDuration: true,
         createdAt: true,
-        lessons: {
-          where: { deletedAt: null },
-          orderBy: { order: 'asc' },
+        _count: {
           select: {
-            id: true,
-            title: true,
-            courseId: true,
-            order: true,
-            duration: true,
-            progress: {
-              where: { tenantId, userId: user.id },
-              select: { status: true, updatedAt: true },
-              orderBy: { updatedAt: 'desc' },
-              take: 1,
-            },
+            lessons: { where: { deletedAt: null } },
           },
         },
       },
@@ -235,28 +223,101 @@ export class StudentTodayService {
     });
 
     const courseIds = courses.map((course) => course.id);
-    const activities =
-      courseIds.length === 0
-        ? []
-        : await this.prisma.learningActivity.findMany({
+    if (courseIds.length === 0) return [];
+
+    const [completedLessonsData, continueLessonsData, lastActivities] = await Promise.all([
+      this.prisma.lesson.findMany({
+        where: {
+          courseId: { in: courseIds },
+          deletedAt: null,
+          progress: {
+            some: {
+              tenantId,
+              userId: user.id,
+              status: ProgressStatus.COMPLETED,
+            },
+          },
+        },
+        select: { courseId: true },
+      }),
+      Promise.all(
+        courses.map(async (course) => {
+          const continueLesson = await this.prisma.lesson.findFirst({
+            where: {
+              courseId: course.id,
+              deletedAt: null,
+              progress: {
+                none: {
+                  tenantId,
+                  userId: user.id,
+                  status: ProgressStatus.COMPLETED,
+                },
+              },
+            },
+            orderBy: { order: 'asc' },
+            select: {
+              id: true,
+              title: true,
+              courseId: true,
+              duration: true,
+            },
+          });
+          return { courseId: course.id, continueLesson };
+        }),
+      ),
+      Promise.all(
+        courses.map(async (course) => {
+          const activity = await this.prisma.learningActivity.findFirst({
             where: {
               tenantId,
               userId: user.id,
-              courseId: { in: courseIds },
+              courseId: course.id,
               type: LearningActivityType.LESSON_OPENED,
             },
-            select: { courseId: true, lessonId: true, occurredAt: true },
             orderBy: { occurredAt: 'desc' },
+            select: { occurredAt: true },
           });
+          return { courseId: course.id, occurredAt: activity?.occurredAt ?? null };
+        }),
+      ),
+    ]);
+
+    const completedCountByCourse = completedLessonsData.reduce(
+      (acc, curr) => {
+        acc[curr.courseId] = (acc[curr.courseId] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    type ContinueLessonType = {
+      id: string;
+      title: string;
+      courseId: string;
+      duration: number;
+    } | null;
+    const continueLessonByCourse = continueLessonsData.reduce(
+      (acc, curr) => {
+        acc[curr.courseId] = curr.continueLesson;
+        return acc;
+      },
+      {} as Record<string, ContinueLessonType>,
+    );
+
+    const lastActivityByCourse = lastActivities.reduce(
+      (acc, curr) => {
+        acc[curr.courseId] = curr.occurredAt;
+        return acc;
+      },
+      {} as Record<string, Date | null>,
+    );
 
     return courses.map((course) => {
-      const courseActivities = activities.filter((activity) => activity.courseId === course.id);
-      const completedLessons = course.lessons.filter(
-        (lesson) => lesson.progress[0]?.status === ProgressStatus.COMPLETED,
-      ).length;
-      const continueLesson =
-        course.lessons.find((lesson) => lesson.progress[0]?.status !== ProgressStatus.COMPLETED) ??
-        null;
+      const totalLessons = course._count.lessons;
+      const completedLessons = completedCountByCourse[course.id] || 0;
+      const continueLesson = continueLessonByCourse[course.id];
+      const completionPercentage =
+        totalLessons === 0 ? 0 : Math.round((completedLessons / totalLessons) * 100);
 
       return {
         course: {
@@ -264,13 +325,10 @@ export class StudentTodayService {
           title: course.title,
           totalDuration: course.totalDuration,
         },
-        totalLessons: course.lessons.length,
+        totalLessons,
         completedLessons,
-        completionPercentage:
-          course.lessons.length === 0
-            ? 0
-            : Math.round((completedLessons / course.lessons.length) * 100),
-        lastActivityAt: courseActivities[0]?.occurredAt ?? null,
+        completionPercentage,
+        lastActivityAt: lastActivityByCourse[course.id] ?? null,
         continueLesson: continueLesson
           ? {
               id: continueLesson.id,

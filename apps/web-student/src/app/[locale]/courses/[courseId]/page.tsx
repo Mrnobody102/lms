@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import {
   ArrowRight,
@@ -133,11 +134,12 @@ export default function CourseDetailPage() {
       {/* Cover Image Banner */}
       {course.coverImageUrl && (
         <div className="relative h-52 w-full overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             src={course.coverImageUrl}
             alt={course.title}
-            className="h-full w-full object-cover"
+            fill
+            sizes="100vw"
+            className="object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/20 to-background" />
         </div>

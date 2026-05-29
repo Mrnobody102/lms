@@ -7,6 +7,14 @@ const nextConfig = {
   transpilePackages: ['@repo/shared', '@repo/ui', '@repo/api-client'],
   output: 'standalone',
   skipTrailingSlashRedirect: true,
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
+  },
   allowedDevOrigins: ['127.0.0.1', '100.117.44.38'],
   async rewrites() {
     return [
