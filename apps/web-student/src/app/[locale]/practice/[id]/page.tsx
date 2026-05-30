@@ -45,6 +45,7 @@ export default function PracticeAttemptPage() {
   const submitAttempt = useSubmitPracticeAttempt(exerciseSetId);
   const updateProgress = useUpdateProgress();
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [isAnswersLoaded, setIsAnswersLoaded] = useState(false);
   const [result, setResult] = useState<PracticeAttemptResult | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [showValidationErrors, setShowValidationErrors] = useState(false);
@@ -75,6 +76,35 @@ export default function PracticeAttemptPage() {
     }
   }, [allAnswered, showValidationErrors]);
 
+  // Load draft from localStorage
+  useEffect(() => {
+    if (!exerciseSetId || isAnswersLoaded || result) return;
+    try {
+      const saved = localStorage.getItem(`practice_draft_${exerciseSetId}`);
+      if (saved) {
+        setAnswers(JSON.parse(saved));
+      }
+    } catch {
+      // ignore
+    } finally {
+      setIsAnswersLoaded(true);
+    }
+  }, [exerciseSetId, isAnswersLoaded, result]);
+
+  // Save draft to localStorage
+  useEffect(() => {
+    if (!isAnswersLoaded || result) return;
+    try {
+      if (Object.keys(answers).length > 0) {
+        localStorage.setItem(`practice_draft_${exerciseSetId}`, JSON.stringify(answers));
+      } else {
+        localStorage.removeItem(`practice_draft_${exerciseSetId}`);
+      }
+    } catch {
+      // ignore
+    }
+  }, [answers, exerciseSetId, isAnswersLoaded, result]);
+
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
     setMessage(null);
@@ -92,6 +122,11 @@ export default function PracticeAttemptPage() {
       {
         onSuccess: (data) => {
           setResult(data);
+          try {
+            localStorage.removeItem(`practice_draft_${exerciseSetId}`);
+          } catch {
+            // ignore
+          }
           if (returnLessonId) {
             updateProgress.mutate(
               {
@@ -113,6 +148,11 @@ export default function PracticeAttemptPage() {
   };
 
   const resetAttempt = () => {
+    try {
+      localStorage.removeItem(`practice_draft_${exerciseSetId}`);
+    } catch {
+      // ignore
+    }
     setAnswers({});
     setResult(null);
     setMessage(null);

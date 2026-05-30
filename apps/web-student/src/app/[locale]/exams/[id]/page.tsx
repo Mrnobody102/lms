@@ -92,48 +92,16 @@ export default function ExamAttemptPage() {
     return () => window.clearInterval(timer);
   }, [attempt, result]);
 
-  useEffect(() => {
-    if (!timeExpired || result) {
-      return;
-    }
-
-    setMessage((current) => current ?? t('exam.expiredMessage'));
-  }, [result, t, timeExpired]);
-
-  const handleStart = () => {
-    setMessage(null);
-    startAttempt.mutate(undefined, {
-      onSuccess: (data) => {
-        setAttempt(data.attempt);
-        setActiveExam(data.exam);
-        setAnswers({});
-        setResult(null);
-        setRemainingMs(new Date(data.attempt.deadlineAt).getTime() - Date.now());
-        if (data.resumed) {
-          setMessage(t('exam.resumeMessage'));
-        }
-        setShowValidationErrors(false);
-      },
-      onError: (error) => setMessage(getApiErrorMessage(error, t('exam.startError'))),
-    });
-  };
-
-  const handleSubmit = (event: FormEvent) => {
-    event.preventDefault();
+  const doSubmit = () => {
     setMessage(null);
 
     if (!attempt) {
       setMessage(t('exam.startRequired'));
       return;
     }
-    if (!allAnswered) {
-      setShowValidationErrors(true);
-      return;
-    }
-    if (timeExpired) {
-      setMessage(t('exam.expiredMessage'));
-      return;
-    }
+
+    // In auto-submit we might not have all answered, but we submit anyway.
+    // We only show validation errors if the user manually submitted.
 
     submitAttempt.mutate(
       questions.map((question) => ({
@@ -162,6 +130,43 @@ export default function ExamAttemptPage() {
         onError: (error) => setMessage(getSubmitErrorMessage(error, t)),
       },
     );
+  };
+
+  useEffect(() => {
+    if (!timeExpired || result || submitAttempt.isPending || !attempt) {
+      return;
+    }
+
+    setMessage((current) => current ?? t('exam.expiredMessage'));
+    doSubmit();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeExpired]); // Only trigger when timeExpired changes to true
+
+  const handleStart = () => {
+    setMessage(null);
+    startAttempt.mutate(undefined, {
+      onSuccess: (data) => {
+        setAttempt(data.attempt);
+        setActiveExam(data.exam);
+        setAnswers({});
+        setResult(null);
+        setRemainingMs(new Date(data.attempt.deadlineAt).getTime() - Date.now());
+        if (data.resumed) {
+          setMessage(t('exam.resumeMessage'));
+        }
+        setShowValidationErrors(false);
+      },
+      onError: (error) => setMessage(getApiErrorMessage(error, t('exam.startError'))),
+    });
+  };
+
+  const handleSubmit = (event: FormEvent) => {
+    event.preventDefault();
+    if (!allAnswered) {
+      setShowValidationErrors(true);
+      return;
+    }
+    doSubmit();
   };
 
   const resetAttempt = () => {
@@ -264,7 +269,7 @@ export default function ExamAttemptPage() {
                 <button
                   type="button"
                   onClick={handleStart}
-                  disabled={startAttempt.isPending}
+                  disabled={startAttempt.isPending || attempt !== null}
                   className="mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {startAttempt.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -331,7 +336,7 @@ export default function ExamAttemptPage() {
                     {!result && (
                       <button
                         type="submit"
-                        disabled={submitAttempt.isPending || timeExpired}
+                        disabled={submitAttempt.isPending}
                         className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {submitAttempt.isPending && <Loader2 className="h-4 w-4 animate-spin" />}

@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '../../../navigation';
 import { RegisterPageClient } from './register-page-client';
@@ -33,7 +34,9 @@ export default async function RegisterPage(props: { params: Promise<{ locale: st
 
         {/* Register Card — only the form is client */}
         <div className="bg-card border border-border rounded-2xl p-8 shadow-2xl dark:shadow-black/50">
-          <RegisterPageClient />
+          <Suspense fallback={null}>
+            <RegisterPageClient />
+          </Suspense>
         </div>
 
         {/* Login Link */}

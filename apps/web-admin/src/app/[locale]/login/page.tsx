@@ -1,11 +1,11 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { LoginForm } from '@/features/auth/components/login-form';
 
-export default function AdminLoginPage() {
-  const t = useTranslations('Admin');
+function AdminLoginClient() {
   const searchParams = useSearchParams();
 
   // Redirect to dashboard after successful login
@@ -13,6 +13,12 @@ export default function AdminLoginPage() {
     const returnUrl = searchParams.get('returnUrl') || searchParams.get('next');
     window.location.assign(getSafeReturnUrl(returnUrl) ?? '/');
   };
+
+  return <LoginForm onSuccess={handleLoginSuccess} />;
+}
+
+export default function AdminLoginPage() {
+  const t = useTranslations('Admin');
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4 sm:p-6">
@@ -40,7 +46,9 @@ export default function AdminLoginPage() {
 
         {/* Login Card */}
         <div className="rounded-2xl border border-border bg-card p-6 shadow-2xl sm:p-8">
-          <LoginForm onSuccess={handleLoginSuccess} />
+          <Suspense fallback={null}>
+            <AdminLoginClient />
+          </Suspense>
         </div>
 
         <p className="text-center text-[11px] text-muted-foreground mt-8">

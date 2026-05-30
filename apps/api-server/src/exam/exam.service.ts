@@ -508,7 +508,13 @@ export class ExamService {
     if (attempt.status === ExamAttemptStatus.SUBMITTED) {
       throw new BadRequestException('Exam attempt has already been submitted');
     }
-    if (this.isAttemptExpired(attempt, attempt.exam.durationMinutes)) {
+
+    // Give a 2-minute grace period for network latency
+    const gracePeriodMs = 120_000;
+    if (
+      Date.now() >
+      this.getAttemptDeadline(attempt, attempt.exam.durationMinutes).getTime() + gracePeriodMs
+    ) {
       throw new BadRequestException('Exam attempt time has expired');
     }
 
@@ -581,25 +587,21 @@ export class ExamService {
     await this.skillMastery.applyAnswerEvents(
       tenantId,
       user.id,
-      results
-        .filter((result) => result.answer !== null)
-        .map((result) => ({
-          skillCodes: questions.find((q) => q.id === result.questionId)?.skillTags ?? [],
-          isCorrect: result.isCorrect,
-        })),
+      results.map((result) => ({
+        skillCodes: questions.find((q) => q.id === result.questionId)?.skillTags ?? [],
+        isCorrect: result.isCorrect,
+      })),
     );
 
     await this.srs.upsertCardsForAnswers(
       tenantId,
       user.id,
-      results
-        .filter((result) => result.answer !== null)
-        .map((result) => ({
-          sourceType: ReviewCardSource.EXAM_QUESTION,
-          questionId: result.questionId,
-          skillCodes: questions.find((q) => q.id === result.questionId)?.skillTags ?? [],
-          isCorrect: result.isCorrect,
-        })),
+      results.map((result) => ({
+        sourceType: ReviewCardSource.EXAM_QUESTION,
+        questionId: result.questionId,
+        skillCodes: questions.find((q) => q.id === result.questionId)?.skillTags ?? [],
+        isCorrect: result.isCorrect,
+      })),
     );
 
     await this.upsertActivityProgressForExam({

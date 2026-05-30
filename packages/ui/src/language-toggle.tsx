@@ -51,7 +51,7 @@ export function LanguageToggle({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all active:scale-95 border bg-card/50"
+          className="flex items-center gap-2 px-3 py-2 shrink-0 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all active:scale-95 border bg-card/50"
         >
           <Languages className="w-4 h-4" />
           <span className="uppercase">{locale}</span>
