@@ -3,9 +3,8 @@
 import {
   LayoutDashboard,
   Users,
+  GraduationCap,
   BookOpen,
-  Dumbbell,
-  FileCheck2,
   Settings,
   DollarSign,
   Calendar,
@@ -17,9 +16,9 @@ import {
   Sparkles,
   Bell,
   Menu,
-  Mic2,
   Store,
   PackageSearch,
+  type LucideIcon,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
@@ -27,6 +26,17 @@ import { useAuthStore } from '@/features/auth/auth.store';
 import { cn } from '@/lib/utils';
 import { Link, usePathname, useRouter } from '@/navigation';
 import { LanguageToggle, useTheme, Sheet, SheetContent, SheetTrigger, SheetTitle } from '@repo/ui';
+
+interface MenuItem {
+  name: string;
+  icon: LucideIcon;
+  href: string;
+}
+
+interface MenuGroup {
+  label: string;
+  items: MenuItem[];
+}
 
 export function AdminSidebar() {
   const t = useTranslations('Admin');
@@ -49,29 +59,59 @@ export function AdminSidebar() {
     return () => mediaQuery.removeEventListener('change', closeOnDesktop);
   }, []);
 
-  const fullMenuItems = [
-    { name: t('dashboard'), icon: LayoutDashboard, href: '/' },
-    { name: t('students'), icon: Users, href: '/students' },
-    { name: t('cohorts.navLabel'), icon: Users, href: '/cohorts' },
-    { name: t('programs'), icon: Layers, href: '/programs' },
-    { name: t('courses'), icon: BookOpen, href: '/courses' },
-    { name: t('practice'), icon: Dumbbell, href: '/practice' },
-    { name: t('roleplayScenariosNav'), icon: Mic2, href: '/roleplay/scenarios' },
-    { name: t('exams'), icon: FileCheck2, href: '/exams' },
-    { name: t('skills.navLabel'), icon: Sparkles, href: '/skills' },
-    { name: t('reports.navLabel'), icon: BarChart3, href: '/reports' },
-    { name: t('marketplace.providerNav'), icon: Store, href: '/marketplace/provider' },
-    { name: t('marketplace.exploreNav'), icon: PackageSearch, href: '/marketplace/explore' },
-    { name: t('notifications.title'), icon: Bell, href: '/notifications' },
-    { name: t('finance'), icon: DollarSign, href: '/finance' },
-    { name: t('schedule'), icon: Calendar, href: '/schedule' },
-    { name: t('settingsLabel'), icon: Settings, href: '/settings' },
+  const fullMenuGroups: MenuGroup[] = [
+    {
+      label: t('nav.groups.overview'),
+      items: [{ name: t('dashboard'), icon: LayoutDashboard, href: '/' }],
+    },
+    {
+      label: t('nav.groups.teaching'),
+      items: [
+        { name: t('programs'), icon: Layers, href: '/programs' },
+        { name: t('courses'), icon: BookOpen, href: '/courses' },
+        { name: t('skills.navLabel'), icon: Sparkles, href: '/skills' },
+      ],
+    },
+    {
+      label: t('nav.groups.people'),
+      items: [
+        { name: t('students'), icon: Users, href: '/students' },
+        { name: t('instructors.navLabel'), icon: GraduationCap, href: '/instructors' },
+        { name: t('cohorts.navLabel'), icon: Users, href: '/cohorts' },
+      ],
+    },
+    {
+      label: t('nav.groups.operations'),
+      items: [
+        { name: t('schedule'), icon: Calendar, href: '/schedule' },
+        { name: t('finance'), icon: DollarSign, href: '/finance' },
+        { name: t('reports.navLabel'), icon: BarChart3, href: '/reports' },
+        { name: t('notifications.title'), icon: Bell, href: '/notifications' },
+      ],
+    },
+    {
+      label: t('nav.groups.marketplace'),
+      items: [
+        { name: t('marketplace.providerNav'), icon: Store, href: '/marketplace/provider' },
+        { name: t('marketplace.exploreNav'), icon: PackageSearch, href: '/marketplace/explore' },
+      ],
+    },
+    {
+      label: t('nav.groups.system'),
+      items: [{ name: t('settingsLabel'), icon: Settings, href: '/settings' }],
+    },
   ];
-  const instructorMenuItems = [
-    { name: t('courses'), icon: BookOpen, href: '/courses' },
-    { name: t('settingsLabel'), icon: Settings, href: '/settings' },
+  const instructorMenuGroups: MenuGroup[] = [
+    {
+      label: t('nav.groups.teaching'),
+      items: [{ name: t('courses'), icon: BookOpen, href: '/courses' }],
+    },
+    {
+      label: t('nav.groups.system'),
+      items: [{ name: t('settingsLabel'), icon: Settings, href: '/settings' }],
+    },
   ];
-  const menuItems = user?.role === 'INSTRUCTOR' ? instructorMenuItems : fullMenuItems;
+  const menuGroups = user?.role === 'INSTRUCTOR' ? instructorMenuGroups : fullMenuGroups;
 
   const isActive = (href: string) => {
     if (href === '/' && pathname === '/') return true;
@@ -101,25 +141,32 @@ export function AdminSidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-3 pb-5 space-y-0.5 overflow-y-auto">
-        {menuItems.map((item) => {
-          const active = isActive(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                active
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-              )}
-            >
-              <item.icon className="w-4 h-4 shrink-0" />
-              {item.name}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 p-3 pb-5 space-y-4 overflow-y-auto">
+        {menuGroups.map((group) => (
+          <div key={group.label} className="space-y-0.5">
+            <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+              {group.label}
+            </p>
+            {group.items.map((item) => {
+              const active = isActive(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                    active
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                  )}
+                >
+                  <item.icon className="w-4 h-4 shrink-0" />
+                  {item.name}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
       {/* Footer Section */}

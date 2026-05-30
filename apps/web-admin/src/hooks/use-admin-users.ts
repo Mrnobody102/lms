@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { adminUserApi } from '@/lib/admin-user-api';
+import { adminUserApi, type CreateInstructorPayload } from '@/lib/admin-user-api';
 
 export function useAdminOverview() {
   return useQuery({
@@ -41,6 +41,36 @@ export function useStudentDetail(userId: string) {
   });
 }
 
+export function useInstructors(params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  isActive?: boolean;
+}) {
+  return useQuery({
+    queryKey: ['admin-instructors', params],
+    queryFn: () =>
+      adminUserApi.getInstructors({
+        page: params?.page ?? 1,
+        limit: params?.limit ?? 20,
+        search: params?.search,
+        isActive: params?.isActive,
+      }),
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useCreateInstructor() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: CreateInstructorPayload) => adminUserApi.createInstructor(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-instructors'] });
+    },
+  });
+}
+
 export function useUpdateStudentStatus() {
   const queryClient = useQueryClient();
 
@@ -49,6 +79,7 @@ export function useUpdateStudentStatus() {
       adminUserApi.updateUserStatus(userId, isActive),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-students'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-instructors'] });
       queryClient.invalidateQueries({ queryKey: ['admin-overview'] });
     },
   });

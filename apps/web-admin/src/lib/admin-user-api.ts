@@ -23,6 +23,14 @@ interface PaginatedResponse<T> {
   meta: { page: number; limit: number; total: number; totalPages: number };
 }
 
+export interface CreateInstructorPayload {
+  email: string;
+  password: string;
+  fullName: string;
+  phoneNumber?: string;
+  isActive?: boolean;
+}
+
 export interface AdminOverview {
   totals: {
     totalStudents: number;
@@ -95,6 +103,26 @@ export const adminUserApi = {
 
   getStudentById(userId: string) {
     return api.get(`/admin/users/${userId}`).then((r) => r.data as AdminUser);
+  },
+
+  getInstructors(params?: { page?: number; limit?: number; search?: string; isActive?: boolean }) {
+    const hasExplicitActiveFilter = params ? 'isActive' in params : false;
+
+    return api
+      .get('/admin/users', {
+        params: {
+          page: params?.page ?? 1,
+          limit: params?.limit ?? 20,
+          role: 'INSTRUCTOR',
+          search: params?.search,
+          isActive: hasExplicitActiveFilter ? params?.isActive : undefined,
+        },
+      })
+      .then((r) => r.data as PaginatedResponse<AdminUser>);
+  },
+
+  createInstructor(payload: CreateInstructorPayload) {
+    return api.post('/admin/users/instructors', payload).then((r) => r.data as AdminUser);
   },
 
   updateUserStatus(userId: string, isActive: boolean) {
