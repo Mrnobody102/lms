@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { CheckCircle2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -14,16 +14,16 @@ export function LoginPageClient() {
   const registered = searchParams.get('registered') === '1';
   const { isAuthenticated, isInitialized } = useAuthStore();
 
-  const handleLoginSuccess = () => {
+  const handleLoginSuccess = useCallback(() => {
     const returnUrl = searchParams.get('returnUrl') || searchParams.get('next');
     router.push(getSafeReturnUrl(returnUrl) ?? '/courses');
-  };
+  }, [router, searchParams]);
 
   useEffect(() => {
     if (isInitialized && isAuthenticated) {
       handleLoginSuccess();
     }
-  }, [isInitialized, isAuthenticated, searchParams]);
+  }, [isInitialized, isAuthenticated, handleLoginSuccess]);
 
   return (
     <div className="space-y-5">

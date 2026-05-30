@@ -1,27 +1,16 @@
-'use client';
-
-import dynamic from 'next/dynamic';
 import { ArrowRight, BookOpenCheck, KeyRound, LogIn, ShieldCheck } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { ThemeToggle, LanguageToggle } from '@repo/ui';
 import { Link } from '../../navigation';
-import { useAuthStore } from '../../features/auth/auth.store';
+import { serverApi } from '../../lib/server-api';
+import LearningDashboard from '../../components/dashboard/learning-dashboard';
 
-// Code-split: dashboard is a heavy module (recharts, many widgets).
-// Users who aren't logged in never download it.
-const LearningDashboard = dynamic(() => import('../../components/dashboard/learning-dashboard'), {
-  loading: () => (
-    <div className="flex-1 flex items-center justify-center min-h-[50vh]">
-      <div className="w-8 h-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-    </div>
-  ),
-});
+export default async function Home() {
+  const user = await serverApi.getMe();
 
-export default function Home() {
-  const { isAuthenticated } = useAuthStore();
-
-  if (isAuthenticated) {
-    return <LearningDashboard />;
+  if (user) {
+    const data = await serverApi.getStudentToday();
+    return <LearningDashboard data={data} />;
   }
 
   return <GuestStudentHome />;

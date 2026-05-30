@@ -1,6 +1,5 @@
 import {
   Prisma,
-  PrismaClient,
   Role,
   LessonType,
   EnrollmentStatus,
@@ -9,8 +8,9 @@ import {
 } from '../.prisma/client';
 import * as bcrypt from 'bcrypt';
 import { createHash } from 'crypto';
+import { createPrismaClient } from '../src/client-factory.js';
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 function deterministicUuid(input: string) {
   const hash = createHash('sha256').update(input).digest('hex');

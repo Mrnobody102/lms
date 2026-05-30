@@ -1,5 +1,3 @@
-'use client';
-
 import {
   ArrowRight,
   BookOpen,
@@ -7,34 +5,43 @@ import {
   Dumbbell,
   FileCheck2,
   History,
-  Loader2,
-  RefreshCcw,
   Target,
   AlertTriangle,
   Flame,
+  RefreshCcw,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { StudentNav } from '../../components/layout/student-nav';
-import { useAuthStore } from '../../features/auth/auth.store';
-import { useStudentToday } from '../../hooks/use-student-today';
-import type { TodayFeedbackItem, TodayTask, TodayTaskType } from '../../lib/student-api';
+import type {
+  StudentTodayResponse,
+  TodayFeedbackItem,
+  TodayTask,
+  TodayTaskType,
+} from '../../lib/student-api';
 import { Link } from '../../navigation';
 
 type StudentTranslator = ReturnType<typeof useTranslations>;
 
-export default function LearningDashboard() {
+export default function LearningDashboard({ data }: { data: StudentTodayResponse | null }) {
   const t = useTranslations('Student');
   const locale = useLocale();
-  const { isAuthenticated } = useAuthStore();
-  const { data, isLoading, isError } = useStudentToday(isAuthenticated);
 
-  if (!isAuthenticated) {
-    return null;
+  if (!data) {
+    return (
+      <div className="min-h-screen bg-background font-sans">
+        <StudentNav showLinks />
+        <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          <section className="rounded-md border border-destructive/20 bg-destructive/5 p-5 text-sm text-destructive">
+            {t('dashboard.todayLoadError')}
+          </section>
+        </main>
+      </div>
+    );
   }
 
-  const tasks = data?.tasks ?? [];
-  const courses = data?.courses ?? [];
+  const tasks = data.tasks ?? [];
+  const courses = data.courses ?? [];
   const recentFeedback = [
     ...(data?.recentFeedback.practice ?? []).map((item) => ({
       ...item,
@@ -67,96 +74,85 @@ export default function LearningDashboard() {
           </Link>
         </header>
 
-        {isLoading ? (
-          <div className="flex items-center gap-2 rounded-md border p-4 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            {t('dashboard.loading')}
-          </div>
-        ) : isError || !data ? (
-          <section className="rounded-md border border-destructive/20 bg-destructive/5 p-5 text-sm text-destructive">
-            {t('dashboard.todayLoadError')}
-          </section>
-        ) : (
-          <div className="grid gap-6 lg:grid-cols-[1.55fr_1fr]">
-            <div className="space-y-6">
-              <PrimaryTaskCard task={data.primaryTask} />
+        <div className="grid gap-6 lg:grid-cols-[1.55fr_1fr]">
+          <div className="space-y-6">
+            <PrimaryTaskCard task={data.primaryTask} />
 
-              <section className="rounded-md border bg-card p-5">
-                <div className="mb-4 flex items-start gap-3">
-                  <IconFrame icon={Target} />
-                  <div>
-                    <h2 className="text-lg font-semibold">{t('dashboard.todayQueueTitle')}</h2>
-                    <p className="text-sm text-muted-foreground">{t('dashboard.todayQueueDesc')}</p>
-                  </div>
+            <section className="rounded-md border bg-card p-5">
+              <div className="mb-4 flex items-start gap-3">
+                <IconFrame icon={Target} />
+                <div>
+                  <h2 className="text-lg font-semibold">{t('dashboard.todayQueueTitle')}</h2>
+                  <p className="text-sm text-muted-foreground">{t('dashboard.todayQueueDesc')}</p>
                 </div>
+              </div>
+              <div className="space-y-3">
+                {tasks.map((task) => (
+                  <TaskRow key={task.id} task={task} locale={locale} />
+                ))}
+              </div>
+            </section>
+
+            <section className="rounded-md border bg-card p-5">
+              <div className="mb-4 flex items-start gap-3">
+                <IconFrame icon={History} />
+                <div>
+                  <h2 className="text-lg font-semibold">{t('dashboard.feedbackTitle')}</h2>
+                  <p className="text-sm text-muted-foreground">{t('dashboard.feedbackDesc')}</p>
+                </div>
+              </div>
+              {recentFeedback.length === 0 ? (
+                <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+                  {t('dashboard.feedbackEmpty')}
+                </div>
+              ) : (
                 <div className="space-y-3">
-                  {tasks.map((task) => (
-                    <TaskRow key={task.id} task={task} locale={locale} />
+                  {recentFeedback.map((item) => (
+                    <FeedbackRow key={`${item.kind}-${item.id}`} item={item} locale={locale} />
                   ))}
                 </div>
-              </section>
-
-              <section className="rounded-md border bg-card p-5">
-                <div className="mb-4 flex items-start gap-3">
-                  <IconFrame icon={History} />
-                  <div>
-                    <h2 className="text-lg font-semibold">{t('dashboard.feedbackTitle')}</h2>
-                    <p className="text-sm text-muted-foreground">{t('dashboard.feedbackDesc')}</p>
-                  </div>
-                </div>
-                {recentFeedback.length === 0 ? (
-                  <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
-                    {t('dashboard.feedbackEmpty')}
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {recentFeedback.map((item) => (
-                      <FeedbackRow key={`${item.kind}-${item.id}`} item={item} locale={locale} />
-                    ))}
-                  </div>
-                )}
-              </section>
-            </div>
-
-            <aside className="space-y-6">
-              <section className="rounded-md border bg-card p-5">
-                <h2 className="text-lg font-semibold">{t('dashboard.courseSnapshotTitle')}</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {t('dashboard.courseSnapshotDesc')}
-                </p>
-                {courses.length === 0 ? (
-                  <div className="mt-4 rounded-md border border-dashed p-4 text-sm text-muted-foreground">
-                    {t('dashboard.emptyDesc')}
-                  </div>
-                ) : (
-                  <div className="mt-4 space-y-4">
-                    {courses.slice(0, 5).map((course) => (
-                      <CourseSnapshot key={course.course.id} course={course} />
-                    ))}
-                  </div>
-                )}
-              </section>
-
-              <section className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-                <MetricTile
-                  icon={RefreshCcw}
-                  label={t('dashboard.reviewDue')}
-                  value={data.srsDue.dueNow}
-                />
-                <MetricTile
-                  icon={BookOpen}
-                  label={t('dashboard.enrolledCourses')}
-                  value={courses.length}
-                />
-                <MetricTile
-                  icon={CheckCircle2}
-                  label={t('dashboard.completedLessons')}
-                  value={courses.reduce((sum, course) => sum + course.completedLessons, 0)}
-                />
-              </section>
-            </aside>
+              )}
+            </section>
           </div>
-        )}
+
+          <aside className="space-y-6">
+            <section className="rounded-md border bg-card p-5">
+              <h2 className="text-lg font-semibold">{t('dashboard.courseSnapshotTitle')}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {t('dashboard.courseSnapshotDesc')}
+              </p>
+              {courses.length === 0 ? (
+                <div className="mt-4 rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+                  {t('dashboard.emptyDesc')}
+                </div>
+              ) : (
+                <div className="mt-4 space-y-4">
+                  {courses.slice(0, 5).map((course) => (
+                    <CourseSnapshot key={course.course.id} course={course} />
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+              <MetricTile
+                icon={RefreshCcw}
+                label={t('dashboard.reviewDue')}
+                value={data.srsDue.dueNow}
+              />
+              <MetricTile
+                icon={BookOpen}
+                label={t('dashboard.enrolledCourses')}
+                value={courses.length}
+              />
+              <MetricTile
+                icon={CheckCircle2}
+                label={t('dashboard.completedLessons')}
+                value={courses.reduce((sum, course) => sum + course.completedLessons, 0)}
+              />
+            </section>
+          </aside>
+        </div>
       </main>
     </div>
   );

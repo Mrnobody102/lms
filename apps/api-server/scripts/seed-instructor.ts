@@ -1,7 +1,8 @@
-import { PrismaClient } from '@repo/database';
+import 'dotenv/config';
+import { createPrismaClient } from '@repo/database';
 import * as bcrypt from 'bcrypt';
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function main() {
   const tenant = await prisma.tenant.findFirst();

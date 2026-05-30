@@ -1,6 +1,6 @@
-import { PrismaClient, PracticeQuestionType, ExamQuestionType } from '@prisma/client';
+import { PracticeQuestionType, ExamQuestionType } from '@prisma/client';
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function main() {
   console.log('Starting to seed diverse test data...');

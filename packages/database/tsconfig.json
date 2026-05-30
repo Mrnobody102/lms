@@ -6,8 +6,8 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "composite": false,
-    "declaration": false,
-    "declarationMap": false,
+    "declaration": true,
+    "declarationMap": true,
     "isolatedModules": false
   },
   "include": ["src/**/*.ts", "index.ts"],

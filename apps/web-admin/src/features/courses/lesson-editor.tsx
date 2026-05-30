@@ -14,7 +14,6 @@ import {
   Clock,
   FileText,
   Loader2,
-  Plus,
   Save,
   Video,
   Zap,
@@ -57,7 +56,6 @@ export function LessonEditor({
   courseId,
   lesson,
   units = [],
-  lessons = [],
   initialUnitId,
   nextOrder,
   onSubmit,
@@ -80,7 +78,6 @@ export function LessonEditor({
   const [examId, setExamId] = useState('');
   const [isDirty, setIsDirty] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [isLessonListOpen, setIsLessonListOpen] = useState(true);
 
   const { data: practiceExerciseSets = [] } = usePracticeExerciseSets();
   const { data: exams = [] } = useExams();
@@ -106,6 +103,17 @@ export function LessonEditor({
       titleRef.current?.focus();
     }
   }, [lesson]);
+
+  // Auto-calculate text duration based on word count
+  useEffect(() => {
+    if (type === 'text' && content) {
+      // Strip HTML tags and count words
+      const plainText = content.replace(/<[^>]*>?/gm, '');
+      const wordCount = plainText.split(/\s+/).filter((w) => w.length > 0).length;
+      const estimated = Math.max(1, Math.ceil(wordCount / 150)); // 150 words/min
+      setDuration(estimated);
+    }
+  }, [content, type]);
 
   // Mark dirty when any field changes
   useEffect(() => {
@@ -264,7 +272,7 @@ export function LessonEditor({
               type="button"
               size="sm"
               onClick={handleSubmit}
-              disabled={saving || !isReady}
+              disabled={saving || !isReady || duration <= 0}
               className="gap-2 shadow-sm"
             >
               {saving ? (
@@ -280,109 +288,6 @@ export function LessonEditor({
 
       {/* ═══ TWO-PANEL LAYOUT ═══ */}
       <div className="flex-1 overflow-hidden flex">
-        {/* COLLAPSIBLE LESSONS SIDEBAR */}
-        <aside
-          className={`shrink-0 bg-muted/10 border-r flex flex-col transition-all duration-300 ease-in-out ${
-            isLessonListOpen ? 'w-64' : 'w-12 items-center'
-          }`}
-        >
-          <div
-            className={`p-3 border-b flex ${isLessonListOpen ? 'justify-between' : 'justify-center'} items-center bg-background/50`}
-          >
-            {isLessonListOpen && (
-              <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                {t('lessons')}
-              </span>
-            )}
-            <button
-              type="button"
-              onClick={() => setIsLessonListOpen(!isLessonListOpen)}
-              className="p-1 rounded hover:bg-muted text-muted-foreground transition-colors"
-              title={isLessonListOpen ? t('collapse') : t('expand')}
-            >
-              <ArrowLeft
-                className={`h-4 w-4 transition-transform duration-300 ${!isLessonListOpen && 'rotate-180'}`}
-              />
-            </button>
-          </div>
-
-          <div className="flex-1 overflow-y-auto py-2">
-            {isLessonListOpen ? (
-              <div className="px-2 space-y-1">
-                <Link
-                  href={`/courses/${courseId}/lessons/new`}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    !isEditing
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                  }`}
-                >
-                  <Plus className="h-4 w-4" />
-                  {t('addLessonTitle')}
-                </Link>
-                <div className="h-px bg-border my-2" />
-                {lessons.map((l) => {
-                  const meta = LESSON_TYPE_META[l.type];
-                  const Icon = meta.icon;
-                  const isCurrent = isEditing && lesson?.id === l.id;
-
-                  return (
-                    <Link
-                      key={l.id}
-                      href={`/courses/${courseId}/lessons/${l.id}/edit`}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors ${
-                        isCurrent
-                          ? 'bg-primary/10 text-primary font-medium'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                      }`}
-                    >
-                      <Icon
-                        className={`h-4 w-4 shrink-0 ${isCurrent ? 'text-primary' : meta.color}`}
-                      />
-                      <span className="truncate">{l.title || t('noTitleYet')}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center gap-2 px-1">
-                <Link
-                  href={`/courses/${courseId}/lessons/new`}
-                  className={`p-2 rounded-md transition-colors ${
-                    !isEditing
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-muted-foreground hover:bg-muted'
-                  }`}
-                  title={t('addLessonTitle')}
-                >
-                  <Plus className="h-4 w-4" />
-                </Link>
-                <div className="w-full h-px bg-border my-1" />
-                {lessons.map((l) => {
-                  const meta = LESSON_TYPE_META[l.type];
-                  const Icon = meta.icon;
-                  const isCurrent = isEditing && lesson?.id === l.id;
-
-                  return (
-                    <Link
-                      key={l.id}
-                      href={`/courses/${courseId}/lessons/${l.id}/edit`}
-                      className={`p-2 rounded-md transition-colors ${
-                        isCurrent
-                          ? 'bg-primary/10 text-primary'
-                          : 'text-muted-foreground hover:bg-muted'
-                      }`}
-                      title={l.title || t('noTitleYet')}
-                    >
-                      <Icon className={`h-4 w-4 ${isCurrent ? 'text-primary' : meta.color}`} />
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </aside>
-
         {/* LEFT SIDEBAR — Lesson Settings */}
         <aside className="w-72 lg:w-80 shrink-0 bg-background border-r flex flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto p-4 space-y-5">
@@ -434,9 +339,21 @@ export function LessonEditor({
 
             {/* Duration */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                {t('durationMinutes')}
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {t('durationMinutes')}
+                </Label>
+                {type === 'text' && (
+                  <span className="text-[10px] text-muted-foreground italic">
+                    (Tự động tính ~150 từ/phút)
+                  </span>
+                )}
+                {type === 'video' && (
+                  <span className="text-[10px] text-muted-foreground italic">
+                    (Khuyến nghị: Lấy từ Video)
+                  </span>
+                )}
+              </div>
               <div className="relative">
                 <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
                 <Input
@@ -445,8 +362,12 @@ export function LessonEditor({
                   value={duration}
                   onChange={(e) => setDuration(parseInt(e.target.value) || 0)}
                   className="pl-9"
+                  disabled={type === 'text'}
                 />
               </div>
+              {duration <= 0 && (
+                <p className="text-[10px] text-destructive">Thời lượng phải lớn hơn 0 phút.</p>
+              )}
             </div>
 
             {/* Unit Assignment */}
@@ -504,7 +425,11 @@ export function LessonEditor({
             <Button variant="outline" onClick={onCancel} disabled={saving} className="flex-1">
               {t('cancel')}
             </Button>
-            <Button onClick={handleSubmit} disabled={saving || !isReady} className="flex-1 gap-2">
+            <Button
+              onClick={handleSubmit}
+              disabled={saving || !isReady || duration <= 0}
+              className="flex-1 gap-2"
+            >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               {t('save')}
             </Button>

@@ -1,5 +1,7 @@
 import { Module, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { CacheModule } from '@nestjs/cache-manager';
+import KeyvRedis from '@keyv/redis';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD, APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
@@ -120,6 +122,21 @@ import { StudentModule } from './student/student.module';
             url: redisUrl,
           },
         };
+      },
+    }),
+    CacheModule.registerAsync({
+      isGlobal: true,
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        const redisUrl = configService.get<string>('REDIS_URL');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (!redisUrl) return {} as any; // fallback to in-memory if no redis
+
+        return {
+          stores: [new KeyvRedis(redisUrl)],
+          ttl: 60000,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any;
       },
     }),
     StorageModule,

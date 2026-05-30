@@ -8,6 +8,7 @@ import { Lesson } from '@/lib/course-api';
 import { LessonEditor } from '@/features/courses/lesson-editor';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
+import { LessonNavigationSidebar } from '@/features/courses/lesson-navigation-sidebar';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui';
 
@@ -66,25 +67,32 @@ export default function NewLessonPage() {
     <AuthGuard>
       <div className="min-h-screen flex flex-col md:flex-row bg-background">
         <AdminSidebar />
-        <main className="flex-1 md:ml-64 relative bg-muted/20">
-          {error && (
-            <div className="max-w-4xl mx-auto mt-6 px-6">
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            </div>
-          )}
-          <LessonEditor
+        <main className="flex-1 md:ml-64 relative bg-muted/20 flex h-screen overflow-hidden">
+          <LessonNavigationSidebar
             courseId={courseId}
-            units={course.units}
-            lessons={course.lessons}
-            initialUnitId={initialUnitId}
-            nextOrder={existingLessonsCount + 1}
-            onSubmit={handleSubmit}
-            onCancel={handleCancel}
-            saving={createLesson.isPending}
+            lessons={course.lessons ?? []}
+            units={course.units ?? []}
           />
+          <div className="flex-1 overflow-y-auto">
+            {error && (
+              <div className="max-w-4xl mx-auto mt-6 px-6">
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              </div>
+            )}
+            <LessonEditor
+              courseId={courseId}
+              units={course.units ?? []}
+              lessons={course.lessons ?? []}
+              initialUnitId={initialUnitId}
+              nextOrder={existingLessonsCount + 1}
+              onSubmit={handleSubmit}
+              onCancel={handleCancel}
+              saving={createLesson.isPending}
+            />
+          </div>
         </main>
       </div>
     </AuthGuard>

@@ -1,5 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 async function main() {
   const admin = await prisma.user.findFirst({ where: { email: 'admin@lms.com' } });
   console.log('Admin user:', admin);

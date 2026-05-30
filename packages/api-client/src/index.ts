@@ -7,7 +7,7 @@ import {
   TENANT_ID_HEADER,
 } from '@repo/shared';
 
-const TIMEOUT_MS = 15000;
+const TIMEOUT_MS = 60000;
 
 declare module 'axios' {
   interface AxiosRequestConfig {

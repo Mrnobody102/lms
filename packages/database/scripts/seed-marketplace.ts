@@ -1,6 +1,6 @@
-import { PrismaClient, MarketplaceResourceType, MarketplacePricingModel } from '../.prisma/client';
+import { MarketplaceResourceType, MarketplacePricingModel } from '../.prisma/client';
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function main() {
   console.log('Seeding marketplace item...');

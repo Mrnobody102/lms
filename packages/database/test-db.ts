@@ -1,5 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 async function main() {
   const tenants = await prisma.tenant.findMany();
   console.log(tenants);

@@ -1,5 +1,4 @@
 import {
-  PrismaClient,
   LessonType,
   EnrollmentStatus,
   PracticeQuestionType,
@@ -7,7 +6,7 @@ import {
   Prisma,
 } from '../.prisma/client';
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 function toJson(v: unknown): Prisma.InputJsonValue {
   return v as Prisma.InputJsonValue;
