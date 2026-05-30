@@ -180,12 +180,40 @@ export class UserAdminService {
         tenantId: true,
         createdAt: true,
         updatedAt: true,
+        currentStreak: true,
+        lastActiveDate: true,
         tenant: {
           select: {
             id: true,
             name: true,
             slug: true,
           },
+        },
+        enrollments: {
+          select: {
+            id: true,
+            createdAt: true,
+            course: {
+              select: {
+                id: true,
+                title: true,
+              },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+        },
+        cohortMemberships: {
+          select: {
+            id: true,
+            createdAt: true,
+            cohort: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
         },
       },
     });

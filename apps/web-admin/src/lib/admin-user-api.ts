@@ -16,6 +16,24 @@ export interface AdminUser {
     name: string;
     slug: string;
   };
+  currentStreak?: number;
+  lastActiveDate?: string | null;
+  enrollments?: Array<{
+    id: string;
+    createdAt: string;
+    course: {
+      id: string;
+      title: string;
+    };
+  }>;
+  cohortMemberships?: Array<{
+    id: string;
+    createdAt: string;
+    cohort: {
+      id: string;
+      name: string;
+    };
+  }>;
 }
 
 interface PaginatedResponse<T> {

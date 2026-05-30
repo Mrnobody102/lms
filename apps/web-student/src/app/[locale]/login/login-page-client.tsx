@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { CheckCircle2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { LoginForm } from '../../../features/auth/components/login-form';
@@ -9,13 +9,14 @@ import { useAuthStore } from '../../../features/auth/auth.store';
 
 export function LoginPageClient() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const t = useTranslations('Student');
   const registered = searchParams.get('registered') === '1';
   const { isAuthenticated, isInitialized } = useAuthStore();
 
   const handleLoginSuccess = () => {
     const returnUrl = searchParams.get('returnUrl') || searchParams.get('next');
-    window.location.assign(getSafeReturnUrl(returnUrl) ?? '/courses');
+    router.push(getSafeReturnUrl(returnUrl) ?? '/courses');
   };
 
   useEffect(() => {

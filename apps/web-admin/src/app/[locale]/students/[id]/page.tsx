@@ -18,6 +18,9 @@ import {
   UserCheck2,
   UserX2,
   Users,
+  Activity,
+  BookOpen,
+  GraduationCap,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -144,6 +147,97 @@ export default function StudentDetailPage() {
                       value={formatDate(student.updatedAt)}
                     />
                   )}
+                </div>
+
+                {/* Learning Stats */}
+                {(student.currentStreak !== undefined || student.lastActiveDate) && (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="rounded-xl border bg-card p-4 shadow-sm flex flex-col gap-1">
+                      <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                        <Activity className="h-4 w-4" />
+                        <span className="text-xs font-semibold uppercase">
+                          {t('streak', { fallback: 'Chuỗi ngày học' })}
+                        </span>
+                      </div>
+                      <p className="text-2xl font-bold">
+                        {student.currentStreak || 0} {t('days', { fallback: 'ngày' })}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border bg-card p-4 shadow-sm flex flex-col gap-1">
+                      <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                        <Calendar className="h-4 w-4" />
+                        <span className="text-xs font-semibold uppercase">
+                          {t('lastActive', { fallback: 'Truy cập lần cuối' })}
+                        </span>
+                      </div>
+                      <p className="text-lg font-semibold">
+                        {student.lastActiveDate ? formatDate(student.lastActiveDate) : '—'}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Enrollments and Cohorts */}
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+                    <div className="border-b bg-muted/40 p-4 flex items-center gap-2">
+                      <BookOpen className="h-4 w-4 text-primary" />
+                      <h3 className="font-semibold">
+                        {t('courses', { fallback: 'Khóa học đã đăng ký' })}
+                      </h3>
+                    </div>
+                    <div className="p-4">
+                      {student.enrollments && student.enrollments.length > 0 ? (
+                        <ul className="space-y-3">
+                          {student.enrollments.map((e) => (
+                            <li
+                              key={e.id}
+                              className="flex flex-col gap-1 rounded-lg border p-3 hover:bg-muted/50 transition-colors"
+                            >
+                              <span className="font-medium text-sm">{e.course.title}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {formatDate(e.createdAt)}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                          {t('noEnrollments', { fallback: 'Chưa đăng ký khóa học nào.' })}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+                    <div className="border-b bg-muted/40 p-4 flex items-center gap-2">
+                      <GraduationCap className="h-4 w-4 text-primary" />
+                      <h3 className="font-semibold">
+                        {t('cohorts', { fallback: 'Lớp học tham gia' })}
+                      </h3>
+                    </div>
+                    <div className="p-4">
+                      {student.cohortMemberships && student.cohortMemberships.length > 0 ? (
+                        <ul className="space-y-3">
+                          {student.cohortMemberships.map((cm) => (
+                            <li
+                              key={cm.id}
+                              className="flex flex-col gap-1 rounded-lg border p-3 hover:bg-muted/50 transition-colors"
+                            >
+                              <span className="font-medium text-sm">{cm.cohort.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {formatDate(cm.createdAt)}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                          {t('noCohorts', { fallback: 'Chưa tham gia lớp học nào.' })}
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 {/* ID / meta */}

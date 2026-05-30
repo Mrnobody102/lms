@@ -884,7 +884,7 @@ export class AuthService {
     }
 
     if (portal === 'admin') {
-      return role === Role.ADMIN || role === Role.SUPER_ADMIN;
+      return role === Role.ADMIN || role === Role.SUPER_ADMIN || role === Role.INSTRUCTOR;
     }
 
     return role === Role.STUDENT;

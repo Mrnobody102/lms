@@ -2,16 +2,17 @@
 
 import { Suspense } from 'react';
 import { useTranslations } from 'next-intl';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { LoginForm } from '@/features/auth/components/login-form';
 
 function AdminLoginClient() {
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   // Redirect to dashboard after successful login
   const handleLoginSuccess = () => {
     const returnUrl = searchParams.get('returnUrl') || searchParams.get('next');
-    window.location.assign(getSafeReturnUrl(returnUrl) ?? '/');
+    router.push(getSafeReturnUrl(returnUrl) ?? '/');
   };
 
   return <LoginForm onSuccess={handleLoginSuccess} />;
