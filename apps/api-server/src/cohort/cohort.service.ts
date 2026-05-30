@@ -186,14 +186,15 @@ export class CohortService {
     const validUserIds = validUsers.map((u) => u.id);
 
     if (validUserIds.length === 0) {
+      const invalidCount = userIds.length;
       await this.auditLog.log({
         userId: actorId,
         tenantId,
         action: AuditAction.COHORT_MEMBERS_ADD,
         status: AuditStatus.SUCCESS,
-        metadata: { cohortId: id, requestedCount: userIds.length, addedCount: 0 },
+        metadata: { cohortId: id, requestedCount: userIds.length, addedCount: 0, invalidCount },
       });
-      return { addedCount: 0 };
+      return { addedCount: 0, skippedCount: 0, invalidCount };
     }
 
     // Get existing memberships to skip them
@@ -209,14 +210,16 @@ export class CohortService {
     const userIdsToAdd = validUserIds.filter((userId) => !existingUserIds.has(userId));
 
     if (userIdsToAdd.length === 0) {
+      const skippedCount = validUserIds.length;
+      const invalidCount = userIds.length - validUserIds.length;
       await this.auditLog.log({
         userId: actorId,
         tenantId,
         action: AuditAction.COHORT_MEMBERS_ADD,
         status: AuditStatus.SUCCESS,
-        metadata: { cohortId: id, requestedCount: userIds.length, addedCount: 0 },
+        metadata: { cohortId: id, requestedCount: userIds.length, addedCount: 0, skippedCount, invalidCount },
       });
-      return { addedCount: 0 };
+      return { addedCount: 0, skippedCount, invalidCount };
     }
 
     const { count } = await this.prisma.cohortMembership.createMany({
@@ -228,6 +231,9 @@ export class CohortService {
       skipDuplicates: true,
     });
 
+    const skippedCount = validUserIds.length - count;
+    const invalidCount = userIds.length - validUserIds.length;
+
     await this.auditLog.log({
       userId: actorId,
       tenantId,
@@ -238,11 +244,12 @@ export class CohortService {
         requestedCount: userIds.length,
         validCount: validUserIds.length,
         addedCount: count,
-        skippedCount: validUserIds.length - count,
+        skippedCount,
+        invalidCount,
       },
     });
 
-    return { addedCount: count };
+    return { addedCount: count, skippedCount, invalidCount };
   }
 
   async removeMember(tenantId: string, cohortId: string, userId: string, actorId?: string) {

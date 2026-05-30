@@ -63,7 +63,7 @@ export function LandingNav() {
             <Sheet>
               <SheetTrigger asChild>
                 <button
-                  className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  className="flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                   aria-label="Menu"
                 >
                   <Menu className="h-5 w-5" />

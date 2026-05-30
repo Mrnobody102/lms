@@ -26,6 +26,7 @@ describe('RoleplayScenarioService', () => {
     const prisma = buildPrismaMock();
     const learningAccess = {
       courseWhere: vi.fn(),
+      ensureAuthoringCourseAccess: vi.fn().mockResolvedValue(undefined),
     };
     const service = new RoleplayScenarioService(prisma as never, learningAccess as never);
 

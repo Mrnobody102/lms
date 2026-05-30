@@ -22,7 +22,7 @@ export function LoginPageClient() {
     if (isInitialized && isAuthenticated) {
       handleLoginSuccess();
     }
-  }, [isInitialized, isAuthenticated]);
+  }, [isInitialized, isAuthenticated, searchParams]);
 
   return (
     <div className="space-y-5">

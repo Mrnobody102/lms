@@ -15,6 +15,7 @@ import { AdminHeader } from '@/components/layout/admin-header';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
 import { Alert, AlertDescription, Badge, Input } from '@/components/ui';
+import { SearchableRelationPicker } from '@/components/filters/searchable-relation-picker';
 import { useCourse, useCourses } from '@/hooks/use-courses';
 import { useExams } from '@/hooks/use-exams';
 
@@ -98,22 +99,15 @@ export default function AdminSchedulePage() {
             <AdminHeader title={t('schedulePage.title')} description={t('schedulePage.desc')} />
 
             <div className="mb-5 grid gap-3 lg:grid-cols-[260px_minmax(220px,1fr)_auto]">
-              <select
+              <SearchableRelationPicker
                 value={selectedCourseId}
-                onChange={(event) => setCourseId(event.target.value)}
-                className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                onChange={setCourseId}
+                options={courses.map((course) => ({ value: course.id, label: course.title }))}
+                placeholder={t('schedulePage.noCourses')}
+                searchPlaceholder={t('schedulePage.search')}
+                emptyMessage={t('schedulePage.noCourses')}
                 disabled={courses.length === 0}
-              >
-                {courses.length === 0 ? (
-                  <option value="">{t('schedulePage.noCourses')}</option>
-                ) : (
-                  courses.map((course) => (
-                    <option key={course.id} value={course.id}>
-                      {course.title}
-                    </option>
-                  ))
-                )}
-              </select>
+              />
 
               <div className="flex h-10 items-center rounded-md border border-input bg-background text-foreground shadow-sm transition-all focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10">
                 <Search className="ml-3.5 h-4 w-4 shrink-0 text-muted-foreground pointer-events-none" />

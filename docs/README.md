@@ -24,9 +24,10 @@ Nếu bạn mới tham gia dự án, hãy đọc theo thứ tự:
 ### Product / Roadmap
 
 1. **[docs/product/PLAN.md](product/PLAN.md)** — Lộ trình tổng thể từ LMS foundation tới dashboard, practice, exam, reports, activation và AI.
-2. **[docs/product/features.md](product/features.md)** — Feature map theo actor/module và trạng thái hiện tại.
-3. **[docs/product/ENGINEERING-BACKLOG.md](product/ENGINEERING-BACKLOG.md)** — Backlog kỹ thuật và tiến độ đã verify.
-4. **[docs/product/architecture-plan.md](product/architecture-plan.md)** — Kiến trúc domain cần giữ khi mở rộng feature.
+2. **[docs/product/AI-NATIVE-LMS-ROADMAP.md](product/AI-NATIVE-LMS-ROADMAP.md)** — Roadmap AI-native 2026–2028: role-based AI workflows, quota/package governance, và competitiveness strategy.
+3. **[docs/product/features.md](product/features.md)** — Feature map theo actor/module và trạng thái hiện tại.
+4. **[docs/product/ENGINEERING-BACKLOG.md](product/ENGINEERING-BACKLOG.md)** — Backlog kỹ thuật và tiến độ đã verify.
+5. **[docs/product/architecture-plan.md](product/architecture-plan.md)** — Kiến trúc domain cần giữ khi mở rộng feature.
 
 ### Dev Frontend (Web Apps)
 

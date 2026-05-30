@@ -1,7 +1,7 @@
-# Codebase Audit + Remediation — Copy Prompt
+# Codebase Audit — Copy Prompt
 
 ```text
-You are performing a comprehensive production-readiness audit of the LMS Platform codebase, then implementing approved fixes.
+You are performing a comprehensive production-readiness audit of the LMS Platform codebase.
 
 ## Context Loading (Required)
 
@@ -27,7 +27,7 @@ Then load ALL of these skill files (cross-cutting full-system audit):
 - agent-knowledge/skills/monorepo-navigator/SKILL.md
 - agent-knowledge/skills/i18n-workflow/SKILL.md
 
-## Phase 1 — Audit Goal
+## Audit Goal
 
 Perform a thorough expert-level audit of the entire codebase to ensure it meets production-grade standards: secure, maintainable, consistent, observable, and ready for scale + fast onboarding.
 
@@ -145,42 +145,17 @@ For every finding use this template:
 - Medium term (1-2 months)
 - Owner suggestion (Backend / Frontend / DevOps / Cross-team)
 
-### E. Validation Results (Audit Baseline)
+### E. Validation Results
 Run and report:
 - pnpm run typecheck
 - pnpm run lint
 - pnpm run test
 Include pass/fail summary and notable failures.
 
-## Phase 2 — Execute Fixes After Audit
-
-After producing the audit report, immediately proceed to implementation:
-
-1. Select fixes in this order:
-   - First: 🔴 Critical
-   - Then: 🟠 High
-   - Then: 🟡 Medium quick wins
-2. Apply minimal, surgical changes only (no broad refactor unless required).
-3. Preserve tenant isolation and security decorators/patterns.
-4. When adding/changing user-facing text, update both en.json and vi.json.
-5. For each implemented fix, provide:
-   - Files changed
-   - What changed
-   - Why it resolves the finding
-6. Re-run validation after fixes:
-   - pnpm run typecheck
-   - pnpm run lint
-   - pnpm run test
-7. Output a final “Audit + Remediation Summary” with:
-   - Fixed findings (IDs)
-   - Deferred findings (with reason)
-   - Remaining risks
-   - Updated readiness verdict
-
 ## Safety Rules
 
+- Do NOT modify source code.
 - Do NOT run destructive commands (delete/drop/reset/force-push).
 - Do NOT expose secret values in report output.
 - If uncertain, mark explicitly as "Needs human confirmation".
-- Do NOT commit/push unless explicitly requested.
 ```

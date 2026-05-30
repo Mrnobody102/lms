@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import { AdminHeader } from '@/components/layout/admin-header';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
+import { SearchableRelationPicker } from '@/components/filters/searchable-relation-picker';
 import { Badge, Label } from '@/components/ui';
 import { useCohorts } from '@/hooks/use-cohorts';
 import { useCourses } from '@/hooks/use-courses';
@@ -55,18 +56,17 @@ export default function CohortComparisonPage() {
             <div className="mb-6 grid gap-4 lg:grid-cols-[280px_160px_160px_1fr]">
               <div className="space-y-1.5">
                 <Label>{t('courseName')}</Label>
-                <select
+                <SearchableRelationPicker
                   value={courseId}
-                  onChange={(event) => setCourseId(event.target.value)}
-                  className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                >
-                  <option value="">{t('reports.allCourses')}</option>
-                  {courses.map((course) => (
-                    <option key={course.id} value={course.id}>
-                      {course.title}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setCourseId}
+                  options={[
+                    { value: '', label: t('reports.allCourses') },
+                    ...courses.map((course) => ({ value: course.id, label: course.title })),
+                  ]}
+                  placeholder={t('reports.allCourses')}
+                  searchPlaceholder={t('schedulePage.search')}
+                  emptyMessage={t('reports.allCourses')}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label>{t('reports.startDate')}</Label>

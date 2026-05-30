@@ -1,14 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Users, UserPlus, ArrowLeft, Trash2, GraduationCap } from 'lucide-react';
+import { Users, UserPlus, ArrowLeft, Trash2, GraduationCap, Search, X } from 'lucide-react';
 import { Link } from '@/navigation';
 import { Button, Input } from '@repo/ui';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { useCohortMembers, useCohorts } from '@/hooks/use-cohorts';
 import { useCourses } from '@/hooks/use-courses';
+import { useDebounce } from '@/hooks/use-debounce';
+import { useStudents } from '@/hooks/use-admin-users';
 import toast from 'react-hot-toast';
 
 export default function CohortDetailsPage() {
@@ -21,10 +23,67 @@ export default function CohortDetailsPage() {
 
   const { members, isLoading, addMembers, removeMember, enrollCourse } = useCohortMembers(cohortId);
   const { data: coursesData } = useCourses({ limit: 100 });
-  const courses = coursesData?.data || [];
+  const courses = useMemo(() => coursesData?.data ?? [], [coursesData]);
 
-  const [userIdInput, setUserIdInput] = useState('');
+  const [studentQuery, setStudentQuery] = useState('');
+  const debouncedStudentQuery = useDebounce(studentQuery, 300);
+  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [selectedCourse, setSelectedCourse] = useState('');
+  const [courseQuery, setCourseQuery] = useState('');
+
+  const { data: studentsData, isLoading: isSearchingStudents } = useStudents({
+    page: 1,
+    limit: 10,
+    search: debouncedStudentQuery.trim() || undefined,
+    isActive: true,
+  });
+
+  const memberUserIds = useMemo(() => new Set(members.map((member) => member.user.id)), [members]);
+  const selectedStudentIdSet = useMemo(() => new Set(selectedStudentIds), [selectedStudentIds]);
+  const suggestedStudents = useMemo(
+    () =>
+      (studentsData?.data ?? []).filter(
+        (student) => !memberUserIds.has(student.id) && !selectedStudentIdSet.has(student.id),
+      ),
+    [studentsData, memberUserIds, selectedStudentIdSet],
+  );
+
+  const selectedStudents = useMemo(() => {
+    const studentMap = new Map((studentsData?.data ?? []).map((student) => [student.id, student]));
+    return selectedStudentIds
+      .map((id) => {
+        const student = studentMap.get(id);
+        if (!student) {
+          return null;
+        }
+        return {
+          id: student.id,
+          label: student.fullName || student.email,
+          email: student.email,
+        };
+      })
+      .filter((student): student is { id: string; label: string; email: string } => student !== null);
+  }, [selectedStudentIds, studentsData]);
+
+  const filteredCourses = useMemo(() => {
+    const query = courseQuery.trim().toLowerCase();
+    if (!query) return courses;
+    return courses.filter((course: { id: string; title: string }) => course.title.toLowerCase().includes(query));
+  }, [courseQuery, courses]);
+
+  const selectedCourseTitle = useMemo(
+    () => courses.find((course: { id: string; title: string }) => course.id === selectedCourse)?.title ?? '',
+    [courses, selectedCourse],
+  );
+
+  const toggleSelectedStudent = (studentId: string) => {
+    setSelectedStudentIds((prev) => {
+      if (prev.includes(studentId)) {
+        return prev.filter((id) => id !== studentId);
+      }
+      return [...prev, studentId];
+    });
+  };
 
   if (!cohort) {
     return <div className="p-8 text-center">{t('common.loading')}</div>;
@@ -32,13 +91,22 @@ export default function CohortDetailsPage() {
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userIdInput.trim()) return;
+    if (selectedStudentIds.length === 0) return;
 
     try {
-      await addMembers.mutateAsync([userIdInput.trim()]);
-      setUserIdInput('');
+      const result = await addMembers.mutateAsync(selectedStudentIds);
+      setSelectedStudentIds([]);
+      setStudentQuery('');
+      toast.success(
+        t('cohorts.membersAddedDetailed', {
+          addedCount: result?.addedCount ?? selectedStudentIds.length,
+          skippedCount: result?.skippedCount ?? 0,
+          invalidCount: result?.invalidCount ?? 0,
+        }),
+      );
     } catch (err) {
       console.error('Failed to add member', err);
+      toast.error(t('cohorts.addMemberError'));
     }
   };
 
@@ -51,6 +119,7 @@ export default function CohortDetailsPage() {
     try {
       await enrollCourse.mutateAsync(selectedCourse);
       setSelectedCourse('');
+      setCourseQuery('');
       toast.success(t('cohorts.enrollSuccess'));
     } catch (err) {
       console.error('Failed to enroll', err);
@@ -80,18 +149,43 @@ export default function CohortDetailsPage() {
             </h3>
             <p className="text-sm text-muted-foreground mb-4">{t('cohorts.bulkEnrollDesc')}</p>
             <div className="space-y-3">
-              <select
-                className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
-                value={selectedCourse}
-                onChange={(e) => setSelectedCourse(e.target.value)}
-              >
-                <option value="">{t('cohorts.selectCourse')}</option>
-                {courses?.map((course: { id: string; title: string }) => (
-                  <option key={course.id} value={course.id}>
-                    {course.title}
-                  </option>
-                ))}
-              </select>
+              <div className="space-y-2">
+                <Input
+                  value={courseQuery}
+                  onChange={(e) => {
+                    setCourseQuery(e.target.value);
+                    if (selectedCourse && e.target.value !== selectedCourseTitle) {
+                      setSelectedCourse('');
+                    }
+                  }}
+                  placeholder={t('cohorts.courseSearchPlaceholder')}
+                  className="h-10 text-sm"
+                />
+                {courseQuery.trim().length > 0 && !selectedCourse && (
+                  <div className="max-h-44 overflow-auto rounded-md border border-border bg-background shadow-sm">
+                    {filteredCourses.length === 0 ? (
+                      <p className="px-3 py-2 text-xs text-muted-foreground">{t('cohorts.noCourseSuggestions')}</p>
+                    ) : (
+                      <ul className="divide-y divide-border">
+                        {filteredCourses.map((course: { id: string; title: string }) => (
+                          <li key={course.id}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedCourse(course.id);
+                                setCourseQuery(course.title);
+                              }}
+                              className="w-full px-3 py-2 text-left text-sm hover:bg-muted/50"
+                            >
+                              {course.title}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </div>
               <ConfirmDialog
                 description={t('cohorts.confirmEnroll')}
                 onConfirm={() => void handleEnrollCourse()}
@@ -116,21 +210,69 @@ export default function CohortDetailsPage() {
                 {t('cohorts.membersListTitle')} ({members.length})
               </h3>
 
-              <form onSubmit={handleAddMember} className="flex gap-2">
-                <Input
-                  placeholder={t('cohorts.userIdPlaceholder')}
-                  value={userIdInput}
-                  onChange={(e) => setUserIdInput(e.target.value)}
-                  className="w-48 text-sm h-9"
-                />
-                <Button
-                  type="submit"
-                  size="sm"
-                  disabled={!userIdInput.trim() || addMembers.isPending}
-                >
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  {t('common.add')}
-                </Button>
+              <form onSubmit={handleAddMember} className="w-full sm:w-auto space-y-2">
+                <div className="flex gap-2">
+                  <div className="relative w-64">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder={t('cohorts.studentSearchPlaceholder')}
+                      value={studentQuery}
+                      onChange={(e) => setStudentQuery(e.target.value)}
+                      className="h-9 pl-9 text-sm"
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    size="sm"
+                    disabled={selectedStudentIds.length === 0 || addMembers.isPending}
+                  >
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    {t('common.add')}
+                  </Button>
+                </div>
+
+                {selectedStudents.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {selectedStudents.map((student) => (
+                      <button
+                        key={student.id}
+                        type="button"
+                        onClick={() => toggleSelectedStudent(student.id)}
+                        className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-2 py-1 text-xs"
+                      >
+                        <span className="max-w-36 truncate">{student.label}</span>
+                        <X className="h-3 w-3" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {studentQuery.trim().length > 0 && (
+                  <div className="max-h-44 overflow-auto rounded-md border border-border bg-background shadow-sm">
+                    {isSearchingStudents ? (
+                      <p className="px-3 py-2 text-xs text-muted-foreground">{t('common.loading')}</p>
+                    ) : suggestedStudents.length === 0 ? (
+                      <p className="px-3 py-2 text-xs text-muted-foreground">
+                        {t('cohorts.noStudentSuggestions')}
+                      </p>
+                    ) : (
+                      <ul className="divide-y divide-border">
+                        {suggestedStudents.map((student) => (
+                          <li key={student.id}>
+                            <button
+                              type="button"
+                              onClick={() => toggleSelectedStudent(student.id)}
+                              className="w-full px-3 py-2 text-left hover:bg-muted/50"
+                            >
+                              <p className="text-sm font-medium">{student.fullName || student.email}</p>
+                              <p className="text-xs text-muted-foreground">{student.email}</p>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
               </form>
             </div>
 

@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl';
 import { AdminHeader } from '@/components/layout/admin-header';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
+import { SearchableRelationPicker } from '@/components/filters/searchable-relation-picker';
 import { Badge, Button, Label } from '@/components/ui';
 import { useCohorts } from '@/hooks/use-cohorts';
 import { useCourses } from '@/hooks/use-courses';
@@ -77,26 +78,34 @@ export default function RiskReportPage() {
           <div className="mx-auto max-w-7xl">
             <AdminHeader title={t('reports.riskTitle')} description={t('reports.riskDesc')} />
             <div className="mb-6 grid gap-4 md:grid-cols-5">
-              <SelectFilter label={t('courseName')} value={courseId} onChange={setCourseId}>
-                <option value="">{t('reports.allCourses')}</option>
-                {courses.map((course) => (
-                  <option key={course.id} value={course.id}>
-                    {course.title}
-                  </option>
-                ))}
-              </SelectFilter>
-              <SelectFilter
-                label={t('reports.cohortColumn')}
-                value={cohortId}
-                onChange={setCohortId}
-              >
-                <option value="">{t('common.all')}</option>
-                {cohorts.map((cohort) => (
-                  <option key={cohort.id} value={cohort.id}>
-                    {cohort.name}
-                  </option>
-                ))}
-              </SelectFilter>
+              <div className="space-y-1.5">
+                <Label>{t('courseName')}</Label>
+                <SearchableRelationPicker
+                  value={courseId}
+                  onChange={setCourseId}
+                  options={[
+                    { value: '', label: t('reports.allCourses') },
+                    ...courses.map((course) => ({ value: course.id, label: course.title })),
+                  ]}
+                  placeholder={t('reports.allCourses')}
+                  searchPlaceholder={t('schedulePage.search')}
+                  emptyMessage={t('reports.allCourses')}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>{t('reports.cohortColumn')}</Label>
+                <SearchableRelationPicker
+                  value={cohortId}
+                  onChange={setCohortId}
+                  options={[
+                    { value: '', label: t('common.all') },
+                    ...cohorts.map((cohort) => ({ value: cohort.id, label: cohort.name })),
+                  ]}
+                  placeholder={t('common.all')}
+                  searchPlaceholder={t('reports.compareWithLabel')}
+                  emptyMessage={t('common.all')}
+                />
+              </div>
               <SelectFilter
                 label={t('reports.severity')}
                 value={severity}

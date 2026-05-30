@@ -57,7 +57,7 @@ export function LessonHeader({ course, isSidebarOpen, toggleSidebar }: LessonHea
         </div>
         <button
           onClick={toggleSidebar}
-          className="p-2 hover:bg-muted rounded-lg transition-all active:scale-90 border border-transparent hover:border-border focus:outline-none focus:ring-2 focus:ring-primary/20"
+          className="flex h-11 w-11 items-center justify-center hover:bg-muted rounded-lg transition-all active:scale-90 border border-transparent hover:border-border focus:outline-none focus:ring-2 focus:ring-primary/20"
           aria-label={
             isSidebarOpen ? t('lesson.closeCurriculumSidebar') : t('lesson.openCurriculumSidebar')
           }

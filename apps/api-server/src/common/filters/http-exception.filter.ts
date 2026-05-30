@@ -31,8 +31,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
       } else if (exceptionResponse?.message !== undefined) {
         message = exceptionResponse.message;
       }
-    } else if (exception instanceof Error) {
-      message = `[DEBUG 500] ${exception.message} | Stack: ${exception.stack}`;
     }
 
     const responseMessage = Array.isArray(message) && message.length === 1 ? message[0] : message;

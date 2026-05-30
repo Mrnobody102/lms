@@ -82,7 +82,11 @@ async function bootstrap() {
 
   // Security and Performance middlewares
   app.use(cookieParser());
-  app.use(helmet());
+  app.use(
+    helmet({
+      crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+    }),
+  );
   app.use(compression());
 
   // Enable CORS

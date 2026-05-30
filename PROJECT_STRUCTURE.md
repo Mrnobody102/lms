@@ -33,7 +33,7 @@ lms-platform/
 │   │   │   └── main.ts
 │   │   └── tsconfig.json
 │   │
-│   ├── web-student/                   # Next.js student portal, port 3000
+│   ├── web-student/                   # Next.js student portal, port 3100
 │   │   ├── Dockerfile
 │   │   ├── e2e/
 │   │   ├── public/
@@ -47,7 +47,7 @@ lms-platform/
 │   │   │   └── proxy.ts
 │   │   └── playwright.config.ts
 │   │
-│   ├── web-admin/                     # Center admin portal, port 3001
+│   ├── web-admin/                     # Center admin portal, port 3101
 │   │   ├── Dockerfile
 │   │   ├── e2e/
 │   │   ├── public/
@@ -62,7 +62,21 @@ lms-platform/
 │   │   │   └── proxy.ts
 │   │   └── playwright.config.ts
 │   │
-│   └── super-portal/                  # Platform owner portal, port 3002
+│   ├── web-sales/                     # Sales portal, port 3103
+│   │   ├── Dockerfile
+│   │   ├── e2e/
+│   │   ├── public/
+│   │   ├── src/
+│   │   │   ├── app/[locale]/
+│   │   │   ├── components/
+│   │   │   ├── features/
+│   │   │   ├── lib/
+│   │   │   ├── messages/
+│   │   │   ├── navigation.ts
+│   │   │   └── proxy.ts
+│   │   └── playwright.config.ts
+│   │
+│   └── super-portal/                  # Platform owner portal, port 3102
 │       ├── Dockerfile
 │       ├── e2e/
 │       ├── src/
@@ -92,7 +106,7 @@ lms-platform/
 ├── scripts/                           # Validation, smoke, ports, Docker build helpers
 ├── tests/                             # Manual HTTP collections
 ├── agent-knowledge/                   # Local skill/context files for AI agents
-├── .github/workflows/                 # CI and manual Docker image checks
+├── .github/workflows/                 # CI, Vercel deploy, and manual Docker image checks
 ├── docker-compose.yml                 # Local Postgres + Redis
 ├── package.json
 ├── pnpm-lock.yaml

@@ -14,6 +14,7 @@ import { AccuracyCell, ProgressBarCell, ReportTable } from '@/components/reports
 import { SkillAccuracyPanel } from '@/components/reports/skill-accuracy-panel';
 import { ActivityTrendPanel } from '@/components/reports/activity-trend-panel';
 import { TrendReportPanel } from '@/components/reports/trend-report-panel';
+import { SearchableRelationPicker } from '@/components/filters/searchable-relation-picker';
 import { useCohorts } from '@/hooks/use-cohorts';
 import { withCohortQuery } from '@/lib/report-links';
 import type { ProgramRollupRow, UnassignedRollupRow } from '@/lib/reports-api';
@@ -69,36 +70,36 @@ export default function ReportsHomePage() {
                 </Link>
                 <label className="flex items-center gap-2">
                   <span className="text-sm font-medium">{t('cohorts.filterLabel')}</span>
-                  <select
-                    className="h-9 px-3 rounded-md border border-input bg-background text-sm min-w-[200px]"
+                  <SearchableRelationPicker
+                    className="min-w-[200px]"
                     value={selectedCohortId}
-                    onChange={(e) => setSelectedCohortId(e.target.value)}
-                  >
-                    <option value="">{t('common.all')}</option>
-                    {cohorts.map((cohort) => (
-                      <option key={cohort.id} value={cohort.id}>
-                        {cohort.name}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setSelectedCohortId}
+                    options={[
+                      { value: '', label: t('common.all') },
+                      ...cohorts.map((cohort) => ({ value: cohort.id, label: cohort.name })),
+                    ]}
+                    placeholder={t('common.all')}
+                    searchPlaceholder={t('reports.compareWithLabel')}
+                    emptyMessage={t('reports.noPrograms')}
+                  />
                 </label>
                 {selectedCohortId && (
                   <label className="flex items-center gap-2">
                     <span className="text-sm font-medium">{t('reports.compareWithLabel')}</span>
-                    <select
-                      className="h-9 px-3 rounded-md border border-input bg-background text-sm min-w-[150px]"
+                    <SearchableRelationPicker
+                      className="min-w-[150px]"
                       value={compareCohortId}
-                      onChange={(e) => setCompareCohortId(e.target.value)}
-                    >
-                      <option value="">{t('common.none')}</option>
-                      {cohorts
-                        .filter((c) => c.id !== selectedCohortId)
-                        .map((cohort) => (
-                          <option key={cohort.id} value={cohort.id}>
-                            {cohort.name}
-                          </option>
-                        ))}
-                    </select>
+                      onChange={setCompareCohortId}
+                      options={[
+                        { value: '', label: t('common.none') },
+                        ...cohorts
+                          .filter((c) => c.id !== selectedCohortId)
+                          .map((cohort) => ({ value: cohort.id, label: cohort.name })),
+                      ]}
+                      placeholder={t('common.none')}
+                      searchPlaceholder={t('reports.compareWithLabel')}
+                      emptyMessage={t('reports.noPrograms')}
+                    />
                   </label>
                 )}
                 <label className="flex items-center gap-2">

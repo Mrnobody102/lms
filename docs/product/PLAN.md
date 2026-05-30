@@ -1,8 +1,11 @@
 # Kế Hoạch Triển Khai LMS Platform
 
-Cập nhật lần cuối: 2026-05-24 (AI practice review, roleplay scenarios/audio, micro-card hardening, Reporting V2)
+Cập nhật lần cuối: 2026-05-30 (AI-native roadmap alignment, role-based AI strategy, quota/package governance direction)
 
 ## Định hướng sản phẩm
+
+> Bổ sung định hướng dài hạn: xem [AI-NATIVE-LMS-ROADMAP.md](AI-NATIVE-LMS-ROADMAP.md) cho chiến lược 2026–2028 về role-based AI workflows, instructor-led operations, và quota/package commercialization.
+
 
 LMS Platform đi theo mô hình **Hybrid AI-Enhanced Learning**: giữ nền tảng học truyền thống (course/lesson/practice/exam) nhưng nhúng các cơ chế đã được nghiên cứu khoa học giáo dục chứng minh hiệu quả, kết hợp AI để cá nhân hóa. Trục sản phẩm gần với IELTS/TOEIC/Duolingo hiện đại.
 
