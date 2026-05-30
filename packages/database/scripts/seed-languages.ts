@@ -1,3 +1,4 @@
+import { createPrismaClient } from '../src';
 import {
   LessonType,
   EnrollmentStatus,
@@ -857,7 +858,7 @@ async function main() {
             prompt: qData.prompt,
             options: options as Prisma.InputJsonValue | undefined,
             correctAnswer: toJson(qData.correctAnswer),
-            explanation: qData.explanation,
+            ...('explanation' in qData ? { explanation: qData.explanation } : {}),
             skillTags: qData.skillTags,
           },
         });
@@ -935,7 +936,7 @@ async function main() {
             prompt: eq.prompt,
             options: eq.options !== undefined ? toJson(eq.options) : undefined,
             correctAnswer: toJson(eq.correctAnswer),
-            explanation: eq.explanation,
+            ...('explanation' in eq ? { explanation: eq.explanation as string | undefined } : {}),
             points: eq.points ?? 2,
             skillTags: eq.skillTags,
             order: i,
@@ -993,3 +994,5 @@ async function main() {
 main()
   .catch(console.error)
   .finally(() => prisma.$disconnect());
+
+export {};

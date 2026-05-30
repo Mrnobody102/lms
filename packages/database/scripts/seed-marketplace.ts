@@ -1,3 +1,4 @@
+import { createPrismaClient } from '../src';
 import { MarketplaceResourceType, MarketplacePricingModel } from '../.prisma/client';
 
 const prisma = createPrismaClient();
@@ -33,3 +34,5 @@ async function main() {
 main()
   .catch(console.error)
   .finally(() => prisma.$disconnect());
+
+export {};

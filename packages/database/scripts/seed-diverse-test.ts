@@ -1,4 +1,6 @@
-import { PracticeQuestionType, ExamQuestionType } from '@prisma/client';
+import { createPrismaClient } from '../src';
+import { Prisma } from '../src';
+import { PracticeQuestionType, ExamQuestionType } from '../src';
 
 const prisma = createPrismaClient();
 
@@ -54,7 +56,7 @@ async function main() {
       courseId: course.id,
       type: PracticeQuestionType.FILL_BLANK,
       prompt: 'Trái đất quay quanh {{blank1}} và mặt trăng quay quanh {{blank2}}.',
-      options: null,
+      options: Prisma.JsonNull,
       correctAnswer: { blank1: 'mặt trời', blank2: 'trái đất' },
       explanation: 'Kiến thức thiên văn cơ bản.',
     },
@@ -90,7 +92,7 @@ async function main() {
       type: PracticeQuestionType.AI_EVALUATED_TEXT,
       prompt:
         'Viết một đoạn văn ngắn khoảng 50 từ giới thiệu về sở thích của bạn. (AI sẽ chấm điểm)',
-      options: null,
+      options: Prisma.JsonNull,
       correctAnswer: { criteria: 'Ngữ pháp đúng, câu từ mạch lạc, đúng chủ đề sở thích.' },
       explanation: 'Giáo viên AI sẽ đọc và đánh giá.',
     },
@@ -100,7 +102,7 @@ async function main() {
       type: PracticeQuestionType.AI_EVALUATED_AUDIO,
       prompt:
         'Vui lòng nhấn ghi âm và đọc to câu sau: "Hello, nice to meet you. How are you doing today?"',
-      options: null,
+      options: Prisma.JsonNull,
       correctAnswer: { expectedTranscript: 'Hello, nice to meet you. How are you doing today?' },
       explanation: 'Hệ thống AI sẽ đánh giá phát âm của bạn.',
     },
@@ -171,7 +173,7 @@ async function main() {
       type: ExamQuestionType.FILL_BLANK,
       prompt:
         'Trong React, hook {{blank1}} được dùng để quản lý state, và hook {{blank2}} dùng cho side effects.',
-      options: null,
+      options: Prisma.JsonNull,
       correctAnswer: { blank1: 'useState', blank2: 'useEffect' },
       points: 10,
       order: 1,
@@ -225,7 +227,7 @@ async function main() {
       type: ExamQuestionType.AI_EVALUATED_TEXT,
       prompt:
         'Trình bày sự khác biệt cơ bản giữa SQL và NoSQL. AI sẽ chấm điểm dựa trên độ chính xác kỹ thuật.',
-      options: null,
+      options: Prisma.JsonNull,
       correctAnswer: {
         criteria:
           'SQL là cơ sở dữ liệu quan hệ, dùng bảng. NoSQL không quan hệ, dùng tài liệu/key-value.',
@@ -258,3 +260,5 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+
+export {};

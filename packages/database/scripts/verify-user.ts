@@ -1,3 +1,4 @@
+import { createPrismaClient } from '../src';
 const prisma = createPrismaClient();
 async function main() {
   const admin = await prisma.user.findFirst({ where: { email: 'admin@lms.com' } });
@@ -6,3 +7,5 @@ async function main() {
 main()
   .catch(console.error)
   .finally(() => prisma.$disconnect());
+
+export {};
