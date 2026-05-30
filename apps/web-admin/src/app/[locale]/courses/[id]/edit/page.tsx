@@ -30,6 +30,9 @@ import { LessonList } from '@/features/courses/lesson-list';
 import { CourseStats } from '@/features/courses/course-stats';
 import { CourseReportPanel } from '@/features/courses/course-report-panel';
 import { EnrollmentPanel } from '@/features/courses/enrollment-panel';
+import { PracticeManager } from '@/features/practice/practice-manager';
+import { ExamsManager } from '@/features/exams/exams-manager';
+import { RoleplayManager } from '@/features/roleplay/roleplay-manager';
 import { useAuthStore } from '@/features/auth/auth.store';
 import {
   createEmptyMicroCardDraft,
@@ -52,6 +55,9 @@ import {
   Settings,
   Users,
   BookOpen,
+  Dumbbell,
+  FileCheck2,
+  Mic2,
   Globe,
   EyeOff,
 } from 'lucide-react';
@@ -83,7 +89,9 @@ export default function CourseEditorPage() {
   const reorderUnits = useReorderUnits();
   const reorderLessons = useReorderLessons();
 
-  const [activeTab, setActiveTab] = useState<'curriculum' | 'settings' | 'students'>('curriculum');
+  const [activeTab, setActiveTab] = useState<
+    'curriculum' | 'practice' | 'exams' | 'roleplay' | 'settings' | 'students'
+  >('curriculum');
   const [localTitle, setLocalTitle] = useState('');
   const [localLevelId, setLocalLevelId] = useState<string>('');
   const [localAiEnabled, setLocalAiEnabled] = useState(false);
@@ -578,6 +586,39 @@ export default function CourseEditorPage() {
                       {t('curriculumTab')}
                     </button>
                     <button
+                      onClick={() => setActiveTab('practice')}
+                      className={`flex items-center gap-2 pb-3 text-sm font-medium transition-all border-b-2 whitespace-nowrap ${
+                        activeTab === 'practice'
+                          ? 'border-primary text-foreground'
+                          : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30'
+                      }`}
+                    >
+                      <Dumbbell className="w-4 h-4" />
+                      {t('practiceTab')}
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('roleplay')}
+                      className={`flex items-center gap-2 pb-3 text-sm font-medium transition-all border-b-2 whitespace-nowrap ${
+                        activeTab === 'roleplay'
+                          ? 'border-primary text-foreground'
+                          : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30'
+                      }`}
+                    >
+                      <Mic2 className="w-4 h-4" />
+                      {t('roleplayTab')}
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('exams')}
+                      className={`flex items-center gap-2 pb-3 text-sm font-medium transition-all border-b-2 whitespace-nowrap ${
+                        activeTab === 'exams'
+                          ? 'border-primary text-foreground'
+                          : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30'
+                      }`}
+                    >
+                      <FileCheck2 className="w-4 h-4" />
+                      {t('examsTab')}
+                    </button>
+                    <button
                       onClick={() => setActiveTab('settings')}
                       className={`flex items-center gap-2 pb-3 text-sm font-medium transition-all border-b-2 whitespace-nowrap ${
                         activeTab === 'settings'
@@ -629,6 +670,27 @@ export default function CourseEditorPage() {
                 />
               </div>
             </div>
+
+            {/* Practice Tab — mounted lazily to avoid firing its queries until opened */}
+            {canManageCourse && activeTab === 'practice' && (
+              <div className="transition-all duration-300 animate-in fade-in">
+                <PracticeManager courseId={courseId} showCourseSelector={false} />
+              </div>
+            )}
+
+            {/* Roleplay Tab */}
+            {canManageCourse && activeTab === 'roleplay' && (
+              <div className="transition-all duration-300 animate-in fade-in">
+                <RoleplayManager courseId={courseId} showCourseSelector={false} />
+              </div>
+            )}
+
+            {/* Exams Tab */}
+            {canManageCourse && activeTab === 'exams' && (
+              <div className="transition-all duration-300 animate-in fade-in">
+                <ExamsManager courseId={courseId} showCourseSelector={false} />
+              </div>
+            )}
 
             {/* Settings Tab */}
             <div
