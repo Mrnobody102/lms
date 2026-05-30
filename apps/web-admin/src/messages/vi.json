@@ -1060,7 +1060,17 @@
       "templateReminderDesc": "Đã đến giờ học rồi! Hãy dành ít phút để hoàn thành bài tập hôm nay nhé.",
       "templateNewFeatureTitle": "Cập nhật tính năng",
       "templateNewFeatureDesc": "Hệ thống vừa cập nhật một số tính năng mới để nâng cao trải nghiệm học tập của bạn. Hãy khám phá ngay!"
-    }
+    },
+    "streak": "Chuỗi ngày học",
+    "days": "ngày",
+    "lastActive": "Hoạt động lần cuối",
+    "noEnrollments": "Chưa đăng ký khóa học nào.",
+    "noCohorts": "Chưa tham gia lớp học nào.",
+    "noQuestions": "Chưa có câu hỏi",
+    "expandSidebar": "Mở rộng thanh bên",
+    "addLesson": "Thêm bài học",
+    "unassignedLessons": "Bài học chưa xếp unit",
+    "lessonNotFound": "Không tìm thấy bài học"
   },
   "Common": {
     "search": "Tìm kiếm...",

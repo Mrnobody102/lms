@@ -1060,7 +1060,17 @@
       "templateReminderDesc": "It's time to study! Take a few minutes to complete today's lessons.",
       "templateNewFeatureTitle": "New Features Update",
       "templateNewFeatureDesc": "We've just updated the system with new features to enhance your learning experience. Check them out!"
-    }
+    },
+    "streak": "Study streak",
+    "days": "days",
+    "lastActive": "Last active",
+    "noEnrollments": "No courses enrolled.",
+    "noCohorts": "No cohorts joined.",
+    "noQuestions": "No questions",
+    "expandSidebar": "Expand sidebar",
+    "addLesson": "Add lesson",
+    "unassignedLessons": "Unassigned lessons",
+    "lessonNotFound": "Lesson not found"
   },
   "Common": {
     "search": "Search...",
