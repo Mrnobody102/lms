@@ -78,6 +78,7 @@ export default function NewLessonPage() {
           <LessonEditor
             courseId={courseId}
             units={course.units}
+            lessons={course.lessons}
             initialUnitId={initialUnitId}
             nextOrder={existingLessonsCount + 1}
             onSubmit={handleSubmit}

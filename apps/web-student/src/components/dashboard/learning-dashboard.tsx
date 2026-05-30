@@ -10,6 +10,8 @@ import {
   Loader2,
   RefreshCcw,
   Target,
+  AlertTriangle,
+  Flame,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
@@ -174,7 +176,19 @@ function PrimaryTaskCard({ task }: { task: TodayTask }) {
             <p className="text-sm font-semibold text-primary-foreground/80">
               {t('dashboard.primaryTask')}
             </p>
-            <h2 className="mt-1 text-2xl font-bold tracking-tight">{getTaskTitle(task, t)}</h2>
+            <div className="flex items-center gap-2 mt-1">
+              <h2 className="text-2xl font-bold tracking-tight">{getTaskTitle(task, t)}</h2>
+              {task.meta.isUrgent && (
+                <span className="flex items-center gap-1 rounded-full bg-red-500/20 px-2 py-0.5 text-xs font-semibold text-red-100 border border-red-500/30">
+                  <Flame className="h-3 w-3" /> Urgent
+                </span>
+              )}
+              {task.meta.isCriticallyWeak && (
+                <span className="flex items-center gap-1 rounded-full bg-orange-500/20 px-2 py-0.5 text-xs font-semibold text-orange-100 border border-orange-500/30">
+                  <AlertTriangle className="h-3 w-3" /> Critical Weakness
+                </span>
+              )}
+            </div>
             <p className="mt-1 text-sm text-primary-foreground/80">{getTaskSubtitle(task, t)}</p>
           </div>
         </div>
@@ -198,7 +212,19 @@ function TaskRow({ task, locale }: { task: TodayTask; locale: string }) {
       <div className="flex min-w-0 items-start gap-3">
         <TaskIconFrame type={task.type} />
         <div className="min-w-0">
-          <h3 className="text-sm font-semibold">{getTaskTitle(task, t)}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold">{getTaskTitle(task, t)}</h3>
+            {task.meta.isUrgent && (
+              <span className="flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                <Flame className="h-3 w-3" /> Urgent
+              </span>
+            )}
+            {task.meta.isCriticallyWeak && (
+              <span className="flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-semibold text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+                <AlertTriangle className="h-3 w-3" /> Critical
+              </span>
+            )}
+          </div>
           <p className="mt-1 text-sm text-muted-foreground">{getTaskSubtitle(task, t)}</p>
           {task.dueAt ? (
             <p className="mt-2 text-xs text-muted-foreground">

@@ -995,7 +995,9 @@
       "confirmEnroll": "Enroll all members in this course?",
       "enrollSuccess": "Successfully enrolled members.",
       "enrollError": "Failed to enroll members.",
-      "filterLabel": "Cohort:"
+      "filterLabel": "Cohort:",
+      "instructorLabel": "Assigned Instructor",
+      "noInstructor": "None"
     },
     "coursesFound": "{count, plural, =0 {No courses found} one {# course found} other {# courses found}}",
     "footer": {
@@ -1047,7 +1049,17 @@
         "titleRequired": "Validation Error: Title is required",
         "success": "Success: Sent notification to {count} users",
         "error": "Error: Failed to send notification"
-      }
+      },
+      "historyTitle": "History",
+      "templatesTitle": "Common Templates",
+      "noHistory": "No recent broadcasts.",
+      "useTemplate": "Use template",
+      "templateSystemTitle": "System Maintenance",
+      "templateSystemDesc": "The system will undergo scheduled maintenance tomorrow at 22:00. Access may be temporarily disrupted. Thank you for your patience!",
+      "templateReminderTitle": "Study Reminder",
+      "templateReminderDesc": "It's time to study! Take a few minutes to complete today's lessons.",
+      "templateNewFeatureTitle": "New Features Update",
+      "templateNewFeatureDesc": "We've just updated the system with new features to enhance your learning experience. Check them out!"
     }
   },
   "Common": {

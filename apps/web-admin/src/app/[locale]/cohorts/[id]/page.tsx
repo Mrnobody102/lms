@@ -62,17 +62,23 @@ export default function CohortDetailsPage() {
           email: student.email,
         };
       })
-      .filter((student): student is { id: string; label: string; email: string } => student !== null);
+      .filter(
+        (student): student is { id: string; label: string; email: string } => student !== null,
+      );
   }, [selectedStudentIds, studentsData]);
 
   const filteredCourses = useMemo(() => {
     const query = courseQuery.trim().toLowerCase();
     if (!query) return courses;
-    return courses.filter((course: { id: string; title: string }) => course.title.toLowerCase().includes(query));
+    return courses.filter((course: { id: string; title: string }) =>
+      course.title.toLowerCase().includes(query),
+    );
   }, [courseQuery, courses]);
 
   const selectedCourseTitle = useMemo(
-    () => courses.find((course: { id: string; title: string }) => course.id === selectedCourse)?.title ?? '',
+    () =>
+      courses.find((course: { id: string; title: string }) => course.id === selectedCourse)
+        ?.title ?? '',
     [courses, selectedCourse],
   );
 
@@ -136,6 +142,12 @@ export default function CohortDetailsPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{cohort.name}</h1>
           <p className="text-muted-foreground mt-1">{t('cohorts.membersSubtitle')}</p>
+          {cohort.instructor && (
+            <div className="flex items-center gap-2 mt-2 text-sm font-medium text-primary bg-primary/10 w-fit px-3 py-1 rounded-full">
+              <GraduationCap className="w-4 h-4" />
+              <span>Phụ trách: {cohort.instructor.fullName}</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -164,7 +176,9 @@ export default function CohortDetailsPage() {
                 {courseQuery.trim().length > 0 && !selectedCourse && (
                   <div className="max-h-44 overflow-auto rounded-md border border-border bg-background shadow-sm">
                     {filteredCourses.length === 0 ? (
-                      <p className="px-3 py-2 text-xs text-muted-foreground">{t('cohorts.noCourseSuggestions')}</p>
+                      <p className="px-3 py-2 text-xs text-muted-foreground">
+                        {t('cohorts.noCourseSuggestions')}
+                      </p>
                     ) : (
                       <ul className="divide-y divide-border">
                         {filteredCourses.map((course: { id: string; title: string }) => (
@@ -250,7 +264,9 @@ export default function CohortDetailsPage() {
                 {studentQuery.trim().length > 0 && (
                   <div className="max-h-44 overflow-auto rounded-md border border-border bg-background shadow-sm">
                     {isSearchingStudents ? (
-                      <p className="px-3 py-2 text-xs text-muted-foreground">{t('common.loading')}</p>
+                      <p className="px-3 py-2 text-xs text-muted-foreground">
+                        {t('common.loading')}
+                      </p>
                     ) : suggestedStudents.length === 0 ? (
                       <p className="px-3 py-2 text-xs text-muted-foreground">
                         {t('cohorts.noStudentSuggestions')}
@@ -264,7 +280,9 @@ export default function CohortDetailsPage() {
                               onClick={() => toggleSelectedStudent(student.id)}
                               className="w-full px-3 py-2 text-left hover:bg-muted/50"
                             >
-                              <p className="text-sm font-medium">{student.fullName || student.email}</p>
+                              <p className="text-sm font-medium">
+                                {student.fullName || student.email}
+                              </p>
                               <p className="text-xs text-muted-foreground">{student.email}</p>
                             </button>
                           </li>

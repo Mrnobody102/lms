@@ -295,6 +295,7 @@ model User {
   progress                          UserLessonProgress[]
   enrollments                       CourseEnrollment[]
   instructorCourseAssignments       CourseInstructorAssignment[]
+  cohortsAsInstructor               Cohort[]                     @relation("CohortInstructor")
   activities                        LearningActivity[]
   practiceAttempts                  PracticeAttempt[]
   examAttempts                      ExamAttempt[]
@@ -1159,19 +1160,22 @@ model MediaAsset {
 }
 
 model Cohort {
-  id          String             @id @default(uuid())
-  tenantId    String
-  tenant      Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  name        String
-  description String?
-  isActive    Boolean            @default(true)
-  deletedAt   DateTime?
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
-  memberships CohortMembership[]
+  id           String             @id @default(uuid())
+  tenantId     String
+  tenant       Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  instructorId String?
+  instructor   User?              @relation("CohortInstructor", fields: [instructorId, tenantId], references: [id, tenantId])
+  name         String
+  description  String?
+  isActive     Boolean            @default(true)
+  deletedAt    DateTime?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  memberships  CohortMembership[]
 
   @@unique([id, tenantId])
   @@unique([tenantId, name])
+  @@index([tenantId, instructorId])
   @@index([tenantId, isActive, deletedAt])
 }
 

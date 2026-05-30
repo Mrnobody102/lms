@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Input, Label } from '@repo/ui';
 import { useCohorts, Cohort } from '@/hooks/use-cohorts';
+import { useInstructors } from '@/hooks/use-admin-users';
 
 interface CohortModalProps {
   isOpen: boolean;
@@ -18,17 +19,25 @@ export function CohortModal({ isOpen, onClose, cohort }: CohortModalProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [isActive, setIsActive] = useState(true);
+  const [instructorId, setInstructorId] = useState<string>('');
   const [error, setError] = useState('');
+
+  const { data: instructorsData, isLoading: isLoadingInstructors } = useInstructors({
+    limit: 100,
+    isActive: true,
+  });
 
   useEffect(() => {
     if (cohort) {
       setName(cohort.name);
       setDescription(cohort.description || '');
       setIsActive(cohort.isActive);
+      setInstructorId(cohort.instructorId || '');
     } else {
       setName('');
       setDescription('');
       setIsActive(true);
+      setInstructorId('');
     }
     setError('');
   }, [cohort, isOpen]);
@@ -47,12 +56,14 @@ export function CohortModal({ isOpen, onClose, cohort }: CohortModalProps) {
           name,
           description,
           isActive,
+          instructorId: instructorId || null,
         });
       } else {
         await createCohort.mutateAsync({
           name,
           description,
           isActive,
+          instructorId: instructorId || undefined,
         });
       }
       onClose();
@@ -95,6 +106,24 @@ export function CohortModal({ isOpen, onClose, cohort }: CohortModalProps) {
               rows={3}
               className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="instructor">{t('cohorts.instructorLabel')}</Label>
+            <select
+              id="instructor"
+              value={instructorId}
+              onChange={(e) => setInstructorId(e.target.value)}
+              disabled={isLoadingInstructors}
+              className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <option value="">{t('cohorts.noInstructor')}</option>
+              {instructorsData?.data?.map((instructor) => (
+                <option key={instructor.id} value={instructor.id}>
+                  {instructor.fullName} ({instructor.email})
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="flex items-center gap-2 pt-2">

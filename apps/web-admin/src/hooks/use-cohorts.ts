@@ -9,6 +9,12 @@ export interface Cohort {
   _count: {
     memberships: number;
   };
+  instructorId?: string;
+  instructor?: {
+    id: string;
+    fullName: string;
+    email: string;
+  };
   createdAt: string;
 }
 
@@ -37,7 +43,12 @@ export function useCohorts() {
   });
 
   const createCohort = useMutation({
-    mutationFn: async (data: { name: string; description?: string; isActive?: boolean }) => {
+    mutationFn: async (data: {
+      name: string;
+      description?: string;
+      isActive?: boolean;
+      instructorId?: string;
+    }) => {
       const res = await api.post('/cohorts', data);
       return res.data as Cohort;
     },
@@ -55,6 +66,7 @@ export function useCohorts() {
       name?: string;
       description?: string;
       isActive?: boolean;
+      instructorId?: string | null;
     }) => {
       const res = await api.patch(`/cohorts/${id}`, data);
       return res.data as Cohort;

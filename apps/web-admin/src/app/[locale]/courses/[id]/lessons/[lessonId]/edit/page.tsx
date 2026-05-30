@@ -89,6 +89,7 @@ export default function EditLessonPage() {
             courseId={courseId}
             lesson={lesson}
             units={course.units}
+            lessons={course.lessons}
             onSubmit={handleSubmit}
             onCancel={handleCancel}
             saving={updateLesson.isPending}

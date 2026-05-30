@@ -1,4 +1,11 @@
-import { Injectable, NotFoundException, ConflictException, Logger, Optional } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  Logger,
+  Optional,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../common/services/prisma.service';
 import { Prisma, CohortMembership, User } from '@repo/database';
 import { AuditAction, AuditLogService, AuditStatus } from '../common/services/audit-log.service';
@@ -19,6 +26,8 @@ export class CohortService {
   ) {}
 
   async create(tenantId: string, createCohortDto: CreateCohortDto, actorId?: string) {
+    await this.validateInstructorAssignment(tenantId, createCohortDto.instructorId);
+
     const existing = await this.prisma.cohort.findUnique({
       where: {
         tenantId_name: {
@@ -62,6 +71,9 @@ export class CohortService {
         _count: {
           select: { memberships: true },
         },
+        instructor: {
+          select: { id: true, fullName: true, email: true },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -73,6 +85,9 @@ export class CohortService {
       include: {
         _count: {
           select: { memberships: true },
+        },
+        instructor: {
+          select: { id: true, fullName: true, email: true },
         },
       },
     });
@@ -86,6 +101,9 @@ export class CohortService {
 
   async update(tenantId: string, id: string, updateCohortDto: UpdateCohortDto, actorId?: string) {
     await this.findOne(tenantId, id);
+    if (Object.prototype.hasOwnProperty.call(updateCohortDto, 'instructorId')) {
+      await this.validateInstructorAssignment(tenantId, updateCohortDto.instructorId ?? undefined);
+    }
 
     if (updateCohortDto.name) {
       const existing = await this.prisma.cohort.findUnique({
@@ -217,7 +235,13 @@ export class CohortService {
         tenantId,
         action: AuditAction.COHORT_MEMBERS_ADD,
         status: AuditStatus.SUCCESS,
-        metadata: { cohortId: id, requestedCount: userIds.length, addedCount: 0, skippedCount, invalidCount },
+        metadata: {
+          cohortId: id,
+          requestedCount: userIds.length,
+          addedCount: 0,
+          skippedCount,
+          invalidCount,
+        },
       });
       return { addedCount: 0, skippedCount, invalidCount };
     }
@@ -408,6 +432,25 @@ export class CohortService {
     }
 
     return { enrolledCount: result.enrolledCount, skippedCount: result.skippedCount };
+  }
+
+  private async validateInstructorAssignment(tenantId: string, instructorId?: string) {
+    if (!instructorId) {
+      return;
+    }
+
+    const instructor = await this.prisma.user.findUnique({
+      where: { id_tenantId: { id: instructorId, tenantId } },
+      select: { id: true, role: true, deletedAt: true, isActive: true },
+    });
+
+    if (!instructor || instructor.deletedAt || !instructor.isActive) {
+      throw new BadRequestException('Assigned instructor is invalid or inactive.');
+    }
+
+    if (instructor.role !== 'INSTRUCTOR') {
+      throw new BadRequestException('Assigned user must have instructor role.');
+    }
   }
 
   private buildStudentCourseUrl(courseId: string) {

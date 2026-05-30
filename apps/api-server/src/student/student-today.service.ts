@@ -36,7 +36,7 @@ export class StudentTodayService {
   ) {}
 
   async getToday(tenantId: string, user: StudentTodayUser) {
-    const [courses, activeAttempts, srsDue, weakMastery, recentPractice, recentExams] =
+    const [courses, activeAttempts, srsDue, weakMastery, recentPractice, recentExams, latestRisk] =
       await Promise.all([
         this.getCourseContinuations(tenantId, user),
         this.getActiveExamAttempts(tenantId, user),
@@ -85,6 +85,10 @@ export class StudentTodayService {
           orderBy: { submittedAt: 'desc' },
           take: 3,
         }),
+        this.prisma.studentRiskSnapshot.findFirst({
+          where: { tenantId, userId: user.id },
+          orderBy: { computedAt: 'desc' },
+        }),
       ]);
 
     const tasks: TodayTask[] = [];
@@ -107,18 +111,20 @@ export class StudentTodayService {
     }
 
     if (srsDue.dueNow > 0) {
+      const isUrgent = srsDue.dueNow >= 20;
       tasks.push({
         id: 'review-due',
         type: 'REVIEW_DUE',
         title: `${srsDue.dueNow}`,
         subtitle: 'review cards due now',
         href: '/practice?tab=review',
-        priority: 90,
+        priority: isUrgent ? 95 : 90,
         dueAt: null,
         meta: {
           dueNow: srsDue.dueNow,
           dueToday: srsDue.dueToday,
           total: srsDue.total,
+          isUrgent,
         },
       });
     }
@@ -131,7 +137,7 @@ export class StudentTodayService {
         title: continueCourse.continueLesson.title,
         subtitle: continueCourse.course.title,
         href: `/lessons/${continueCourse.continueLesson.id}`,
-        priority: 70,
+        priority: 70, // Base priority for continue
         dueAt: null,
         meta: {
           courseId: continueCourse.course.id,
@@ -142,18 +148,33 @@ export class StudentTodayService {
     }
 
     if (weakMastery && weakMastery.mastery < 0.6) {
+      const isHighRisk = latestRisk?.severity === 'HIGH';
+      const isCriticallyWeak = weakMastery.mastery < 0.4;
+
+      // Adaptive priority bumping
+      let priority = 60;
+      if (isHighRisk && isCriticallyWeak) {
+        priority = 85; // Highest priority below exams and urgent reviews, blocks continue lesson
+      } else if (isCriticallyWeak) {
+        priority = 80; // Blocks continue lesson
+      } else if (isHighRisk) {
+        priority = 75; // Blocks continue lesson
+      }
+
       tasks.push({
         id: `weak-skill-${weakMastery.skillCode}`,
         type: 'WEAK_SKILL_PRACTICE',
         title: weakMastery.skillCode,
         subtitle: 'weak skill practice',
         href: `/practice?skill=${encodeURIComponent(weakMastery.skillCode)}`,
-        priority: 60,
+        priority,
         dueAt: null,
         meta: {
           skillCode: weakMastery.skillCode,
           mastery: Math.round(weakMastery.mastery * 100),
           attempts: weakMastery.attempts,
+          isHighRisk,
+          isCriticallyWeak,
         },
       });
     }

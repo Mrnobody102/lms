@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsUUID } from 'class-validator';
 
 export class CreateCohortDto {
   @ApiProperty({ example: 'IELTS Evening Class', description: 'Cohort display name' })
@@ -16,4 +16,9 @@ export class CreateCohortDto {
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;
+
+  @ApiPropertyOptional({ example: 'uuid', description: 'Assigned instructor ID' })
+  @IsUUID()
+  @IsOptional()
+  instructorId?: string;
 }

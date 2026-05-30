@@ -995,7 +995,9 @@
       "confirmEnroll": "Ghi danh tất cả thành viên vào khóa học này?",
       "enrollSuccess": "Ghi danh thành viên thành công.",
       "enrollError": "Có lỗi xảy ra khi ghi danh.",
-      "filterLabel": "Lớp học:"
+      "filterLabel": "Lớp học:",
+      "instructorLabel": "Giảng viên phụ trách",
+      "noInstructor": "Không có"
     },
     "coursesFound": "{count, plural, =0 {Không tìm thấy khóa học nào} other {Tìm thấy # khóa học}}",
     "footer": {
@@ -1047,7 +1049,17 @@
         "titleRequired": "Lỗi: Vui lòng nhập tiêu đề",
         "success": "Thành công: Đã gửi thông báo tới {count} người dùng",
         "error": "Lỗi: Không thể gửi thông báo"
-      }
+      },
+      "historyTitle": "Bản thông báo cũ",
+      "templatesTitle": "Mẫu thường dùng",
+      "noHistory": "Chưa có thông báo nào gần đây.",
+      "useTemplate": "Dùng mẫu",
+      "templateSystemTitle": "Bảo trì hệ thống",
+      "templateSystemDesc": "Hệ thống sẽ tiến hành bảo trì định kỳ vào 22:00 ngày mai. Trong thời gian này, việc truy cập có thể bị gián đoạn. Mong các bạn thông cảm!",
+      "templateReminderTitle": "Nhắc nhở học tập",
+      "templateReminderDesc": "Đã đến giờ học rồi! Hãy dành ít phút để hoàn thành bài tập hôm nay nhé.",
+      "templateNewFeatureTitle": "Cập nhật tính năng",
+      "templateNewFeatureDesc": "Hệ thống vừa cập nhật một số tính năng mới để nâng cao trải nghiệm học tập của bạn. Hãy khám phá ngay!"
     }
   },
   "Common": {

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Plus, Users, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Users, Pencil, Trash2, GraduationCap } from 'lucide-react';
 import { Link } from '@/navigation';
 import { Button, EmptyState, LoadingState } from '@repo/ui';
 import { useCohorts, Cohort } from '@/hooks/use-cohorts';
@@ -67,11 +67,19 @@ export default function CohortsPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-auto pt-4 border-t border-border">
-                      <Users className="w-4 h-4" />
-                      <span>
-                        {cohort._count?.memberships || 0} {t('cohorts.members')}
-                      </span>
+                    <div className="flex flex-col gap-2 text-sm text-muted-foreground mt-auto pt-4 border-t border-border">
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4" />
+                        <span>
+                          {cohort._count?.memberships || 0} {t('cohorts.members')}
+                        </span>
+                      </div>
+                      {cohort.instructor && (
+                        <div className="flex items-center gap-2">
+                          <GraduationCap className="w-4 h-4" />
+                          <span>{cohort.instructor.fullName}</span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex gap-2 mt-4">
