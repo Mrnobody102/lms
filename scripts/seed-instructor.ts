@@ -24,7 +24,7 @@ async function main() {
 
   const user = await prisma.user.upsert({
     where: {
-      email_tenantId: {
+      tenantId_email: {
         email,
         tenantId: tenant.id,
       },
