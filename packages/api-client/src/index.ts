@@ -44,12 +44,12 @@ function appendApiPath(baseUrl: string): string {
 }
 
 function getDefaultBaseUrl(): string {
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    return appendApiPath(process.env.NEXT_PUBLIC_API_URL);
-  }
-
   if (typeof window !== 'undefined') {
     return '/api';
+  }
+
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return appendApiPath(process.env.NEXT_PUBLIC_API_URL);
   }
 
   if (process.env.NODE_ENV === 'production') {

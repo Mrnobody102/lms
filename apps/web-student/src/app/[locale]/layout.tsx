@@ -30,7 +30,10 @@ export default async function RootLayout(props: {
 
   return (
     <html lang={locale} suppressHydrationWarning>
-      <body className="font-sans" suppressHydrationWarning>
+      <body
+        className="font-sans min-h-screen bg-background text-foreground antialiased overflow-x-hidden flex flex-col"
+        suppressHydrationWarning
+      >
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <NextIntlClientProvider messages={messages} locale={locale}>
             <QueryProvider>{children}</QueryProvider>
