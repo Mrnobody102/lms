@@ -112,7 +112,11 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
         <div className="flex justify-end">
           <Link
             href="/forgot-password"
-            className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+            className={`text-xs font-medium transition-colors ${
+              loading
+                ? 'text-muted-foreground pointer-events-none opacity-60'
+                : 'text-primary hover:text-primary/80'
+            }`}
           >
             {t('auth.forgotPassword')}
           </Link>

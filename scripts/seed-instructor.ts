@@ -31,6 +31,7 @@ async function main() {
     },
     update: {
       role: 'INSTRUCTOR',
+      password: hashedPassword,
     },
     create: {
       email,

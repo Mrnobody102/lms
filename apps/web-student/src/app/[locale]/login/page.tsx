@@ -1,7 +1,8 @@
 import { Suspense } from 'react';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { Link } from '../../../navigation';
+
 import { LoginPageClient } from './login-page-client';
+import { LoginFooterClient } from './login-footer-client';
 
 export default async function LoginPage(props: { params: Promise<{ locale: string }> }) {
   const { locale } = await props.params;
@@ -40,15 +41,7 @@ export default async function LoginPage(props: { params: Promise<{ locale: strin
         </div>
 
         {/* Register Link */}
-        <p className="text-center text-sm text-muted-foreground mt-8">
-          {t('auth.footerLogin')}{' '}
-          <Link
-            href="/register"
-            className="text-primary hover:text-primary/80 font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
-          >
-            {t('auth.signUpLink')}
-          </Link>
-        </p>
+        <LoginFooterClient />
       </div>
     </div>
   );
