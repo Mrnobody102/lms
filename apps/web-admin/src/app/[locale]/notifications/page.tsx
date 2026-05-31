@@ -114,7 +114,7 @@ export default function NotificationsPage() {
   };
 
   return (
-    <AuthGuard>
+    <AuthGuard requiredCapability="notification:manage">
       <div className="min-h-screen flex flex-col md:flex-row bg-background">
         <AdminSidebar />
         <main className="flex-1 md:ml-[var(--admin-sidebar-width)] p-6 lg:p-8">

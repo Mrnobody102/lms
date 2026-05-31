@@ -24,7 +24,7 @@ import { AuthGuard } from '@/components/layout/auth-guard';
 import { Alert, AlertDescription, Badge, Button, Input, Label } from '@/components/ui';
 import { useActivationCodes } from '@/hooks/use-activation-codes';
 import { useAdminOverview } from '@/hooks/use-admin-users';
-import { useBillingConfig, useUpdateBillingConfig } from '@/hooks/use-billing';
+import { useBillingConfig, useBillingOverview, useUpdateBillingConfig } from '@/hooks/use-billing';
 import type { ActivationCodeSummary } from '@/lib/activation-api';
 import type { BillingConfig } from '@/lib/billing-api';
 
@@ -48,6 +48,7 @@ export default function FinancePage() {
   const overviewQuery = useAdminOverview();
   const activationQuery = useActivationCodes();
   const billingQuery = useBillingConfig();
+  const billingOverviewQuery = useBillingOverview();
   const updateBilling = useUpdateBillingConfig();
   const [billingForm, setBillingForm] = useState<BillingConfig>(DEFAULT_BILLING_CONFIG);
   const [billingMessage, setBillingMessage] = useState<string | null>(null);
@@ -141,7 +142,7 @@ export default function FinancePage() {
   };
 
   return (
-    <AuthGuard>
+    <AuthGuard requiredCapability="finance:manage">
       <div className="min-h-screen flex flex-col md:flex-row bg-background">
         <AdminSidebar />
         <main className="flex-1 md:ml-[var(--admin-sidebar-width)] p-6 lg:p-8">
@@ -172,8 +173,11 @@ export default function FinancePage() {
                 </section>
 
                 <section className="mt-8">
+                  {billingOverviewQuery.data && (
+                    <BillingOverviewPanel overview={billingOverviewQuery.data} locale={locale} />
+                  )}
                   {billingMessage && (
-                    <div className="mb-4 rounded-lg border bg-muted/20 p-3 text-sm text-muted-foreground">
+                    <div className="mb-4 mt-6 rounded-lg border bg-muted/20 p-3 text-sm text-muted-foreground">
                       {billingMessage}
                     </div>
                   )}
@@ -192,6 +196,93 @@ export default function FinancePage() {
       </div>
     </AuthGuard>
   );
+}
+
+function BillingOverviewPanel({
+  locale,
+  overview,
+}: {
+  locale: string;
+  overview: import('@/lib/billing-api').BillingOverview;
+}) {
+  const t = useTranslations('Admin.financePage');
+  const currency = overview.invoices[0]?.currency ?? 'VND';
+
+  return (
+    <div className="mb-8 grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
+      <div className="rounded-xl border bg-card p-5 shadow-sm">
+        <p className="text-sm font-medium text-muted-foreground">{t('subscriptionPlan')}</p>
+        <h2 className="mt-2 text-xl font-bold">
+          {overview.subscription?.planName ?? t('notConfigured')}
+        </h2>
+        <div className="mt-4 space-y-2 text-sm text-muted-foreground">
+          <p>
+            {t('subscriptionStatus')}: {overview.subscription?.status ?? '-'}
+          </p>
+          <p>
+            {t('aiQuota')}: {overview.subscription?.aiRequestQuota.toLocaleString() ?? 0}
+          </p>
+          <p>
+            {t('storageQuota')}:{' '}
+            {formatBytes(Number(overview.subscription?.storageQuotaBytes ?? 0))}
+          </p>
+        </div>
+      </div>
+      <div className="rounded-xl border bg-card p-5 shadow-sm">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="text-base font-semibold">{t('recentInvoices')}</h2>
+          <Badge variant="secondary">
+            {overview.payments.length} {t('payments')}
+          </Badge>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[560px] text-sm">
+            <thead className="border-b text-left text-xs uppercase text-muted-foreground">
+              <tr>
+                <th className="py-2 pr-3">{t('invoiceNumber')}</th>
+                <th className="py-2 pr-3">{t('statusColumn')}</th>
+                <th className="py-2 pr-3 text-right">{t('amount')}</th>
+                <th className="py-2 pl-3">{t('paidAt')}</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {overview.invoices.map((invoice) => (
+                <tr key={invoice.id}>
+                  <td className="py-3 pr-3 font-medium">{invoice.number}</td>
+                  <td className="py-3 pr-3">{invoice.status}</td>
+                  <td className="py-3 pr-3 text-right font-semibold">
+                    {formatMoney(invoice.totalMinor, invoice.currency || currency, locale)}
+                  </td>
+                  <td className="py-3 pl-3 text-muted-foreground">
+                    {invoice.paidAt
+                      ? new Intl.DateTimeFormat(locale).format(new Date(invoice.paidAt))
+                      : '-'}
+                  </td>
+                </tr>
+              ))}
+              {overview.invoices.length === 0 && (
+                <tr>
+                  <td className="py-6 text-muted-foreground" colSpan={4}>
+                    {t('noInvoices')}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function formatMoney(amountMinor: number, currency: string, locale: string) {
+  const amount = currency.toUpperCase() === 'VND' ? amountMinor : amountMinor / 100;
+  return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(amount);
+}
+
+function formatBytes(bytes: number) {
+  if (bytes <= 0) return '0 GB';
+  return `${Math.round(bytes / 1024 / 1024 / 1024)} GB`;
 }
 
 interface FinanceStat {

@@ -72,10 +72,10 @@ curl http://localhost:4000/api
 
 Sau khi `pnpm db:seed`:
 
-| Role        | Email             | Password   | Ghi chú                        |
-| ----------- | ----------------- | ---------- | ------------------------------ |
-| Super Admin | `admin@lms.com`   | `admin123` | Quản trị platform/tenant demo  |
-| Student     | `student@lms.com` | `admin123` | Đã được enroll vào course demo |
+| Role        | Email             | Password     | Ghi chú                        |
+| ----------- | ----------------- | ------------ | ------------------------------ |
+| Super Admin | `admin@lms.com`   | `Demo@12345` | Quản trị platform/tenant demo  |
+| Student     | `student@lms.com` | `Demo@12345` | Đã được enroll vào course demo |
 
 ## Auth flow hiện tại
 
@@ -96,7 +96,7 @@ curl -X POST http://localhost:4000/api/auth/login \
   -c cookies.txt \
   -d '{
     "email": "admin@lms.com",
-    "password": "admin123"
+    "password": "Demo@12345"
   }'
 ```
 

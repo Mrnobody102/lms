@@ -11,11 +11,14 @@ import { Button, Input, Separator, Skeleton, Alert, AlertDescription } from '@/c
 import { FolderTree, AlertCircle, Search, Edit2, Trash2, Layers } from 'lucide-react';
 import { Link } from '@/navigation';
 import { Badge } from '@/components/ui';
+import { useAuthStore } from '@/features/auth/auth.store';
 import { useDebounce } from '@/hooks/use-debounce';
 
 export default function ProgramsPage() {
   const t = useTranslations('Admin');
   const [search, setSearch] = useState('');
+  const { user } = useAuthStore();
+  const canManagePrograms = user?.role !== 'INSTRUCTOR';
 
   const { data: programs, isLoading, error } = usePrograms();
   const deleteProgram = useDeleteProgram();
@@ -28,7 +31,7 @@ export default function ProgramsPage() {
   const errorMessage = error instanceof Error ? error.message : error ? String(error) : null;
 
   return (
-    <AuthGuard>
+    <AuthGuard requiredCapability="program:read">
       <div className="min-h-screen flex flex-col md:flex-row bg-background">
         <AdminSidebar />
         <main className="flex-1 md:ml-[var(--admin-sidebar-width)] p-6 lg:p-8">
@@ -45,9 +48,11 @@ export default function ProgramsPage() {
                   className="h-full min-w-0 flex-1 border-0 bg-transparent px-3 py-0 shadow-none focus-visible:ring-0"
                 />
               </div>
-              <Link href="/programs/new">
-                <Button>{t('createProgram')}</Button>
-              </Link>
+              {canManagePrograms && (
+                <Link href="/programs/new">
+                  <Button>{t('createProgram')}</Button>
+                </Link>
+              )}
             </div>
 
             <Separator className="mb-8" />
@@ -77,9 +82,11 @@ export default function ProgramsPage() {
                 </div>
                 <h3 className="text-xl font-semibold tracking-tight mb-2">{t('noPrograms')}</h3>
                 <p className="text-sm text-muted-foreground max-w-sm mb-8">{t('noProgramsDesc')}</p>
-                <Link href="/programs/new">
-                  <Button className="rounded-xl px-6">{t('createProgram')}</Button>
-                </Link>
+                {canManagePrograms && (
+                  <Link href="/programs/new">
+                    <Button className="rounded-xl px-6">{t('createProgram')}</Button>
+                  </Link>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -92,31 +99,33 @@ export default function ProgramsPage() {
                       <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
                         <FolderTree className="w-5 h-5" />
                       </div>
-                      <div className="flex gap-2">
-                        <Link href={`/programs/${program.id}/edit`}>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-primary"
+                      {canManagePrograms && (
+                        <div className="flex gap-2">
+                          <Link href={`/programs/${program.id}/edit`}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-primary"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                          </Link>
+                          <ConfirmDialog
+                            description={t('confirmDeleteProgram')}
+                            destructive
+                            onConfirm={() => deleteProgram.mutate(program.id)}
                           >
-                            <Edit2 className="w-4 h-4" />
-                          </Button>
-                        </Link>
-                        <ConfirmDialog
-                          description={t('confirmDeleteProgram')}
-                          destructive
-                          onConfirm={() => deleteProgram.mutate(program.id)}
-                        >
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                            disabled={deleteProgram.isPending}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </ConfirmDialog>
-                      </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                              disabled={deleteProgram.isPending}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </ConfirmDialog>
+                        </div>
+                      )}
                     </div>
                     <div className="flex-1">
                       <h3 className="font-semibold text-base line-clamp-2 leading-snug text-foreground group-hover:text-primary transition-colors">

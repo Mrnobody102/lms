@@ -1,4 +1,5 @@
 export * from './types/user';
+export * from './auth/capabilities';
 export * from './constants/i18n';
 export * from './constants/auth';
 export * from './constants/http';

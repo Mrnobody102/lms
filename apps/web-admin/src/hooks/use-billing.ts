@@ -9,6 +9,14 @@ export function useBillingConfig() {
   });
 }
 
+export function useBillingOverview() {
+  return useQuery({
+    queryKey: ['admin-billing-overview'],
+    queryFn: () => billingApi.getOverview(),
+    staleTime: 60 * 1000,
+  });
+}
+
 export function useUpdateBillingConfig() {
   const queryClient = useQueryClient();
 

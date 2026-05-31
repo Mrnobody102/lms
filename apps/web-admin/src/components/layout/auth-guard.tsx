@@ -1,15 +1,21 @@
 'use client';
 
 import { useEffect } from 'react';
+import { hasCapability, type Capability } from '@repo/shared';
 import { useAuthStore } from '@/features/auth/auth.store';
 import { useRouter } from '@/navigation';
 
 interface AuthGuardProps {
   children: React.ReactNode;
+  requiredCapability?: Capability;
   loaderMessage?: string;
 }
 
-export function AuthGuard({ children, loaderMessage = 'Loading...' }: AuthGuardProps) {
+export function AuthGuard({
+  children,
+  requiredCapability,
+  loaderMessage = 'Loading...',
+}: AuthGuardProps) {
   const { isAuthenticated, isInitialized, user } = useAuthStore();
   const router = useRouter();
 
@@ -24,12 +30,16 @@ export function AuthGuard({ children, loaderMessage = 'Loading...' }: AuthGuardP
         user.role !== 'INSTRUCTOR'
       ) {
         router.push('/login?error=unauthorized');
+      } else if (requiredCapability && !hasCapability(user?.role, requiredCapability)) {
+        router.push('/?error=forbidden');
       }
     }
-  }, [isInitialized, isAuthenticated, user, router]);
+  }, [isInitialized, isAuthenticated, user, router, requiredCapability]);
 
   const isAuthorized =
-    user && (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN' || user.role === 'INSTRUCTOR');
+    user &&
+    (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN' || user.role === 'INSTRUCTOR') &&
+    (!requiredCapability || hasCapability(user.role, requiredCapability));
 
   if (!isInitialized || !isAuthenticated || !isAuthorized) {
     return (

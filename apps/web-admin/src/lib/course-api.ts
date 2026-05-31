@@ -43,6 +43,9 @@ export interface Course {
   title: string;
   description?: string | null;
   coverImageUrl?: string | null;
+  subject?: string | null;
+  languageCode?: string | null;
+  proficiencyLevel?: string | null;
   isActive: boolean;
   levelId?: string | null;
   aiSettings?: CourseAiSettings | null;
@@ -57,6 +60,9 @@ export interface CourseCreateInput {
   slug?: string;
   description?: string;
   coverImageUrl?: string;
+  subject?: string;
+  languageCode?: string;
+  proficiencyLevel?: string;
   totalDuration?: number;
   aiSettings?: CourseAiSettings;
   levelId?: string;

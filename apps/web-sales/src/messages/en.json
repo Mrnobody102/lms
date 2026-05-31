@@ -31,6 +31,16 @@
       "subtitle": "Find the course that matches your current level, then sign in to start learning.",
       "searchPlaceholder": "Search courses",
       "search": "Search",
+      "languageFilter": "Language",
+      "levelFilter": "Level",
+      "allLanguages": "All languages",
+      "allLevels": "All levels",
+      "languages": {
+        "en": "English",
+        "ja": "Japanese",
+        "zh": "Chinese",
+        "ko": "Korean"
+      },
       "loadError": "Could not load courses right now.",
       "empty": "No public courses are available yet.",
       "emptySearch": "No courses match this search.",

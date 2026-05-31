@@ -11,7 +11,7 @@ async function main() {
     return;
   }
 
-  const hashedPassword = await bcrypt.hash('password123', 12);
+  const hashedPassword = await bcrypt.hash('Demo@12345', 12);
   const email = 'instructor1@example.com';
 
   const identity = await prisma.globalUserIdentity.upsert({

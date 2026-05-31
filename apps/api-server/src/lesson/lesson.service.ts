@@ -13,20 +13,26 @@ export class LessonService {
     private readonly srs: SrsService,
   ) {}
 
-  async create(data: {
-    title: string;
-    type?: LessonType;
-    content?: string;
-    videoUrl?: string;
-    duration?: number;
-    practiceExerciseSetId?: string | null;
-    examId?: string | null;
-    aiPrompt?: string;
-    order?: number;
-    unitId?: string | null;
-    courseId: string;
-    tenantId: string;
-  }) {
+  async create(
+    data: {
+      title: string;
+      type?: LessonType;
+      content?: string;
+      videoUrl?: string;
+      duration?: number;
+      practiceExerciseSetId?: string | null;
+      examId?: string | null;
+      aiPrompt?: string;
+      order?: number;
+      unitId?: string | null;
+      courseId: string;
+      tenantId: string;
+    },
+    user?: { id: string; role: Role },
+  ) {
+    if (user) {
+      await this.learningAccess.ensureAuthoringCourseAccess(data.courseId, data.tenantId, user);
+    }
     const course = await this.prisma.course.findFirst({
       where: this.learningAccess.courseWhere(data.tenantId, undefined, data.courseId, {
         includeInactive: true,
@@ -118,8 +124,12 @@ export class LessonService {
       order?: number;
       unitId?: string | null;
     },
+    user?: { id: string; role: Role },
   ) {
-    const lesson = await this.findOne(id, tenantId);
+    const lesson = await this.findOne(id, tenantId, user);
+    if (user) {
+      await this.learningAccess.ensureAuthoringCourseAccess(lesson.courseId, tenantId, user);
+    }
     const unitId =
       data.unitId === undefined
         ? undefined
@@ -151,9 +161,12 @@ export class LessonService {
     });
   }
 
-  async remove(id: string, tenantId: string) {
+  async remove(id: string, tenantId: string, user?: { id: string; role: Role }) {
     // Ensure lesson exists and belongs to tenant
-    await this.findOne(id, tenantId);
+    const lesson = await this.findOne(id, tenantId, user);
+    if (user) {
+      await this.learningAccess.ensureAuthoringCourseAccess(lesson.courseId, tenantId, user);
+    }
 
     return this.prisma.lesson.update({
       where: { id_tenantId: { id, tenantId } },
@@ -229,14 +242,18 @@ export class LessonService {
     });
   }
 
-  async reorderLessons(courseId: string, unitId: string, tenantId: string, lessonIds: string[]) {
+  async reorderLessons(
+    courseId: string,
+    unitId: string,
+    tenantId: string,
+    lessonIds: string[],
+    user?: { id: string; role: Role },
+  ) {
     // We optionally could verify unit belongs to course, but since lesson's primary ID is used for update,
     // we mostly just need to ensure the caller has access.
-    await this.learningAccess.ensureCourseAccess(courseId, tenantId, {
-      id: 'system',
-      role: Role.ADMIN,
-    }); // Assuming admin role is required, or it's handled by controller.
-    // Actually, controller uses guards.
+    if (user) {
+      await this.learningAccess.ensureAuthoringCourseAccess(courseId, tenantId, user);
+    }
 
     return this.prisma.$transaction(
       lessonIds.map((id, index) =>

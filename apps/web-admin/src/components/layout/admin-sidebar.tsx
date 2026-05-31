@@ -123,8 +123,20 @@ export function AdminSidebar() {
   ];
   const instructorMenuGroups: MenuGroup[] = [
     {
+      label: t('nav.groups.overview'),
+      items: [{ name: t('dashboard'), icon: LayoutDashboard, href: '/' }],
+    },
+    {
       label: t('nav.groups.teaching'),
-      items: [{ name: t('courses'), icon: BookOpen, href: '/courses' }],
+      items: [
+        { name: t('instructorNav.myCourses'), icon: BookOpen, href: '/courses' },
+        { name: t('instructorNav.myClasses'), icon: Users, href: '/course-runs' },
+        { name: t('schedule'), icon: Calendar, href: '/schedule' },
+      ],
+    },
+    {
+      label: t('nav.groups.operations'),
+      items: [{ name: t('reports.navLabel'), icon: BarChart3, href: '/reports' }],
     },
     {
       label: t('nav.groups.system'),

@@ -22,6 +22,32 @@ export interface BillingConfig {
   updatedAt: string | null;
 }
 
+export interface BillingOverview {
+  subscription: {
+    planName: string;
+    status: string;
+    storageQuotaBytes: string;
+    aiRequestQuota: number;
+  } | null;
+  invoices: Array<{
+    id: string;
+    number: string;
+    status: string;
+    currency: string;
+    totalMinor: number;
+    dueAt: Date | null;
+    paidAt: Date | null;
+  }>;
+  payments: Array<{
+    id: string;
+    status: string;
+    provider: string;
+    currency: string;
+    amountMinor: number;
+    paidAt: Date | null;
+  }>;
+}
+
 const DEFAULT_BILLING_CONFIG: BillingConfig = {
   paymentProvider: BillingPaymentProvider.NONE,
   paymentPublicKey: '',
@@ -87,6 +113,56 @@ export class AdminBillingService {
     });
 
     return nextBilling;
+  }
+
+  async getBillingOverview(currentUser: AuthenticatedUser): Promise<BillingOverview> {
+    const [subscription, invoices, payments] = await Promise.all([
+      this.prisma.tenantSubscription.findFirst({
+        where: { tenantId: currentUser.tenantId },
+        orderBy: { createdAt: 'desc' },
+        include: { plan: { select: { name: true } } },
+      }),
+      this.prisma.invoice.findMany({
+        where: { tenantId: currentUser.tenantId },
+        orderBy: { createdAt: 'desc' },
+        take: 8,
+        select: {
+          id: true,
+          number: true,
+          status: true,
+          currency: true,
+          totalMinor: true,
+          dueAt: true,
+          paidAt: true,
+        },
+      }),
+      this.prisma.payment.findMany({
+        where: { tenantId: currentUser.tenantId },
+        orderBy: { createdAt: 'desc' },
+        take: 8,
+        select: {
+          id: true,
+          status: true,
+          provider: true,
+          currency: true,
+          amountMinor: true,
+          paidAt: true,
+        },
+      }),
+    ]);
+
+    return {
+      subscription: subscription
+        ? {
+            planName: subscription.plan.name,
+            status: subscription.status,
+            storageQuotaBytes: subscription.storageQuotaBytes.toString(),
+            aiRequestQuota: subscription.aiRequestQuota,
+          }
+        : null,
+      invoices,
+      payments,
+    };
   }
 
   private readBillingConfig(settings: Prisma.JsonValue | Record<string, unknown> | null) {

@@ -19,6 +19,32 @@ export interface BillingConfig {
 
 export type UpdateBillingConfigPayload = Partial<Omit<BillingConfig, 'updatedAt'>>;
 
+export interface BillingOverview {
+  subscription: {
+    planName: string;
+    status: string;
+    storageQuotaBytes: string;
+    aiRequestQuota: number;
+  } | null;
+  invoices: Array<{
+    id: string;
+    number: string;
+    status: string;
+    currency: string;
+    totalMinor: number;
+    dueAt: string | null;
+    paidAt: string | null;
+  }>;
+  payments: Array<{
+    id: string;
+    status: string;
+    provider: string;
+    currency: string;
+    amountMinor: number;
+    paidAt: string | null;
+  }>;
+}
+
 export const billingApi = {
   getConfig() {
     return api.get('/admin/billing/config').then((r) => r.data as BillingConfig);
@@ -26,5 +52,9 @@ export const billingApi = {
 
   updateConfig(payload: UpdateBillingConfigPayload) {
     return api.patch('/admin/billing/config', payload).then((r) => r.data as BillingConfig);
+  },
+
+  getOverview() {
+    return api.get('/admin/billing/overview').then((r) => r.data as BillingOverview);
   },
 };

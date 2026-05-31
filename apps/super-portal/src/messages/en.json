@@ -10,6 +10,19 @@
       "inactive": "Inactive",
       "customDomains": "Custom domains"
     },
+    "sidebar": {
+      "title": "Super Portal",
+      "subtitle": "SaaS LMS operations",
+      "overview": "Overview",
+      "tenants": "Tenants",
+      "billing": "Plans & Billing",
+      "usage": "Usage & Storage",
+      "domains": "Domains",
+      "flags": "Feature flags",
+      "incidents": "Incidents",
+      "audit": "Audit logs",
+      "infrastructure": "Infrastructure"
+    },
     "themeToggle": "Toggle theme",
     "accountAvatar": "Account avatar",
     "footer": {

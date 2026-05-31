@@ -88,11 +88,14 @@ interface ExamsManagerProps {
   courseId?: string;
   /** Show the course selector dropdown (standalone page mode). Defaults to true. */
   showCourseSelector?: boolean;
+  /** Publishing exams is admin-only in the shared admin/instructor workspace. */
+  canPublish?: boolean;
 }
 
 export function ExamsManager({
   courseId: lockedCourseId,
   showCourseSelector = true,
+  canPublish = true,
 }: ExamsManagerProps) {
   const t = useTranslations('Admin');
   const { data: courseData, isLoading: coursesLoading } = useCourses({ limit: 100 });
@@ -254,7 +257,7 @@ export function ExamsManager({
       description: description.trim() || null,
       durationMinutes: draft.durationMinutes ?? 0,
       passingScore: draft.passingScore ?? 0,
-      isPublished,
+      isPublished: canPublish ? isPublished : undefined,
       sections: [
         {
           title: sectionTitle.trim(),
@@ -272,7 +275,7 @@ export function ExamsManager({
           description: description.trim() || undefined,
           durationMinutes: draft.durationMinutes ?? 0,
           passingScore: draft.passingScore ?? 0,
-          isPublished,
+          isPublished: canPublish && isPublished,
           sections: [
             {
               title: sectionTitle.trim(),
@@ -607,36 +610,40 @@ export function ExamsManager({
                           {t('selectedItemsValue', { count: selectedExamIds.length })}
                         </span>
                         <div className="flex flex-wrap gap-2">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            className="gap-2"
-                            disabled={examBulkPending}
-                            onClick={() => handleBulkExamPublish(true)}
-                          >
-                            {examBulkAction === 'publish' ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <CheckCircle2 className="h-3.5 w-3.5" />
-                            )}
-                            {t('publishSelected')}
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            className="gap-2"
-                            disabled={examBulkPending}
-                            onClick={() => handleBulkExamPublish(false)}
-                          >
-                            {examBulkAction === 'unpublish' ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <X className="h-3.5 w-3.5" />
-                            )}
-                            {t('unpublishSelected')}
-                          </Button>
+                          {canPublish && (
+                            <>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                className="gap-2"
+                                disabled={examBulkPending}
+                                onClick={() => handleBulkExamPublish(true)}
+                              >
+                                {examBulkAction === 'publish' ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <CheckCircle2 className="h-3.5 w-3.5" />
+                                )}
+                                {t('publishSelected')}
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                className="gap-2"
+                                disabled={examBulkPending}
+                                onClick={() => handleBulkExamPublish(false)}
+                              >
+                                {examBulkAction === 'unpublish' ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <X className="h-3.5 w-3.5" />
+                                )}
+                                {t('unpublishSelected')}
+                              </Button>
+                            </>
+                          )}
                           <Button
                             type="button"
                             size="sm"
@@ -691,21 +698,23 @@ export function ExamsManager({
                               </span>
                             </div>
                             <div className="mt-4 flex flex-wrap gap-2">
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                className="gap-2"
-                                disabled={updateExam.isPending}
-                                onClick={() => handleToggleExamPublished(exam)}
-                              >
-                                {exam.isPublished ? (
-                                  <X className="h-3.5 w-3.5" />
-                                ) : (
-                                  <CheckCircle2 className="h-3.5 w-3.5" />
-                                )}
-                                {exam.isPublished ? t('unpublish') : t('publish')}
-                              </Button>
+                              {canPublish && (
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  className="gap-2"
+                                  disabled={updateExam.isPending}
+                                  onClick={() => handleToggleExamPublished(exam)}
+                                >
+                                  {exam.isPublished ? (
+                                    <X className="h-3.5 w-3.5" />
+                                  ) : (
+                                    <CheckCircle2 className="h-3.5 w-3.5" />
+                                  )}
+                                  {exam.isPublished ? t('unpublish') : t('publish')}
+                                </Button>
+                              )}
                               <Button
                                 type="button"
                                 size="sm"
@@ -796,7 +805,10 @@ export function ExamsManager({
                       value: selectedCourse?.title ?? t('selectCourse'),
                     },
                     { label: t('unit'), value: selectedUnit?.title ?? t('allUnits') },
-                    { label: t('status'), value: isPublished ? t('published') : t('draft') },
+                    {
+                      label: t('status'),
+                      value: canPublish && isPublished ? t('published') : t('draft'),
+                    },
                     {
                       label: t('examTitle'),
                       value: title.trim() || t('examTitlePlaceholder'),
@@ -887,14 +899,16 @@ export function ExamsManager({
                         />
                       </div>
                     </div>
-                    <label className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={isPublished}
-                        onChange={(event) => setIsPublished(event.target.checked)}
-                      />
-                      {t('publishNow')}
-                    </label>
+                    {canPublish && (
+                      <label className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={isPublished}
+                          onChange={(event) => setIsPublished(event.target.checked)}
+                        />
+                        {t('publishNow')}
+                      </label>
+                    )}
 
                     <div className="border-t pt-4 space-y-4">
                       <div className="space-y-1.5">

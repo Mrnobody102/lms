@@ -92,7 +92,7 @@ export class RoleplayController {
 
   @Post('scenarios/:id/publish')
   @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Publish a roleplay scenario' })
   publishScenario(@Request() req: AuthenticatedRequest, @Param('id', ParseUUIDPipe) id: string) {
     return this.scenarioService.setPublished(getScopedTenantId(req), id, true, req.user);
@@ -100,7 +100,7 @@ export class RoleplayController {
 
   @Post('scenarios/:id/unpublish')
   @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Unpublish a roleplay scenario' })
   unpublishScenario(@Request() req: AuthenticatedRequest, @Param('id', ParseUUIDPipe) id: string) {
     return this.scenarioService.setPublished(getScopedTenantId(req), id, false, req.user);

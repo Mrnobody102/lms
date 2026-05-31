@@ -31,6 +31,16 @@
       "subtitle": "Tìm khóa phù hợp với trình độ hiện tại, sau đó đăng nhập để bắt đầu học.",
       "searchPlaceholder": "Tìm khóa học",
       "search": "Tìm",
+      "languageFilter": "Ngôn ngữ",
+      "levelFilter": "Cấp độ",
+      "allLanguages": "Tất cả ngôn ngữ",
+      "allLevels": "Tất cả cấp độ",
+      "languages": {
+        "en": "Tiếng Anh",
+        "ja": "Tiếng Nhật",
+        "zh": "Tiếng Trung",
+        "ko": "Tiếng Hàn"
+      },
       "loadError": "Không thể tải khóa học lúc này.",
       "empty": "Chưa có khóa học công khai nào.",
       "emptySearch": "Không có khóa học khớp tìm kiếm này.",

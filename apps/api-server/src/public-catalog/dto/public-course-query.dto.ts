@@ -22,4 +22,19 @@ export class PublicCourseQueryDto {
   @IsOptional()
   @IsString()
   search?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by course language code' })
+  @IsOptional()
+  @IsString()
+  languageCode?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by proficiency level label/code' })
+  @IsOptional()
+  @IsString()
+  proficiencyLevel?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by program ID' })
+  @IsOptional()
+  @IsString()
+  programId?: string;
 }

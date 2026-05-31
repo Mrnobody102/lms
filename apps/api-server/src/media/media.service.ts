@@ -1,5 +1,10 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import type { MediaAsset } from '@repo/database';
+import {
+  MediaAssetStatus,
+  SubscriptionStatus,
+  UsageLedgerType,
+  type MediaAsset,
+} from '@repo/database';
 import { PrismaService } from '../common/services/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { randomUUID } from 'crypto';
@@ -20,6 +25,7 @@ export class MediaService {
     mimeType: string,
     sizeBytes: number,
   ) {
+    await this.ensureStorageQuota(tenantId, sizeBytes);
     // Generate a unique storage key: {tenantId}/media/{uuid}_{filename}
     // Using a sanitized filename could be better, but UUID ensures no collision.
     const safeFilename = filename.replace(/[^a-zA-Z0-9.\-_]/g, '_');
@@ -67,12 +73,56 @@ export class MediaService {
       },
     });
 
+    await this.prisma.usageLedger.create({
+      data: {
+        tenantId,
+        type: UsageLedgerType.MEDIA_UPLOAD,
+        quantity: BigInt(asset.sizeBytes),
+        unit: 'bytes',
+        sourceType: 'MediaAsset',
+        sourceId: asset.id,
+        description: `Uploaded ${asset.filename}`,
+      },
+    });
+
     const updatedAsset = await this.prisma.mediaAsset.findFirstOrThrow({
       where: { id: assetId, tenantId },
     });
 
     this.logger.log(`Media asset ${assetId} marked as READY.`);
     return updatedAsset;
+  }
+
+  private async ensureStorageQuota(tenantId: string, nextSizeBytes: number) {
+    const [usage, subscription] = await Promise.all([
+      this.prisma.mediaAsset.aggregate({
+        where: { tenantId, status: { in: [MediaAssetStatus.UPLOADING, MediaAssetStatus.READY] } },
+        _sum: { sizeBytes: true },
+      }),
+      this.prisma.tenantSubscription.findFirst({
+        where: {
+          tenantId,
+          status: { in: [SubscriptionStatus.TRIALING, SubscriptionStatus.ACTIVE] },
+        },
+        orderBy: { createdAt: 'desc' },
+        select: { storageQuotaBytes: true, plan: { select: { storageQuotaBytes: true } } },
+      }),
+    ]);
+
+    const quota = subscription
+      ? subscription.storageQuotaBytes > BigInt(0)
+        ? subscription.storageQuotaBytes
+        : subscription.plan.storageQuotaBytes
+      : BigInt(0);
+
+    if (quota <= BigInt(0)) {
+      return;
+    }
+
+    const used = BigInt(usage._sum.sizeBytes ?? 0);
+    if (used + BigInt(nextSizeBytes) > quota) {
+      throw new BadRequestException('Tenant storage quota would be exceeded');
+    }
   }
 
   async validateAudioAsset(tenantId: string, assetId: string): Promise<MediaAsset> {

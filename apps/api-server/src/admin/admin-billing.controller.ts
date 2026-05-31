@@ -24,6 +24,13 @@ export class AdminBillingController {
     return this.adminBillingService.getBillingConfig(user);
   }
 
+  @Get('overview')
+  @ApiOperation({ summary: 'Get billing subscription, invoice, and payment overview' })
+  @ApiResponse({ status: 200, description: 'Billing overview retrieved successfully' })
+  async getBillingOverview(@CurrentUser() user: AuthenticatedUser) {
+    return this.adminBillingService.getBillingOverview(user);
+  }
+
   @Patch('config')
   @ApiOperation({ summary: 'Update billing configuration for the current tenant' })
   @ApiResponse({ status: 200, description: 'Billing configuration updated successfully' })

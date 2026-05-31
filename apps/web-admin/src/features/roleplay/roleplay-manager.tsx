@@ -45,11 +45,14 @@ interface RoleplayManagerProps {
   courseId?: string;
   /** Show the course selector dropdown (standalone page mode). Defaults to true. */
   showCourseSelector?: boolean;
+  /** Content publishing is admin-only in the shared admin/instructor workspace. */
+  canPublish?: boolean;
 }
 
 export function RoleplayManager({
   courseId: lockedCourseId,
   showCourseSelector = true,
+  canPublish = true,
 }: RoleplayManagerProps) {
   const t = useTranslations('Admin');
   const queryClient = useQueryClient();
@@ -102,7 +105,7 @@ export function RoleplayManager({
         mode: draft.mode,
         systemPrompt: draft.systemPrompt.trim(),
         openingMessage: draft.openingMessage.trim() || undefined,
-        isPublished: draft.isPublished,
+        isPublished: canPublish ? draft.isPublished : false,
       }),
     onSuccess: () => {
       resetDraft(draft.courseId);
@@ -124,7 +127,7 @@ export function RoleplayManager({
         mode: draft.mode,
         systemPrompt: draft.systemPrompt.trim(),
         openingMessage: draft.openingMessage.trim() || undefined,
-        isPublished: draft.isPublished,
+        isPublished: canPublish ? draft.isPublished : undefined,
       }),
     onSuccess: () => {
       resetDraft(draft.courseId);
@@ -307,17 +310,19 @@ export function RoleplayManager({
             value={draft.openingMessage}
             onChange={(openingMessage) => setDraft((current) => ({ ...current, openingMessage }))}
           />
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={draft.isPublished}
-              onChange={(event) =>
-                setDraft((current) => ({ ...current, isPublished: event.target.checked }))
-              }
-              className="h-4 w-4 rounded border-input"
-            />
-            {t('publishedOnly')}
-          </label>
+          {canPublish && (
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={draft.isPublished}
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, isPublished: event.target.checked }))
+                }
+                className="h-4 w-4 rounded border-input"
+              />
+              {t('publishedOnly')}
+            </label>
+          )}
           <div className="flex gap-2">
             <Button
               type="submit"
@@ -376,18 +381,20 @@ export function RoleplayManager({
                         <PencilLine className="h-4 w-4" />
                         {t('edit')}
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() =>
-                          publishScenario.mutate({
-                            id: scenario.id,
-                            published: scenario.isPublished,
-                          })
-                        }
-                      >
-                        {scenario.isPublished ? t('unpublish') : t('publish')}
-                      </Button>
+                      {canPublish && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            publishScenario.mutate({
+                              id: scenario.id,
+                              published: scenario.isPublished,
+                            })
+                          }
+                        >
+                          {scenario.isPublished ? t('unpublish') : t('publish')}
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="destructive"

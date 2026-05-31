@@ -105,9 +105,14 @@ export default function CourseEditorPage() {
   const toggleCourseStatus = useToggleCourseStatus();
   const courseIsActive = course?.isActive !== false;
   const canManageCourse = user?.role !== 'INSTRUCTOR';
+  const canAuthorContent =
+    user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN' || user?.role === 'INSTRUCTOR';
 
   useEffect(() => {
-    if (!canManageCourse && !['curriculum', 'students'].includes(activeTab)) {
+    if (
+      !canManageCourse &&
+      !['curriculum', 'practice', 'roleplay', 'exams', 'students'].includes(activeTab)
+    ) {
       setActiveTab('curriculum');
     }
   }, [activeTab, canManageCourse]);
@@ -638,7 +643,7 @@ export default function CourseEditorPage() {
                   <BookOpen className="w-4 h-4" />
                   {t('curriculumTab')}
                 </button>
-                {canManageCourse && (
+                {canAuthorContent && (
                   <>
                     <button
                       onClick={() => setActiveTab('practice')}
@@ -766,29 +771,42 @@ export default function CourseEditorPage() {
                   onDuplicate={handleDuplicateLesson}
                   onBulkDelete={handleBulkDeleteLessons}
                   getPreviewUrl={getLessonPreviewUrl}
-                  readOnly={!canManageCourse}
+                  readOnly={!canAuthorContent}
                 />
               </div>
             </div>
 
             {/* Practice Tab — mounted lazily to avoid firing its queries until opened */}
-            {canManageCourse && activeTab === 'practice' && (
+            {canAuthorContent && activeTab === 'practice' && (
               <div className="transition-all duration-300 animate-in fade-in">
-                <PracticeManager courseId={courseId} showCourseSelector={false} />
+                <PracticeManager
+                  courseId={courseId}
+                  showCourseSelector={false}
+                  canPublish={canManageCourse}
+                  canReview={canManageCourse}
+                />
               </div>
             )}
 
             {/* Roleplay Tab */}
-            {canManageCourse && activeTab === 'roleplay' && (
+            {canAuthorContent && activeTab === 'roleplay' && (
               <div className="transition-all duration-300 animate-in fade-in">
-                <RoleplayManager courseId={courseId} showCourseSelector={false} />
+                <RoleplayManager
+                  courseId={courseId}
+                  showCourseSelector={false}
+                  canPublish={canManageCourse}
+                />
               </div>
             )}
 
             {/* Exams Tab */}
-            {canManageCourse && activeTab === 'exams' && (
+            {canAuthorContent && activeTab === 'exams' && (
               <div className="transition-all duration-300 animate-in fade-in">
-                <ExamsManager courseId={courseId} showCourseSelector={false} />
+                <ExamsManager
+                  courseId={courseId}
+                  showCourseSelector={false}
+                  canPublish={canManageCourse}
+                />
               </div>
             )}
 

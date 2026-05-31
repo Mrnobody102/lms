@@ -35,6 +35,80 @@ enum EnrollmentStatus {
   REVOKED
 }
 
+enum CourseInstructorRole {
+  OWNER
+  CO_TEACHER
+  GRADER
+  ASSISTANT
+}
+
+enum CourseRunStatus {
+  DRAFT
+  SCHEDULED
+  ENROLLING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum RunEnrollmentStatus {
+  ENROLLED
+  WAITLISTED
+  COMPLETED
+  DROPPED
+  REFUNDED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  LATE
+  ABSENT
+  EXCUSED
+}
+
+enum BillingPlanStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  OPEN
+  PAID
+  VOID
+  UNCOLLECTIBLE
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum RefundStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+}
+
+enum UsageLedgerType {
+  STORAGE_BYTES
+  AI_REQUEST
+  MEDIA_UPLOAD
+  ENROLLMENT_SEAT
+}
+
 enum LearningActivityType {
   LESSON_OPENED
   LESSON_COMPLETED
@@ -249,6 +323,19 @@ model Tenant {
   marketplaceProvidedSubscriptions ResourceSubscription[]       @relation("MarketplaceProviderTenant")
   marketplaceUsageAsProvider       MarketplaceUsageEvent[]      @relation("MarketplaceUsageProviderTenant")
   marketplaceUsageAsSubscriber     MarketplaceUsageEvent[]      @relation("MarketplaceUsageSubscriberTenant")
+  billingPlans                     BillingPlan[]
+  billingPrices                    Price[]
+  tenantSubscriptions              TenantSubscription[]
+  invoices                         Invoice[]
+  payments                         Payment[]
+  refunds                          Refund[]
+  paymentProviderAccounts          PaymentProviderAccount[]
+  usageLedger                      UsageLedger[]
+  instructorSpecialties            InstructorSpecialty[]
+  courseRuns                       CourseRun[]
+  runSessions                      RunSession[]
+  runEnrollments                   RunEnrollment[]
+  attendances                      Attendance[]
   videoEngagementEvents            VideoEngagementEvent[]
   adaptiveLearningPathItems        AdaptiveLearningPathItem[]
   isActive                         Boolean                      @default(true)
@@ -295,6 +382,12 @@ model User {
   progress                          UserLessonProgress[]
   enrollments                       CourseEnrollment[]
   instructorCourseAssignments       CourseInstructorAssignment[]
+  instructorSpecialties             InstructorSpecialty[]
+  ledCourseRuns                     CourseRun[]                  @relation("CourseRunInstructor")
+  taughtRunSessions                 RunSession[]                 @relation("RunSessionInstructor")
+  runEnrollments                    RunEnrollment[]
+  attendances                       Attendance[]                 @relation("AttendanceStudent")
+  attendanceMarks                   Attendance[]                 @relation("AttendanceMarkedBy")
   cohortsAsInstructor               Cohort[]                     @relation("CohortInstructor")
   activities                        LearningActivity[]
   practiceAttempts                  PracticeAttempt[]
@@ -375,6 +468,9 @@ model Course {
   slug                      String? // SEO-friendly slug
   description               String?
   coverImageUrl             String? // URL to the course cover/thumbnail image
+  subject                   String?
+  languageCode              String?
+  proficiencyLevel          String?
   isActive                  Boolean                      @default(true)
   deletedAt                 DateTime?
   tenantId                  String
@@ -385,6 +481,8 @@ model Course {
   lessons                   Lesson[]
   enrollments               CourseEnrollment[]
   instructorAssignments     CourseInstructorAssignment[]
+  courseRuns                CourseRun[]
+  prices                    Price[]
   activities                LearningActivity[]
   questions                 PracticeQuestion[]
   aiQuestionGenerationJobs  AiQuestionGenerationJob[]
@@ -406,6 +504,7 @@ model Course {
   @@unique([tenantId, slug])
   @@unique([id, tenantId])
   @@index([tenantId, isActive])
+  @@index([tenantId, languageCode, proficiencyLevel])
   @@index([tenantId, deletedAt])
   @@index([levelId])
 }
@@ -496,6 +595,7 @@ model Lesson {
   progress              UserLessonProgress[]
   activities            LearningActivity[]
   discussions           DiscussionThread[]
+  runSessions           RunSession[]
   createdAt             DateTime             @default(now())
   updatedAt             DateTime             @updatedAt
 
@@ -548,17 +648,18 @@ model CourseEnrollment {
 }
 
 model CourseInstructorAssignment {
-  id           String   @id @default(uuid())
+  id           String               @id @default(uuid())
   tenantId     String
-  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant       Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   courseId     String
-  course       Course   @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  course       Course               @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
   instructorId String
-  instructor   User     @relation(fields: [instructorId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  instructor   User                 @relation(fields: [instructorId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  role         CourseInstructorRole @default(OWNER)
   assignedById String?
-  assignedAt   DateTime @default(now())
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  assignedAt   DateTime             @default(now())
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
 
   @@unique([id, tenantId])
   @@unique([tenantId, courseId, instructorId])
@@ -1172,6 +1273,7 @@ model Cohort {
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
   memberships  CohortMembership[]
+  courseRuns   CourseRun[]
 
   @@unique([id, tenantId])
   @@unique([tenantId, name])
@@ -1301,6 +1403,333 @@ model MarketplaceUsageEvent {
   @@index([providerTenantId, occurredAt])
   @@index([subscriberTenantId, occurredAt])
   @@index([eventType, occurredAt])
+}
+
+model InstructorSpecialty {
+  id             String   @id @default(uuid())
+  tenantId       String
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  instructorId   String
+  instructor     User     @relation(fields: [instructorId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  subject        String
+  languageCode   String?
+  levelRange     String?
+  skillTags      String[]
+  certifications Json?
+  bio            String?
+  weeklyCapacity Int?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([id, tenantId])
+  @@unique([tenantId, instructorId, subject, languageCode, levelRange])
+  @@index([tenantId, instructorId])
+  @@index([tenantId, languageCode])
+}
+
+model CourseRun {
+  id                 String          @id @default(uuid())
+  tenantId           String
+  tenant             Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  courseId           String
+  course             Course          @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  cohortId           String?
+  cohort             Cohort?         @relation(fields: [cohortId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
+  instructorId       String
+  instructor         User            @relation("CourseRunInstructor", fields: [instructorId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  title              String
+  code               String?
+  status             CourseRunStatus @default(DRAFT)
+  capacity           Int             @default(30)
+  enrollmentOpensAt  DateTime?
+  enrollmentClosesAt DateTime?
+  startsAt           DateTime?
+  endsAt             DateTime?
+  timezone           String          @default("Asia/Ho_Chi_Minh")
+  deliveryMode       String          @default("online")
+  location           String?
+  onlineMeetingUrl   String?
+  notes              String?
+  sessions           RunSession[]
+  enrollments        RunEnrollment[]
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  @@unique([id, tenantId])
+  @@unique([tenantId, code])
+  @@index([tenantId, courseId, status])
+  @@index([tenantId, instructorId, startsAt])
+  @@index([tenantId, cohortId])
+}
+
+model RunSession {
+  id               String       @id @default(uuid())
+  tenantId         String
+  tenant           Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  runId            String
+  run              CourseRun    @relation(fields: [runId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  instructorId     String?
+  instructor       User?        @relation("RunSessionInstructor", fields: [instructorId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
+  lessonId         String?
+  lesson           Lesson?      @relation(fields: [lessonId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
+  title            String
+  startsAt         DateTime
+  endsAt           DateTime
+  timezone         String       @default("Asia/Ho_Chi_Minh")
+  location         String?
+  onlineMeetingUrl String?
+  notes            String?
+  attendances      Attendance[]
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@unique([id, tenantId])
+  @@index([tenantId, runId, startsAt])
+  @@index([tenantId, instructorId, startsAt])
+  @@index([tenantId, lessonId])
+}
+
+model RunEnrollment {
+  id         String              @id @default(uuid())
+  tenantId   String
+  tenant     Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  runId      String
+  run        CourseRun           @relation(fields: [runId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  userId     String
+  user       User                @relation(fields: [userId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  status     RunEnrollmentStatus @default(ENROLLED)
+  enrolledAt DateTime            @default(now())
+  droppedAt  DateTime?
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+
+  @@unique([runId, userId])
+  @@unique([id, tenantId])
+  @@index([tenantId, runId, status])
+  @@index([tenantId, userId, status])
+}
+
+model Attendance {
+  id         String           @id @default(uuid())
+  tenantId   String
+  tenant     Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sessionId  String
+  session    RunSession       @relation(fields: [sessionId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  userId     String
+  user       User             @relation("AttendanceStudent", fields: [userId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  status     AttendanceStatus @default(PRESENT)
+  note       String?
+  markedById String?
+  markedBy   User?            @relation("AttendanceMarkedBy", fields: [markedById, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
+  markedAt   DateTime         @default(now())
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@unique([sessionId, userId])
+  @@unique([id, tenantId])
+  @@index([tenantId, sessionId, status])
+  @@index([tenantId, userId])
+}
+
+model BillingPlan {
+  id                String               @id @default(uuid())
+  tenantId          String
+  tenant            Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name              String
+  code              String
+  description       String?
+  status            BillingPlanStatus    @default(ACTIVE)
+  maxStudents       Int?
+  maxCourses        Int?
+  storageQuotaBytes BigInt               @default(0)
+  aiRequestQuota    Int                  @default(0)
+  prices            Price[]
+  subscriptions     TenantSubscription[]
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  @@unique([id, tenantId])
+  @@unique([tenantId, code])
+  @@index([tenantId, status])
+}
+
+model Price {
+  id            String               @id @default(uuid())
+  tenantId      String
+  tenant        Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  planId        String?
+  plan          BillingPlan?         @relation(fields: [planId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  courseId      String?
+  course        Course?              @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  currency      String               @default("VND")
+  amountMinor   Int
+  interval      String               @default("one_time")
+  isActive      Boolean              @default(true)
+  metadata      Json?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  subscriptions TenantSubscription[]
+  invoiceItems  InvoiceItem[]
+
+  @@unique([id, tenantId])
+  @@index([tenantId, planId, isActive])
+  @@index([tenantId, courseId, isActive])
+}
+
+model TenantSubscription {
+  id                 String             @id @default(uuid())
+  tenantId           String
+  tenant             Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  planId             String
+  plan               BillingPlan        @relation(fields: [planId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  priceId            String?
+  price              Price?             @relation(fields: [priceId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
+  status             SubscriptionStatus @default(ACTIVE)
+  startsAt           DateTime           @default(now())
+  endsAt             DateTime?
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd  Boolean            @default(false)
+  storageQuotaBytes  BigInt             @default(0)
+  aiRequestQuota     Int                @default(0)
+  metadata           Json?
+  invoices           Invoice[]
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  @@unique([id, tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, planId])
+}
+
+model Invoice {
+  id             String              @id @default(uuid())
+  tenantId       String
+  tenant         Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  subscriptionId String?
+  subscription   TenantSubscription? @relation(fields: [subscriptionId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
+  number         String
+  status         InvoiceStatus       @default(DRAFT)
+  currency       String              @default("VND")
+  subtotalMinor  Int                 @default(0)
+  discountMinor  Int                 @default(0)
+  taxMinor       Int                 @default(0)
+  totalMinor     Int                 @default(0)
+  dueAt          DateTime?
+  paidAt         DateTime?
+  voidedAt       DateTime?
+  metadata       Json?
+  items          InvoiceItem[]
+  payments       Payment[]
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@unique([id, tenantId])
+  @@unique([tenantId, number])
+  @@index([tenantId, status, createdAt])
+}
+
+model InvoiceItem {
+  id              String   @id @default(uuid())
+  tenantId        String
+  invoiceId       String
+  invoice         Invoice  @relation(fields: [invoiceId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  priceId         String?
+  price           Price?   @relation(fields: [priceId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
+  description     String
+  quantity        Int      @default(1)
+  unitAmountMinor Int      @default(0)
+  amountMinor     Int      @default(0)
+  metadata        Json?
+  createdAt       DateTime @default(now())
+
+  @@unique([id, tenantId])
+  @@index([tenantId, invoiceId])
+}
+
+model PaymentProviderAccount {
+  id         String    @id @default(uuid())
+  tenantId   String
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  provider   String
+  publicKey  String?
+  merchantId String?
+  webhookUrl String?
+  secretRef  String?
+  isActive   Boolean   @default(true)
+  metadata   Json?
+  payments   Payment[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@unique([id, tenantId])
+  @@unique([tenantId, provider, merchantId])
+  @@index([tenantId, provider, isActive])
+}
+
+model Payment {
+  id                String                  @id @default(uuid())
+  tenantId          String
+  tenant            Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invoiceId         String?
+  invoice           Invoice?                @relation(fields: [invoiceId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
+  providerAccountId String?
+  providerAccount   PaymentProviderAccount? @relation(fields: [providerAccountId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
+  status            PaymentStatus           @default(PENDING)
+  currency          String                  @default("VND")
+  amountMinor       Int
+  provider          String                  @default("manual")
+  providerPaymentId String?
+  failureReason     String?
+  paidAt            DateTime?
+  metadata          Json?
+  refunds           Refund[]
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  @@unique([id, tenantId])
+  @@index([tenantId, status, createdAt])
+  @@index([tenantId, invoiceId])
+  @@index([provider, providerPaymentId])
+}
+
+model Refund {
+  id               String       @id @default(uuid())
+  tenantId         String
+  tenant           Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  paymentId        String
+  payment          Payment      @relation(fields: [paymentId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  status           RefundStatus @default(PENDING)
+  amountMinor      Int
+  reason           String?
+  providerRefundId String?
+  refundedAt       DateTime?
+  metadata         Json?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@unique([id, tenantId])
+  @@index([tenantId, status, createdAt])
+  @@index([tenantId, paymentId])
+}
+
+model UsageLedger {
+  id          String          @id @default(uuid())
+  tenantId    String
+  tenant      Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  type        UsageLedgerType
+  quantity    BigInt
+  unit        String
+  sourceType  String?
+  sourceId    String?
+  description String?
+  occurredAt  DateTime        @default(now())
+  metadata    Json?
+  createdAt   DateTime        @default(now())
+
+  @@unique([id, tenantId])
+  @@index([tenantId, type, occurredAt])
+  @@index([tenantId, sourceType, sourceId])
 }
 
 model VideoEngagementEvent {

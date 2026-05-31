@@ -25,6 +25,7 @@ import type { LucideIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Footer } from '@/components/layout/footer';
 import { Header } from '@/components/layout/header';
+import { PortalSidebar } from '@/components/layout/portal-sidebar';
 import { LoginModal } from '@/features/auth/components/login-modal';
 import { useAuthStore } from '@/features/auth/auth.store';
 import { Tenant, useTenant, useUpdateTenant } from '@/hooks/use-tenants';
@@ -100,54 +101,57 @@ export default function TenantDetailsPage({ params }: { params: Promise<{ id: st
   return (
     <div className="min-h-screen font-sans">
       <Header />
-      <div className="p-8 max-w-7xl mx-auto text-foreground">
-        <div className="mb-6">
-          <Link
-            href="/"
-            className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-all"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            {t('backToList')}
-          </Link>
-        </div>
+      <div className="flex">
+        <PortalSidebar />
+        <div className="mx-auto max-w-7xl p-8 text-foreground">
+          <div className="mb-6">
+            <Link
+              href="/"
+              className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-all"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              {t('backToList')}
+            </Link>
+          </div>
 
-        <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-          <div className="min-w-0">
-            <div className="mb-3 flex flex-wrap items-center gap-3">
-              <h1 className="flex min-w-0 items-center gap-3 text-3xl font-extrabold">
-                <Building2 className="h-8 w-8 shrink-0 text-primary" />
-                <span className="truncate">{currentTenant.name}</span>
-              </h1>
-              <TenantStatusBadge isActive={currentTenant.isActive} />
-            </div>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
-              <span className="inline-flex items-center gap-2 font-medium">
-                <Globe className="h-4 w-4" />
-                {currentTenant.domain || `${currentTenant.slug}.lms.com`}
-              </span>
-              {currentTenant.domain && (
-                <a
-                  href={`https://${currentTenant.domain}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-primary hover:underline"
-                >
-                  {t('openDomain')}
-                  <ExternalLink className="h-3.5 w-3.5" />
-                </a>
-              )}
+          <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+            <div className="min-w-0">
+              <div className="mb-3 flex flex-wrap items-center gap-3">
+                <h1 className="flex min-w-0 items-center gap-3 text-3xl font-extrabold">
+                  <Building2 className="h-8 w-8 shrink-0 text-primary" />
+                  <span className="truncate">{currentTenant.name}</span>
+                </h1>
+                <TenantStatusBadge isActive={currentTenant.isActive} />
+              </div>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
+                <span className="inline-flex items-center gap-2 font-medium">
+                  <Globe className="h-4 w-4" />
+                  {currentTenant.domain || `${currentTenant.slug}.lms.com`}
+                </span>
+                {currentTenant.domain && (
+                  <a
+                    href={`https://${currentTenant.domain}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-primary hover:underline"
+                  >
+                    {t('openDomain')}
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        <TenantTabs activeTab={activeTab} onChange={setActiveTab} />
+          <TenantTabs activeTab={activeTab} onChange={setActiveTab} />
 
-        <div className="mt-6">
-          {activeTab === 'overview' ? (
-            <TenantOverview locale={locale} settings={tenantSettings} tenant={currentTenant} />
-          ) : (
-            <TenantSettingsForm mode={activeTab} tenant={currentTenant} />
-          )}
+          <div className="mt-6">
+            {activeTab === 'overview' ? (
+              <TenantOverview locale={locale} settings={tenantSettings} tenant={currentTenant} />
+            ) : (
+              <TenantSettingsForm mode={activeTab} tenant={currentTenant} />
+            )}
+          </div>
         </div>
       </div>
       {!isAuthenticated && <LoginModal />}

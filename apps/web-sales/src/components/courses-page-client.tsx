@@ -16,6 +16,8 @@ export function CoursesPageClient() {
   const searchParams = useSearchParams();
   const page = Math.max(Number(searchParams.get('page') ?? '1') || 1, 1);
   const search = searchParams.get('search') ?? '';
+  const languageCode = searchParams.get('languageCode') ?? '';
+  const proficiencyLevel = searchParams.get('proficiencyLevel') ?? '';
   const [query, setQuery] = useState(search);
   const [courseData, setCourseData] = useState<PublicCourseListResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -25,7 +27,13 @@ export function CoursesPageClient() {
     let isMounted = true;
     setIsLoading(true);
 
-    getPublicCourses({ page, limit: PAGE_SIZE, search: search || undefined })
+    getPublicCourses({
+      page,
+      limit: PAGE_SIZE,
+      search: search || undefined,
+      languageCode: languageCode || undefined,
+      proficiencyLevel: proficiencyLevel || undefined,
+    })
       .then((response) => {
         if (isMounted) {
           setCourseData(response);
@@ -46,7 +54,7 @@ export function CoursesPageClient() {
     return () => {
       isMounted = false;
     };
-  }, [page, search]);
+  }, [page, search, languageCode, proficiencyLevel]);
 
   useEffect(() => {
     setQuery(search);
@@ -56,17 +64,34 @@ export function CoursesPageClient() {
     return (nextPage: number) => {
       const params = new URLSearchParams();
       if (search) params.set('search', search);
+      if (languageCode) params.set('languageCode', languageCode);
+      if (proficiencyLevel) params.set('proficiencyLevel', proficiencyLevel);
       if (nextPage > 1) params.set('page', String(nextPage));
       const suffix = params.toString();
       return suffix ? `/courses?${suffix}` : '/courses';
     };
-  }, [search]);
+  }, [search, languageCode, proficiencyLevel]);
 
   const submitSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const params = new URLSearchParams();
     const trimmed = query.trim();
     if (trimmed) params.set('search', trimmed);
+    if (languageCode) params.set('languageCode', languageCode);
+    if (proficiencyLevel) params.set('proficiencyLevel', proficiencyLevel);
+    const suffix = params.toString();
+    router.push(suffix ? `/courses?${suffix}` : '/courses');
+  };
+
+  const pushFilter = (key: 'languageCode' | 'proficiencyLevel', value: string) => {
+    const params = new URLSearchParams();
+    if (search) params.set('search', search);
+    if (key === 'languageCode' ? value : languageCode) {
+      params.set('languageCode', key === 'languageCode' ? value : languageCode);
+    }
+    if (key === 'proficiencyLevel' ? value : proficiencyLevel) {
+      params.set('proficiencyLevel', key === 'proficiencyLevel' ? value : proficiencyLevel);
+    }
     const suffix = params.toString();
     router.push(suffix ? `/courses?${suffix}` : '/courses');
   };
@@ -110,6 +135,32 @@ export function CoursesPageClient() {
                 {t('courses.search')}
               </button>
             </form>
+          </div>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:max-w-2xl lg:grid-cols-2">
+            <FilterSelect
+              label={t('courses.languageFilter')}
+              value={languageCode}
+              onChange={(value) => pushFilter('languageCode', value)}
+              options={[
+                { value: '', label: t('courses.allLanguages') },
+                { value: 'en', label: t('courses.languages.en') },
+                { value: 'ja', label: t('courses.languages.ja') },
+                { value: 'zh', label: t('courses.languages.zh') },
+                { value: 'ko', label: t('courses.languages.ko') },
+              ]}
+            />
+            <FilterSelect
+              label={t('courses.levelFilter')}
+              value={proficiencyLevel}
+              onChange={(value) => pushFilter('proficiencyLevel', value)}
+              options={[
+                { value: '', label: t('courses.allLevels') },
+                { value: 'B2+/C1', label: 'B2+/C1' },
+                { value: 'JLPT N4', label: 'JLPT N4' },
+                { value: 'HSK4', label: 'HSK4' },
+                { value: 'TOPIK II', label: 'TOPIK II' },
+              ]}
+            />
           </div>
         </div>
       </section>
@@ -161,6 +212,35 @@ export function CoursesPageClient() {
         )}
       </section>
     </main>
+  );
+}
+
+function FilterSelect({
+  label,
+  onChange,
+  options,
+  value,
+}: {
+  label: string;
+  onChange: (value: string) => void;
+  options: Array<{ value: string; label: string }>;
+  value: string;
+}) {
+  return (
+    <label className="grid gap-1.5 text-sm font-semibold">
+      {label}
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-11 rounded-md border bg-background px-3 pr-9 text-sm font-normal outline-none transition focus:border-primary"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
 

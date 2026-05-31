@@ -9,6 +9,7 @@ import {
   CourseActivityCompletionPolicy,
   CourseActivityProgressStatus,
   CourseActivityType,
+  CourseInstructorRole,
   EnrollmentStatus,
   ExamAttemptStatus,
   Prisma,
@@ -138,6 +139,9 @@ export class CourseService {
     description?: string;
     totalDuration?: number;
     coverImageUrl?: string;
+    subject?: string;
+    languageCode?: string;
+    proficiencyLevel?: string;
     aiSettings?: Record<string, unknown>;
     levelId?: string;
     isActive?: boolean;
@@ -150,6 +154,9 @@ export class CourseService {
           description: data.description,
           totalDuration: data.totalDuration,
           coverImageUrl: data.coverImageUrl,
+          subject: data.subject,
+          languageCode: data.languageCode,
+          proficiencyLevel: data.proficiencyLevel,
           aiSettings: this.toJsonInput(data.aiSettings),
           levelId: data.levelId,
           tenantId: data.tenantId,
@@ -432,8 +439,13 @@ export class CourseService {
     courseId: string,
     tenantId: string,
     data: { title: string; description?: string; order?: number },
+    user?: CourseAccessUser,
   ) {
-    await this.findOne(courseId, tenantId, undefined, { includeInactive: true });
+    if (user) {
+      await this.learningAccess.ensureAuthoringCourseAccess(courseId, tenantId, user);
+    } else {
+      await this.findOne(courseId, tenantId, undefined, { includeInactive: true });
+    }
 
     return this.prisma.courseUnit.create({
       data: {
@@ -451,7 +463,11 @@ export class CourseService {
     unitId: string,
     tenantId: string,
     data: { title?: string; description?: string; order?: number },
+    user?: CourseAccessUser,
   ) {
+    if (user) {
+      await this.learningAccess.ensureAuthoringCourseAccess(courseId, tenantId, user);
+    }
     await this.ensureUnit(courseId, unitId, tenantId);
 
     return this.prisma.courseUnit.update({
@@ -460,7 +476,10 @@ export class CourseService {
     });
   }
 
-  async removeUnit(courseId: string, unitId: string, tenantId: string) {
+  async removeUnit(courseId: string, unitId: string, tenantId: string, user?: CourseAccessUser) {
+    if (user) {
+      await this.learningAccess.ensureAuthoringCourseAccess(courseId, tenantId, user);
+    }
     await this.ensureUnit(courseId, unitId, tenantId);
 
     return this.prisma.$transaction(async (tx) => {
@@ -481,11 +500,36 @@ export class CourseService {
     });
   }
 
-  async reorderUnits(courseId: string, tenantId: string, unitIds: string[]) {
-    await this.findOne(courseId, tenantId, undefined, { includeInactive: true });
+  async reorderUnits(
+    courseId: string,
+    tenantId: string,
+    unitIds: string[],
+    user?: CourseAccessUser,
+  ) {
+    if (user) {
+      await this.learningAccess.ensureAuthoringCourseAccess(courseId, tenantId, user);
+    } else {
+      await this.findOne(courseId, tenantId, undefined, { includeInactive: true });
+    }
+    const uniqueUnitIds = [...new Set(unitIds)];
+    if (uniqueUnitIds.length !== unitIds.length) {
+      throw new BadRequestException('Unit IDs must be unique');
+    }
+    const matchingUnits = await this.prisma.courseUnit.findMany({
+      where: {
+        tenantId,
+        courseId,
+        id: { in: uniqueUnitIds },
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+    if (matchingUnits.length !== uniqueUnitIds.length) {
+      throw new BadRequestException('All units must belong to the target course');
+    }
 
     return this.prisma.$transaction(
-      unitIds.map((id, index) =>
+      uniqueUnitIds.map((id, index) =>
         this.prisma.courseUnit.update({
           where: { id_tenantId: { id, tenantId } },
           data: { order: index },
@@ -503,6 +547,9 @@ export class CourseService {
       description?: string;
       totalDuration?: number;
       coverImageUrl?: string | null;
+      subject?: string | null;
+      languageCode?: string | null;
+      proficiencyLevel?: string | null;
       aiSettings?: Record<string, unknown>;
       levelId?: string;
       isActive?: boolean;
@@ -517,6 +564,9 @@ export class CourseService {
       description: data.description,
       totalDuration: data.totalDuration,
       coverImageUrl: data.coverImageUrl,
+      subject: data.subject,
+      languageCode: data.languageCode,
+      proficiencyLevel: data.proficiencyLevel,
       levelId: data.levelId,
       aiSettings: this.toJsonInput(data.aiSettings),
       ...(data.isActive !== undefined ? { isActive: data.isActive } : {}),
@@ -574,6 +624,7 @@ export class CourseService {
     tenantId: string,
     instructorId: string,
     assignedById?: string,
+    role: CourseInstructorRole = CourseInstructorRole.OWNER,
   ) {
     await this.findOne(courseId, tenantId, undefined, { includeInactive: true });
 
@@ -602,12 +653,14 @@ export class CourseService {
       },
       update: {
         assignedById,
+        role,
       },
       create: {
         tenantId,
         courseId,
         instructorId,
         assignedById,
+        role,
       },
       include: {
         instructor: {

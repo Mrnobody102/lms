@@ -24,6 +24,7 @@ import { AdminReportsModule } from './admin-reports/admin-reports.module';
 import { McpModule } from './mcp/mcp.module';
 import { LessonModule } from './lesson/lesson.module';
 import { CourseModule } from './course/course.module';
+import { CourseRunModule } from './course-run/course-run.module';
 import { ProgressModule } from './progress/progress.module';
 import { PracticeModule } from './practice/practice.module';
 import { ExamModule } from './exam/exam.module';
@@ -94,6 +95,7 @@ import { StudentModule } from './student/student.module';
     McpModule,
     LessonModule,
     CourseModule,
+    CourseRunModule,
     ProgressModule,
     PracticeModule,
     ExamModule,

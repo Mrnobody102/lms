@@ -69,11 +69,16 @@ interface PracticeManagerProps {
   courseId?: string;
   /** Show the course selector dropdown (standalone page mode). Defaults to true. */
   showCourseSelector?: boolean;
+  /** Publishing and review queue actions are admin-only in the shared workspace. */
+  canPublish?: boolean;
+  canReview?: boolean;
 }
 
 export function PracticeManager({
   courseId: lockedCourseId,
   showCourseSelector = true,
+  canPublish = true,
+  canReview = true,
 }: PracticeManagerProps) {
   const t = useTranslations('Admin');
   const { data: courseData, isLoading: coursesLoading } = useCourses({ limit: 100 });
@@ -152,11 +157,14 @@ export function PracticeManager({
   const rejectQuestion = useRejectPracticeQuestion();
   const bulkApproveQuestions = useBulkApprovePracticeQuestions();
   const bulkRejectQuestions = useBulkRejectPracticeQuestions();
-  const { data: reviewQueuePageData, isLoading: reviewQueueLoading } = useReviewQueue({
-    ...query,
-    page: reviewQueuePage,
-    limit: PRACTICE_LIST_PAGE_SIZE,
-  });
+  const { data: reviewQueuePageData, isLoading: reviewQueueLoading } = useReviewQueue(
+    {
+      ...query,
+      page: reviewQueuePage,
+      limit: PRACTICE_LIST_PAGE_SIZE,
+    },
+    { enabled: canReview },
+  );
   const questions = questionsPageData?.data ?? [];
   const questionsTotal = questionsPageData?.meta.total ?? questions.length;
   const questionTotalPages = Math.max(questionsPageData?.meta.totalPages ?? 1, 1);
@@ -196,9 +204,9 @@ export function PracticeManager({
         courseId,
         setTitle,
         selectedQuestionCount: selectedQuestionIds.length,
-        isPublished,
+        isPublished: canPublish && isPublished,
       }),
-    [courseId, isPublished, selectedQuestionIds.length, setTitle],
+    [canPublish, courseId, isPublished, selectedQuestionIds.length, setTitle],
   );
 
   useEffect(() => {
@@ -434,7 +442,7 @@ export function PracticeManager({
       unitId: unitId || null,
       title: setTitle.trim(),
       description: setDescription.trim() || null,
-      isPublished,
+      isPublished: canPublish ? isPublished : undefined,
       questionIds: selectedQuestionIds,
     };
 
@@ -445,7 +453,7 @@ export function PracticeManager({
           unitId: unitId || undefined,
           title: setTitle.trim(),
           description: setDescription.trim() || undefined,
-          isPublished,
+          isPublished: canPublish && isPublished,
           questionIds: selectedQuestionIds,
         });
 
@@ -684,25 +692,27 @@ export function PracticeManager({
               >
                 {t('exerciseSetsTab')}
               </button>
-              <button
-                onClick={() => setActiveTab('review-queue')}
-                className={`pb-3 text-sm font-medium transition-colors border-b-2 flex items-center gap-2 ${
-                  activeTab === 'review-queue'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                <Sparkles className="h-4 w-4" />
-                {t('reviewQueue')}
-                {reviewQueueTotal > 0 && (
-                  <Badge
-                    variant="secondary"
-                    className="ml-1 h-5 w-5 p-0 flex items-center justify-center rounded-full"
-                  >
-                    {reviewQueueTotal}
-                  </Badge>
-                )}
-              </button>
+              {canReview && (
+                <button
+                  onClick={() => setActiveTab('review-queue')}
+                  className={`pb-3 text-sm font-medium transition-colors border-b-2 flex items-center gap-2 ${
+                    activeTab === 'review-queue'
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <Sparkles className="h-4 w-4" />
+                  {t('reviewQueue')}
+                  {reviewQueueTotal > 0 && (
+                    <Badge
+                      variant="secondary"
+                      className="ml-1 h-5 w-5 p-0 flex items-center justify-center rounded-full"
+                    >
+                      {reviewQueueTotal}
+                    </Badge>
+                  )}
+                </button>
+              )}
               <button
                 onClick={() => setActiveTab('set-editor')}
                 className={`pb-3 text-sm font-medium transition-colors border-b-2 ${
@@ -1203,36 +1213,40 @@ export function PracticeManager({
                           {t('selectedItemsValue', { count: selectedExerciseSetIds.length })}
                         </span>
                         <div className="flex flex-wrap gap-2">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            className="gap-2"
-                            disabled={exerciseSetBulkPending}
-                            onClick={() => handleBulkExerciseSetPublish(true)}
-                          >
-                            {exerciseSetBulkAction === 'publish' ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <CheckCircle2 className="h-3.5 w-3.5" />
-                            )}
-                            {t('publishSelected')}
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            className="gap-2"
-                            disabled={exerciseSetBulkPending}
-                            onClick={() => handleBulkExerciseSetPublish(false)}
-                          >
-                            {exerciseSetBulkAction === 'unpublish' ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <X className="h-3.5 w-3.5" />
-                            )}
-                            {t('unpublishSelected')}
-                          </Button>
+                          {canPublish && (
+                            <>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                className="gap-2"
+                                disabled={exerciseSetBulkPending}
+                                onClick={() => handleBulkExerciseSetPublish(true)}
+                              >
+                                {exerciseSetBulkAction === 'publish' ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <CheckCircle2 className="h-3.5 w-3.5" />
+                                )}
+                                {t('publishSelected')}
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                className="gap-2"
+                                disabled={exerciseSetBulkPending}
+                                onClick={() => handleBulkExerciseSetPublish(false)}
+                              >
+                                {exerciseSetBulkAction === 'unpublish' ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <X className="h-3.5 w-3.5" />
+                                )}
+                                {t('unpublishSelected')}
+                              </Button>
+                            </>
+                          )}
                           <Button
                             type="button"
                             size="sm"
@@ -1271,22 +1285,24 @@ export function PracticeManager({
                                 <Badge variant={set.isPublished ? 'success' : 'outline'}>
                                   {set.isPublished ? t('published') : t('draft')}
                                 </Badge>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7"
-                                  disabled={updateExerciseSet.isPending}
-                                  onClick={() => handleToggleExerciseSetPublished(set)}
-                                  title={set.isPublished ? t('unpublish') : t('publish')}
-                                  aria-label={set.isPublished ? t('unpublish') : t('publish')}
-                                >
-                                  {set.isPublished ? (
-                                    <X className="h-3.5 w-3.5" />
-                                  ) : (
-                                    <CheckCircle2 className="h-3.5 w-3.5" />
-                                  )}
-                                </Button>
+                                {canPublish && (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    disabled={updateExerciseSet.isPending}
+                                    onClick={() => handleToggleExerciseSetPublished(set)}
+                                    title={set.isPublished ? t('unpublish') : t('publish')}
+                                    aria-label={set.isPublished ? t('unpublish') : t('publish')}
+                                  >
+                                    {set.isPublished ? (
+                                      <X className="h-3.5 w-3.5" />
+                                    ) : (
+                                      <CheckCircle2 className="h-3.5 w-3.5" />
+                                    )}
+                                  </Button>
+                                )}
                                 <Button
                                   type="button"
                                   variant="ghost"
@@ -1571,14 +1587,16 @@ export function PracticeManager({
                     <div className="rounded-lg border bg-muted/20 p-3 text-sm text-muted-foreground">
                       {t('selectedQuestionsValue', { count: selectedQuestionIds.length })}
                     </div>
-                    <label className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={isPublished}
-                        onChange={(event) => setIsPublished(event.target.checked)}
-                      />
-                      {t('publishNow')}
-                    </label>
+                    {canPublish && (
+                      <label className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={isPublished}
+                          onChange={(event) => setIsPublished(event.target.checked)}
+                        />
+                        {t('publishNow')}
+                      </label>
+                    )}
                     <Button type="submit" className="w-full gap-2" disabled={exerciseSetSaving}>
                       {exerciseSetSaving ? (
                         <Loader2 className="h-4 w-4 animate-spin" />

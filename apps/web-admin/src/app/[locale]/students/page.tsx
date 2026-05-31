@@ -152,7 +152,7 @@ export default function AdminStudentsPage() {
   };
 
   return (
-    <AuthGuard>
+    <AuthGuard requiredCapability="student:manage">
       <div className="min-h-screen flex flex-col md:flex-row bg-background">
         <AdminSidebar />
         <main className="min-w-0 flex-1 p-6 md:ml-[var(--admin-sidebar-width)] md:w-[calc(100%-var(--admin-sidebar-width))] md:max-w-[calc(100%-var(--admin-sidebar-width))] lg:p-8">

@@ -33,13 +33,16 @@ export class LessonController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
   @ApiOperation({ summary: 'Tạo bài học mới' })
   create(@Body() createLessonDto: CreateLessonDto, @Request() req: AuthenticatedRequest) {
-    return this.lessonService.create({
-      ...createLessonDto,
-      tenantId: getScopedTenantId(req),
-    });
+    return this.lessonService.create(
+      {
+        ...createLessonDto,
+        tenantId: getScopedTenantId(req),
+      },
+      req.user,
+    );
   }
 
   @Get()
@@ -89,7 +92,7 @@ export class LessonController {
 
   @Patch('reorder')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
   @ApiOperation({ summary: 'Reorder lessons inside a unit' })
   reorderLessons(@Body() dto: ReorderLessonsDto, @Request() req: AuthenticatedRequest) {
     return this.lessonService.reorderLessons(
@@ -97,26 +100,27 @@ export class LessonController {
       dto.unitId,
       getScopedTenantId(req),
       dto.lessonIds,
+      req.user,
     );
   }
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
   @ApiOperation({ summary: 'Cập nhật bài học' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateLessonDto: UpdateLessonDto,
     @Request() req: AuthenticatedRequest,
   ) {
-    return this.lessonService.update(id, getScopedTenantId(req), updateLessonDto);
+    return this.lessonService.update(id, getScopedTenantId(req), updateLessonDto, req.user);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
   @ApiOperation({ summary: 'Xóa bài học' })
   remove(@Param('id', ParseUUIDPipe) id: string, @Request() req: AuthenticatedRequest) {
-    return this.lessonService.remove(id, getScopedTenantId(req));
+    return this.lessonService.remove(id, getScopedTenantId(req), req.user);
   }
 }

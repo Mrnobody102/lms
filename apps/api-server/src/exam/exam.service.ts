@@ -85,7 +85,10 @@ export class ExamService {
     }
   }
 
-  async createExam(tenantId: string, data: CreateExamDto) {
+  async createExam(tenantId: string, data: CreateExamDto, user?: ExamUser) {
+    if (data.courseId && user) {
+      await this.learningAccess.ensureAuthoringCourseAccess(data.courseId, tenantId, user);
+    }
     await this.ensureCourse(tenantId, data.courseId);
     await this.ensureUnit(tenantId, data.courseId, data.unitId);
     await this.validateAudioAssets(tenantId, data.sections);
@@ -110,7 +113,7 @@ export class ExamService {
         description: data.description,
         durationMinutes: data.durationMinutes ?? 30,
         passingScore: data.passingScore,
-        isPublished: data.isPublished ?? false,
+        isPublished: user?.role === Role.INSTRUCTOR ? false : (data.isPublished ?? false),
         sections: {
           create: sections.map((section, sectionIndex) => ({
             tenantId,
@@ -153,6 +156,7 @@ export class ExamService {
       isPublished?: boolean;
       sections?: CreateExamDto['sections'];
     },
+    user?: ExamUser,
   ) {
     const exam = await this.prisma.exam.findFirst({
       where: { id, tenantId, deletedAt: null },
@@ -161,6 +165,9 @@ export class ExamService {
 
     if (!exam) {
       throw new NotFoundException(`Exam with ID ${id} not found`);
+    }
+    if (user) {
+      await this.learningAccess.ensureAuthoringCourseAccess(exam.courseId, tenantId, user);
     }
 
     const nextUnitId =
@@ -173,7 +180,7 @@ export class ExamService {
       description: data.description,
       durationMinutes: data.durationMinutes,
       passingScore: data.passingScore,
-      isPublished: data.isPublished,
+      isPublished: user?.role === Role.INSTRUCTOR ? undefined : data.isPublished,
       unitId: nextUnitId,
     };
 
@@ -245,14 +252,17 @@ export class ExamService {
     });
   }
 
-  async removeExam(id: string, tenantId: string) {
+  async removeExam(id: string, tenantId: string, user?: ExamUser) {
     const exam = await this.prisma.exam.findFirst({
       where: { id, tenantId, deletedAt: null },
-      select: { id: true },
+      select: { id: true, courseId: true },
     });
 
     if (!exam) {
       throw new NotFoundException(`Exam with ID ${id} not found`);
+    }
+    if (user) {
+      await this.learningAccess.ensureAuthoringCourseAccess(exam.courseId, tenantId, user);
     }
 
     return this.prisma.exam.update({

@@ -281,10 +281,11 @@ export function useBulkRejectAiDrafts() {
   });
 }
 
-export function useReviewQueue(params?: PracticeListParams) {
+export function useReviewQueue(params?: PracticeListParams, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['practice-review-queue', params],
     queryFn: () => practiceApi.getReviewQueue(params),
+    enabled: options?.enabled ?? true,
     staleTime: 60 * 1000,
   });
 }

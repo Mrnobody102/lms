@@ -4,7 +4,7 @@
 const webBaseUrl = (process.env.WEB_STUDENT_URL || 'http://127.0.0.1:3100').replace(/\/+$/, '');
 const tenantId = process.env.NEXT_PUBLIC_TENANT_ID || process.env.TENANT_ID || 'trung-tam-demo';
 const email = process.env.STUDENT_EMAIL || 'student@lms.com';
-const password = process.env.STUDENT_PASSWORD || 'admin123';
+const password = process.env.STUDENT_PASSWORD || 'Demo@12345';
 
 function fail(message) {
   console.error(`web-student login smoke failed: ${message}`);

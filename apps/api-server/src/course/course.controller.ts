@@ -56,6 +56,9 @@ export class CourseController {
       description,
       totalDuration,
       coverImageUrl,
+      subject,
+      languageCode,
+      proficiencyLevel,
       aiSettings,
       levelId,
       isActive,
@@ -67,6 +70,9 @@ export class CourseController {
       description,
       totalDuration,
       coverImageUrl,
+      subject,
+      languageCode,
+      proficiencyLevel,
       aiSettings,
       levelId,
       isActive,
@@ -128,6 +134,7 @@ export class CourseController {
       getScopedTenantId(req),
       assignInstructorDto.instructorId,
       req.user.id,
+      assignInstructorDto.role,
     );
   }
 
@@ -145,31 +152,36 @@ export class CourseController {
 
   @Post(':id/units')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
   @ApiOperation({ summary: 'Create a unit/chapter inside a course' })
   createUnit(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() createCourseUnitDto: CreateCourseUnitDto,
     @Request() req: AuthenticatedRequest,
   ) {
-    return this.courseService.createUnit(id, getScopedTenantId(req), createCourseUnitDto);
+    return this.courseService.createUnit(id, getScopedTenantId(req), createCourseUnitDto, req.user);
   }
 
   @Patch(':id/units/reorder')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
   @ApiOperation({ summary: 'Reorder units inside a course' })
   reorderUnits(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() reorderUnitsDto: ReorderUnitsDto,
     @Request() req: AuthenticatedRequest,
   ) {
-    return this.courseService.reorderUnits(id, getScopedTenantId(req), reorderUnitsDto.unitIds);
+    return this.courseService.reorderUnits(
+      id,
+      getScopedTenantId(req),
+      reorderUnitsDto.unitIds,
+      req.user,
+    );
   }
 
   @Patch(':id/units/:unitId')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
   @ApiOperation({ summary: 'Update a unit/chapter inside a course' })
   updateUnit(
     @Param('id', ParseUUIDPipe) id: string,
@@ -177,19 +189,25 @@ export class CourseController {
     @Body() updateCourseUnitDto: UpdateCourseUnitDto,
     @Request() req: AuthenticatedRequest,
   ) {
-    return this.courseService.updateUnit(id, unitId, getScopedTenantId(req), updateCourseUnitDto);
+    return this.courseService.updateUnit(
+      id,
+      unitId,
+      getScopedTenantId(req),
+      updateCourseUnitDto,
+      req.user,
+    );
   }
 
   @Delete(':id/units/:unitId')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
   @ApiOperation({ summary: 'Soft-delete a unit/chapter and keep its lessons ungrouped' })
   removeUnit(
     @Param('id', ParseUUIDPipe) id: string,
     @Param('unitId', ParseUUIDPipe) unitId: string,
     @Request() req: AuthenticatedRequest,
   ) {
-    return this.courseService.removeUnit(id, unitId, getScopedTenantId(req));
+    return this.courseService.removeUnit(id, unitId, getScopedTenantId(req), req.user);
   }
 
   @Post(':id/enrollments')
@@ -293,6 +311,9 @@ export class CourseController {
       description: updateCourseDto.description,
       totalDuration: updateCourseDto.totalDuration,
       coverImageUrl: updateCourseDto.coverImageUrl,
+      subject: updateCourseDto.subject,
+      languageCode: updateCourseDto.languageCode,
+      proficiencyLevel: updateCourseDto.proficiencyLevel,
       aiSettings: updateCourseDto.aiSettings,
       levelId: updateCourseDto.levelId,
       isActive: updateCourseDto.isActive,

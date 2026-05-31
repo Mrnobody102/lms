@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma, Role, RoleplayMode } from '@repo/database';
 import { LearningAccessService } from '../common/services/learning-access.service';
 import { PrismaService } from '../common/services/prisma.service';
@@ -37,7 +42,7 @@ export class RoleplayScenarioService {
         systemPrompt: dto.systemPrompt,
         openingMessage: dto.openingMessage,
         rubric: this.toNullableJsonInput(dto.rubric),
-        isPublished: dto.isPublished ?? false,
+        isPublished: user.role === Role.INSTRUCTOR ? false : (dto.isPublished ?? false),
       },
     });
   }
@@ -133,7 +138,7 @@ export class RoleplayScenarioService {
         systemPrompt: dto.systemPrompt,
         openingMessage: dto.openingMessage,
         rubric: this.toNullableJsonInput(dto.rubric),
-        isPublished: dto.isPublished,
+        isPublished: user.role === Role.INSTRUCTOR ? undefined : dto.isPublished,
       },
     });
   }
@@ -150,6 +155,9 @@ export class RoleplayScenarioService {
   }
 
   async setPublished(tenantId: string, id: string, isPublished: boolean, user: ScenarioActor) {
+    if (user.role === Role.INSTRUCTOR) {
+      throw new ForbiddenException('Instructors cannot publish roleplay scenarios');
+    }
     await this.get(tenantId, id, user);
     return this.prisma.roleplayScenario.update({
       where: { id_tenantId: { id, tenantId } },

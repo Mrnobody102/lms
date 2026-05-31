@@ -105,7 +105,11 @@ export class PracticeService {
       audioMediaAssetId?: string;
       audioReplayLimit?: number;
     },
+    user?: PracticeUser,
   ) {
+    if (user) {
+      await this.learningAccess.ensureAuthoringCourseAccess(data.courseId, tenantId, user);
+    }
     await this.ensureCourse(tenantId, data.courseId);
     await this.ensureUnit(tenantId, data.courseId, data.unitId);
     if (data.audioMediaAssetId) {
@@ -292,6 +296,7 @@ export class PracticeService {
       audioMediaAssetId?: string | null;
       audioReplayLimit?: number | null;
     },
+    user?: PracticeUser,
   ) {
     const question = await this.prisma.practiceQuestion.findFirst({
       where: { id, tenantId, deletedAt: null },
@@ -299,6 +304,9 @@ export class PracticeService {
 
     if (!question) {
       throw new NotFoundException(`Practice question with ID ${id} not found`);
+    }
+    if (user) {
+      await this.learningAccess.ensureAuthoringCourseAccess(question.courseId, tenantId, user);
     }
 
     if (data.audioMediaAssetId) {
@@ -338,14 +346,17 @@ export class PracticeService {
     });
   }
 
-  async removeQuestion(id: string, tenantId: string) {
+  async removeQuestion(id: string, tenantId: string, user?: PracticeUser) {
     const question = await this.prisma.practiceQuestion.findFirst({
       where: { id, tenantId, deletedAt: null },
-      select: { id: true },
+      select: { id: true, courseId: true },
     });
 
     if (!question) {
       throw new NotFoundException(`Practice question with ID ${id} not found`);
+    }
+    if (user) {
+      await this.learningAccess.ensureAuthoringCourseAccess(question.courseId, tenantId, user);
     }
 
     return this.prisma.$transaction(async (tx) => {
@@ -360,7 +371,7 @@ export class PracticeService {
     });
   }
 
-  async listQuestions(tenantId: string, query: PracticeListQuery) {
+  async listQuestions(tenantId: string, query: PracticeListQuery, user?: PracticeUser) {
     const skills = this.parseSkillFilter(query.skill);
     const { page, limit, skip } = this.getPagination(query);
     const search = query.search?.trim();
@@ -373,6 +384,11 @@ export class PracticeService {
       reviewStatus: 'APPROVED',
       deletedAt: null,
     };
+    if (user?.role === Role.INSTRUCTOR) {
+      where.course = this.learningAccess.courseWhere(tenantId, user, query.courseId, {
+        includeInactive: true,
+      });
+    }
 
     if (search) {
       where.OR = [
@@ -404,7 +420,11 @@ export class PracticeService {
       isPublished?: boolean;
       questionIds: string[];
     },
+    user?: PracticeUser,
   ) {
+    if (user) {
+      await this.learningAccess.ensureAuthoringCourseAccess(data.courseId, tenantId, user);
+    }
     await this.ensureCourse(tenantId, data.courseId);
     await this.ensureUnit(tenantId, data.courseId, data.unitId);
     const questions = await this.findValidQuestions(tenantId, data.courseId, data.questionIds);
@@ -417,7 +437,7 @@ export class PracticeService {
           unitId: data.unitId,
           title: data.title,
           description: data.description,
-          isPublished: data.isPublished ?? false,
+          isPublished: user?.role === Role.INSTRUCTOR ? false : (data.isPublished ?? false),
         },
       });
 
@@ -447,6 +467,7 @@ export class PracticeService {
       isPublished?: boolean;
       questionIds?: string[];
     },
+    user?: PracticeUser,
   ) {
     const exerciseSet = await this.prisma.practiceExerciseSet.findFirst({
       where: { id, tenantId, deletedAt: null },
@@ -455,6 +476,9 @@ export class PracticeService {
 
     if (!exerciseSet) {
       throw new NotFoundException(`Practice exercise set with ID ${id} not found`);
+    }
+    if (user) {
+      await this.learningAccess.ensureAuthoringCourseAccess(exerciseSet.courseId, tenantId, user);
     }
 
     const nextUnitId =
@@ -483,7 +507,7 @@ export class PracticeService {
         data: {
           title: data.title,
           description: data.description,
-          isPublished: data.isPublished,
+          isPublished: user?.role === Role.INSTRUCTOR ? undefined : data.isPublished,
           unitId: nextUnitId,
         },
       });
@@ -508,14 +532,17 @@ export class PracticeService {
     });
   }
 
-  async removeExerciseSet(id: string, tenantId: string) {
+  async removeExerciseSet(id: string, tenantId: string, user?: PracticeUser) {
     const exerciseSet = await this.prisma.practiceExerciseSet.findFirst({
       where: { id, tenantId, deletedAt: null },
-      select: { id: true },
+      select: { id: true, courseId: true },
     });
 
     if (!exerciseSet) {
       throw new NotFoundException(`Practice exercise set with ID ${id} not found`);
+    }
+    if (user) {
+      await this.learningAccess.ensureAuthoringCourseAccess(exerciseSet.courseId, tenantId, user);
     }
 
     return this.prisma.practiceExerciseSet.update({
@@ -543,6 +570,10 @@ export class PracticeService {
           OR: [{ courseId: null }, { course: this.learningAccess.courseWhere(tenantId, user) }],
         });
       }
+    } else if (user.role === Role.INSTRUCTOR) {
+      where.course = this.learningAccess.courseWhere(tenantId, user, query.courseId, {
+        includeInactive: true,
+      });
     } else if (query.status && query.status !== 'all') {
       where.isPublished = query.status === 'published';
     }
@@ -736,7 +767,9 @@ export class PracticeService {
       throw new NotFoundException(`Practice exercise set with ID ${id} not found`);
     }
 
-    if (exerciseSet.courseId) {
+    if (user.role === Role.INSTRUCTOR) {
+      await this.learningAccess.ensureAuthoringCourseAccess(exerciseSet.courseId, tenantId, user);
+    } else if (exerciseSet.courseId) {
       await this.learningAccess.ensureCourseAccess(exerciseSet.courseId, tenantId, user);
     }
     return user.role === Role.STUDENT ? this.hideAnswers(exerciseSet) : exerciseSet;

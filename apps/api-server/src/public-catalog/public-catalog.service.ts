@@ -34,6 +34,8 @@ export interface PublicCourseSummary {
   slug: string | null;
   description: string | null;
   coverImageUrl: string | null;
+  languageCode: string | null;
+  proficiencyLevel: string | null;
   totalDuration: number;
   level: PublicCourseLevel | null;
   lessonCount: number;
@@ -61,6 +63,8 @@ const publicCourseSummarySelect = {
   slug: true,
   description: true,
   coverImageUrl: true,
+  languageCode: true,
+  proficiencyLevel: true,
   totalDuration: true,
   level: {
     select: {
@@ -143,6 +147,9 @@ export class PublicCatalogService {
       isActive: true,
       deletedAt: null,
       ...(search ? { title: { contains: search, mode: 'insensitive' } } : {}),
+      ...(query.languageCode ? { languageCode: query.languageCode } : {}),
+      ...(query.proficiencyLevel ? { proficiencyLevel: query.proficiencyLevel } : {}),
+      ...(query.programId ? { level: { programId: query.programId } } : {}),
     };
 
     const [courses, total] = await Promise.all([
@@ -193,6 +200,8 @@ function mapPublicCourseSummary(course: PublicCourseSummaryRow): PublicCourseSum
     slug: course.slug,
     description: course.description,
     coverImageUrl: course.coverImageUrl,
+    languageCode: course.languageCode,
+    proficiencyLevel: course.proficiencyLevel,
     totalDuration: course.totalDuration,
     level: course.level,
     lessonCount: course._count.lessons,

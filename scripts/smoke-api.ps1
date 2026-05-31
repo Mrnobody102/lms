@@ -8,7 +8,7 @@ $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $baseUrl = 'http://127.0.0.1:4000/api'
 $tenantHint = 'trung-tam-demo'
 $studentEmail = 'student@lms.com'
-$studentPassword = 'admin123'
+$studentPassword = 'Demo@12345'
 $apiProcess = $null
 
 function Get-PowerShellExecutable {

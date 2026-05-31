@@ -57,6 +57,30 @@ export class CreateCourseDto {
   @IsOptional()
   coverImageUrl?: string;
 
+  @ApiPropertyOptional({ example: 'language', description: 'Course domain or subject' })
+  @IsString()
+  @IsOptional()
+  @MaxLength(120)
+  subject?: string;
+
+  @ApiPropertyOptional({
+    example: 'ja',
+    description: 'ISO-like language code for language courses',
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(16)
+  languageCode?: string;
+
+  @ApiPropertyOptional({
+    example: 'JLPT N4',
+    description: 'External or internal proficiency level',
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(80)
+  proficiencyLevel?: string;
+
   @ApiPropertyOptional({
     description: 'Temporary AI settings stored per course until provider integration is ready',
     type: Object,

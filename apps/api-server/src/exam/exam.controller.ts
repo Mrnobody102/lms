@@ -33,30 +33,30 @@ export class ExamController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
   @ApiOperation({ summary: 'Create an exam template with sections and questions' })
   createExam(@Body() dto: CreateExamDto, @Request() req: AuthenticatedRequest) {
-    return this.examService.createExam(getScopedTenantId(req), dto);
+    return this.examService.createExam(getScopedTenantId(req), dto, req.user);
   }
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
   @ApiOperation({ summary: 'Update an exam template' })
   updateExam(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateExamDto,
     @Request() req: AuthenticatedRequest,
   ) {
-    return this.examService.updateExam(id, getScopedTenantId(req), dto);
+    return this.examService.updateExam(id, getScopedTenantId(req), dto, req.user);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
   @ApiOperation({ summary: 'Delete an exam template' })
   deleteExam(@Param('id', ParseUUIDPipe) id: string, @Request() req: AuthenticatedRequest) {
-    return this.examService.removeExam(id, getScopedTenantId(req));
+    return this.examService.removeExam(id, getScopedTenantId(req), req.user);
   }
 
   @Get()

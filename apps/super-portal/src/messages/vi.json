@@ -10,6 +10,19 @@
       "inactive": "Đã khóa",
       "customDomains": "Tên miền riêng"
     },
+    "sidebar": {
+      "title": "Super Portal",
+      "subtitle": "Điều hành SaaS LMS",
+      "overview": "Tổng quan",
+      "tenants": "Tenants",
+      "billing": "Gói & Billing",
+      "usage": "Dung lượng & Usage",
+      "domains": "Tên miền",
+      "flags": "Feature flags",
+      "incidents": "Sự cố",
+      "audit": "Audit logs",
+      "infrastructure": "Hạ tầng"
+    },
     "themeToggle": "Đổi giao diện",
     "accountAvatar": "Ảnh đại diện tài khoản",
     "footer": {

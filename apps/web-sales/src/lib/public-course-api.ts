@@ -20,6 +20,8 @@ export interface PublicCourseSummary {
   slug: string | null;
   description: string | null;
   coverImageUrl: string | null;
+  languageCode?: string | null;
+  proficiencyLevel?: string | null;
   totalDuration: number;
   level: {
     id: string;
@@ -52,6 +54,9 @@ export interface PublicCourseListParams {
   page?: number;
   limit?: number;
   search?: string;
+  languageCode?: string;
+  proficiencyLevel?: string;
+  programId?: string;
 }
 
 export async function getPublicCourses(params?: PublicCourseListParams) {
