@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PracticeQuestionType } from '@repo/database';
 
-export type AiProviderMode = 'off' | 'gateway';
+export type AiProviderMode = 'off' | 'gateway' | 'groq';
 
 export interface AiGatewayRuntimeConfig {
   provider: AiProviderMode;
@@ -37,9 +37,9 @@ export interface AiPracticeEvaluationResponse {
 export class AiGatewayService {
   getRuntimeConfig(env: NodeJS.ProcessEnv = process.env): AiGatewayRuntimeConfig {
     const provider = normalizeProvider(env.AI_PROVIDER);
-    const endpointUrl = normalizeOptionalString(env.AI_ENDPOINT_URL);
-    const apiKey = normalizeOptionalString(env.AI_API_KEY);
-    const model = normalizeOptionalString(env.AI_MODEL);
+    const endpointUrl = resolveEndpointUrl(provider, env);
+    const apiKey = resolveApiKey(provider, env);
+    const model = resolveModel(provider, env);
     const timeoutMs = normalizeNumber(env.AI_TIMEOUT_MS, 15000);
     const maxOutputTokens = normalizeNumber(env.AI_MAX_OUTPUT_TOKENS, 512);
     const temperature = normalizeNumber(env.AI_TEMPERATURE, 0.2);
@@ -52,7 +52,8 @@ export class AiGatewayService {
       timeoutMs,
       maxOutputTokens,
       temperature,
-      enabled: provider === 'gateway' && Boolean(endpointUrl),
+      enabled:
+        provider === 'gateway' ? Boolean(endpointUrl) : provider === 'groq' && Boolean(apiKey),
     };
   }
 
@@ -64,27 +65,30 @@ export class AiGatewayService {
       return null;
     }
 
-    const payload = {
-      task: 'practice-evaluation',
-      model: config.model,
-      temperature: config.temperature,
-      maxOutputTokens: config.maxOutputTokens,
-      input: {
-        questionType: input.type,
-        questionPrompt: input.questionPrompt,
-        studentAnswer: input.answer,
-        referenceAnswer: input.correctAnswer,
-        skillTags: input.skillTags ?? [],
-        courseTitle: input.courseTitle,
-        courseAiSettings: input.courseAiSettings,
-      },
-      outputContract: {
-        matched: 'boolean',
-        transcript: 'string',
-        summary: 'string',
-        confidence: 'number from 0 to 1',
-      },
-    };
+    const payload =
+      config.provider === 'groq'
+        ? buildGroqPracticeEvaluationPayload(input, config)
+        : {
+            task: 'practice-evaluation',
+            model: config.model,
+            temperature: config.temperature,
+            maxOutputTokens: config.maxOutputTokens,
+            input: {
+              questionType: input.type,
+              questionPrompt: input.questionPrompt,
+              studentAnswer: input.answer,
+              referenceAnswer: input.correctAnswer,
+              skillTags: input.skillTags ?? [],
+              courseTitle: input.courseTitle,
+              courseAiSettings: input.courseAiSettings,
+            },
+            outputContract: {
+              matched: 'boolean',
+              transcript: 'string',
+              summary: 'string',
+              confidence: 'number from 0 to 1',
+            },
+          };
 
     const response = await this.postJson(config, payload);
     return normalizeGatewayResponse(response, config);
@@ -123,7 +127,34 @@ export class AiGatewayService {
 }
 
 function normalizeProvider(value: string | undefined): AiProviderMode {
-  return value === 'gateway' ? 'gateway' : 'off';
+  if (value === 'gateway') return 'gateway';
+  if (value === 'groq') return 'groq';
+  return 'off';
+}
+
+function resolveEndpointUrl(provider: AiProviderMode, env: NodeJS.ProcessEnv) {
+  if (provider === 'groq') {
+    const baseUrl = normalizeOptionalString(env.GROQ_BASE_URL) ?? 'https://api.groq.com/openai/v1';
+    return `${baseUrl.replace(/\/+$/, '')}/chat/completions`;
+  }
+
+  return normalizeOptionalString(env.AI_ENDPOINT_URL);
+}
+
+function resolveApiKey(provider: AiProviderMode, env: NodeJS.ProcessEnv) {
+  if (provider === 'groq') {
+    return normalizeOptionalString(env.GROQ_API_KEY) ?? normalizeOptionalString(env.AI_API_KEY);
+  }
+
+  return normalizeOptionalString(env.AI_API_KEY);
+}
+
+function resolveModel(provider: AiProviderMode, env: NodeJS.ProcessEnv) {
+  if (provider === 'groq') {
+    return normalizeOptionalString(env.GROQ_MODEL) ?? normalizeOptionalString(env.AI_MODEL);
+  }
+
+  return normalizeOptionalString(env.AI_MODEL);
 }
 
 function normalizeOptionalString(value: string | undefined) {
@@ -134,6 +165,43 @@ function normalizeOptionalString(value: string | undefined) {
 function normalizeNumber(value: string | undefined, fallback: number) {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function buildGroqPracticeEvaluationPayload(
+  input: AiPracticeEvaluationRequest,
+  config: AiGatewayRuntimeConfig,
+) {
+  return {
+    model: config.model ?? 'llama-3.3-70b-versatile',
+    temperature: config.temperature,
+    max_completion_tokens: config.maxOutputTokens,
+    response_format: { type: 'json_object' },
+    messages: [
+      {
+        role: 'system',
+        content: `You are an LMS practice evaluator.
+Return valid JSON only with this shape:
+{
+  "matched": true,
+  "transcript": "student answer transcript",
+  "summary": "short Vietnamese feedback",
+  "confidence": 0.0
+}`,
+      },
+      {
+        role: 'user',
+        content: JSON.stringify({
+          questionType: input.type,
+          questionPrompt: input.questionPrompt,
+          studentAnswer: input.answer,
+          referenceAnswer: input.correctAnswer,
+          skillTags: input.skillTags ?? [],
+          courseTitle: input.courseTitle,
+          courseAiSettings: input.courseAiSettings,
+        }),
+      },
+    ],
+  };
 }
 
 function normalizeGatewayResponse(

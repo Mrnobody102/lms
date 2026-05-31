@@ -91,14 +91,17 @@ export const envSchema = z
     // Redis
     REDIS_URL: redisUrlSchema.optional(),
 
-    // AI gateway. Keep disabled until an endpoint/API key is configured.
-    AI_PROVIDER: z.enum(['off', 'gateway']).default('off'),
+    // AI. Keep disabled until a provider/API key is configured.
+    AI_PROVIDER: z.enum(['off', 'gateway', 'groq']).default('off'),
     AI_ENDPOINT_URL: z.string().url().optional(),
     AI_API_KEY: z.string().optional(),
     AI_MODEL: z.string().optional(),
     AI_TIMEOUT_MS: z.coerce.number().min(1000).max(120000).default(15000),
     AI_MAX_OUTPUT_TOKENS: z.coerce.number().min(1).max(8192).default(512),
     AI_TEMPERATURE: z.coerce.number().min(0).max(2).default(0.2),
+    GROQ_API_KEY: z.string().optional(),
+    GROQ_BASE_URL: z.string().url().optional(),
+    GROQ_MODEL: z.string().optional(),
 
     // MCP
     MCP_ENABLED: booleanEnvSchema,
@@ -157,6 +160,14 @@ export const envSchema = z
         code: z.ZodIssueCode.custom,
         path: ['AI_ENDPOINT_URL'],
         message: 'AI_ENDPOINT_URL is required when AI_PROVIDER=gateway',
+      });
+    }
+
+    if (env.AI_PROVIDER === 'groq' && !env.GROQ_API_KEY && !env.AI_API_KEY) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['GROQ_API_KEY'],
+        message: 'GROQ_API_KEY or AI_API_KEY is required when AI_PROVIDER=groq',
       });
     }
 

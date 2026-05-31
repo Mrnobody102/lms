@@ -48,6 +48,28 @@ describe('AiGatewayService', () => {
     });
   });
 
+  it('should enable Groq runtime config from Groq env values', () => {
+    const service = new AiGatewayService();
+
+    expect(
+      service.getRuntimeConfig({
+        AI_PROVIDER: 'groq',
+        GROQ_API_KEY: 'groq-secret-key',
+        GROQ_MODEL: 'llama-3.3-70b-versatile',
+        GROQ_BASE_URL: 'https://api.groq.com/openai/v1/',
+      } as NodeJS.ProcessEnv),
+    ).toEqual({
+      provider: 'groq',
+      endpointUrl: 'https://api.groq.com/openai/v1/chat/completions',
+      apiKey: 'groq-secret-key',
+      model: 'llama-3.3-70b-versatile',
+      timeoutMs: 15000,
+      maxOutputTokens: 512,
+      temperature: 0.2,
+      enabled: true,
+    });
+  });
+
   it('should normalize OpenAI-style gateway payloads', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -120,5 +142,51 @@ describe('AiGatewayService', () => {
         correctAnswer: 'Hello',
       }),
     ).resolves.toBeNull();
+  });
+
+  it('should send OpenAI-compatible practice evaluation requests to Groq', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [
+          {
+            message: {
+              content:
+                '{"matched":true,"transcript":"Hello","summary":"Câu trả lời đúng.","confidence":0.92}',
+            },
+          },
+        ],
+      }),
+    });
+
+    vi.stubGlobal('fetch', fetchMock);
+    vi.stubEnv('AI_PROVIDER', 'groq');
+    vi.stubEnv('GROQ_API_KEY', 'groq-secret-key');
+    vi.stubEnv('GROQ_MODEL', 'llama-3.3-70b-versatile');
+
+    const service = new AiGatewayService();
+
+    await expect(
+      service.evaluatePracticeAnswer({
+        type: PracticeQuestionType.AI_EVALUATED_TEXT,
+        answer: 'Hello',
+        correctAnswer: 'Hello',
+        questionPrompt: 'Say hello',
+      }),
+    ).resolves.toEqual({
+      matched: true,
+      transcript: 'Hello',
+      summary: 'Câu trả lời đúng.',
+      confidence: 0.92,
+      provider: 'groq',
+      model: 'llama-3.3-70b-versatile',
+    });
+
+    const requestInit = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    const body = JSON.parse(String(requestInit.body)) as Record<string, unknown>;
+    expect(body).toMatchObject({
+      model: 'llama-3.3-70b-versatile',
+      response_format: { type: 'json_object' },
+    });
   });
 });

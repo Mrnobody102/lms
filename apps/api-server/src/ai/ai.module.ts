@@ -5,6 +5,7 @@ import { AiController } from './ai.controller';
 import { AiService } from './ai.service';
 import { AI_PROVIDER_TOKEN } from './interfaces/ai-provider.interface';
 import { GeminiProvider } from './providers/gemini.provider';
+import { GroqProvider } from './providers/groq.provider';
 
 @Module({
   imports: [SkillModule],
@@ -14,7 +15,7 @@ import { GeminiProvider } from './providers/gemini.provider';
     AiService,
     {
       provide: AI_PROVIDER_TOKEN,
-      useClass: GeminiProvider,
+      useClass: process.env.AI_PROVIDER === 'groq' ? GroqProvider : GeminiProvider,
     },
   ],
   exports: [AiGatewayService, AiService],

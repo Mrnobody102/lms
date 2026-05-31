@@ -29,6 +29,9 @@
     "AI_TIMEOUT_MS",
     "AI_MAX_OUTPUT_TOKENS",
     "AI_TEMPERATURE",
+    "GROQ_API_KEY",
+    "GROQ_BASE_URL",
+    "GROQ_MODEL",
     "GOOGLE_GENERATIVE_AI_API_KEY",
     "npm_package_version"
   ],
