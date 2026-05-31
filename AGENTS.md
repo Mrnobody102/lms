@@ -17,6 +17,7 @@ Every AI agent MUST follow these "Hard Rules" to maintain monorepo integrity:
 5.  **Proxy vs Middleware**: Use `proxy.ts` for all Next.js portals. `middleware.ts` is deprecated.
 6.  **Strict Linting**: Follow `unused-imports` and `import-sorting` rules. Run `pnpm lint` before finishing.
 7.  **i18n Sync**: Always update both `vi.json` and `en.json` when adding UI text.
+8.  **Explicit Git Commits Only**: Do NOT automatically `git commit` or `git push` under any circumstances unless explicitly commanded by the human developer.
 
 ## 📁 Rule System Structure
 
