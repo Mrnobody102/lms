@@ -158,6 +158,7 @@
       "audioRequired": "Hãy chọn file audio trước.",
       "audioSendError": "Không thể gửi audio.",
       "audioUploadError": "Không thể tải audio lên.",
+      "sendMessage": "Gửi tin nhắn",
       "messagePlaceholder": "Nhập tin nhắn...",
       "mode": {
         "TEXT": "Text",

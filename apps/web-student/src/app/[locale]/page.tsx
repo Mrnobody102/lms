@@ -4,20 +4,15 @@ import { useLocale, useTranslations } from 'next-intl';
 import { ThemeToggle, LanguageToggle } from '@repo/ui';
 import { Link } from '../../navigation';
 import { serverApi } from '../../lib/server-api';
-import LearningDashboard from '../../components/dashboard/learning-dashboard';
+import { StudentHomeClient } from './student-home-client';
 
 export default async function Home() {
   const cookieStore = await cookies();
   const hasSession = Boolean(cookieStore.get('access_token')?.value);
 
-  if (hasSession) {
-    const data = await serverApi.getStudentToday();
-    if (data) {
-      return <LearningDashboard data={data} />;
-    }
-  }
+  const data = hasSession ? await serverApi.getStudentToday() : null;
 
-  return <GuestStudentHome />;
+  return <StudentHomeClient guest={<GuestStudentHome />} initialData={data} />;
 }
 
 function GuestStudentHome() {

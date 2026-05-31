@@ -158,6 +158,7 @@
       "audioRequired": "Choose an audio file first.",
       "audioSendError": "Could not send audio message.",
       "audioUploadError": "Could not upload audio.",
+      "sendMessage": "Send message",
       "messagePlaceholder": "Type your message...",
       "mode": {
         "TEXT": "Text",

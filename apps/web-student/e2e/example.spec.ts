@@ -70,6 +70,20 @@ async function installStudentApiMocks(page: Page) {
     'access-control-allow-methods': 'GET,POST,PATCH,OPTIONS',
     'access-control-allow-headers': 'content-type,x-tenant-id,x-csrf-token',
   };
+  const sessionCookie =
+    'access_token=e2e-student-token; Path=/; HttpOnly; SameSite=Lax; Max-Age=3600';
+
+  const setSessionCookie = async () => {
+    await page.context().addCookies([
+      {
+        name: 'access_token',
+        value: 'e2e-student-token',
+        url: 'http://127.0.0.1:3100',
+        httpOnly: true,
+        sameSite: 'Lax',
+      },
+    ]);
+  };
 
   const buildAiFeedback = () => ({
     status: 'AUTO_REVIEWED',
@@ -150,11 +164,11 @@ async function installStudentApiMocks(page: Page) {
     const path = url.pathname;
     const method = request.method();
 
-    const json = (status: number, body: unknown) =>
+    const json = (status: number, body: unknown, extraHeaders: Record<string, string> = {}) =>
       route.fulfill({
         status,
         contentType: 'application/json',
-        headers: corsHeaders,
+        headers: { ...corsHeaders, ...extraHeaders },
         body: JSON.stringify(body),
       });
 
@@ -174,12 +188,14 @@ async function installStudentApiMocks(page: Page) {
 
     if (path.endsWith('/api/auth/register') && method === 'POST') {
       isLoggedIn = true;
-      return json(201, { user: studentUser });
+      await setSessionCookie();
+      return json(201, { user: studentUser }, { 'set-cookie': sessionCookie });
     }
 
     if (path.endsWith('/api/auth/login') && method === 'POST') {
       isLoggedIn = true;
-      return json(200, { user: studentUser });
+      await setSessionCookie();
+      return json(200, { user: studentUser }, { 'set-cookie': sessionCookie });
     }
 
     if (path.endsWith('/api/auth/refresh') && method === 'POST') {
@@ -190,18 +206,26 @@ async function installStudentApiMocks(page: Page) {
         });
       }
 
-      return json(200, { user: studentUser });
+      await setSessionCookie();
+      return json(200, { user: studentUser }, { 'set-cookie': sessionCookie });
     }
 
     if (path.endsWith('/api/auth/logout') && method === 'POST') {
       isLoggedIn = false;
       progress = [];
       activities = [];
+      await page.context().clearCookies({ name: 'access_token' });
 
-      return json(200, {
-        success: true,
-        message: 'Logged out successfully',
-      });
+      return json(
+        200,
+        {
+          success: true,
+          message: 'Logged out successfully',
+        },
+        {
+          'set-cookie': 'access_token=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0',
+        },
+      );
     }
 
     if (path.endsWith('/api/courses') && method === 'GET') {

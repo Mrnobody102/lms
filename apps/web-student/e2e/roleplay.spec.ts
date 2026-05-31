@@ -43,6 +43,20 @@ async function installRoleplayApiMocks(page: Page) {
     'access-control-allow-methods': 'GET,POST,OPTIONS',
     'access-control-allow-headers': 'content-type,x-tenant-id,x-csrf-token',
   };
+  const sessionCookie =
+    'access_token=e2e-student-token; Path=/; HttpOnly; SameSite=Lax; Max-Age=3600';
+
+  const setSessionCookie = async () => {
+    await page.context().addCookies([
+      {
+        name: 'access_token',
+        value: 'e2e-student-token',
+        url: 'http://127.0.0.1:3100',
+        httpOnly: true,
+        sameSite: 'Lax',
+      },
+    ]);
+  };
 
   await page.route('**/api/**', async (route) => {
     const request = route.request();
@@ -50,11 +64,11 @@ async function installRoleplayApiMocks(page: Page) {
     const path = url.pathname;
     const method = request.method();
 
-    const json = (status: number, body: unknown) =>
+    const json = (status: number, body: unknown, extraHeaders: Record<string, string> = {}) =>
       route.fulfill({
         status,
         contentType: 'application/json',
-        headers: corsHeaders,
+        headers: { ...corsHeaders, ...extraHeaders },
         body: JSON.stringify(body),
       });
 
@@ -71,7 +85,20 @@ async function installRoleplayApiMocks(page: Page) {
 
     if (path.endsWith('/api/auth/login') && method === 'POST') {
       isLoggedIn = true;
-      return json(200, { user: studentUser });
+      await setSessionCookie();
+      return json(200, { user: studentUser }, { 'set-cookie': sessionCookie });
+    }
+
+    if (path.endsWith('/api/auth/refresh') && method === 'POST') {
+      if (!isLoggedIn) {
+        return json(401, {
+          statusCode: 401,
+          message: 'Invalid or missing authentication token',
+        });
+      }
+
+      await setSessionCookie();
+      return json(200, { user: studentUser }, { 'set-cookie': sessionCookie });
     }
 
     if (path.endsWith('/api/notifications') && method === 'GET') {
@@ -233,8 +260,10 @@ test('student can view roleplay dashboard and interact with chat', async ({ page
   await expect(page.getByRole('heading', { name: 'Roleplay Session' })).toBeVisible();
 
   // Send message
-  await page.getByPlaceholder('Type your message...').fill('Hi, I am here for the interview.');
-  await page.locator('form button[type="submit"]').click();
+  const messageInput = page.getByPlaceholder('Type your message...');
+  await messageInput.fill('Hi, I am here for the interview.');
+  await expect(page.getByRole('button', { name: 'Send message' })).toBeEnabled();
+  await messageInput.press('Enter');
 
   // Check AI response
   await expect(

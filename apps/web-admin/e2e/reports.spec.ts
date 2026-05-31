@@ -144,10 +144,9 @@ test('admin can view reports dashboard and see time-series charts', async ({ pag
   await expect(page.getByRole('heading', { name: 'Learning activity' })).toBeVisible();
 
   // Verify Cohort Filter
-  const cohortSelect = page.locator('select').first();
-  await cohortSelect.waitFor();
-  await expect(cohortSelect).toBeVisible();
-  await cohortSelect.selectOption({ label: 'Cohort Alpha' });
+  await page.getByRole('button', { name: 'Cohort:' }).click();
+  await page.getByRole('option', { name: 'Cohort Alpha' }).click();
+  await expect(page.getByRole('button', { name: /Cohort Alpha/ })).toBeVisible();
 
   // Verify Program Rows
   await expect(page.getByText('Foundations of UI')).toBeVisible();

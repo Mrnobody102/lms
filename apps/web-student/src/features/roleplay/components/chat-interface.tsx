@@ -41,9 +41,14 @@ export function ChatInterface({ sessionId }: { sessionId: string }) {
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isSending) return;
-    sendMessage({ id: sessionId, content: input });
-    setInput('');
+    const message = input.trim();
+    if (!message || isSending) return;
+    sendMessage(
+      { id: sessionId, content: message },
+      {
+        onSuccess: () => setInput(''),
+      },
+    );
   };
 
   const isCompleted = session.status === 'COMPLETED';
@@ -177,7 +182,12 @@ export function ChatInterface({ sessionId }: { sessionId: string }) {
               disabled={isSending || isCompleting}
               className="flex-1"
             />
-            <Button type="submit" disabled={!input.trim() || isSending || isCompleting} size="icon">
+            <Button
+              type="submit"
+              aria-label={t('roleplay.sendMessage')}
+              disabled={!input.trim() || isSending || isCompleting}
+              size="icon"
+            >
               <Send className="w-4 h-4" />
             </Button>
           </form>

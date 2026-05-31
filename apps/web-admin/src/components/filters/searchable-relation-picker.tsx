@@ -45,6 +45,8 @@ export function SearchableRelationPicker({
     <div className={`relative ${className ?? ''}`}>
       <button
         type="button"
+        aria-expanded={open}
+        aria-haspopup="listbox"
         onClick={() => setOpen((current) => !current)}
         onBlur={(event) => {
           if (!event.currentTarget.parentElement?.contains(event.relatedTarget as Node)) {
@@ -71,7 +73,7 @@ export function SearchableRelationPicker({
               autoFocus
             />
           </div>
-          <div className="max-h-56 overflow-y-auto">
+          <div className="max-h-56 overflow-y-auto" role="listbox">
             {filteredOptions.length === 0 ? (
               <p className="px-2 py-1.5 text-sm text-muted-foreground">{emptyMessage}</p>
             ) : (
@@ -79,6 +81,8 @@ export function SearchableRelationPicker({
                 <button
                   key={option.value}
                   type="button"
+                  role="option"
+                  aria-selected={value === option.value}
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={() => {
                     onChange(option.value);
