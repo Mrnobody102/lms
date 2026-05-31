@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import {
   ArrowRight,
@@ -61,6 +61,34 @@ export default function CourseDetailPage() {
     { courseId },
     canLoadProtectedCourse,
   );
+  const coverImageUrl = course?.coverImageUrl?.trim() ?? '';
+  const [isCoverImageReady, setIsCoverImageReady] = useState(false);
+
+  useEffect(() => {
+    if (!coverImageUrl) {
+      setIsCoverImageReady(false);
+      return;
+    }
+
+    let isMounted = true;
+    const image = new window.Image();
+    image.onload = () => {
+      if (isMounted) {
+        setIsCoverImageReady(true);
+      }
+    };
+    image.onerror = () => {
+      if (isMounted) {
+        setIsCoverImageReady(false);
+      }
+    };
+    image.src = coverImageUrl;
+
+    return () => {
+      isMounted = false;
+    };
+  }, [coverImageUrl]);
+
   const isLoading =
     !isInitialized ||
     (canLoadProtectedCourse &&
@@ -125,14 +153,12 @@ export default function CourseDetailPage() {
   const publishedExams = exams.filter((item) => item.isPublished);
   const practiceSet = publishedPracticeSets[0] ?? null;
   const exam = publishedExams[0] ?? null;
-  const coverImageUrl = course.coverImageUrl?.trim();
 
   return (
     <div className="min-h-screen bg-background font-sans">
       <StudentNav showLinks />
 
-      {/* Cover Image Banner */}
-      {coverImageUrl && (
+      {coverImageUrl && isCoverImageReady && (
         <div
           aria-label={course.title}
           role="img"
