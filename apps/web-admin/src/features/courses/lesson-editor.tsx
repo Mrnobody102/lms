@@ -345,12 +345,12 @@ export function LessonEditor({
                 </Label>
                 {type === 'text' && (
                   <span className="text-[10px] text-muted-foreground italic">
-                    (Tự động tính ~150 từ/phút)
+                    {t('textDurationHint')}
                   </span>
                 )}
                 {type === 'video' && (
                   <span className="text-[10px] text-muted-foreground italic">
-                    (Khuyến nghị: Lấy từ Video)
+                    {t('videoDurationHint')}
                   </span>
                 )}
               </div>
@@ -366,7 +366,7 @@ export function LessonEditor({
                 />
               </div>
               {duration <= 0 && (
-                <p className="text-[10px] text-destructive">Thời lượng phải lớn hơn 0 phút.</p>
+                <p className="text-[10px] text-destructive">{t('durationPositiveError')}</p>
               )}
             </div>
 

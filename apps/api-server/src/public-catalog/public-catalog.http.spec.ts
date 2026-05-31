@@ -1,4 +1,5 @@
 import { type INestApplication, ValidationPipe } from '@nestjs/common';
+import { CacheModule } from '@nestjs/cache-manager';
 import { Test } from '@nestjs/testing';
 import type { NextFunction, Request, Response } from 'express';
 import request from 'supertest';
@@ -75,6 +76,7 @@ describe('Public catalog HTTP flow', () => {
     };
 
     const moduleRef = await Test.createTestingModule({
+      imports: [CacheModule.register()],
       controllers: [PublicCatalogController],
       providers: [
         PublicCatalogService,
@@ -108,7 +110,7 @@ describe('Public catalog HTTP flow', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   it('should list public courses without authentication and wrap the response', async () => {

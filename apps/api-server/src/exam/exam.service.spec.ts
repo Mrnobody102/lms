@@ -353,7 +353,7 @@ describe('ExamService', () => {
   });
 
   it('should reject submission when the exam attempt is expired', async () => {
-    const startedAt = new Date(Date.now() - 31 * 60_000);
+    const startedAt = new Date(Date.now() - 33 * 60_000);
     const prisma = {
       examAttempt: {
         findFirst: vi.fn().mockResolvedValue({
@@ -376,6 +376,7 @@ describe('ExamService', () => {
                     id: 'question-1',
                     type: ExamQuestionType.MULTIPLE_CHOICE,
                     prompt: 'Choose one',
+                    options: ['A', 'B'],
                     correctAnswer: 1,
                     explanation: 'B is correct',
                     points: 1,

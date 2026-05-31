@@ -155,8 +155,8 @@ export default function AdminStudentsPage() {
     <AuthGuard>
       <div className="min-h-screen flex flex-col md:flex-row bg-background">
         <AdminSidebar />
-        <main className="flex-1 md:ml-64 p-6 lg:p-8">
-          <div className="max-w-6xl mx-auto">
+        <main className="min-w-0 flex-1 p-6 md:ml-64 md:w-[calc(100%-16rem)] md:max-w-[calc(100%-16rem)] lg:p-8">
+          <div className="mx-auto max-w-6xl min-w-0">
             <AdminHeader title={t('students')} description={t('manageStudentsDesc')} />
 
             {message && (
@@ -177,8 +177,8 @@ export default function AdminStudentsPage() {
               {t('studentsFound', { count: total })}
             </div>
 
-            <div className="mb-4 flex flex-wrap items-center gap-3">
-              <div className="flex h-10 min-w-[200px] flex-1 items-center rounded-md border border-input bg-background text-foreground shadow-sm transition-all focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10">
+            <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-center">
+              <div className="flex h-10 w-full min-w-0 items-center rounded-md border border-input bg-background text-foreground shadow-sm transition-all focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10 sm:col-span-2 lg:col-span-1 lg:min-w-[200px] lg:flex-1">
                 <Search className="ml-3.5 h-4 w-4 shrink-0 text-muted-foreground pointer-events-none" />
                 <Input
                   value={search}
@@ -197,7 +197,7 @@ export default function AdminStudentsPage() {
                   setSelectedStudentIds([]);
                 }}
                 placeholder={t('filterByEmail')}
-                className="h-10 min-w-[180px] rounded-md"
+                className="h-10 w-full min-w-0 rounded-md lg:w-auto lg:min-w-[180px]"
               />
               <select
                 value={cohortId}
@@ -205,7 +205,7 @@ export default function AdminStudentsPage() {
                   setCohortId(event.target.value);
                   setSelectedStudentIds([]);
                 }}
-                className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                className="h-10 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm lg:w-auto"
               >
                 <option value="">{t('allCohorts')}</option>
                 {cohorts.map((cohort) => (
@@ -214,7 +214,7 @@ export default function AdminStudentsPage() {
                   </option>
                 ))}
               </select>
-              <div className="flex items-center gap-2">
+              <div className="grid w-full grid-cols-3 gap-2 sm:col-span-2 lg:col-span-1 lg:flex lg:w-auto lg:items-center">
                 {filterItems.map((filter) => (
                   <button
                     key={filter.key}
@@ -224,7 +224,7 @@ export default function AdminStudentsPage() {
                       setPage(1);
                       setSelectedStudentIds([]);
                     }}
-                    className={`inline-flex h-10 items-center justify-center whitespace-nowrap rounded-lg border px-4 text-sm font-medium transition-colors ${
+                    className={`inline-flex h-10 min-w-0 items-center justify-center rounded-lg border px-2 text-center text-xs font-medium leading-tight transition-colors sm:whitespace-nowrap sm:px-4 sm:text-sm ${
                       statusFilter === filter.key
                         ? 'border-primary bg-primary text-primary-foreground'
                         : 'border-input bg-background hover:bg-accent hover:text-accent-foreground'
@@ -234,7 +234,13 @@ export default function AdminStudentsPage() {
                   </button>
                 ))}
               </div>
-              <Button type="button" variant="ghost" onClick={clearFilters} disabled={!hasFilters}>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={clearFilters}
+                disabled={!hasFilters}
+                className="w-full sm:w-auto"
+              >
                 {t('clearFilters')}
               </Button>
             </div>
@@ -334,7 +340,7 @@ export default function AdminStudentsPage() {
                 className="rounded-xl border border-dashed bg-muted/20 py-24"
               />
             ) : (
-              <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
+              <div className="max-w-full overflow-x-auto rounded-xl border bg-card shadow-sm">
                 <div className="min-w-[780px]">
                   <div className="grid grid-cols-[3rem_minmax(0,1.2fr)_130px_minmax(0,0.8fr)_220px] gap-4 border-b bg-muted/30 px-5 py-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground items-center">
                     <span className="flex justify-center">{t('selectItem')}</span>

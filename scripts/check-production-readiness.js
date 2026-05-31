@@ -103,7 +103,7 @@ requireIncludes('apps/api-server/src/app.module.ts', [
 
 requireIncludes('apps/api-server/src/main.ts', [
   { label: 'cookie parser middleware', value: 'cookieParser()' },
-  { label: 'helmet middleware', value: 'helmet()' },
+  { label: 'helmet middleware', value: 'helmet(' },
   { label: 'CORS credentials', value: 'credentials: true' },
   { label: 'exact CORS origin parsing', value: 'parseCorsOrigin' },
   { label: 'trust proxy configuration', value: "'trust proxy'" },

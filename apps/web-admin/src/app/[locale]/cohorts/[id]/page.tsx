@@ -145,7 +145,7 @@ export default function CohortDetailsPage() {
           {cohort.instructor && (
             <div className="flex items-center gap-2 mt-2 text-sm font-medium text-primary bg-primary/10 w-fit px-3 py-1 rounded-full">
               <GraduationCap className="w-4 h-4" />
-              <span>Phụ trách: {cohort.instructor.fullName}</span>
+              <span>{t('cohorts.instructorAssigned', { name: cohort.instructor.fullName })}</span>
             </div>
           )}
         </div>

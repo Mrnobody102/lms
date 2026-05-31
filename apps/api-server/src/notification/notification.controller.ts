@@ -1,24 +1,12 @@
-import {
-  Controller,
-  Get,
-  MessageEvent,
-  Param,
-  Patch,
-  Query,
-  Sse,
-  UseGuards,
-  UseInterceptors,
-} from '@nestjs/common';
+import { Controller, Get, MessageEvent, Param, Patch, Query, Sse, UseGuards } from '@nestjs/common';
 import { map, Observable } from 'rxjs';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { TransformInterceptor } from '../common/interceptors/transform.interceptor';
 import { NotificationQueryDto } from './dto/notification-query.dto';
 import { NotificationService } from './notification.service';
 
 @Controller('notifications')
 @UseGuards(JwtAuthGuard)
-@UseInterceptors(TransformInterceptor)
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
 
