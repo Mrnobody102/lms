@@ -206,6 +206,7 @@
         "days": "{days}d ago"
       },
       "read": "Read",
+      "openAction": "Open link",
       "pagination": {
         "prev": "Previous",
         "next": "Next",

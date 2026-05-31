@@ -261,46 +261,36 @@ export class StudentTodayService {
         },
         select: { courseId: true },
       }),
-      Promise.all(
-        courses.map(async (course) => {
-          const continueLesson = await this.prisma.lesson.findFirst({
-            where: {
-              courseId: course.id,
-              deletedAt: null,
-              progress: {
-                none: {
-                  tenantId,
-                  userId: user.id,
-                  status: ProgressStatus.COMPLETED,
-                },
-              },
-            },
-            orderBy: { order: 'asc' },
-            select: {
-              id: true,
-              title: true,
-              courseId: true,
-              duration: true,
-            },
-          });
-          return { courseId: course.id, continueLesson };
-        }),
-      ),
-      Promise.all(
-        courses.map(async (course) => {
-          const activity = await this.prisma.learningActivity.findFirst({
-            where: {
+      this.prisma.lesson.findMany({
+        where: {
+          courseId: { in: courseIds },
+          deletedAt: null,
+          progress: {
+            none: {
               tenantId,
               userId: user.id,
-              courseId: course.id,
-              type: LearningActivityType.LESSON_OPENED,
+              status: ProgressStatus.COMPLETED,
             },
-            orderBy: { occurredAt: 'desc' },
-            select: { occurredAt: true },
-          });
-          return { courseId: course.id, occurredAt: activity?.occurredAt ?? null };
-        }),
-      ),
+          },
+        },
+        orderBy: [{ courseId: 'asc' }, { order: 'asc' }],
+        select: {
+          id: true,
+          title: true,
+          courseId: true,
+          duration: true,
+        },
+      }),
+      this.prisma.learningActivity.groupBy({
+        by: ['courseId'],
+        where: {
+          tenantId,
+          userId: user.id,
+          courseId: { in: courseIds },
+          type: LearningActivityType.LESSON_OPENED,
+        },
+        _max: { occurredAt: true },
+      }),
     ]);
 
     const completedCountByCourse = completedLessonsData.reduce(
@@ -318,16 +308,18 @@ export class StudentTodayService {
       duration: number;
     } | null;
     const continueLessonByCourse = continueLessonsData.reduce(
-      (acc, curr) => {
-        acc[curr.courseId] = curr.continueLesson;
+      (acc, lesson) => {
+        if (!acc[lesson.courseId]) {
+          acc[lesson.courseId] = lesson;
+        }
         return acc;
       },
       {} as Record<string, ContinueLessonType>,
     );
 
     const lastActivityByCourse = lastActivities.reduce(
-      (acc, curr) => {
-        acc[curr.courseId] = curr.occurredAt;
+      (acc, activity) => {
+        acc[activity.courseId] = activity._max.occurredAt;
         return acc;
       },
       {} as Record<string, Date | null>,

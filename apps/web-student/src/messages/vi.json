@@ -206,6 +206,7 @@
         "days": "{days} ngày trước"
       },
       "read": "Đã đọc",
+      "openAction": "Mở liên kết",
       "pagination": {
         "prev": "Trang trước",
         "next": "Trang sau",

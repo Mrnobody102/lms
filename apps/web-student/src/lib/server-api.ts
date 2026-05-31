@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { DEFAULT_DEMO_TENANT_ID } from '@repo/shared';
+import { DEFAULT_DEMO_TENANT_ID, type AuthUser } from '@repo/shared';
 import type { StudentTodayResponse } from './student-api';
 
 function getBaseUrl() {
@@ -39,6 +39,7 @@ async function serverFetch<T>(endpoint: string, init?: RequestInit): Promise<T> 
 
   const response = await fetch(url, {
     ...init,
+    cache: init?.cache ?? 'no-store',
     headers,
   });
 
@@ -56,8 +57,7 @@ async function serverFetch<T>(endpoint: string, init?: RequestInit): Promise<T> 
 export const serverApi = {
   getMe: async () => {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return await serverFetch<any>('/users/me');
+      return await serverFetch<AuthUser>('/users/me');
     } catch (_error) {
       return null; // Return null if unauthenticated (e.g. 401)
     }

@@ -145,7 +145,7 @@ export default function FinancePage() {
       <div className="min-h-screen flex flex-col md:flex-row bg-background">
         <AdminSidebar />
         <main className="flex-1 md:ml-[var(--admin-sidebar-width)] p-6 lg:p-8">
-          <div className="max-w-6xl mx-auto">
+          <div className="max-w-7xl mx-auto">
             <AdminHeader title={t('title')} description={t('desc')} />
 
             {hasError ? (
@@ -166,7 +166,7 @@ export default function FinancePage() {
                   ))}
                 </section>
 
-                <section className="mt-8 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+                <section className="mt-8 grid gap-6 2xl:grid-cols-[minmax(0,1fr)_380px]">
                   <ActivationCodeTable codes={activationCodes} locale={locale} />
                   <FinanceReadiness config={billingForm} />
                 </section>
@@ -311,7 +311,7 @@ function BillingConfigPanel({
         {dirty && <Badge variant="warning">{t('unsavedBilling')}</Badge>}
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="grid gap-5 xl:grid-cols-3">
         <div className="space-y-4">
           <h3 className="text-sm font-semibold">{t('paymentSection')}</h3>
           <div className="space-y-1.5">
@@ -359,7 +359,7 @@ function BillingConfigPanel({
 
         <div className="space-y-4">
           <h3 className="text-sm font-semibold">{t('pricingSection')}</h3>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label>{t('currency')}</Label>
               <Input
@@ -380,7 +380,7 @@ function BillingConfigPanel({
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label>{t('discountPercent')}</Label>
               <Input
@@ -474,7 +474,14 @@ function ActivationCodeTable({
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[760px] text-sm">
+          <table className="w-full min-w-[900px] table-fixed text-sm">
+            <colgroup>
+              <col className="w-[34%]" />
+              <col className="w-[26%]" />
+              <col className="w-[16%]" />
+              <col className="w-[15%]" />
+              <col className="w-[9%]" />
+            </colgroup>
             <thead className="border-b bg-muted/20 text-left text-xs uppercase text-muted-foreground">
               <tr>
                 <th className="px-5 py-3 font-semibold">{t('codeColumn')}</th>
@@ -492,31 +499,31 @@ function ActivationCodeTable({
                 return (
                   <tr key={code.id} className="align-top">
                     <td className="px-5 py-4">
-                      <p className="font-mono text-sm font-semibold">{code.code}</p>
-                      <p className="mt-1 max-w-[220px] truncate text-xs text-muted-foreground">
+                      <p className="truncate font-mono text-sm font-semibold">{code.code}</p>
+                      <p className="mt-1 truncate text-xs text-muted-foreground">
                         {code.description || t('noDescription')}
                       </p>
                     </td>
                     <td className="px-5 py-4">
                       {code.course?.title ? (
-                        <p className="max-w-[220px] truncate font-medium">{code.course.title}</p>
+                        <p className="truncate font-medium">{code.course.title}</p>
                       ) : (
                         <span className="text-muted-foreground">{t('allCourses')}</span>
                       )}
                     </td>
                     <td className="px-5 py-4">
-                      <p className="font-medium">
+                      <p className="whitespace-nowrap font-medium tabular-nums">
                         {t('usageValue', {
                           used: code.usedCount,
                           total: code.maxUses,
                         })}
                       </p>
-                      <p className="mt-1 text-xs text-muted-foreground">
+                      <p className="mt-1 whitespace-nowrap text-xs text-muted-foreground tabular-nums">
                         {t('remainingValue', { count: remaining })}
                       </p>
                     </td>
                     <td className="px-5 py-4">
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <div className="flex items-center gap-1.5 whitespace-nowrap text-muted-foreground">
                         <Clock3 className="h-4 w-4" />
                         {code.expiresAt ? formatDate(code.expiresAt, locale) : t('noExpiry')}
                       </div>
@@ -540,14 +547,21 @@ function StatusBadge({ status }: { status: ActivationStatus }) {
 
   if (status === 'active') {
     return (
-      <Badge variant="secondary" className="gap-1 text-emerald-700 dark:text-emerald-300">
+      <Badge
+        variant="secondary"
+        className="gap-1 whitespace-nowrap text-emerald-700 dark:text-emerald-300"
+      >
         <CheckCircle2 className="h-3 w-3" />
         {t('active')}
       </Badge>
     );
   }
 
-  return <Badge variant="outline">{t(status)}</Badge>;
+  return (
+    <Badge variant="outline" className="whitespace-nowrap">
+      {t(status)}
+    </Badge>
+  );
 }
 
 type ActivationStatus = 'active' | 'inactive' | 'expired' | 'usedUp';

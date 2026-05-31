@@ -15,18 +15,11 @@ import {
   useMarkAllNotificationsAsRead,
 } from '../../../hooks/use-notifications';
 import { Notification } from '../../../lib/notification-api';
-import { Link } from '@/navigation';
-
-function getInternalActionUrl(actionUrl: string | null) {
-  if (!actionUrl || !actionUrl.startsWith('/') || actionUrl.startsWith('//')) {
-    return null;
-  }
-
-  return actionUrl;
-}
+import { Link, useRouter } from '@/navigation';
 
 export function NotificationBell() {
   const t = useTranslations('Student');
+  const router = useRouter();
   const { data, isLoading } = useNotifications(0, 5);
   const markAsRead = useMarkNotificationAsRead();
   const markAllAsRead = useMarkAllNotificationsAsRead();
@@ -56,6 +49,13 @@ export function NotificationBell() {
       default:
         return <Info className="w-4 h-4 text-blue-500" />;
     }
+  };
+
+  const openNotification = (notification: Notification) => {
+    if (!notification.readAt) {
+      markAsRead.mutate(notification.id);
+    }
+    router.push(`/notifications?notificationId=${encodeURIComponent(notification.id)}`);
   };
 
   return (
@@ -98,12 +98,19 @@ export function NotificationBell() {
             </div>
           ) : (
             notifications.map((n: Notification) => {
-              const actionUrl = getInternalActionUrl(n.actionUrl);
-
               return (
                 <div
                   key={n.id}
-                  className={`group relative flex items-start gap-3 p-4 transition-colors hover:bg-muted/50 ${
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => openNotification(n)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      openNotification(n);
+                    }
+                  }}
+                  className={`group relative flex cursor-pointer items-start gap-3 p-4 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset ${
                     !n.readAt ? 'bg-primary/5' : ''
                   }`}
                 >
@@ -112,19 +119,7 @@ export function NotificationBell() {
                   )}
                   <div className="mt-0.5 shrink-0">{getIcon(n.type)}</div>
                   <div className="min-w-0 flex-1 space-y-1 pl-1 pr-8">
-                    <p className="truncate text-sm font-medium leading-none">
-                      {actionUrl ? (
-                        <Link
-                          href={actionUrl}
-                          className="hover:underline"
-                          onClick={() => !n.readAt && markAsRead.mutate(n.id)}
-                        >
-                          {n.title}
-                        </Link>
-                      ) : (
-                        <span>{n.title}</span>
-                      )}
-                    </p>
+                    <p className="truncate text-sm font-medium leading-none">{n.title}</p>
                     {n.content && (
                       <p className="line-clamp-2 text-sm text-muted-foreground">{n.content}</p>
                     )}
@@ -135,7 +130,10 @@ export function NotificationBell() {
                       variant="ghost"
                       size="icon"
                       className="absolute right-2 top-2 h-6 w-6 shrink-0 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100"
-                      onClick={() => markAsRead.mutate(n.id)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        markAsRead.mutate(n.id);
+                      }}
                       title={t('notifications.read')}
                     >
                       <Check className="w-3 h-3" />

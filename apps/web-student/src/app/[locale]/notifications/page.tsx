@@ -3,7 +3,7 @@
 import { Button } from '@repo/ui';
 import { CheckCircle2, AlertTriangle, Info, Check, Loader2, Bell } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 import { Link } from '@/navigation';
 import { AuthRequiredPanel } from '@/components/auth/auth-required-panel';
@@ -47,6 +47,7 @@ export default function NotificationsPage() {
   const t = useTranslations('Student.notifications');
   const { isAuthenticated, isInitialized } = useAuthStore();
   const [page, setPage] = useState(0);
+  const [selectedNotificationId, setSelectedNotificationId] = useState<string | null>(null);
 
   const { data, isLoading } = useNotifications(
     page * ITEMS_PER_PAGE,
@@ -60,6 +61,15 @@ export default function NotificationsPage() {
   const unreadCount = data?.unreadCount || 0;
   const totalPages = Math.max(1, Math.ceil((data?.meta.total ?? 0) / ITEMS_PER_PAGE));
   const canGoNext = data?.meta.hasMore ?? false;
+  const selectedNotification =
+    notifications.find((notification) => notification.id === selectedNotificationId) ?? null;
+
+  useEffect(() => {
+    const notificationId = new URLSearchParams(window.location.search).get('notificationId');
+    if (notificationId) {
+      setSelectedNotificationId(notificationId);
+    }
+  }, []);
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -122,41 +132,51 @@ export default function NotificationsPage() {
               </div>
             ) : (
               <div className="space-y-4">
+                {selectedNotification && (
+                  <NotificationDetail
+                    notification={selectedNotification}
+                    timeLabel={timeAgo(selectedNotification.createdAt, t)}
+                    icon={getIcon(selectedNotification.type)}
+                    actionLabel={t('openAction')}
+                    readLabel={t('read')}
+                    onMarkAsRead={() => markAsRead.mutate(selectedNotification.id)}
+                  />
+                )}
+
                 <div className="rounded-xl border bg-card overflow-hidden">
                   <div className="divide-y">
                     {notifications.map((n: Notification) => {
-                      const actionUrl = getInternalActionUrl(n.actionUrl);
-
                       return (
-                        <div
+                        <article
                           key={n.id}
                           className={`relative flex gap-4 p-5 transition-colors hover:bg-muted/30 sm:p-6 ${
-                            !n.readAt ? 'bg-primary/5' : ''
-                          }`}
+                            selectedNotificationId === n.id ? 'ring-1 ring-inset ring-primary' : ''
+                          } ${!n.readAt ? 'bg-primary/5' : ''}`}
                         >
                           {!n.readAt && (
                             <span className="absolute bottom-0 left-0 top-0 w-1 bg-primary" />
                           )}
                           <div className="mt-0.5 shrink-0">{getIcon(n.type)}</div>
                           <div className="min-w-0 flex-1 space-y-1">
-                            <p
-                              className={`text-base font-medium ${!n.readAt ? 'text-foreground' : 'text-muted-foreground'}`}
+                            <button
+                              type="button"
+                              className={`block w-full text-left text-base font-medium hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                                !n.readAt ? 'text-foreground' : 'text-muted-foreground'
+                              }`}
+                              onClick={() => {
+                                setSelectedNotificationId(n.id);
+                                if (!n.readAt) {
+                                  markAsRead.mutate(n.id);
+                                }
+                              }}
                             >
-                              {actionUrl ? (
-                                <Link
-                                  href={actionUrl}
-                                  className="hover:text-primary hover:underline"
-                                  onClick={() => !n.readAt && markAsRead.mutate(n.id)}
-                                >
-                                  {n.title}
-                                </Link>
-                              ) : (
-                                <span>{n.title}</span>
-                              )}
-                            </p>
+                              {n.title}
+                            </button>
                             {n.content && (
                               <p
-                                className={`text-sm ${!n.readAt ? 'text-muted-foreground' : 'text-muted-foreground/70'}`}
+                                className={`line-clamp-2 text-sm ${
+                                  !n.readAt ? 'text-muted-foreground' : 'text-muted-foreground/70'
+                                }`}
                               >
                                 {n.content}
                               </p>
@@ -178,7 +198,7 @@ export default function NotificationsPage() {
                               </Button>
                             </div>
                           )}
-                        </div>
+                        </article>
                       );
                     })}
                   </div>
@@ -210,5 +230,57 @@ export default function NotificationsPage() {
         )}
       </main>
     </div>
+  );
+}
+
+function NotificationDetail({
+  notification,
+  timeLabel,
+  icon,
+  actionLabel,
+  readLabel,
+  onMarkAsRead,
+}: {
+  notification: Notification;
+  timeLabel: string;
+  icon: ReactNode;
+  actionLabel: string;
+  readLabel: string;
+  onMarkAsRead: () => void;
+}) {
+  const actionUrl = getInternalActionUrl(notification.actionUrl);
+
+  return (
+    <section className="rounded-xl border bg-card p-5 shadow-sm sm:p-6">
+      <div className="flex items-start gap-4">
+        <div className="mt-0.5 shrink-0">{icon}</div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold tracking-tight">{notification.title}</h2>
+              <p className="mt-1 text-xs font-medium text-muted-foreground">{timeLabel}</p>
+            </div>
+            {!notification.readAt && (
+              <Button variant="outline" size="sm" onClick={onMarkAsRead}>
+                <Check className="mr-2 h-4 w-4" />
+                {readLabel}
+              </Button>
+            )}
+          </div>
+
+          {notification.content ? (
+            <p className="mt-4 whitespace-pre-line text-sm leading-7 text-foreground/85">
+              {notification.content}
+            </p>
+          ) : null}
+
+          {actionUrl && (
+            <Button asChild className="mt-5">
+              <Link href={actionUrl}>{actionLabel}</Link>
+            </Button>
+          )}
+        </div>
+      </div>
+    </section>
   );
 }

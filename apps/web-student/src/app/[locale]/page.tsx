@@ -1,4 +1,5 @@
 import { ArrowRight, BookOpenCheck, KeyRound, LogIn, ShieldCheck } from 'lucide-react';
+import { cookies } from 'next/headers';
 import { useLocale, useTranslations } from 'next-intl';
 import { ThemeToggle, LanguageToggle } from '@repo/ui';
 import { Link } from '../../navigation';
@@ -6,11 +7,14 @@ import { serverApi } from '../../lib/server-api';
 import LearningDashboard from '../../components/dashboard/learning-dashboard';
 
 export default async function Home() {
-  const user = await serverApi.getMe();
+  const cookieStore = await cookies();
+  const hasSession = Boolean(cookieStore.get('access_token')?.value);
 
-  if (user) {
+  if (hasSession) {
     const data = await serverApi.getStudentToday();
-    return <LearningDashboard data={data} />;
+    if (data) {
+      return <LearningDashboard data={data} />;
+    }
   }
 
   return <GuestStudentHome />;
