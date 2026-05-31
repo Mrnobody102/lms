@@ -3,7 +3,7 @@
 import {
   Activity,
   AlertTriangle,
-  CircleDollarSign,
+  CheckCircle2,
   CreditCard,
   Database,
   Flag,
@@ -12,15 +12,29 @@ import {
   ListChecks,
   LockKeyhole,
   ServerCog,
+  ToggleLeft,
+  ToggleRight,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import toast from 'react-hot-toast';
 import { Footer } from '@/components/layout/footer';
 import { Header } from '@/components/layout/header';
 import { PortalSidebar } from '@/components/layout/portal-sidebar';
 import { LoginModal } from '@/features/auth/components/login-modal';
 import { useAuthStore } from '@/features/auth/auth.store';
-import { Tenant, useTenants } from '@/hooks/use-tenants';
+import {
+  PlatformFeatureFlagRow,
+  PlatformUsageRow,
+  usePlatformAuditLogs,
+  usePlatformBilling,
+  usePlatformDomains,
+  usePlatformFeatureFlags,
+  usePlatformIncidents,
+  usePlatformUsage,
+  useUpdatePlatformFeatureFlags,
+} from '@/hooks/use-platform';
+import { useSystemTelemetry } from '@/hooks/use-system-telemetry';
 
 export type OpsPageKind =
   | 'plansBilling'
@@ -44,10 +58,6 @@ const PAGE_CONFIG: Record<OpsPageKind, { icon: LucideIcon; tone: string }> = {
 export function PortalOpsPage({ kind }: { kind: OpsPageKind }) {
   const t = useTranslations('SuperPortal.ops');
   const { isAuthenticated, isInitialized } = useAuthStore();
-  const { data: tenants = [], isLoading } = useTenants({
-    enabled: isAuthenticated,
-    includeInactive: true,
-  });
   const config = PAGE_CONFIG[kind];
   const Icon = config.icon;
 
@@ -66,33 +76,24 @@ export function PortalOpsPage({ kind }: { kind: OpsPageKind }) {
       <div className="flex">
         <PortalSidebar />
         <main className="mx-auto w-full max-w-7xl p-4 text-foreground sm:p-6 lg:p-8">
-          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex min-w-0 items-start gap-4">
-              <div className={`mt-1 rounded-xl p-3 ${config.tone}`}>
-                <Icon className="h-6 w-6" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                  {t('eyebrow')}
-                </p>
-                <h1 className="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">
-                  {t(`${kind}.title`)}
-                </h1>
-                <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-                  {t(`${kind}.desc`)}
-                </p>
-              </div>
+          <div className="mb-6 flex min-w-0 items-start gap-4">
+            <div className={`mt-1 rounded-xl p-3 ${config.tone}`}>
+              <Icon className="h-6 w-6" />
             </div>
-            <span className="inline-flex w-fit items-center rounded-full border bg-card px-3 py-1 text-xs font-semibold text-muted-foreground">
-              {t('demoBadge')}
-            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                {t('eyebrow')}
+              </p>
+              <h1 className="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">
+                {t(`${kind}.title`)}
+              </h1>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
+                {t(`${kind}.desc`)}
+              </p>
+            </div>
           </div>
 
-          {!isAuthenticated ? (
-            <DemoLockedState />
-          ) : (
-            <OpsContent kind={kind} loading={isLoading} tenants={tenants} />
-          )}
+          {!isAuthenticated ? <LockedState /> : <OpsContent kind={kind} />}
         </main>
       </div>
       {!isAuthenticated && <LoginModal />}
@@ -101,7 +102,7 @@ export function PortalOpsPage({ kind }: { kind: OpsPageKind }) {
   );
 }
 
-function DemoLockedState() {
+function LockedState() {
   const t = useTranslations('SuperPortal.ops');
   return (
     <div className="rounded-xl border bg-card p-8 text-center">
@@ -114,97 +115,79 @@ function DemoLockedState() {
   );
 }
 
-function OpsContent({
-  kind,
-  loading,
-  tenants,
-}: {
-  kind: OpsPageKind;
-  loading: boolean;
-  tenants: Tenant[];
-}) {
-  if (loading) {
-    return (
-      <div className="grid gap-4 md:grid-cols-3">
-        {Array.from({ length: 6 }).map((_, index) => (
-          <div key={index} className="h-36 animate-pulse rounded-xl border bg-muted/30" />
-        ))}
-      </div>
-    );
-  }
-
-  switch (kind) {
-    case 'plansBilling':
-      return <PlansBilling tenants={tenants} />;
-    case 'usageStorage':
-      return <UsageStorage tenants={tenants} />;
-    case 'domains':
-      return <Domains tenants={tenants} />;
-    case 'featureFlags':
-      return <FeatureFlags tenants={tenants} />;
-    case 'incidents':
-      return <Incidents tenants={tenants} />;
-    case 'auditLogs':
-      return <AuditLogs tenants={tenants} />;
-    case 'infrastructure':
-      return <Infrastructure tenants={tenants} />;
-  }
+function OpsContent({ kind }: { kind: OpsPageKind }) {
+  if (kind === 'plansBilling') return <PlansBilling />;
+  if (kind === 'usageStorage') return <UsageStorage />;
+  if (kind === 'domains') return <Domains />;
+  if (kind === 'featureFlags') return <FeatureFlags />;
+  if (kind === 'incidents') return <Incidents />;
+  if (kind === 'auditLogs') return <AuditLogs />;
+  return <Infrastructure />;
 }
 
-function PlansBilling({ tenants }: { tenants: Tenant[] }) {
+function PlansBilling() {
   const t = useTranslations('SuperPortal.ops');
-  const active = tenants.filter((tenant) => tenant.isActive).length;
-  const plans = [
-    { name: 'Starter', price: '1.990.000 VND', tenants: Math.max(1, tenants.length - 2) },
-    { name: 'Pro', price: '4.990.000 VND', tenants: Math.max(1, Math.ceil(active / 2)) },
-    { name: 'Enterprise', price: t('contactSales'), tenants: Math.max(0, active - 1) },
-  ];
-  const invoices = tenants.slice(0, 5).map((tenant, index) => ({
-    tenant: tenant.name,
-    amount: `${(index + 2) * 1200000} VND`,
-    status:
-      index % 3 === 0
-        ? t('status.pending')
-        : index % 3 === 1
-          ? t('status.refunded')
-          : t('status.paid'),
-  }));
+  const { data, isLoading, isError } = usePlatformBilling();
+
+  if (isLoading) return <LoadingGrid />;
+  if (isError || !data) return <ErrorState />;
 
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-3">
-        {plans.map((plan) => (
-          <SummaryCard
-            key={plan.name}
-            icon={CircleDollarSign}
-            label={plan.name}
-            value={plan.price}
-            helper={t('planTenantCount', { count: plan.tenants })}
-          />
-        ))}
+        <SummaryCard
+          icon={CreditCard}
+          label={t('plansBilling.plans')}
+          value={data.plans.length.toLocaleString()}
+          helper={t('plansBilling.realData')}
+        />
+        <SummaryCard
+          icon={CheckCircle2}
+          label={t('plansBilling.subscriptions')}
+          value={data.subscriptions.length.toLocaleString()}
+          helper={t('plansBilling.realData')}
+        />
+        <SummaryCard
+          icon={Database}
+          label={t('plansBilling.invoices')}
+          value={data.invoices.length.toLocaleString()}
+          helper={t('plansBilling.realData')}
+        />
       </div>
-      <DemoTable
+      <DataTable
+        title={t('plansBilling.subscriptionTitle')}
+        empty={t('empty')}
+        headers={[t('tenant'), t('plan'), t('statusLabel'), t('quota')]}
+        rows={data.subscriptions.map((subscription) => [
+          subscription.tenant.name,
+          subscription.plan.name,
+          subscription.status,
+          formatBytesString(subscription.storageQuotaBytes),
+        ])}
+      />
+      <DataTable
         title={t('plansBilling.invoiceTitle')}
-        headers={[t('tenant'), t('amount'), t('statusLabel')]}
-        rows={invoices.map((invoice) => [invoice.tenant, invoice.amount, invoice.status])}
+        empty={t('empty')}
+        headers={[t('tenant'), t('invoice'), t('amount'), t('statusLabel')]}
+        rows={data.invoices.map((invoice) => [
+          invoice.tenant.name,
+          invoice.number,
+          formatMoney(invoice.totalMinor, invoice.currency),
+          invoice.status,
+        ])}
       />
     </div>
   );
 }
 
-function UsageStorage({ tenants }: { tenants: Tenant[] }) {
+function UsageStorage() {
   const t = useTranslations('SuperPortal.ops');
-  const rows = tenants.slice(0, 6).map((tenant, index) => {
-    const used = 28 + index * 11;
-    const quota = 100;
-    return {
-      tenant: tenant.name,
-      storage: `${used} / ${quota} GB`,
-      api: `${(index + 1) * 18}k`,
-      ai: `${42 + index * 7}%`,
-      percent: used,
-    };
-  });
+  const { data = [], isLoading, isError } = usePlatformUsage();
+  const totalStorage = data.reduce((sum, row) => sum + row.mediaStorageBytes, 0);
+  const totalRequests = data.reduce((sum, row) => sum + (row.requestMetrics?.count ?? 0), 0);
+
+  if (isLoading) return <LoadingGrid />;
+  if (isError) return <ErrorState />;
 
   return (
     <div className="space-y-6">
@@ -212,199 +195,219 @@ function UsageStorage({ tenants }: { tenants: Tenant[] }) {
         <SummaryCard
           icon={HardDrive}
           label={t('usageStorage.storage')}
-          value="412 GB"
+          value={formatBytes(totalStorage)}
           helper={t('usageStorage.storageDesc')}
-        />
-        <SummaryCard
-          icon={AlertTriangle}
-          label={t('usageStorage.ai')}
-          value="68%"
-          helper={t('usageStorage.aiDesc')}
         />
         <SummaryCard
           icon={Activity}
           label={t('usageStorage.requests')}
-          value="182k"
+          value={totalRequests.toLocaleString()}
           helper={t('usageStorage.requestsDesc')}
         />
+        <SummaryCard
+          icon={Database}
+          label={t('usageStorage.tenants')}
+          value={data.length.toLocaleString()}
+          helper={t('usageStorage.realData')}
+        />
       </div>
-      <div className="rounded-xl border bg-card">
-        <div className="border-b p-4">
-          <h2 className="font-bold">{t('usageStorage.tableTitle')}</h2>
-        </div>
-        <div className="divide-y">
-          {rows.map((row) => (
-            <div
-              key={row.tenant}
-              className="grid gap-3 p-4 md:grid-cols-[minmax(0,1fr)_180px_120px_120px]"
-            >
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold">{row.tenant}</p>
-                <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full bg-primary"
-                    style={{ width: `${row.percent}%` }}
-                  />
-                </div>
-              </div>
-              <Cell label={t('usageStorage.storage')} value={row.storage} />
-              <Cell label={t('usageStorage.requests')} value={row.api} />
-              <Cell label={t('usageStorage.ai')} value={row.ai} />
-            </div>
-          ))}
-        </div>
-      </div>
+      <UsageRows rows={data} />
     </div>
   );
 }
 
-function Domains({ tenants }: { tenants: Tenant[] }) {
+function Domains() {
   const t = useTranslations('SuperPortal.ops');
-  const rows = tenants
-    .slice(0, 8)
-    .map((tenant, index) => [
-      tenant.name,
-      tenant.domain || `${tenant.slug}.lms.local`,
-      index % 4 === 0 ? t('status.pending') : t('status.verified'),
-      index % 3 === 0 ? t('status.renewing') : t('status.active'),
-    ]);
+  const { data = [], isLoading, isError } = usePlatformDomains();
+
+  if (isLoading) return <LoadingGrid />;
+  if (isError) return <ErrorState />;
+
   return (
-    <DemoTable
+    <DataTable
       title={t('domains.tableTitle')}
-      headers={[t('tenant'), t('domain'), t('dns'), t('ssl')]}
-      rows={rows}
+      empty={t('empty')}
+      headers={[t('tenant'), t('domain'), t('statusLabel')]}
+      rows={data.map((row) => [
+        row.tenant.name,
+        row.domain ?? t('notConfigured'),
+        row.status === 'configured' ? t('status.configured') : t('status.missing'),
+      ])}
     />
   );
 }
 
-function FeatureFlags({ tenants }: { tenants: Tenant[] }) {
-  const t = useTranslations('SuperPortal.ops');
-  const flags = [
-    'AI Tutor',
-    'Roleplay',
-    'Marketplace',
-    'Billing',
-    'Advanced reports',
-    'Media upload',
-  ];
+function FeatureFlags() {
+  const { data = [], isLoading, isError } = usePlatformFeatureFlags();
+
+  if (isLoading) return <LoadingGrid />;
+  if (isError) return <ErrorState />;
+
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      {tenants.slice(0, 6).map((tenant, tenantIndex) => (
-        <div key={tenant.id} className="rounded-xl border bg-card p-4">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <h2 className="truncate font-bold">{tenant.name}</h2>
-            <StatusBadge
-              label={tenant.isActive ? t('status.active') : t('status.inactive')}
-              tone={tenant.isActive ? 'success' : 'muted'}
-            />
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {flags.map((flag, index) => {
-              const enabled = (tenantIndex + index) % 3 !== 0;
-              return (
-                <div
-                  key={flag}
-                  className="flex items-center justify-between rounded-lg border bg-background px-3 py-2"
-                >
-                  <span className="text-sm font-medium">{flag}</span>
-                  <StatusBadge
-                    label={enabled ? t('on') : t('off')}
-                    tone={enabled ? 'success' : 'muted'}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ))}
+    <div className="grid gap-4">
+      {data.length === 0 ? (
+        <EmptyState />
+      ) : (
+        data.map((row) => <FeatureFlagCard key={row.tenant.id} row={row} />)
+      )}
     </div>
   );
 }
 
-function Incidents({ tenants }: { tenants: Tenant[] }) {
+function FeatureFlagCard({ row }: { row: PlatformFeatureFlagRow }) {
   const t = useTranslations('SuperPortal.ops');
-  const rows = [
-    [
-      t('incidents.mediaLatency'),
-      tenants[0]?.name ?? 'Demo Language Center',
-      t('severity.medium'),
-      t('status.monitoring'),
-    ],
-    [
-      t('incidents.emailDelay'),
-      tenants[1]?.name ?? 'IELTS Academy',
-      t('severity.low'),
-      t('status.resolved'),
-    ],
-    [
-      t('incidents.storageQuota'),
-      tenants[2]?.name ?? 'Corporate Training',
-      t('severity.high'),
-      t('status.open'),
-    ],
-  ];
+  const updateFlags = useUpdatePlatformFeatureFlags();
+  const flags = Object.entries(row.featureFlags) as Array<[keyof typeof row.featureFlags, boolean]>;
+
+  const toggleFlag = (key: keyof typeof row.featureFlags, value: boolean) => {
+    updateFlags.mutate(
+      { tenantId: row.tenant.id, featureFlags: { [key]: value } },
+      {
+        onSuccess: () => toast.success(t('featureFlags.updateSuccess')),
+        onError: () => toast.error(t('featureFlags.updateError')),
+      },
+    );
+  };
+
   return (
-    <DemoTable
+    <article className="rounded-xl border bg-card p-4">
+      <div className="mb-4">
+        <h2 className="font-bold">{row.tenant.name}</h2>
+        <p className="text-xs text-muted-foreground">{row.tenant.slug}</p>
+      </div>
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {flags.map(([key, value]) => (
+          <button
+            key={key}
+            type="button"
+            disabled={updateFlags.isPending}
+            onClick={() => toggleFlag(key, !value)}
+            className="flex items-center justify-between gap-3 rounded-lg border bg-background px-3 py-2 text-left text-sm hover:bg-muted disabled:opacity-50"
+          >
+            <span className="font-medium">{t(`featureFlags.keys.${key}`)}</span>
+            {value ? (
+              <ToggleRight className="h-5 w-5 text-emerald-600" />
+            ) : (
+              <ToggleLeft className="h-5 w-5 text-muted-foreground" />
+            )}
+          </button>
+        ))}
+      </div>
+    </article>
+  );
+}
+
+function Incidents() {
+  const t = useTranslations('SuperPortal.ops');
+  const { data = [], isLoading, isError } = usePlatformIncidents();
+
+  if (isLoading) return <LoadingGrid />;
+  if (isError) return <ErrorState />;
+
+  return (
+    <DataTable
       title={t('incidents.tableTitle')}
-      headers={[t('incident'), t('tenant'), t('severityLabel'), t('statusLabel')]}
-      rows={rows}
+      empty={t('incidents.empty')}
+      headers={[t('incident'), t('severityLabel'), t('statusLabel'), t('tenant'), t('time')]}
+      rows={data.map((incident) => [
+        incident.title,
+        incident.severity,
+        incident.status,
+        incident.tenantId ?? t('notConfigured'),
+        formatDate(incident.createdAt),
+      ])}
     />
   );
 }
 
-function AuditLogs({ tenants }: { tenants: Tenant[] }) {
+function AuditLogs() {
   const t = useTranslations('SuperPortal.ops');
-  const actions = [
-    t('audit.planChanged'),
-    t('audit.quotaUpdated'),
-    t('audit.domainVerified'),
-    t('audit.flagToggled'),
-    t('audit.invoiceExported'),
-  ];
-  const rows = actions.map((action, index) => [
-    `super.admin@lms.local`,
-    tenants[index % Math.max(tenants.length, 1)]?.name ?? 'Demo tenant',
-    action,
-    `${index + 1}h ago`,
-  ]);
+  const { data = [], isLoading, isError } = usePlatformAuditLogs();
+
+  if (isLoading) return <LoadingGrid />;
+  if (isError) return <ErrorState />;
+
   return (
-    <DemoTable
+    <DataTable
       title={t('audit.tableTitle')}
-      headers={[t('actor'), t('tenant'), t('action'), t('time')]}
-      rows={rows}
+      empty={t('empty')}
+      headers={[t('tenant'), t('actor'), t('action'), t('statusLabel'), t('time')]}
+      rows={data.map((log) => [
+        log.tenantId,
+        log.user?.email ?? log.userId ?? t('systemActor'),
+        log.action,
+        log.status,
+        formatDate(log.createdAt),
+      ])}
     />
   );
 }
 
-function Infrastructure({ tenants }: { tenants: Tenant[] }) {
+function Infrastructure() {
   const t = useTranslations('SuperPortal.ops');
-  const services = [
-    ['API', 'Render Singapore', '42 ms', 'healthy'],
-    ['PostgreSQL', 'Managed DB', '18 ms', 'healthy'],
-    ['Redis', 'Queue/cache', '9 ms', 'healthy'],
-    ['Object storage', 'Media bucket', '64 ms', tenants.length > 3 ? 'warning' : 'healthy'],
-    ['Realtime notifications', 'SSE channel', '38 ms', 'healthy'],
-    ['Email', 'SMTP provider', '72 ms', 'healthy'],
-  ];
+  const { data, isLoading, isError } = useSystemTelemetry();
+
+  if (isLoading) return <LoadingGrid />;
+  if (isError || !data) return <ErrorState />;
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-      {services.map(([name, region, latency, status]) => (
-        <div key={name} className="rounded-xl border bg-card p-4">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div>
-              <h2 className="font-bold">{name}</h2>
-              <p className="text-sm text-muted-foreground">{region}</p>
-            </div>
-            <StatusBadge
-              label={status === 'warning' ? t('status.warning') : t('status.healthy')}
-              tone={status === 'warning' ? 'warning' : 'success'}
-            />
-          </div>
-          <Cell label={t('latency')} value={latency} />
-        </div>
-      ))}
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-4">
+        <SummaryCard
+          icon={ServerCog}
+          label={t('infrastructure.uptime')}
+          value={`${data.runtime.process.uptimeSeconds}s`}
+          helper={`pid ${data.runtime.process.pid}`}
+        />
+        <SummaryCard
+          icon={Activity}
+          label={t('infrastructure.cpu')}
+          value={data.runtime.cpu.loadAverage1m.toFixed(2)}
+          helper={`${data.runtime.cpu.cores} cores`}
+        />
+        <SummaryCard
+          icon={HardDrive}
+          label={t('infrastructure.memory')}
+          value={`${data.runtime.memory.rssMb} MB`}
+          helper={`heap ${data.runtime.memory.heapUsedMb}/${data.runtime.memory.heapTotalMb} MB`}
+        />
+        <SummaryCard
+          icon={AlertTriangle}
+          label={t('infrastructure.alerts')}
+          value={data.alerts.length.toLocaleString()}
+          helper={t('infrastructure.realData')}
+        />
+      </div>
+      <DataTable
+        title={t('infrastructure.tenantTraffic')}
+        empty={t('empty')}
+        headers={[t('tenant'), t('usageStorage.requests'), t('errors'), t('latency')]}
+        rows={data.requestMetrics.tenantTraffic.map((row) => [
+          row.tenantId,
+          row.count.toLocaleString(),
+          row.errorCount.toLocaleString(),
+          `${row.maxDurationMs} ms`,
+        ])}
+      />
     </div>
+  );
+}
+
+function UsageRows({ rows }: { rows: PlatformUsageRow[] }) {
+  const t = useTranslations('SuperPortal.ops');
+
+  return (
+    <DataTable
+      title={t('usageStorage.tableTitle')}
+      empty={t('empty')}
+      headers={[t('tenant'), t('usageStorage.storage'), t('usageStorage.requests'), t('errors')]}
+      rows={rows.map((row) => [
+        row.tenant.name,
+        formatBytes(row.mediaStorageBytes),
+        (row.requestMetrics?.count ?? 0).toLocaleString(),
+        (row.requestMetrics?.errorCount ?? 0).toLocaleString(),
+      ])}
+    />
   );
 }
 
@@ -420,103 +423,113 @@ function SummaryCard({
   value: string;
 }) {
   return (
-    <div className="rounded-xl border bg-card p-5">
-      <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+    <article className="rounded-xl border bg-card p-4">
+      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
         <Icon className="h-5 w-5" />
       </div>
-      <p className="text-sm font-semibold text-muted-foreground">{label}</p>
-      <p className="mt-1 text-2xl font-extrabold">{value}</p>
-      <p className="mt-2 text-sm text-muted-foreground">{helper}</p>
-    </div>
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="mt-2 text-2xl font-bold">{value}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{helper}</p>
+    </article>
   );
 }
 
-function DemoTable({
+function DataTable({
+  empty,
   headers,
   rows,
   title,
 }: {
+  empty: string;
   headers: string[];
   rows: string[][];
   title: string;
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border bg-card">
+    <section className="overflow-hidden rounded-xl border bg-card">
       <div className="border-b p-4">
         <h2 className="font-bold">{title}</h2>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[680px] text-left text-sm">
-          <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
-            <tr>
-              {headers.map((header) => (
-                <th key={header} className="px-4 py-3 font-bold">
-                  {header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {rows.map((row, rowIndex) => (
-              <tr key={`${row[0]}-${rowIndex}`}>
-                {row.map((cell, cellIndex) => (
-                  <td key={`${cell}-${cellIndex}`} className="px-4 py-3">
-                    {cellIndex === row.length - 1 ? (
-                      <StatusCell value={cell} />
-                    ) : (
-                      <span className={cellIndex === 0 ? 'font-semibold' : 'text-muted-foreground'}>
-                        {cell}
-                      </span>
-                    )}
-                  </td>
+      {rows.length === 0 ? (
+        <div className="p-6 text-sm text-muted-foreground">{empty}</div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+              <tr>
+                {headers.map((header) => (
+                  <th key={header} className="whitespace-nowrap px-4 py-3 font-semibold">
+                    {header}
+                  </th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="divide-y">
+              {rows.map((row, rowIndex) => (
+                <tr key={`${row[0]}-${rowIndex}`}>
+                  {row.map((cell, cellIndex) => (
+                    <td key={`${cell}-${cellIndex}`} className="whitespace-nowrap px-4 py-3">
+                      {cell}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function LoadingGrid() {
+  return (
+    <div className="grid gap-4 md:grid-cols-3">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <div key={index} className="h-36 animate-pulse rounded-xl border bg-muted/30" />
+      ))}
     </div>
   );
 }
 
-function StatusCell({ value }: { value: string }) {
-  const normalized = value.toLowerCase();
-  const tone =
-    normalized.includes('paid') ||
-    normalized.includes('verified') ||
-    normalized.includes('active') ||
-    normalized.includes('resolved') ||
-    normalized.includes('healthy')
-      ? 'success'
-      : normalized.includes('pending') || normalized.includes('monitoring')
-        ? 'warning'
-        : 'muted';
-
-  return <StatusBadge label={value} tone={tone} />;
-}
-
-function StatusBadge({ label, tone }: { label: string; tone: 'success' | 'warning' | 'muted' }) {
-  const className =
-    tone === 'success'
-      ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600'
-      : tone === 'warning'
-        ? 'border-amber-500/20 bg-amber-500/10 text-amber-700'
-        : 'border-border bg-muted text-muted-foreground';
-
+function EmptyState() {
+  const t = useTranslations('SuperPortal.ops');
   return (
-    <span
-      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${className}`}
-    >
-      {label}
-    </span>
+    <div className="rounded-xl border bg-card p-6 text-sm text-muted-foreground">{t('empty')}</div>
   );
 }
 
-function Cell({ label, value }: { label: string; value: string }) {
+function ErrorState() {
+  const t = useTranslations('SuperPortal.ops');
   return (
-    <div>
-      <p className="text-xs font-semibold uppercase text-muted-foreground">{label}</p>
-      <p className="mt-1 text-sm font-bold">{value}</p>
+    <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-6 text-sm text-destructive">
+      {t('loadError')}
     </div>
   );
+}
+
+function formatBytes(value: number) {
+  if (value <= 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const index = Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1);
+  return `${(value / 1024 ** index).toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
+}
+
+function formatBytesString(value: string) {
+  return formatBytes(Number(value));
+}
+
+function formatMoney(amountMinor: number, currency: string) {
+  return new Intl.NumberFormat(undefined, {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: 0,
+  }).format(amountMinor / 100);
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date(value));
 }

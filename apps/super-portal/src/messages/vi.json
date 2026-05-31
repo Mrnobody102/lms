@@ -13,7 +13,6 @@
     "ops": {
       "loading": "Đang tải dữ liệu vận hành...",
       "eyebrow": "SaaS operations",
-      "demoBadge": "Demo view",
       "lockedTitle": "Cần đăng nhập Super Admin",
       "lockedDesc": "Đăng nhập để xem dữ liệu vận hành tenant, billing và hạ tầng.",
       "tenant": "Tenant",
@@ -28,6 +27,14 @@
       "action": "Hành động",
       "time": "Thời gian",
       "latency": "Độ trễ",
+      "errors": "Lỗi",
+      "quota": "Quota",
+      "plan": "Gói",
+      "invoice": "Invoice",
+      "empty": "Chưa có dữ liệu vận hành thật cho màn hình này.",
+      "loadError": "Không thể tải dữ liệu vận hành lúc này.",
+      "notConfigured": "Chưa cấu hình",
+      "systemActor": "Hệ thống",
       "on": "Bật",
       "off": "Tắt",
       "contactSales": "Liên hệ",
@@ -44,7 +51,9 @@
         "resolved": "Đã xử lý",
         "open": "Đang mở",
         "warning": "Cảnh báo",
-        "healthy": "Ổn định"
+        "healthy": "Ổn định",
+        "configured": "Đã cấu hình",
+        "missing": "Thiếu cấu hình"
       },
       "severity": {
         "low": "Thấp",
@@ -53,18 +62,25 @@
       },
       "plansBilling": {
         "title": "Gói & Billing",
-        "desc": "Demo cấu hình plan, subscription và invoice ở cấp tenant để trình bày mô hình SaaS LMS.",
+        "desc": "Xem plan, subscription, invoice và payment thật từ billing tables.",
+        "plans": "Gói",
+        "subscriptions": "Subscription",
+        "invoices": "Invoice",
+        "realData": "Lấy từ dữ liệu billing",
+        "subscriptionTitle": "Subscription theo tenant",
         "invoiceTitle": "Invoice gần đây"
       },
       "usageStorage": {
         "title": "Dung lượng & Usage",
-        "desc": "Theo dõi storage, request và AI quota của từng tenant ở mức tổng quan demo.",
+        "desc": "Theo dõi storage thật, usage ledger và request metrics theo tenant.",
         "storage": "Storage",
-        "storageDesc": "Tổng dung lượng media demo",
+        "storageDesc": "Dung lượng media đã lưu",
         "ai": "AI quota",
         "aiDesc": "Mức sử dụng AI trung bình",
         "requests": "API requests",
-        "requestsDesc": "Lưu lượng tenant trong kỳ",
+        "requestsDesc": "Lưu lượng API đã quan sát",
+        "tenants": "Tenant",
+        "realData": "Lấy từ usage records",
         "tableTitle": "Usage theo tenant"
       },
       "domains": {
@@ -74,12 +90,23 @@
       },
       "featureFlags": {
         "title": "Feature flags",
-        "desc": "Minh họa khả năng bật/tắt tính năng theo tenant: AI, roleplay, marketplace, billing và media upload."
+        "desc": "Cập nhật feature flag theo tenant và lưu vào tenant settings.",
+        "updateSuccess": "Đã cập nhật feature flags.",
+        "updateError": "Không thể cập nhật feature flags.",
+        "keys": {
+          "aiTutorEnabled": "AI tutor",
+          "activationCodesEnabled": "Mã kích hoạt",
+          "roleplayEnabled": "Roleplay",
+          "marketplaceEnabled": "Marketplace",
+          "billingEnabled": "Billing",
+          "mediaUploadEnabled": "Tải media"
+        }
       },
       "incidents": {
         "title": "Sự cố",
-        "desc": "Danh sách sự cố vận hành mẫu để demo quy trình theo dõi ảnh hưởng theo tenant.",
+        "desc": "Sự cố vận hành suy ra từ audit failure và API error metrics thật.",
         "tableTitle": "Incident timeline",
+        "empty": "Không phát hiện sự cố đang mở từ telemetry hiện tại.",
         "mediaLatency": "Độ trễ upload media tăng",
         "emailDelay": "Email thông báo gửi chậm",
         "storageQuota": "Tenant gần vượt quota storage"
@@ -98,7 +125,13 @@
       },
       "infrastructure": {
         "title": "Hạ tầng",
-        "desc": "Health view mức demo cho API, database, cache, storage, email và realtime notification."
+        "desc": "Telemetry runtime từ API process và request metrics.",
+        "uptime": "Uptime",
+        "cpu": "CPU load",
+        "memory": "Bộ nhớ",
+        "alerts": "Cảnh báo",
+        "realData": "Telemetry live",
+        "tenantTraffic": "Lưu lượng tenant"
       }
     },
     "sidebar": {
@@ -245,6 +278,18 @@
       "supportTitle": "Hỗ trợ",
       "supportDesc": "Thông tin liên hệ hỗ trợ riêng của tenant hiển thị trong portal.",
       "supportEmailLabel": "Email hỗ trợ",
+      "usersLabel": "User hoạt động",
+      "coursesLabel": "Khóa học",
+      "enrollmentsLabel": "Enrollments",
+      "storageLabel": "Dung lượng media",
+      "operationsTitle": "Tổng quan vận hành",
+      "subscriptionLabel": "Subscription",
+      "readinessLabel": "Readiness",
+      "domainReady": "Domain sẵn sàng",
+      "domainMissing": "Thiếu domain",
+      "subscriptionReady": "Subscription active",
+      "subscriptionMissing": "Thiếu subscription",
+      "noAuditLogs": "Chưa có audit log gần đây.",
       "limitsTitle": "Giới hạn tài nguyên",
       "limitsDesc": "Thiết lập giới hạn mềm cho tenant. Bỏ trống nghĩa là không đặt giới hạn riêng.",
       "maxStudentsLabel": "Số học viên tối đa",

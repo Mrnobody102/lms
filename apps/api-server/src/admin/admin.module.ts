@@ -11,6 +11,8 @@ import { TenantAdminService } from './tenant-admin.service';
 
 import { AdminSystemController } from './admin-system.controller';
 import { AdminSystemService } from './admin-system.service';
+import { AdminPlatformController } from './admin-platform.controller';
+import { AdminPlatformService } from './admin-platform.service';
 
 @Module({
   imports: [MetricsModule],
@@ -20,6 +22,7 @@ import { AdminSystemService } from './admin-system.service';
     AdminOverviewController,
     AdminTenantController,
     AdminSystemController,
+    AdminPlatformController,
   ],
   providers: [
     UserAdminService,
@@ -27,6 +30,7 @@ import { AdminSystemService } from './admin-system.service';
     AdminOverviewService,
     TenantAdminService,
     AdminSystemService,
+    AdminPlatformService,
   ],
   exports: [
     UserAdminService,
@@ -34,6 +38,7 @@ import { AdminSystemService } from './admin-system.service';
     AdminOverviewService,
     TenantAdminService,
     AdminSystemService,
+    AdminPlatformService,
   ],
 })
 export class AdminModule {}

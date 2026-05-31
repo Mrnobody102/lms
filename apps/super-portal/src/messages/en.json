@@ -13,7 +13,6 @@
     "ops": {
       "loading": "Loading operations data...",
       "eyebrow": "SaaS operations",
-      "demoBadge": "Demo view",
       "lockedTitle": "Super Admin login required",
       "lockedDesc": "Log in to view tenant operations, billing, and infrastructure data.",
       "tenant": "Tenant",
@@ -28,6 +27,14 @@
       "action": "Action",
       "time": "Time",
       "latency": "Latency",
+      "errors": "Errors",
+      "quota": "Quota",
+      "plan": "Plan",
+      "invoice": "Invoice",
+      "empty": "No real operational data is available for this view yet.",
+      "loadError": "Cannot load operations data right now.",
+      "notConfigured": "Not configured",
+      "systemActor": "System",
       "on": "On",
       "off": "Off",
       "contactSales": "Contact sales",
@@ -44,7 +51,9 @@
         "resolved": "Resolved",
         "open": "Open",
         "warning": "Warning",
-        "healthy": "Healthy"
+        "healthy": "Healthy",
+        "configured": "Configured",
+        "missing": "Missing"
       },
       "severity": {
         "low": "Low",
@@ -53,18 +62,25 @@
       },
       "plansBilling": {
         "title": "Plans & Billing",
-        "desc": "Demo tenant-level plans, subscriptions, and invoices for presenting the SaaS LMS model.",
+        "desc": "Review real tenant plans, subscriptions, invoices, and payments from the billing tables.",
+        "plans": "Plans",
+        "subscriptions": "Subscriptions",
+        "invoices": "Invoices",
+        "realData": "Backed by billing records",
+        "subscriptionTitle": "Tenant subscriptions",
         "invoiceTitle": "Recent invoices"
       },
       "usageStorage": {
         "title": "Usage & Storage",
-        "desc": "Track storage, requests, and AI quota per tenant at demo overview level.",
+        "desc": "Track real storage, usage ledger, and in-memory API request metrics by tenant.",
         "storage": "Storage",
-        "storageDesc": "Demo media storage total",
+        "storageDesc": "Stored media assets",
         "ai": "AI quota",
         "aiDesc": "Average AI usage",
         "requests": "API requests",
-        "requestsDesc": "Tenant traffic this period",
+        "requestsDesc": "Observed API traffic",
+        "tenants": "Tenants",
+        "realData": "Backed by usage records",
         "tableTitle": "Usage by tenant"
       },
       "domains": {
@@ -74,12 +90,23 @@
       },
       "featureFlags": {
         "title": "Feature flags",
-        "desc": "Show tenant-level feature control for AI, roleplay, marketplace, billing, and media upload."
+        "desc": "Update tenant-level feature controls persisted under tenant settings.",
+        "updateSuccess": "Feature flags updated.",
+        "updateError": "Cannot update feature flags.",
+        "keys": {
+          "aiTutorEnabled": "AI tutor",
+          "activationCodesEnabled": "Activation codes",
+          "roleplayEnabled": "Roleplay",
+          "marketplaceEnabled": "Marketplace",
+          "billingEnabled": "Billing",
+          "mediaUploadEnabled": "Media upload"
+        }
       },
       "incidents": {
         "title": "Incidents",
-        "desc": "Sample operational incidents for demonstrating tenant impact tracking.",
+        "desc": "Operational incidents derived from real audit failures and API error metrics.",
         "tableTitle": "Incident timeline",
+        "empty": "No active incidents were detected from current telemetry.",
         "mediaLatency": "Media upload latency increased",
         "emailDelay": "Notification email delay",
         "storageQuota": "Tenant near storage quota"
@@ -98,7 +125,13 @@
       },
       "infrastructure": {
         "title": "Infrastructure",
-        "desc": "Demo health view for API, database, cache, storage, email, and realtime notifications."
+        "desc": "Runtime telemetry from the API process and request metrics.",
+        "uptime": "Uptime",
+        "cpu": "CPU load",
+        "memory": "Memory",
+        "alerts": "Alerts",
+        "realData": "Live telemetry",
+        "tenantTraffic": "Tenant traffic"
       }
     },
     "sidebar": {
@@ -245,6 +278,18 @@
       "supportTitle": "Support",
       "supportDesc": "Tenant-specific support contact shown in portal experiences.",
       "supportEmailLabel": "Support email",
+      "usersLabel": "Active users",
+      "coursesLabel": "Courses",
+      "enrollmentsLabel": "Enrollments",
+      "storageLabel": "Media storage",
+      "operationsTitle": "Operations overview",
+      "subscriptionLabel": "Subscription",
+      "readinessLabel": "Readiness",
+      "domainReady": "Domain ready",
+      "domainMissing": "Domain missing",
+      "subscriptionReady": "Subscription active",
+      "subscriptionMissing": "Subscription missing",
+      "noAuditLogs": "No recent audit logs.",
       "limitsTitle": "Resource limits",
       "limitsDesc": "Set soft limits for tenant usage. Empty values mean no tenant-specific cap.",
       "maxStudentsLabel": "Maximum students",

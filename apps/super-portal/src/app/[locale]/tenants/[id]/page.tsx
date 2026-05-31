@@ -9,6 +9,7 @@ import {
   Bot,
   Building2,
   CheckCircle2,
+  Database,
   ExternalLink,
   Globe,
   KeyRound,
@@ -28,6 +29,7 @@ import { Header } from '@/components/layout/header';
 import { PortalSidebar } from '@/components/layout/portal-sidebar';
 import { LoginModal } from '@/features/auth/components/login-modal';
 import { useAuthStore } from '@/features/auth/auth.store';
+import { TenantOverview as TenantOverviewData, useTenantOverview } from '@/hooks/use-platform';
 import { Tenant, useTenant, useUpdateTenant } from '@/hooks/use-tenants';
 import { Link } from '@/navigation';
 
@@ -45,6 +47,7 @@ export default function TenantDetailsPage({ params }: { params: Promise<{ id: st
   const { data: currentTenant, isLoading: tenantLoading } = useTenant(id, {
     enabled: isAuthenticated,
   });
+  const { data: operationsOverview } = useTenantOverview(id, isAuthenticated);
 
   if (!isInitialized) {
     return (
@@ -147,7 +150,12 @@ export default function TenantDetailsPage({ params }: { params: Promise<{ id: st
 
           <div className="mt-6">
             {activeTab === 'overview' ? (
-              <TenantOverview locale={locale} settings={tenantSettings} tenant={currentTenant} />
+              <TenantOverview
+                locale={locale}
+                operationsOverview={operationsOverview}
+                settings={tenantSettings}
+                tenant={currentTenant}
+              />
             ) : (
               <TenantSettingsForm mode={activeTab} tenant={currentTenant} />
             )}
@@ -221,10 +229,12 @@ function TenantTabs({
 
 function TenantOverview({
   locale,
+  operationsOverview,
   settings,
   tenant,
 }: {
   locale: string;
+  operationsOverview?: TenantOverviewData;
   settings: TenantSettingsFormState;
   tenant: Tenant;
 }) {
@@ -247,6 +257,31 @@ function TenantOverview({
           />
           <MetricTile icon={Palette} label={t('primaryColorLabel')} value={settings.primaryColor} />
         </div>
+
+        {operationsOverview && (
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <MetricTile
+              icon={Users}
+              label={t('usersLabel')}
+              value={`${operationsOverview.counts.activeUsers}/${operationsOverview.counts.users}`}
+            />
+            <MetricTile
+              icon={BookOpen}
+              label={t('coursesLabel')}
+              value={String(operationsOverview.counts.courses)}
+            />
+            <MetricTile
+              icon={Activity}
+              label={t('enrollmentsLabel')}
+              value={String(operationsOverview.counts.enrollments)}
+            />
+            <MetricTile
+              icon={Database}
+              label={t('storageLabel')}
+              value={formatBytes(operationsOverview.counts.mediaStorageBytes)}
+            />
+          </div>
+        )}
 
         <div className="rounded-lg border bg-card p-5">
           <h3 className="mb-4 flex items-center gap-2 text-base font-bold">
@@ -273,6 +308,48 @@ function TenantOverview({
             />
           </div>
         </div>
+
+        {operationsOverview && (
+          <div className="rounded-lg border bg-card p-5">
+            <h3 className="mb-4 flex items-center gap-2 text-base font-bold">
+              <Activity className="h-5 w-5 text-primary" />
+              {t('operationsTitle')}
+            </h3>
+            <div className="grid gap-4 md:grid-cols-2">
+              <DetailItem
+                label={t('subscriptionLabel')}
+                value={
+                  operationsOverview.subscription
+                    ? `${operationsOverview.subscription.plan.name} / ${operationsOverview.subscription.status}`
+                    : t('notSet')
+                }
+              />
+              <DetailItem
+                label={t('readinessLabel')}
+                value={[
+                  operationsOverview.readiness.hasDomain ? t('domainReady') : t('domainMissing'),
+                  operationsOverview.readiness.hasActiveSubscription
+                    ? t('subscriptionReady')
+                    : t('subscriptionMissing'),
+                ].join(', ')}
+              />
+            </div>
+            <div className="mt-4 divide-y rounded-lg border">
+              {operationsOverview.recentAuditLogs.length === 0 ? (
+                <div className="p-3 text-sm text-muted-foreground">{t('noAuditLogs')}</div>
+              ) : (
+                operationsOverview.recentAuditLogs.map((log) => (
+                  <div key={log.id} className="flex items-center justify-between gap-3 p-3 text-sm">
+                    <span className="font-medium">{log.action}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {formatDateTime(log.createdAt, locale)}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <TenantPreview settings={settings} tenant={tenant} />
@@ -786,6 +863,13 @@ function readColor(value: unknown): string {
 
 function normalizeColor(value: string): string {
   return /^#[0-9a-fA-F]{6}$/.test(value) ? value : DEFAULT_PRIMARY_COLOR;
+}
+
+function formatBytes(value: number) {
+  if (value <= 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const index = Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1);
+  return `${(value / 1024 ** index).toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
 }
 
 function readLocale(value: unknown): 'vi' | 'en' | '' {

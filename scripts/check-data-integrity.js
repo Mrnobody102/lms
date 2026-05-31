@@ -1,14 +1,56 @@
 #!/usr/bin/env node
 /* eslint-disable no-undef, turbo/no-undeclared-env-vars */
 
-const { PrismaClient } = require('@repo/database');
+const { existsSync, readFileSync } = require('node:fs');
+const { join } = require('node:path');
+const { pathToFileURL } = require('node:url');
 
 const SAMPLE_LIMIT = Number.parseInt(process.env.DATA_INTEGRITY_SAMPLE_LIMIT || '5', 10);
 
-const prisma = new PrismaClient({
-  log:
-    process.env.DATA_INTEGRITY_QUERY_LOG === '1' ? ['query', 'warn', 'error'] : ['warn', 'error'],
-});
+let prisma;
+
+function loadRootEnv() {
+  const envPath = join(__dirname, '..', '.env');
+  if (!existsSync(envPath)) {
+    return;
+  }
+
+  for (const rawLine of readFileSync(envPath, 'utf8').split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) {
+      continue;
+    }
+
+    const separatorIndex = line.indexOf('=');
+    if (separatorIndex <= 0) {
+      continue;
+    }
+
+    const key = line.slice(0, separatorIndex).trim();
+    let value = line.slice(separatorIndex + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+
+    process.env[key] ??= value;
+  }
+}
+
+async function createPrismaClient() {
+  const databaseEntry = join(__dirname, '..', 'packages', 'database', 'dist', 'index.js');
+
+  if (!existsSync(databaseEntry)) {
+    throw new Error(
+      'packages/database/dist/index.js is missing. Run `pnpm --filter @repo/database build` before data integrity checks.',
+    );
+  }
+
+  const database = await import(pathToFileURL(databaseEntry).href);
+  return database.createPrismaClient();
+}
 
 const checks = [
   {
@@ -241,10 +283,14 @@ async function runCheck(check) {
 }
 
 async function main() {
+  loadRootEnv();
+
   if (!process.env.DATABASE_URL) {
     console.error('DATABASE_URL is required for data integrity checks.');
     process.exit(1);
   }
+
+  prisma = await createPrismaClient();
 
   const results = [];
   for (const check of checks) {
@@ -272,5 +318,5 @@ main()
     process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect();
+    await prisma?.$disconnect();
   });

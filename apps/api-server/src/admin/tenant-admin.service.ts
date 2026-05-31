@@ -2,12 +2,17 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../common/services/prisma.service';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
+import { AuthenticatedUser } from '../common/interfaces/authenticated-request.interface';
+import { AuditAction, AuditLogService, AuditStatus } from '../common/services/audit-log.service';
 
 @Injectable()
 export class TenantAdminService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private auditLog: AuditLogService,
+  ) {}
 
-  async createTenant(createTenantDto: CreateTenantDto) {
+  async createTenant(createTenantDto: CreateTenantDto, currentUser?: AuthenticatedUser) {
     const existingTenant = await this.prisma.tenant.findUnique({
       where: { slug: createTenantDto.slug },
     });
@@ -33,6 +38,16 @@ export class TenantAdminService {
         settings: createTenantDto.settings || {},
       },
     });
+
+    if (currentUser) {
+      await this.auditLog.log({
+        tenantId: tenant.id,
+        userId: currentUser.id,
+        action: AuditAction.TENANT_CREATE,
+        status: AuditStatus.SUCCESS,
+        metadata: { name: tenant.name, slug: tenant.slug, domain: tenant.domain },
+      });
+    }
 
     return tenant;
   }
@@ -65,7 +80,11 @@ export class TenantAdminService {
     return tenant;
   }
 
-  async updateTenant(tenantId: string, updateTenantDto: UpdateTenantDto) {
+  async updateTenant(
+    tenantId: string,
+    updateTenantDto: UpdateTenantDto,
+    currentUser?: AuthenticatedUser,
+  ) {
     return this.prisma.$transaction(async (tx) => {
       const tenant = await tx.tenant.findUnique({
         where: { id: tenantId },
@@ -104,11 +123,27 @@ export class TenantAdminService {
         },
       });
 
+      if (currentUser) {
+        await this.auditLog.log({
+          tenantId,
+          userId: currentUser.id,
+          action: AuditAction.TENANT_UPDATE,
+          status: AuditStatus.SUCCESS,
+          metadata: {
+            name: updateTenantDto.name,
+            slug: updateTenantDto.slug,
+            domain: updateTenantDto.domain,
+            isActive: updateTenantDto.isActive,
+            settingsUpdated: updateTenantDto.settings !== undefined,
+          },
+        });
+      }
+
       return updatedTenant;
     });
   }
 
-  async deleteTenant(tenantId: string) {
+  async deleteTenant(tenantId: string, currentUser?: AuthenticatedUser) {
     const existingTenant = await this.prisma.tenant.findUnique({
       where: { id: tenantId },
     });
@@ -121,10 +156,19 @@ export class TenantAdminService {
       where: { id: tenantId },
       data: { isActive: false },
     });
+    if (currentUser) {
+      await this.auditLog.log({
+        tenantId,
+        userId: currentUser.id,
+        action: AuditAction.TENANT_DEACTIVATE,
+        status: AuditStatus.SUCCESS,
+        metadata: { name: tenant.name, slug: tenant.slug },
+      });
+    }
     return tenant;
   }
 
-  async restoreTenant(tenantId: string) {
+  async restoreTenant(tenantId: string, currentUser?: AuthenticatedUser) {
     const existingTenant = await this.prisma.tenant.findUnique({
       where: { id: tenantId },
     });
@@ -137,6 +181,15 @@ export class TenantAdminService {
       where: { id: tenantId },
       data: { isActive: true },
     });
+    if (currentUser) {
+      await this.auditLog.log({
+        tenantId,
+        userId: currentUser.id,
+        action: AuditAction.TENANT_RESTORE,
+        status: AuditStatus.SUCCESS,
+        metadata: { name: tenant.name, slug: tenant.slug },
+      });
+    }
     return tenant;
   }
 }

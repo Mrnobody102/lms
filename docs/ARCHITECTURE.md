@@ -90,6 +90,19 @@ graph TD
 - `metrics`
 - `mcp`
 
+### Super Portal Operations Flow
+
+`apps/super-portal` là portal vận hành SaaS cấp platform, chỉ dùng cho `Role.SUPER_ADMIN`.
+Portal không tự dựng số liệu demo cho operational views; mọi màn hình billing, usage, domains, feature flags, audit logs, incidents và tenant readiness phải fetch từ `api-server`.
+
+- Auth dùng browser cookie + CSRF như các portal web khác.
+- Super Admin API nằm trong `admin` module, trả response qua `TransformInterceptor`.
+- Tenant overview (`GET /admin/tenants/:id/overview`) gom profile tenant, counts, subscription summary, readiness và latest audit logs.
+- Platform usage/billing/domains/feature flags/audit logs/incidents nằm dưới `GET/PATCH /admin/platform/*`.
+- Feature flags persist trong `Tenant.settings.featureFlags`.
+- Domain metadata persist trong `Tenant.settings.domain`; trạng thái DNS/SSL chỉ được hiển thị khi có dữ liệu thật, không giả lập verification.
+- Incident view được dẫn xuất từ audit/system telemetry hiện có cho tới khi có nhu cầu vận hành một incident model riêng.
+
 ## Learning Domain Hiện Tại (Đang dịch chuyển)
 
 Luồng nội dung học tập hiện tại đi theo mô hình course-first:
