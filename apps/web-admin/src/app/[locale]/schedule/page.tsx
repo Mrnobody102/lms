@@ -41,7 +41,7 @@ export default function AdminSchedulePage() {
   const courses = useMemo(() => coursesQuery.data?.data ?? [], [coursesQuery.data]);
   const selectedCourseId = courseId || courses[0]?.id || '';
   const courseQuery = useCourse(selectedCourseId);
-  const examsQuery = useExams({ courseId: selectedCourseId });
+  const examsQuery = useExams({ courseId: selectedCourseId }, Boolean(selectedCourseId));
 
   const items = useMemo<ScheduleItem[]>(() => {
     const course = courseQuery.data;
@@ -87,8 +87,14 @@ export default function AdminSchedulePage() {
     });
   }, [items, query, typeFilter]);
 
-  const isLoading = coursesQuery.isLoading || courseQuery.isLoading || examsQuery.isLoading;
-  const hasError = coursesQuery.isError || courseQuery.isError || examsQuery.isError;
+  const isLoading =
+    coursesQuery.isLoading ||
+    (Boolean(selectedCourseId) && courseQuery.isLoading) ||
+    (Boolean(selectedCourseId) && examsQuery.isLoading);
+  const hasError =
+    coursesQuery.isError ||
+    (Boolean(selectedCourseId) && courseQuery.isError) ||
+    (Boolean(selectedCourseId) && examsQuery.isError);
 
   return (
     <AuthGuard>

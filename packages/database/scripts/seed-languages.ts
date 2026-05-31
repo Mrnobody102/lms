@@ -1,11 +1,11 @@
 import { createPrismaClient } from '../src';
 import {
-  LessonType,
   EnrollmentStatus,
-  PracticeQuestionType,
   ExamQuestionType,
+  LessonType,
+  PracticeQuestionType,
   Prisma,
-} from '../.prisma/client';
+} from '../src/generated/prisma/client/client.js';
 
 const prisma = createPrismaClient();
 

@@ -6,7 +6,12 @@ import { AdminHeader } from '@/components/layout/admin-header';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
 import { Alert, AlertDescription, Badge } from '@/components/ui';
+import { useAuthStore } from '@/features/auth/auth.store';
 import { useAdminOverview } from '@/hooks/use-admin-users';
+import { useCourseRuns } from '@/hooks/use-course-runs';
+import { useCourses } from '@/hooks/use-courses';
+import type { Course } from '@/lib/course-api';
+import type { CourseRunSummary } from '@/lib/course-run-api';
 import {
   Activity,
   AlertCircle,
@@ -24,7 +29,14 @@ import type { LucideIcon } from 'lucide-react';
 export default function AdminHome() {
   const t = useTranslations('Admin');
   const locale = useLocale();
-  const { data: overview, isLoading, isError } = useAdminOverview();
+  const { isAuthenticated, isInitialized, user } = useAuthStore();
+  const isInstructor = user?.role === 'INSTRUCTOR';
+  const canLoadQueries = isInitialized && isAuthenticated;
+  const shouldLoadAdminOverview = canLoadQueries && Boolean(user) && !isInstructor;
+  const shouldLoadInstructorData = canLoadQueries && isInstructor;
+  const { data: overview, isLoading, isError } = useAdminOverview(shouldLoadAdminOverview);
+  const instructorCoursesQuery = useCourses({ page: 1, limit: 100 }, shouldLoadInstructorData);
+  const instructorRunsQuery = useCourseRuns(shouldLoadInstructorData);
 
   const stats = overview
     ? [
@@ -70,12 +82,20 @@ export default function AdminHome() {
         <main className="flex-1 md:ml-[var(--admin-sidebar-width)] p-6 lg:p-8">
           <div className="max-w-6xl mx-auto">
             <AdminHeader
-              title={t('dashboard')}
-              description={t('welcome')}
-              showCreateCourse={true}
+              title={isInstructor ? t('instructorDashboardTitle') : t('dashboard')}
+              description={isInstructor ? t('instructorDashboardDesc') : t('welcome')}
+              showCreateCourse={!isInstructor}
             />
 
-            {isLoading ? (
+            {isInstructor ? (
+              <InstructorDashboard
+                courses={instructorCoursesQuery.data?.data ?? []}
+                runs={instructorRunsQuery.data ?? []}
+                isLoading={instructorCoursesQuery.isLoading || instructorRunsQuery.isLoading}
+                isError={instructorCoursesQuery.isError || instructorRunsQuery.isError}
+                locale={locale}
+              />
+            ) : isLoading ? (
               <div className="flex items-center gap-2 rounded-md border p-4 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 {t('loading')}
@@ -212,6 +232,216 @@ export default function AdminHome() {
       </div>
     </AuthGuard>
   );
+}
+
+function InstructorDashboard({
+  courses,
+  runs,
+  isLoading,
+  isError,
+  locale,
+}: {
+  courses: Course[];
+  runs: CourseRunSummary[];
+  isLoading: boolean;
+  isError: boolean;
+  locale: string;
+}) {
+  const t = useTranslations('Admin');
+  const assignedCourseCount = courses.length;
+  const activeCourseCount = courses.filter((course) => course.isActive).length;
+  const learnerCount = courses.reduce(
+    (total, course) => total + (course.enrollments?.length ?? 0),
+    0,
+  );
+  const sessionCount = runs.reduce((total, run) => total + (run._count?.sessions ?? 0), 0);
+  const visibleRuns = runs.slice(0, 3);
+  const visibleCourses = courses.slice(0, 4);
+
+  const summaryCards = [
+    {
+      label: t('assignedCourses'),
+      value: assignedCourseCount,
+      detail: t('activeCourseCountValue', { count: activeCourseCount }),
+      icon: BookOpen,
+      href: '/courses',
+    },
+    {
+      label: t('assignedClasses'),
+      value: runs.length,
+      detail: t('scheduledSessionsValue', { count: sessionCount }),
+      icon: CalendarDays,
+      href: '/course-runs',
+    },
+    {
+      label: t('assignedLearners'),
+      value: learnerCount,
+      detail: t('activeEnrollmentsValue', { count: learnerCount }),
+      icon: Users,
+      href: '/reports',
+    },
+  ];
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2 rounded-md border p-4 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        {t('loading')}
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Alert variant="destructive" className="mb-8">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>{t('instructorDashboardLoadError')}</AlertDescription>
+      </Alert>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-3">
+        {summaryCards.map((card) => (
+          <Link key={card.label} href={card.href} className="block">
+            <div className="h-full rounded-xl border bg-card p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div className="rounded-lg bg-primary/10 p-2 text-primary">
+                  <card.icon className="h-5 w-5" />
+                </div>
+                <Badge variant="secondary" className="text-xs">
+                  {card.detail}
+                </Badge>
+              </div>
+              <p className="text-sm font-medium text-muted-foreground">{card.label}</p>
+              <p className="mt-1 text-3xl font-bold tracking-tight">{card.value}</p>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-[1.35fr_1fr]">
+        <section className="rounded-xl border bg-card p-5 shadow-sm">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold">{t('instructorCoursesTitle')}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{t('instructorCoursesDesc')}</p>
+            </div>
+            <Link href="/courses" className="text-sm font-medium text-primary hover:underline">
+              {t('openMyCourses')}
+            </Link>
+          </div>
+
+          {visibleCourses.length === 0 ? (
+            <div className="rounded-lg border border-dashed bg-muted/20 p-6 text-sm text-muted-foreground">
+              {t('noInstructorData')}
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {visibleCourses.map((course) => (
+                <div
+                  key={course.id}
+                  className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold">{course.title}</p>
+                    <p className="mt-1 truncate text-xs text-muted-foreground">
+                      {course.languageCode?.toUpperCase() || t('common.none')}
+                      {course.proficiencyLevel ? ` · ${course.proficiencyLevel}` : ''}
+                    </p>
+                  </div>
+                  <Badge variant={course.isActive ? 'success' : 'secondary'} className="shrink-0">
+                    {course.isActive
+                      ? t('schedulePage.status.active')
+                      : t('schedulePage.status.draft')}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="rounded-xl border bg-card p-5 shadow-sm">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold">{t('instructorClassesTitle')}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{t('instructorClassesDesc')}</p>
+            </div>
+            <Link href="/course-runs" className="text-sm font-medium text-primary hover:underline">
+              {t('openMyClasses')}
+            </Link>
+          </div>
+
+          {visibleRuns.length === 0 ? (
+            <div className="rounded-lg border border-dashed bg-muted/20 p-6 text-sm text-muted-foreground">
+              {t('noInstructorData')}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {visibleRuns.map((run) => (
+                <div key={run.id} className="rounded-lg border bg-background p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="line-clamp-1 text-sm font-semibold">{run.title}</p>
+                      <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
+                        {run.course.title}
+                      </p>
+                    </div>
+                    <Badge variant={run.status === 'IN_PROGRESS' ? 'success' : 'secondary'}>
+                      {t(`courseRuns.statuses.${run.status}`)}
+                    </Badge>
+                  </div>
+                  <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                    <CalendarDays className="h-3.5 w-3.5 text-primary" />
+                    <span className="min-w-0 truncate">
+                      {formatRunDate(run.startsAt, locale, t)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Link
+          href="/schedule"
+          className="rounded-xl border bg-card px-4 py-3 text-sm font-medium transition hover:bg-accent"
+        >
+          {t('openTeachingSchedule')}
+        </Link>
+        <Link
+          href="/reports"
+          className="rounded-xl border bg-card px-4 py-3 text-sm font-medium transition hover:bg-accent"
+        >
+          {t('openReports')}
+        </Link>
+        <Link
+          href="/settings"
+          className="rounded-xl border bg-card px-4 py-3 text-sm font-medium transition hover:bg-accent"
+        >
+          {t('settingsLabel')}
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function formatRunDate(
+  value: string | null | undefined,
+  locale: string,
+  t: (key: string) => string,
+) {
+  if (!value) {
+    return t('courseRuns.notScheduled');
+  }
+
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date(value));
 }
 
 function formatDateTime(value: string, locale: string) {

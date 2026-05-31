@@ -7,10 +7,11 @@ import {
   Lesson,
 } from '@/lib/course-api';
 
-export function useCourses(params?: CourseListParams) {
+export function useCourses(params?: CourseListParams, enabled = true) {
   return useQuery({
     queryKey: ['courses', params],
     queryFn: () => courseApi.getCourses(params),
+    enabled,
     staleTime: 60 * 1000,
   });
 }

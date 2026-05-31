@@ -1,18 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ExamListParams, ExamQuestionType, examApi } from '@/lib/exam-api';
 
-export function useExams(params?: ExamListParams) {
+export function useExams(params?: ExamListParams, enabled = true) {
   return useQuery({
     queryKey: ['exams', params],
     queryFn: () => examApi.getExams(params),
+    enabled,
     staleTime: 60 * 1000,
   });
 }
 
-export function useExamsPage(params?: ExamListParams) {
+export function useExamsPage(params?: ExamListParams, enabled = true) {
   return useQuery({
     queryKey: ['exams-page', params],
     queryFn: () => examApi.getExamsPage(params),
+    enabled,
     staleTime: 60 * 1000,
   });
 }

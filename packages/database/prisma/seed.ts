@@ -12,7 +12,7 @@ import {
   PaymentStatus,
   PracticeQuestionType,
   ExamQuestionType,
-} from '../.prisma/client';
+} from '../src/generated/prisma/client/client.js';
 import * as bcrypt from 'bcrypt';
 import { createHash } from 'crypto';
 import { createPrismaClient } from '../src/client-factory.js';
@@ -1459,11 +1459,18 @@ async function main() {
   console.log('Start seeding...');
 
   const tenant = await prisma.tenant.upsert({
-    where: { slug: 'learning-center-demo' },
-    update: {},
+    where: { slug: 'trung-tam-demo' },
+    update: {
+      name: 'Trung Tâm Học Tập Demo',
+      domain: 'demo.lms.com',
+      settings: {
+        themeColor: '#ff0000',
+        logoUrl: 'https://example.com/logo.png',
+      },
+    },
     create: {
       name: 'Trung Tâm Học Tập Demo',
-      slug: 'learning-center-demo',
+      slug: 'trung-tam-demo',
       domain: 'demo.lms.com',
       settings: {
         themeColor: '#ff0000',

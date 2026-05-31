@@ -119,6 +119,9 @@
     background-size: 1rem;
     padding-right: 2.75rem !important;
   }
+  select.appearance-none {
+    background-image: none;
+  }
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings:

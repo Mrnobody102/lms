@@ -1,5 +1,8 @@
 import { createPrismaClient } from '../src';
-import { MarketplaceResourceType, MarketplacePricingModel } from '../.prisma/client';
+import {
+  MarketplacePricingModel,
+  MarketplaceResourceType,
+} from '../src/generated/prisma/client/client.js';
 
 const prisma = createPrismaClient();
 

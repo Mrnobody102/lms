@@ -5,10 +5,11 @@ import {
   type UpdateAdminUserPayload,
 } from '@/lib/admin-user-api';
 
-export function useAdminOverview() {
+export function useAdminOverview(enabled = true) {
   return useQuery({
     queryKey: ['admin-overview'],
     queryFn: () => adminUserApi.getOverview(),
+    enabled,
     staleTime: 60 * 1000,
   });
 }
