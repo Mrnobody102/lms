@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo } from 'react';
-import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import {
   ArrowRight,
@@ -126,21 +125,20 @@ export default function CourseDetailPage() {
   const publishedExams = exams.filter((item) => item.isPublished);
   const practiceSet = publishedPracticeSets[0] ?? null;
   const exam = publishedExams[0] ?? null;
+  const coverImageUrl = course.coverImageUrl?.trim();
 
   return (
     <div className="min-h-screen bg-background font-sans">
       <StudentNav showLinks />
 
       {/* Cover Image Banner */}
-      {course.coverImageUrl && (
-        <div className="relative h-52 w-full overflow-hidden">
-          <Image
-            src={course.coverImageUrl}
-            alt={course.title}
-            fill
-            sizes="100vw"
-            className="object-cover"
-          />
+      {coverImageUrl && (
+        <div
+          aria-label={course.title}
+          role="img"
+          className="relative h-44 w-full overflow-hidden bg-muted bg-cover bg-center sm:h-52"
+          style={{ backgroundImage: `url(${JSON.stringify(coverImageUrl)})` }}
+        >
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/20 to-background" />
         </div>
       )}

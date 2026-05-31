@@ -36,8 +36,10 @@ import { RoleplayManager } from '@/features/roleplay/roleplay-manager';
 import { useAuthStore } from '@/features/auth/auth.store';
 import {
   createEmptyMicroCardDraft,
+  createEmptyQuizQuestionDraft,
   isLessonDraftReady,
   parseMicroCardContent,
+  parseQuizContent,
 } from '@/features/courses/lesson-type-fields';
 import {
   CourseUnit,
@@ -241,12 +243,12 @@ export default function CourseEditorPage() {
         );
       }
 
-      const { id: _id, courseId: _lessonCourseId, ...copy } = lesson;
       await createLesson.mutateAsync({
         courseId,
         data: {
-          ...copy,
           title: t('duplicatedLessonTitle', { title: lesson.title }),
+          type: lesson.type,
+          duration: lesson.duration,
           order: nextOrder,
           unitId: lesson.unitId ?? null,
           content: lesson.content ?? null,
@@ -1028,6 +1030,13 @@ function isPersistedLessonReady(lesson: Lesson) {
     );
   }
 
+  if (lesson.type === 'quiz') {
+    return parseQuizContent(lesson.content).some(
+      (quiz) =>
+        quiz.question.trim().length > 0 && quiz.options.some((option) => option.trim().length > 0),
+    );
+  }
+
   return isLessonDraftReady({
     type: lesson.type,
     title: lesson.title,
@@ -1037,5 +1046,6 @@ function isPersistedLessonReady(lesson: Lesson) {
     practiceExerciseSetId: lesson.practiceExerciseSetId ?? '',
     examId: lesson.examId ?? '',
     microCards: [createEmptyMicroCardDraft()],
+    quizDrafts: [createEmptyQuizQuestionDraft()],
   });
 }

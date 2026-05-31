@@ -5,6 +5,7 @@
 - [Core](#core)
 - [Backend (`apps/api-server`)](#backend-appsapi-server)
 - [Frontend (`apps/web-*`)](#frontend-appsweb-)
+- [Mobile (`apps/mobile-student`)](#mobile-appsmobile-student)
 - [DevOps & Infrastructure (DevOps & Hạ tầng) - Dự kiến](#devops--infrastructure-devops--hạ-tầng---dự-kiến)
 
 ## Core
@@ -34,17 +35,22 @@
   - Client State: [Zustand](https://docs.pmnd.rs/zustand) - Quản lý global state nhẹ nhàng.
 - **Form Handling**: [React Hook Form](https://react-hook-form.com/) + [Zod](https://zod.dev/).
 
-### Mobile App (Chiến Lược Tương Lai)
+## Mobile (`apps/mobile-student`)
 
-- **Framework**: **React Native (Expo)**.
-  - _Lý do_: Tận dụng được tối đa code logic đã viết bằng TypeScript trong Monorepo (các gói `packages/shared`, `packages/api-client`). Đội ngũ dev frontend (React/Next.js) có thể dễ dàng tham gia phát triển.
+- **Framework**: React Native + Expo.
+  - _Lý do_: Tận dụng TypeScript và các package shared trong monorepo, đồng thời có native capability cho push notification, offline cache, audio và microphone.
+- **Phạm vi MVP**: student app trước; admin và super portal tiếp tục dùng web.
 - **Kiến trúc**:
-  - **API-First**: Mobile App sẽ gọi chung hệ thống API (Rest/GraphQL) với Web App.
-  - **Shared State**: Có thể dùng chung các hook data-fetching (TanStack Query) nếu cấu trúc code tốt.
-- **Tính năng đặc thù**:
-  - Push Notifications (thông báo lịch học, bài tập).
-  - Offline Mode (tải bài học về học offline).
-  - Audio/Microphone integrate (luyện phát âm hoặc phản hồi nói).
+  - **API-first**: gọi chung NestJS API với web-student, ưu tiên các student contract hiện có như course activity, lesson, progress, practice/exam, SRS, roleplay và media.
+  - **Client adapter**: `@repo/api-client` cần tách browser adapter và mobile adapter. Browser giữ cookie + CSRF; mobile dùng base URL rõ ràng, tenant resolver native và token/session trong secure storage.
+  - **Shared logic**: dùng lại parser, DTO/types, query keys và learning helpers khi hợp lý; UI native viết riêng, không copy Radix/Tailwind web components.
+  - **Tenant resolution**: mobile chọn tenant bằng tenant slug/domain/org code hoặc activation/license flow; không dùng hardcoded `NEXT_PUBLIC_TENANT_ID` trong production.
+- **Feature order**:
+  - M1: tenant selection, login/session restore, dashboard, continue learning, course activity timeline.
+  - M2: lesson viewer cho text/video/quiz/micro-card, progress completion, SRS review.
+  - M3: practice/exam attempt + review, audio prompt playback.
+  - M4: roleplay text trước, audio/microphone sau khi production pronunciation provider ổn.
+  - M5: push notification và offline-lite cache cho bài đã mở/SRS due.
 
 ## DevOps & Infrastructure (DevOps & Hạ tầng) - Dự kiến
 

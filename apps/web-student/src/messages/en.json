@@ -942,6 +942,13 @@
       "activeAttempts": "Active attempts",
       "activeAttemptsValue": "{count, plural, =0 {No active attempts} one {# active attempt} other {# active attempts}}",
       "activeAttemptsDesc": "Resume timed exams before they expire.",
+      "examsByCourse": "View by course",
+      "examsByCourseDesc": "Group exams by course so unit tests and mock tests from different courses stay separate.",
+      "courseExamCount": "{count, plural, =0 {No exams} one {# exam} other {# exams}}",
+      "filters": {
+        "course": "Course",
+        "allCourses": "All courses"
+      },
       "unitTests": "Unit tests",
       "unitTestsDesc": "Short checkpoints for each course unit.",
       "noUnitTests": "No unit tests are published yet.",

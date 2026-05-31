@@ -44,6 +44,8 @@ interface LessonTypeFieldsProps {
   examId: string;
   onExamIdChange: (value: string) => void;
   exams?: ResourceOption[];
+  quizDrafts: QuizQuestionDraft[];
+  onQuizDraftsChange: (value: QuizQuestionDraft[]) => void;
 }
 
 interface ResourceOption {
@@ -67,6 +69,8 @@ export function LessonTypeFields({
   examId,
   onExamIdChange,
   exams = [],
+  quizDrafts,
+  onQuizDraftsChange,
 }: LessonTypeFieldsProps) {
   const t = useTranslations('Admin');
 
@@ -85,6 +89,38 @@ export function LessonTypeFields({
   const removeMicroCard = (index: number) => {
     const nextCards = microCards.filter((_card, currentIndex) => currentIndex !== index);
     onMicroCardsChange(nextCards.length > 0 ? nextCards : [createEmptyMicroCardDraft()]);
+  };
+
+  const updateQuizDraft = <K extends keyof QuizQuestionDraft>(
+    index: number,
+    field: K,
+    value: QuizQuestionDraft[K],
+  ) => {
+    onQuizDraftsChange(
+      quizDrafts.map((draft, currentIndex) =>
+        currentIndex === index ? { ...draft, [field]: value } : draft,
+      ),
+    );
+  };
+
+  const updateQuizOption = (questionIndex: number, optionIndex: number, value: string) => {
+    onQuizDraftsChange(
+      quizDrafts.map((draft, qIndex) => {
+        if (qIndex !== questionIndex) return draft;
+        const newOptions = [...draft.options];
+        newOptions[optionIndex] = value;
+        return { ...draft, options: newOptions };
+      }),
+    );
+  };
+
+  const addQuizDraft = () => {
+    onQuizDraftsChange([...quizDrafts, createEmptyQuizQuestionDraft()]);
+  };
+
+  const removeQuizDraft = (index: number) => {
+    const nextDrafts = quizDrafts.filter((_draft, currentIndex) => currentIndex !== index);
+    onQuizDraftsChange(nextDrafts.length > 0 ? nextDrafts : [createEmptyQuizQuestionDraft()]);
   };
 
   if (type === 'video') {
@@ -233,6 +269,73 @@ export function LessonTypeFields({
     );
   }
 
+  if (type === 'quiz') {
+    return (
+      <div className="space-y-3 rounded-lg border bg-muted/20 p-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium">{t('quizQuestions')}</p>
+            <p className="text-xs text-muted-foreground">{t('quizQuestionsDesc')}</p>
+          </div>
+          <Button type="button" variant="outline" size="sm" onClick={addQuizDraft}>
+            {t('quizAddQuestion')}
+          </Button>
+        </div>
+
+        {quizDrafts.map((quiz, index) => (
+          <div key={index} className="space-y-3 rounded-lg border bg-background p-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-medium">{t('quizQuestionLabel', { index: index + 1 })}</p>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => removeQuizDraft(index)}
+                disabled={quizDrafts.length === 1}
+              >
+                {t('remove')}
+              </Button>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm">{t('quizQuestionPrompt')}</Label>
+              <Input
+                value={quiz.question}
+                onChange={(event) => updateQuizDraft(index, 'question', event.target.value)}
+                placeholder={t('quizQuestionPromptPlaceholder')}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm">{t('quizOptions')}</Label>
+              <div className="space-y-2">
+                {quiz.options.map((option, optIdx) => (
+                  <div key={optIdx} className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name={`quiz-${index}-correct`}
+                      checked={quiz.correctAnswer === optIdx}
+                      onChange={() => updateQuizDraft(index, 'correctAnswer', optIdx)}
+                      className="h-4 w-4 text-primary"
+                      title={t('quizCorrectAnswer')}
+                    />
+                    <Input
+                      value={option}
+                      onChange={(event) => updateQuizOption(index, optIdx, event.target.value)}
+                      placeholder={t('quizOptionPlaceholder', { index: optIdx + 1 })}
+                      className={
+                        quiz.correctAnswer === optIdx ? 'border-primary ring-1 ring-primary/20' : ''
+                      }
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   if (type === 'simulation') {
     return (
       <div className="space-y-1.5">
@@ -260,6 +363,14 @@ export function createEmptyMicroCardDraft(): MicroCardDraft {
   };
 }
 
+export function createEmptyQuizQuestionDraft(): QuizQuestionDraft {
+  return {
+    question: '',
+    options: ['', '', '', ''],
+    correctAnswer: 0,
+  };
+}
+
 export function isLessonDraftReady(input: {
   type: LessonType;
   title: string;
@@ -269,6 +380,7 @@ export function isLessonDraftReady(input: {
   practiceExerciseSetId: string;
   examId: string;
   microCards: MicroCardDraft[];
+  quizDrafts: QuizQuestionDraft[];
 }) {
   if (!input.title.trim()) {
     return false;
@@ -289,6 +401,13 @@ export function isLessonDraftReady(input: {
   if (input.type === 'micro_card') {
     return input.microCards.some(
       (card) => card.front.trim().length > 0 && card.back.trim().length > 0,
+    );
+  }
+
+  if (input.type === 'quiz') {
+    return input.quizDrafts.some(
+      (quiz) =>
+        quiz.question.trim().length > 0 && quiz.options.some((opt) => opt.trim().length > 0),
     );
   }
 
@@ -316,6 +435,23 @@ export function serializeMicroCardContent(input: MicroCardDraft[]) {
   return serializeSharedMicroCardContent(input);
 }
 
+export function parseQuizContent(content: string | null | undefined): QuizQuestionDraft[] {
+  if (!content) return [createEmptyQuizQuestionDraft()];
+  try {
+    const parsed: unknown = JSON.parse(content);
+    if (hasQuizQuestions(parsed) && parsed.questions.length > 0) {
+      return parsed.questions;
+    }
+  } catch {
+    // Invalid legacy content falls back to an empty draft.
+  }
+  return [createEmptyQuizQuestionDraft()];
+}
+
+export function serializeQuizContent(drafts: QuizQuestionDraft[]): string {
+  return JSON.stringify({ questions: drafts });
+}
+
 function toMicroCardDraft(value: MicroCardItem): MicroCardDraft {
   return {
     front: value.front,
@@ -324,4 +460,32 @@ function toMicroCardDraft(value: MicroCardItem): MicroCardDraft {
     example: value.example ?? '',
     audioUrl: value.audioUrl ?? '',
   };
+}
+
+function hasQuizQuestions(value: unknown): value is QuizDraft {
+  if (!value || typeof value !== 'object' || !('questions' in value)) {
+    return false;
+  }
+
+  const questions = (value as { questions: unknown }).questions;
+  return Array.isArray(questions) && questions.every(isQuizQuestionDraft);
+}
+
+function isQuizQuestionDraft(value: unknown): value is QuizQuestionDraft {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const draft = value as {
+    correctAnswer?: unknown;
+    options?: unknown;
+    question?: unknown;
+  };
+
+  return (
+    typeof draft.question === 'string' &&
+    Array.isArray(draft.options) &&
+    draft.options.every((option) => typeof option === 'string') &&
+    typeof draft.correctAnswer === 'number'
+  );
 }

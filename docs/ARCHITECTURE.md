@@ -1,6 +1,6 @@
 # Tổng Quan Kiến Trúc (Architecture Overview)
 
-LMS Platform là monorepo multi-tenant dùng pnpm + Turborepo, với backend NestJS và ba frontend Next.js riêng cho student, admin và super portal.
+LMS Platform là monorepo multi-tenant dùng pnpm + Turborepo, với backend NestJS, các web portal Next.js và hướng mở rộng mobile native cho student bằng Expo.
 
 ## Mục Lục
 
@@ -18,6 +18,7 @@ graph TD
     Edge --> Student[web-student]
     Edge --> Admin[web-admin]
     Edge --> Portal[super-portal]
+    Mobile[mobile-student] -->|HTTPS| API
 
     Student -->|REST + cookie| API[api-server]
     Admin -->|REST + cookie| API
@@ -62,11 +63,12 @@ graph TD
 - `apps/web-student`: trải nghiệm học viên.
 - `apps/web-admin`: quản trị trung tâm.
 - `apps/super-portal`: quản trị platform/tenant.
+- `apps/mobile-student` (planned P11): Expo React Native app cho học viên; dùng chung student API nhưng auth/session đi qua native secure storage thay vì browser cookie.
 
 ### Shared packages
 
 - `@repo/database`: Prisma schema, migrations, seed, generated client.
-- `@repo/api-client`: Axios client shared cho browser auth, CSRF, 401 handling.
+- `@repo/api-client`: Axios client shared cho browser auth, CSRF, 401 handling; cần mở rộng adapter cho mobile native token/session storage ở P11.
 - `@repo/shared`: constants, auth store, security helpers, CSP.
 - `@repo/ui`: shared UI primitives.
 
@@ -153,6 +155,8 @@ Kiến trúc hệ thống được thiết kế để kết hợp hài hòa gi�
 
 - `NEXT_PUBLIC_TENANT_ID` là tenant hint local/dev, không phải cơ chế production.
 - Production browser traffic nên resolve tenant từ host/subdomain.
+- Production mobile traffic phải resolve tenant bằng tenant slug/domain/org code hoặc activation/license flow; không dùng hardcoded frontend tenant hint làm authority.
+- Browser session dùng cookie + CSRF; mobile session không có `document.cookie`, nên phải dùng secure storage native và gửi credential qua mobile API client adapter.
 - `CORS_ORIGINS` phải là exact origin list.
 - `TRUST_PROXY` chỉ bật khi đứng sau reverse proxy đáng tin cậy.
 - `ALLOW_TENANT_HEADER_IN_PRODUCTION` nên để `false` trừ khi edge chủ động inject header.

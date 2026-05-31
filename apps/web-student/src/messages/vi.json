@@ -942,6 +942,13 @@
       "activeAttempts": "Lần làm đang mở",
       "activeAttemptsValue": "{count, plural, =0 {0 lần đang làm} one {# lần đang làm} other {# lần đang làm}}",
       "activeAttemptsDesc": "Tiếp tục các đề đang làm trước khi hết giờ.",
+      "examsByCourse": "Xem theo khóa học",
+      "examsByCourseDesc": "Nhóm đề theo khóa để tránh trộn unit và đề thi thử của nhiều khóa.",
+      "courseExamCount": "{count, plural, =0 {Chưa có đề} one {# đề kiểm tra} other {# đề kiểm tra}}",
+      "filters": {
+        "course": "Khóa học",
+        "allCourses": "Tất cả khóa học"
+      },
       "unitTests": "Kiểm tra theo unit",
       "unitTestsDesc": "Checkpoint ngắn để kiểm tra từng phần trong khóa học.",
       "noUnitTests": "Chưa có đề kiểm tra theo unit.",

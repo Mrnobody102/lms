@@ -27,8 +27,10 @@ import {
   parseMicroCardContent,
   serializeMicroCardContent,
   createEmptyMicroCardDraft,
+  parseQuizContent,
+  serializeQuizContent,
+  createEmptyQuizQuestionDraft,
   LessonTypeFields,
-  MicroCardDraft,
 } from './lesson-type-fields';
 
 interface LessonEditorProps {
@@ -78,6 +80,7 @@ export function LessonEditor({
   const [videoUrl, setVideoUrl] = useState('');
   const [aiPrompt, setAiPrompt] = useState('');
   const [microCards, setMicroCards] = useState([createEmptyMicroCardDraft()]);
+  const [quizDrafts, setQuizDrafts] = useState([createEmptyQuizQuestionDraft()]);
   const [practiceExerciseSetId, setPracticeExerciseSetId] = useState('');
   const [examId, setExamId] = useState('');
   const [isDirty, setIsDirty] = useState(false);
@@ -102,6 +105,7 @@ export function LessonEditor({
       setVideoUrl(lesson.videoUrl ?? '');
       setAiPrompt(lesson.aiPrompt ?? '');
       setMicroCards(parseMicroCardContent(lesson.content));
+      setQuizDrafts(parseQuizContent(lesson.content));
       setPracticeExerciseSetId(lesson.practiceExerciseSetId ?? '');
       setExamId(lesson.examId ?? '');
     } else {
@@ -132,6 +136,7 @@ export function LessonEditor({
     videoUrl,
     aiPrompt,
     microCards,
+    quizDrafts,
     practiceExerciseSetId,
     examId,
   ]);
@@ -145,6 +150,7 @@ export function LessonEditor({
         videoUrl,
         aiPrompt,
         microCards,
+        quizDrafts,
         practiceExerciseSetId,
         examId,
       })
@@ -161,8 +167,10 @@ export function LessonEditor({
         type === 'text'
           ? content.trim()
           : type === 'micro_card'
-            ? serializeMicroCardContent(microCards as MicroCardDraft[])
-            : null,
+            ? serializeMicroCardContent(microCards)
+            : type === 'quiz'
+              ? serializeQuizContent(quizDrafts)
+              : null,
       practiceExerciseSetId: type === 'practice' ? practiceExerciseSetId : null,
       examId: type === 'exam' ? examId : null,
       videoUrl: type === 'video' ? videoUrl.trim() : null,
@@ -188,6 +196,7 @@ export function LessonEditor({
     videoUrl,
     aiPrompt,
     microCards,
+    quizDrafts,
     practiceExerciseSetId,
     examId,
   });
@@ -545,6 +554,8 @@ export function LessonEditor({
                 onAiPromptChange={setAiPrompt}
                 microCards={microCards}
                 onMicroCardsChange={setMicroCards}
+                quizDrafts={quizDrafts}
+                onQuizDraftsChange={setQuizDrafts}
                 practiceExerciseSetId={practiceExerciseSetId}
                 onPracticeExerciseSetIdChange={setPracticeExerciseSetId}
                 practiceExerciseSets={attachablePracticeExerciseSets}

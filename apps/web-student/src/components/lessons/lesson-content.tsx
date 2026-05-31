@@ -9,6 +9,7 @@ import { Link } from '../../navigation';
 import { MicroCardContent } from './micro-card-content';
 import { TextContent } from './text-content';
 import { VideoPlayer } from './video-player';
+import { QuizContent } from './quiz-content';
 
 const SimulationContent = dynamic(
   () => import('./simulation-content').then((m) => ({ default: m.SimulationContent })),
@@ -60,6 +61,8 @@ export function LessonContent({ lesson, onComplete }: LessonContentProps) {
         );
       case 'simulation':
         return <SimulationContent aiPrompt={lesson.aiPrompt ?? undefined} />;
+      case 'quiz':
+        return <QuizContent quiz={parseLessonQuizContent(lesson.content)} />;
       case 'practice':
         return lesson.practiceExerciseSetId ? (
           <LinkedLessonResource
@@ -119,5 +122,54 @@ function LinkedLessonResource({
         {label}
       </Link>
     </div>
+  );
+}
+
+interface LessonQuizContent {
+  questions: {
+    correctAnswer: number;
+    options: string[];
+    question: string;
+  }[];
+}
+
+function parseLessonQuizContent(content: string | null | undefined): LessonQuizContent | undefined {
+  if (!content) {
+    return undefined;
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(content);
+    return isLessonQuizContent(parsed) ? parsed : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function isLessonQuizContent(value: unknown): value is LessonQuizContent {
+  if (!value || typeof value !== 'object' || !('questions' in value)) {
+    return false;
+  }
+
+  const questions = (value as { questions: unknown }).questions;
+  return Array.isArray(questions) && questions.every(isLessonQuizQuestion);
+}
+
+function isLessonQuizQuestion(value: unknown): value is LessonQuizContent['questions'][number] {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const question = value as {
+    correctAnswer?: unknown;
+    options?: unknown;
+    question?: unknown;
+  };
+
+  return (
+    typeof question.question === 'string' &&
+    Array.isArray(question.options) &&
+    question.options.every((option) => typeof option === 'string') &&
+    typeof question.correctAnswer === 'number'
   );
 }

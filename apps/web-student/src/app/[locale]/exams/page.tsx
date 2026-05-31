@@ -32,17 +32,43 @@ export default function ExamsPage() {
     refetch: refetchAttempts,
   } = useExamAttempts({ limit: 5 }, isAuthenticated);
   const [now, setNow] = useState(() => Date.now());
+  const [selectedCourseId, setSelectedCourseId] = useState('all');
+  const courseOptions = useMemo(
+    () => buildExamCourseOptions(exams, t('exam.courseFallback')),
+    [exams, t],
+  );
+  const filteredExams = useMemo(
+    () =>
+      selectedCourseId === 'all'
+        ? exams
+        : exams.filter((exam) => getExamCourseId(exam) === selectedCourseId),
+    [exams, selectedCourseId],
+  );
+  const filteredAttempts = useMemo(
+    () =>
+      selectedCourseId === 'all'
+        ? attempts
+        : attempts.filter((attempt) => attempt.exam.course.id === selectedCourseId),
+    [attempts, selectedCourseId],
+  );
   const hasActiveAttempt = useMemo(
     () =>
-      attempts.some((attempt) => attempt.status === 'STARTED' && !isAttemptExpired(attempt, now)),
-    [attempts, now],
+      filteredAttempts.some(
+        (attempt) => attempt.status === 'STARTED' && !isAttemptExpired(attempt, now),
+      ),
+    [filteredAttempts, now],
   );
-  const overview = useMemo(() => buildExamOverview(exams, attempts, now), [attempts, exams, now]);
-  const activeAttempts = attempts.filter(
+  const overview = useMemo(
+    () => buildExamOverview(filteredExams, filteredAttempts, now),
+    [filteredAttempts, filteredExams, now],
+  );
+  const activeAttempts = filteredAttempts.filter(
     (attempt) => attempt.status === 'STARTED' && !isAttemptExpired(attempt, now),
   );
-  const unitTests = exams.filter((exam) => Boolean(exam.unitId));
-  const mockTests = exams.filter((exam) => !exam.unitId);
+  const examCourseGroups = useMemo(
+    () => buildExamCourseGroups(filteredExams, t('exam.courseFallback')),
+    [filteredExams, t],
+  );
 
   useEffect(() => {
     if (!hasActiveAttempt) {
@@ -52,6 +78,15 @@ export default function ExamsPage() {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
   }, [hasActiveAttempt]);
+
+  useEffect(() => {
+    if (
+      selectedCourseId !== 'all' &&
+      courseOptions.every((course) => course.id !== selectedCourseId)
+    ) {
+      setSelectedCourseId('all');
+    }
+  }, [courseOptions, selectedCourseId]);
 
   return (
     <div className="min-h-screen bg-background font-sans">
@@ -127,6 +162,36 @@ export default function ExamsPage() {
                   </section>
                 )}
 
+                {courseOptions.length > 1 ? (
+                  <section className="rounded-md border bg-card p-4">
+                    <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_280px] md:items-center">
+                      <div>
+                        <h2 className="text-base font-semibold">{t('exam.examsByCourse')}</h2>
+                        <p className="text-sm text-muted-foreground">
+                          {t('exam.examsByCourseDesc')}
+                        </p>
+                      </div>
+                      <label className="space-y-1.5">
+                        <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                          {t('exam.filters.course')}
+                        </span>
+                        <select
+                          value={selectedCourseId}
+                          onChange={(event) => setSelectedCourseId(event.target.value)}
+                          className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                        >
+                          <option value="all">{t('exam.filters.allCourses')}</option>
+                          {courseOptions.map((course) => (
+                            <option key={course.id} value={course.id}>
+                              {course.title}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                  </section>
+                ) : null}
+
                 {activeAttempts.length > 0 ? (
                   <section className="rounded-md border bg-card p-6">
                     <SectionHeading
@@ -142,19 +207,11 @@ export default function ExamsPage() {
                   </section>
                 ) : null}
 
-                <ExamSection
-                  title={t('exam.unitTests')}
-                  desc={t('exam.unitTestsDesc')}
-                  exams={unitTests}
-                  emptyLabel={t('exam.noUnitTests')}
-                />
-
-                <ExamSection
-                  title={t('exam.mockTests')}
-                  desc={t('exam.mockTestsDesc')}
-                  exams={mockTests}
-                  emptyLabel={t('exam.noMockTests')}
-                />
+                <div className="space-y-6">
+                  {examCourseGroups.map((group) => (
+                    <CourseExamGroup key={group.id} group={group} />
+                  ))}
+                </div>
 
                 <section className="rounded-md border bg-card p-6">
                   <div className="mb-5 flex items-start gap-3">
@@ -186,13 +243,13 @@ export default function ExamsPage() {
                         {t('exam.retry')}
                       </button>
                     </div>
-                  ) : attempts.length === 0 ? (
+                  ) : filteredAttempts.length === 0 ? (
                     <div className="rounded-md border border-dashed p-5 text-sm text-muted-foreground">
                       {t('exam.noAttempts')}
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {attempts.map((attempt) => {
+                      {filteredAttempts.map((attempt) => {
                         const attemptExpired = isAttemptExpired(attempt, now);
 
                         return (
@@ -294,7 +351,48 @@ export default function ExamsPage() {
   );
 }
 
-function ExamSection({
+interface ExamCourseOption {
+  id: string;
+  title: string;
+}
+
+interface ExamCourseGroup extends ExamCourseOption {
+  unitTests: ExamSummary[];
+  mockTests: ExamSummary[];
+}
+
+function CourseExamGroup({ group }: { group: ExamCourseGroup }) {
+  const t = useTranslations('Student');
+  const examCount = group.unitTests.length + group.mockTests.length;
+
+  return (
+    <section className="rounded-md border bg-card p-6">
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <SectionHeading
+          icon={<BookOpen className="h-5 w-5" />}
+          title={group.title}
+          desc={t('exam.courseExamCount', { count: examCount })}
+        />
+      </div>
+      <div className="mt-6 space-y-7">
+        <ExamListBlock
+          title={t('exam.unitTests')}
+          desc={t('exam.unitTestsDesc')}
+          exams={group.unitTests}
+          emptyLabel={t('exam.noUnitTests')}
+        />
+        <ExamListBlock
+          title={t('exam.mockTests')}
+          desc={t('exam.mockTestsDesc')}
+          exams={group.mockTests}
+          emptyLabel={t('exam.noMockTests')}
+        />
+      </div>
+    </section>
+  );
+}
+
+function ExamListBlock({
   title,
   desc,
   exams,
@@ -306,8 +404,16 @@ function ExamSection({
   emptyLabel: string;
 }) {
   return (
-    <section className="rounded-md border bg-card p-6">
-      <SectionHeading icon={<FileCheck2 className="h-5 w-5" />} title={title} desc={desc} />
+    <div>
+      <div className="flex items-start gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary">
+          <FileCheck2 className="h-4 w-4" />
+        </div>
+        <div>
+          <h3 className="text-base font-semibold">{title}</h3>
+          <p className="text-sm text-muted-foreground">{desc}</p>
+        </div>
+      </div>
       {exams.length === 0 ? (
         <div className="mt-5 rounded-md border border-dashed p-5 text-sm text-muted-foreground">
           {emptyLabel}
@@ -319,7 +425,7 @@ function ExamSection({
           ))}
         </div>
       )}
-    </section>
+    </div>
   );
 }
 
@@ -510,4 +616,54 @@ function buildExamOverview(exams: ExamSummary[], attempts: ExamAttemptSummary[],
 
 function isAttemptExpired(attempt: ExamAttemptSummary, now: number) {
   return attempt.isExpired || new Date(attempt.deadlineAt).getTime() <= now;
+}
+
+function buildExamCourseOptions(exams: ExamSummary[], fallbackTitle: string): ExamCourseOption[] {
+  const courses = new Map<string, ExamCourseOption>();
+
+  exams.forEach((exam) => {
+    const id = getExamCourseId(exam);
+    if (!courses.has(id)) {
+      courses.set(id, {
+        id,
+        title: exam.course?.title ?? fallbackTitle,
+      });
+    }
+  });
+
+  return Array.from(courses.values()).sort((a, b) => a.title.localeCompare(b.title));
+}
+
+function buildExamCourseGroups(exams: ExamSummary[], fallbackTitle: string): ExamCourseGroup[] {
+  const groups = new Map<string, ExamCourseGroup>();
+
+  exams.forEach((exam) => {
+    const id = getExamCourseId(exam);
+    const group =
+      groups.get(id) ??
+      ({
+        id,
+        title: exam.course?.title ?? fallbackTitle,
+        unitTests: [],
+        mockTests: [],
+      } satisfies ExamCourseGroup);
+
+    if (hasExamUnit(exam)) {
+      group.unitTests.push(exam);
+    } else {
+      group.mockTests.push(exam);
+    }
+
+    groups.set(id, group);
+  });
+
+  return Array.from(groups.values()).sort((a, b) => a.title.localeCompare(b.title));
+}
+
+function getExamCourseId(exam: ExamSummary) {
+  return exam.course?.id ?? exam.courseId ?? 'unknown-course';
+}
+
+function hasExamUnit(exam: ExamSummary) {
+  return Boolean(exam.unitId ?? exam.unit?.id);
 }

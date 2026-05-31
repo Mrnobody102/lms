@@ -34,11 +34,13 @@ export function useCourseReport(id: string) {
   });
 }
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 export function useLessons(courseId: string, params?: { page?: number; limit?: number }) {
   return useQuery({
     queryKey: ['lessons', courseId, params],
     queryFn: () => courseApi.getLessons(courseId, params),
-    enabled: !!courseId,
+    enabled: UUID_PATTERN.test(courseId),
     staleTime: 60 * 1000,
   });
 }

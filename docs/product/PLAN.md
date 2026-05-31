@@ -1,11 +1,10 @@
 # Kế Hoạch Triển Khai LMS Platform
 
-Cập nhật lần cuối: 2026-05-30 (AI-native roadmap alignment, role-based AI strategy, quota/package governance direction)
+Cập nhật lần cuối: 2026-05-31 (bổ sung P11 Mobile Student App, Expo native direction)
 
 ## Định hướng sản phẩm
 
 > Bổ sung định hướng dài hạn: xem [AI-NATIVE-LMS-ROADMAP.md](AI-NATIVE-LMS-ROADMAP.md) cho chiến lược 2026–2028 về role-based AI workflows, instructor-led operations, và quota/package commercialization.
-
 
 LMS Platform đi theo mô hình **Hybrid AI-Enhanced Learning**: giữ nền tảng học truyền thống (course/lesson/practice/exam) nhưng nhúng các cơ chế đã được nghiên cứu khoa học giáo dục chứng minh hiệu quả, kết hợp AI để cá nhân hóa. Trục sản phẩm gần với IELTS/TOEIC/Duolingo hiện đại.
 
@@ -74,6 +73,7 @@ Chưa có hoặc mới ở mức sơ khai:
 - Mọi hành động admin nhạy cảm (bulk enroll/unenroll, license grant/revoke, role change) phải có audit log.
 - AI feature phải có giá trị giáo dục cụ thể (in-context tutor giải thích lỗi, AI-generated practice từ skill yếu) trước khi làm chat free-form.
 - Skill mastery và SRS scheduling phải dùng signal có sẵn (`PracticeAnswer`, `ExamAnswer`, `LearningActivity`) thay vì tạo event mới song song.
+- Mobile app đi theo hướng API-first, dùng chung backend và learning contract hiện có; không copy web UI nguyên khối sang native.
 
 ## Roadmap ưu tiên
 
@@ -386,6 +386,42 @@ Phạm vi:
 
 Phụ thuộc cho: P4/P5 listening question, P8c audio scoring.
 
+### P11. Mobile Student App
+
+Mục tiêu: đưa trải nghiệm học viên lên ứng dụng di động native, ưu tiên retention, microlearning, SRS và audio practice; admin/super portal vẫn dùng web trong MVP.
+
+Hướng kỹ thuật:
+
+- Framework chính: React Native + Expo trong app mới `apps/mobile-student`.
+- Mobile dùng chung API NestJS hiện tại, đặc biệt các contract student-facing: auth, course activity, lesson, progress, practice/exam, SRS, roleplay và media.
+- Không phụ thuộc browser cookie/`document.cookie`; mobile auth dùng native secure storage cho token/session.
+- Tenant mobile chọn bằng tenant slug/domain/org code hoặc activation/license flow, không dùng hardcoded `NEXT_PUBLIC_TENANT_ID` trong production.
+- `@repo/api-client` cần mở rộng theo adapter: browser giữ cookie + CSRF hiện tại, mobile dùng base URL rõ ràng, bearer/session token native và tenant resolver native.
+- Tách logic shareable từ `web-student` khi có lợi: API hooks/query keys, parser, DTO/types và learning helpers; UI native viết riêng thay vì copy Tailwind/Radix web.
+
+MVP feature order:
+
+1. M1: tenant selection, login/session restore, home dashboard, continue learning, course detail/activity timeline.
+2. M2: lesson viewer cho text/video/quiz/micro-card, progress completion, SRS review.
+3. M3: practice/exam attempt + review, audio prompt playback.
+4. M4: roleplay text trước; audio/microphone sau khi production pronunciation provider được chọn/cấu hình ổn.
+5. M5: push notifications nhắc học và offline-lite cache cho bài đã mở/SRS due.
+
+Test/verification:
+
+- API contract tests cho mobile auth/session, tenant isolation và enrollment/license gating.
+- Unit tests cho shared parser/client adapter nếu tách hoặc mở rộng `@repo/api-client`.
+- Expo component tests cho dashboard, lesson viewer, SRS card, practice/exam answer states.
+- Mobile smoke/E2E bằng Expo/Detox hoặc Playwright fallback trong CI: login, mở course được enroll, ghi progress lesson, làm SRS review, submit practice/exam không lộ đáp án trước submit.
+- Regression gate vẫn giữ `pnpm lint`, `pnpm run typecheck`, `pnpm test` và i18n sync.
+
+Ngoài MVP:
+
+- Offline mode đầy đủ có conflict handling cho attempt/progress sync.
+- Push notification theo risk/mastery/SRS personalization.
+- Roleplay audio và pronunciation flow native hoàn chỉnh.
+- Store release pipeline, deep link, app update policy và mobile observability.
+
 ## Thứ tự làm tiếp đề xuất
 
 Thứ tự ưu tiên dựa trên giá trị giáo dục, dependencies và hiện trạng:
@@ -400,7 +436,9 @@ Thứ tự ưu tiên dựa trên giá trị giáo dục, dependencies và hiện
 8. **Student/Admin report V2 polish** ✅ DONE: risk flags, risk snapshots/rules và cohort comparison UI/API.
 9. **AI-Generated Practice** (P8b) ✅ DONE: job/draft/review workflow và admin review workspace.
 10. **AI Conversation Roleplay** (P8c) ✅ DONE MVP: course scenarios, student scenario flow, audio message endpoint và pronunciation queue/provider abstraction.
-11. **Next**: production pronunciation provider selection/config, Reporting V2 export polish, và adaptive sequencing từ risk/mastery/SRS signals.
+11. **Production pronunciation provider selection/config**: chốt provider thật cho P8c audio scoring trước khi mở roleplay audio sâu hơn.
+12. **Reporting V2 export polish + adaptive sequencing**: export risk/cohort nâng cao nếu product cần, và dùng risk/mastery/SRS signals để đề xuất lộ trình tốt hơn.
+13. **Mobile Student App (P11)**: scaffold Expo native sau P10, ưu tiên student MVP: dashboard, course activity, lesson viewer, SRS, practice/exam, roleplay text, push notification và offline-lite.
 
 ## Definition Of Done Cấp Dự Án
 

@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { Loader2, User, Mail, Phone, Image as ImageIcon, Save } from 'lucide-react';
+import { Image as ImageIcon, Loader2, Mail, Phone, Save, UploadCloud, User } from 'lucide-react';
 import { Button, ImageUpload, Input, Label } from '@repo/ui';
 import api from '@/lib/api';
 import { uploadMediaFile } from '@/lib/media-upload';
 import { useAuthStore } from '../../auth/auth.store';
+
+type AvatarSource = 'upload' | 'url';
 
 export function ProfileForm() {
   const t = useTranslations('Admin');
@@ -15,6 +17,7 @@ export function ProfileForm() {
   const [fullName, setFullName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
+  const [avatarSource, setAvatarSource] = useState<AvatarSource>('upload');
   const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
@@ -126,31 +129,76 @@ export function ProfileForm() {
           </div>
         </div>
 
-        {/* Avatar URL */}
+        {/* Avatar */}
         <div className="space-y-2">
           <Label>{t('settings.profile.avatar')}</Label>
-          <ImageUpload
-            value={avatarUrl}
-            onValueChange={setAvatarUrl}
-            onUpload={uploadMediaFile}
-            onUploadError={() => setError(t('settings.profile.avatarUploadError'))}
-            emptyLabel={t('settings.profile.avatarUpload')}
-            changeLabel={t('settings.profile.avatarChange')}
-            uploadingLabel={t('settings.profile.avatarUploading')}
-            helperText={t('settings.profile.avatarHelper')}
-            uploadedImageAlt={t('settings.profile.avatar')}
-          />
-          <div className="relative">
-            <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted-foreground">
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setAvatarSource('upload')}
+              className={`flex h-9 items-center justify-center gap-2 rounded-md border px-3 text-sm font-medium transition-colors ${
+                avatarSource === 'upload'
+                  ? 'border-primary bg-primary/5 text-primary'
+                  : 'border-input bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
+              }`}
+            >
+              <UploadCloud className="h-4 w-4" />
+              {t('settings.profile.avatarSourceUpload')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setAvatarSource('url')}
+              className={`flex h-9 items-center justify-center gap-2 rounded-md border px-3 text-sm font-medium transition-colors ${
+                avatarSource === 'url'
+                  ? 'border-primary bg-primary/5 text-primary'
+                  : 'border-input bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
+              }`}
+            >
               <ImageIcon className="h-4 w-4" />
-            </div>
-            <Input
-              value={avatarUrl}
-              onChange={(e) => setAvatarUrl(e.target.value)}
-              placeholder={t('settings.profile.avatarPlaceholder')}
-              className="h-10 rounded-md pl-10"
-            />
+              {t('settings.profile.avatarSourceUrl')}
+            </button>
           </div>
+
+          {avatarSource === 'upload' ? (
+            <ImageUpload
+              value={avatarUrl}
+              onValueChange={setAvatarUrl}
+              onUpload={uploadMediaFile}
+              onUploadError={() => setError(t('settings.profile.avatarUploadError'))}
+              emptyLabel={t('settings.profile.avatarUpload')}
+              changeLabel={t('settings.profile.avatarChange')}
+              uploadingLabel={t('settings.profile.avatarUploading')}
+              helperText={t('settings.profile.avatarHelper')}
+              uploadedImageAlt={t('settings.profile.avatar')}
+            />
+          ) : (
+            <div className="space-y-2">
+              <div className="relative">
+                <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted-foreground">
+                  <ImageIcon className="h-4 w-4" />
+                </div>
+                <Input
+                  value={avatarUrl}
+                  onChange={(e) => setAvatarUrl(e.target.value)}
+                  placeholder={t('settings.profile.avatarPlaceholder')}
+                  className="h-10 rounded-md pl-10"
+                />
+              </div>
+              {avatarUrl && (
+                <div
+                  aria-label={t('settings.profile.avatar')}
+                  role="img"
+                  className="aspect-video w-full overflow-hidden rounded-lg border bg-muted bg-cover bg-center"
+                  style={{ backgroundImage: `url("${avatarUrl}")` }}
+                />
+              )}
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground">
+            {avatarSource === 'upload'
+              ? t('settings.profile.avatarUploadModeHelp')
+              : t('settings.profile.avatarUrlModeHelp')}
+          </p>
         </div>
       </div>
 

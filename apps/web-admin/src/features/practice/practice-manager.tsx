@@ -165,7 +165,7 @@ export function PracticeManager({
     },
     { enabled: canReview },
   );
-  const questions = questionsPageData?.data ?? [];
+  const questions = useMemo(() => questionsPageData?.data ?? [], [questionsPageData]);
   const questionsTotal = questionsPageData?.meta.total ?? questions.length;
   const questionTotalPages = Math.max(questionsPageData?.meta.totalPages ?? 1, 1);
   const exerciseSets = exerciseSetsPageData?.data ?? [];
@@ -184,6 +184,19 @@ export function PracticeManager({
   const reviewBulkPending = reviewBulkAction !== null;
   const filteredQuestions = questions;
   const filteredExerciseSets = exerciseSets;
+  const questionById = useMemo(() => {
+    const map = new Map<string, PracticeQuestion>();
+    questions.forEach((question) => map.set(question.id, question));
+    editingExerciseSet?.questions.forEach((item) => map.set(item.question.id, item.question));
+    return map;
+  }, [editingExerciseSet, questions]);
+  const selectedQuestionSummaries = useMemo(
+    () =>
+      selectedQuestionIds
+        .map((id) => questionById.get(id))
+        .filter((question): question is PracticeQuestion => Boolean(question)),
+    [questionById, selectedQuestionIds],
+  );
   const questionBulkPending = questionBulkAction !== null;
   const exerciseSetBulkPending = exerciseSetBulkAction !== null;
   const questionDraft = useMemo(
@@ -223,6 +236,8 @@ export function PracticeManager({
   }, [lockedCourseId, courseId]);
 
   useEffect(() => {
+    if (editingExerciseSetId) return;
+
     setUnitId('');
     setSelectedQuestionIds([]);
     setSelectedExerciseSetIds([]);
@@ -232,7 +247,7 @@ export function PracticeManager({
     setQuestionPage(1);
     setExerciseSetPage(1);
     setReviewQueuePage(1);
-  }, [courseId]);
+  }, [courseId, editingExerciseSetId]);
 
   useEffect(() => {
     if (!editingExerciseSetId || !editingExerciseSet) return;
@@ -336,9 +351,15 @@ export function PracticeManager({
   };
 
   const handleDuplicateQuestion = (question: PracticeQuestion) => {
+    const duplicateCourseId = question.courseId ?? courseId;
+    if (!duplicateCourseId) {
+      toast.error(t('practiceQuestionDuplicateError'));
+      return;
+    }
+
     createQuestion.mutate(
       {
-        courseId,
+        courseId: duplicateCourseId,
         unitId: question.unitId ?? (unitId || undefined),
         type: question.type,
         prompt: question.prompt,
@@ -346,6 +367,8 @@ export function PracticeManager({
         correctAnswer: question.correctAnswer,
         explanation: question.explanation ?? undefined,
         skillTags: question.skillTags,
+        audioMediaAssetId: question.audioMediaAssetId ?? undefined,
+        audioReplayLimit: question.audioReplayLimit ?? undefined,
       },
       {
         onSuccess: () => toast.success(t('practiceQuestionDuplicated')),
@@ -425,6 +448,16 @@ export function PracticeManager({
     setQuestionSearch('');
     setQuestionTypeFilter('all');
     setQuestionPage(1);
+  };
+
+  const toggleQuestionSelection = (questionId: string, checked: boolean) => {
+    setSelectedQuestionIds((current) =>
+      checked
+        ? current.includes(questionId)
+          ? current
+          : [...current, questionId]
+        : current.filter((id) => id !== questionId),
+    );
   };
 
   const handleSubmitExerciseSet = (event: FormEvent) => {
@@ -841,13 +874,9 @@ export function PracticeManager({
                             type="checkbox"
                             className="mt-1"
                             checked={selectedQuestionIds.includes(question.id)}
-                            onChange={(event) => {
-                              setSelectedQuestionIds((current) =>
-                                event.target.checked
-                                  ? [...current, question.id]
-                                  : current.filter((id) => id !== question.id),
-                              );
-                            }}
+                            onChange={(event) =>
+                              toggleQuestionSelection(question.id, event.target.checked)
+                            }
                           />
                           <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-start justify-between gap-2">
@@ -1584,8 +1613,111 @@ export function PracticeManager({
                         className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                       />
                     </div>
-                    <div className="rounded-lg border bg-muted/20 p-3 text-sm text-muted-foreground">
-                      {t('selectedQuestionsValue', { count: selectedQuestionIds.length })}
+                    <div className="space-y-3 rounded-lg border bg-muted/20 p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <Label>{t('selectedQuestions')}</Label>
+                        <Badge variant="secondary">
+                          {t('selectedQuestionsValue', { count: selectedQuestionIds.length })}
+                        </Badge>
+                      </div>
+                      {selectedQuestionSummaries.length > 0 ? (
+                        <div className="space-y-2">
+                          {selectedQuestionSummaries.map((question) => (
+                            <div
+                              key={question.id}
+                              className="flex items-start justify-between gap-3 rounded-md border bg-background px-3 py-2"
+                            >
+                              <div className="min-w-0">
+                                <div className="mb-1 flex flex-wrap items-center gap-1.5">
+                                  <Badge variant="outline">
+                                    {getPracticeQuestionTypeLabel(question.type, t)}
+                                  </Badge>
+                                  {question.skillTags.slice(0, 3).map((tag) => (
+                                    <Badge key={tag} variant="secondary">
+                                      {tag}
+                                    </Badge>
+                                  ))}
+                                </div>
+                                <p className="line-clamp-2 text-sm font-medium">
+                                  {question.prompt}
+                                </p>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 shrink-0 text-destructive hover:text-destructive"
+                                onClick={() => toggleQuestionSelection(question.id, false)}
+                                title={t('removeQuestionFromSet')}
+                                aria-label={t('removeQuestionFromSet')}
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          ))}
+                          {selectedQuestionSummaries.length < selectedQuestionIds.length && (
+                            <p className="text-xs text-muted-foreground">
+                              {t('selectedQuestionsNotLoaded', {
+                                count:
+                                  selectedQuestionIds.length - selectedQuestionSummaries.length,
+                              })}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">{t('noSelectedQuestions')}</p>
+                      )}
+                    </div>
+                    <div className="space-y-3 rounded-lg border p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <Label>{t('availableQuestions')}</Label>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setActiveTab('questions')}
+                        >
+                          {t('openQuestionBank')}
+                        </Button>
+                      </div>
+                      {questionsLoading ? (
+                        <LoadingRow label={t('loading')} />
+                      ) : filteredQuestions.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">{t('noQuestions')}</p>
+                      ) : (
+                        <div className="max-h-72 divide-y overflow-y-auto rounded-md border">
+                          {filteredQuestions.map((question) => (
+                            <label
+                              key={question.id}
+                              className="flex cursor-pointer items-start gap-3 px-3 py-2 hover:bg-muted/40"
+                            >
+                              <input
+                                type="checkbox"
+                                className="mt-1"
+                                checked={selectedQuestionIds.includes(question.id)}
+                                onChange={(event) =>
+                                  toggleQuestionSelection(question.id, event.target.checked)
+                                }
+                              />
+                              <div className="min-w-0 flex-1">
+                                <div className="mb-1 flex flex-wrap items-center gap-1.5">
+                                  <Badge variant="outline">
+                                    {getPracticeQuestionTypeLabel(question.type, t)}
+                                  </Badge>
+                                  {question.skillTags.slice(0, 2).map((tag) => (
+                                    <Badge key={tag} variant="secondary">
+                                      {tag}
+                                    </Badge>
+                                  ))}
+                                </div>
+                                <p className="line-clamp-2 text-sm font-medium">
+                                  {question.prompt}
+                                </p>
+                              </div>
+                            </label>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     {canPublish && (
                       <label className="flex items-center gap-2 text-sm">
