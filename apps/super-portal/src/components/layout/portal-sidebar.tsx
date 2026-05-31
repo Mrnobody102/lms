@@ -19,13 +19,13 @@ export function PortalSidebar() {
   const items = [
     { label: t('overview'), icon: Activity, href: '/' },
     { label: t('tenants'), icon: Building2, href: '/' },
-    { label: t('billing'), icon: CreditCard, href: '#billing' },
-    { label: t('usage'), icon: HardDrive, href: '#usage' },
-    { label: t('domains'), icon: Globe2, href: '#domains' },
-    { label: t('flags'), icon: Flag, href: '#feature-flags' },
-    { label: t('incidents'), icon: ListChecks, href: '#incidents' },
-    { label: t('audit'), icon: Database, href: '#audit' },
-    { label: t('infrastructure'), icon: ServerCog, href: '#infrastructure' },
+    { label: t('billing'), icon: CreditCard, href: '/plans-billing' },
+    { label: t('usage'), icon: HardDrive, href: '/usage-storage' },
+    { label: t('domains'), icon: Globe2, href: '/domains' },
+    { label: t('flags'), icon: Flag, href: '/feature-flags' },
+    { label: t('incidents'), icon: ListChecks, href: '/incidents' },
+    { label: t('audit'), icon: Database, href: '/audit-logs' },
+    { label: t('infrastructure'), icon: ServerCog, href: '/infrastructure' },
   ];
 
   return (
@@ -51,15 +51,6 @@ function PortalNavLink({
   const Icon = item.icon;
   const className =
     'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground';
-
-  if (item.href.startsWith('#')) {
-    return (
-      <a href={item.href} className={className}>
-        <Icon className="h-4 w-4" />
-        {item.label}
-      </a>
-    );
-  }
 
   return (
     <Link href={item.href} className={className}>

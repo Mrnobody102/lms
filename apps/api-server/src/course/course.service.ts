@@ -146,6 +146,8 @@ export class CourseService {
     levelId?: string;
     isActive?: boolean;
   }) {
+    await this.ensureLevelBelongsToTenant(data.tenantId, data.levelId);
+
     return this.prisma.$transaction(async (tx) => {
       const course = await tx.course.create({
         data: {
@@ -555,6 +557,8 @@ export class CourseService {
       isActive?: boolean;
     },
   ) {
+    await this.ensureLevelBelongsToTenant(tenantId, data.levelId);
+
     // Ensure course exists and belongs to tenant
     await this.findOne(id, tenantId, undefined, { includeInactive: true });
 
@@ -576,6 +580,31 @@ export class CourseService {
       where: { id_tenantId: { id, tenantId } },
       data: updateData,
     });
+  }
+
+  private async ensureLevelBelongsToTenant(tenantId: string, levelId?: string) {
+    if (!levelId) {
+      return;
+    }
+
+    const level = await this.prisma.level.findFirst({
+      where: {
+        id: levelId,
+        tenantId,
+        deletedAt: null,
+        isActive: true,
+        program: {
+          tenantId,
+          deletedAt: null,
+          isActive: true,
+        },
+      },
+      select: { id: true },
+    });
+
+    if (!level) {
+      throw new BadRequestException('Selected level is not available for this tenant');
+    }
   }
 
   async remove(id: string, tenantId: string) {

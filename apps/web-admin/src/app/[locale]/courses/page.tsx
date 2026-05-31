@@ -13,6 +13,7 @@ import { BookOpen, AlertCircle, Search } from 'lucide-react';
 import { Link } from '@/navigation';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useAuthStore } from '@/features/auth/auth.store';
+import { getApiErrorMessage, getApiErrorStatus } from '@/lib/api-error';
 
 const COURSES_PAGE_SIZE = 12;
 
@@ -39,7 +40,12 @@ export default function CoursesPage() {
   const allCourses = Array.isArray(courseData?.data) ? courseData.data : [];
   const totalPages = Math.max(courseData?.meta?.totalPages ?? 1, 1);
 
-  const errorMessage = error instanceof Error ? error.message : error ? String(error) : null;
+  const errorMessage = error
+    ? getApiErrorMessage(
+        error,
+        t(getApiErrorStatus(error) === 500 ? 'coursesLoadServerError' : 'coursesLoadError'),
+      )
+    : null;
 
   const handleDelete = (courseId: string) => {
     deleteCourse.mutate(courseId);

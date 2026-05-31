@@ -10,6 +10,97 @@
       "inactive": "Đã khóa",
       "customDomains": "Tên miền riêng"
     },
+    "ops": {
+      "loading": "Đang tải dữ liệu vận hành...",
+      "eyebrow": "SaaS operations",
+      "demoBadge": "Demo view",
+      "lockedTitle": "Cần đăng nhập Super Admin",
+      "lockedDesc": "Đăng nhập để xem dữ liệu vận hành tenant, billing và hạ tầng.",
+      "tenant": "Tenant",
+      "amount": "Số tiền",
+      "statusLabel": "Trạng thái",
+      "domain": "Tên miền",
+      "dns": "DNS",
+      "ssl": "SSL",
+      "incident": "Sự cố",
+      "severityLabel": "Mức độ",
+      "actor": "Người thao tác",
+      "action": "Hành động",
+      "time": "Thời gian",
+      "latency": "Độ trễ",
+      "on": "Bật",
+      "off": "Tắt",
+      "contactSales": "Liên hệ",
+      "planTenantCount": "{count} tenant đang dùng",
+      "status": {
+        "paid": "Đã thanh toán",
+        "pending": "Đang chờ",
+        "refunded": "Đã hoàn tiền",
+        "verified": "Đã xác minh",
+        "renewing": "Đang gia hạn",
+        "active": "Hoạt động",
+        "inactive": "Đã khóa",
+        "monitoring": "Đang theo dõi",
+        "resolved": "Đã xử lý",
+        "open": "Đang mở",
+        "warning": "Cảnh báo",
+        "healthy": "Ổn định"
+      },
+      "severity": {
+        "low": "Thấp",
+        "medium": "Trung bình",
+        "high": "Cao"
+      },
+      "plansBilling": {
+        "title": "Gói & Billing",
+        "desc": "Demo cấu hình plan, subscription và invoice ở cấp tenant để trình bày mô hình SaaS LMS.",
+        "invoiceTitle": "Invoice gần đây"
+      },
+      "usageStorage": {
+        "title": "Dung lượng & Usage",
+        "desc": "Theo dõi storage, request và AI quota của từng tenant ở mức tổng quan demo.",
+        "storage": "Storage",
+        "storageDesc": "Tổng dung lượng media demo",
+        "ai": "AI quota",
+        "aiDesc": "Mức sử dụng AI trung bình",
+        "requests": "API requests",
+        "requestsDesc": "Lưu lượng tenant trong kỳ",
+        "tableTitle": "Usage theo tenant"
+      },
+      "domains": {
+        "title": "Tên miền",
+        "desc": "Xem nhanh custom domain, trạng thái DNS và SSL của từng tenant.",
+        "tableTitle": "Domain health"
+      },
+      "featureFlags": {
+        "title": "Feature flags",
+        "desc": "Minh họa khả năng bật/tắt tính năng theo tenant: AI, roleplay, marketplace, billing và media upload."
+      },
+      "incidents": {
+        "title": "Sự cố",
+        "desc": "Danh sách sự cố vận hành mẫu để demo quy trình theo dõi ảnh hưởng theo tenant.",
+        "tableTitle": "Incident timeline",
+        "mediaLatency": "Độ trễ upload media tăng",
+        "emailDelay": "Email thông báo gửi chậm",
+        "storageQuota": "Tenant gần vượt quota storage"
+      },
+      "audit": {
+        "tableTitle": "Audit logs gần đây",
+        "planChanged": "Đổi plan subscription",
+        "quotaUpdated": "Tăng quota storage",
+        "domainVerified": "Xác minh domain",
+        "flagToggled": "Bật feature flag",
+        "invoiceExported": "Export invoice"
+      },
+      "auditLogs": {
+        "title": "Audit logs",
+        "desc": "Theo dõi các thao tác Super Admin trên tenant, billing, quota, domain và feature flag."
+      },
+      "infrastructure": {
+        "title": "Hạ tầng",
+        "desc": "Health view mức demo cho API, database, cache, storage, email và realtime notification."
+      }
+    },
     "sidebar": {
       "title": "Super Portal",
       "subtitle": "Điều hành SaaS LMS",

@@ -11,11 +11,13 @@ import { Button, Input, Label, Alert, AlertDescription } from '@/components/ui';
 import { ArrowLeft, Plus, Loader2, AlertCircle, BookOpen } from 'lucide-react';
 import { Link, useRouter } from '@/navigation';
 import { buildCourseAiSettings } from '@/lib/course-api';
+import { getApiErrorMessage, getApiErrorStatus } from '@/lib/api-error';
 
 export default function NewCoursePage() {
   const t = useTranslations('Admin');
   const router = useRouter();
   const [title, setTitle] = useState('');
+  const [programId, setProgramId] = useState<string>('');
   const [levelId, setLevelId] = useState<string>('');
   const [aiEnabled, setAiEnabled] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
@@ -26,6 +28,20 @@ export default function NewCoursePage() {
     () => programs?.some((program) => (program.levels?.length ?? 0) > 0) ?? false,
     [programs],
   );
+  const selectedProgram = useMemo(
+    () => programs?.find((program) => program.id === programId) ?? null,
+    [programId, programs],
+  );
+  const selectedProgramLevels = selectedProgram?.levels ?? [];
+
+  const handleProgramChange = (nextProgramId: string) => {
+    setProgramId(nextProgramId);
+    const nextProgram = programs?.find((program) => program.id === nextProgramId);
+    const nextLevelIds = new Set((nextProgram?.levels ?? []).map((level) => level.id));
+    if (!nextLevelIds.has(levelId)) {
+      setLevelId('');
+    }
+  };
 
   const handleCreateCourse = (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,7 +64,17 @@ export default function NewCoursePage() {
     );
   };
 
-  const error = createError?.message ?? localError;
+  const error =
+    createError || localError
+      ? getApiErrorMessage(
+          createError ?? localError,
+          t(
+            getApiErrorStatus(createError) === 500
+              ? 'courseCreateServerError'
+              : 'cannotCreateCourse',
+          ),
+        )
+      : null;
 
   return (
     <AuthGuard requiredCapability="course:manage">
@@ -95,42 +121,60 @@ export default function NewCoursePage() {
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label className="text-sm font-medium">{t('levelOptional')}</Label>
-                  <select
-                    value={levelId}
-                    onChange={(e) => setLevelId(e.target.value)}
-                    disabled={!hasProgramLevels}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
-                  >
-                    <option value="">{t('none')}</option>
-                    {programs?.map((p) => {
-                      if (!p.levels || p.levels.length === 0) return null;
-                      return (
-                        <optgroup key={p.id} label={p.title}>
-                          {p.levels.map((l) => (
-                            <option key={l.id} value={l.id}>
-                              {l.title}
-                            </option>
-                          ))}
-                        </optgroup>
-                      );
-                    })}
-                  </select>
-                  {hasProgramLevels ? (
-                    <p className="text-xs text-muted-foreground">{t('levelOptionalDesc')}</p>
-                  ) : (
-                    <div className="rounded-lg border border-dashed bg-muted/20 p-3 text-xs text-muted-foreground">
-                      <p>{t('noLevelsConfigured')}</p>
-                      <Link
-                        href="/programs"
-                        className="mt-2 inline-flex font-medium text-primary hover:underline"
-                      >
-                        {t('managePrograms')}
-                      </Link>
-                    </div>
-                  )}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-medium">{t('programOptional')}</Label>
+                    <select
+                      value={programId}
+                      onChange={(e) => handleProgramChange(e.target.value)}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm outline-none transition-colors focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
+                    >
+                      <option value="">{t('none')}</option>
+                      {programs?.map((program) => (
+                        <option key={program.id} value={program.id}>
+                          {program.title}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-muted-foreground">{t('programOptionalDesc')}</p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-medium">{t('levelOptional')}</Label>
+                    <select
+                      value={levelId}
+                      onChange={(e) => setLevelId(e.target.value)}
+                      disabled={!selectedProgram || selectedProgramLevels.length === 0}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm outline-none transition-colors focus:border-primary/40 focus:ring-2 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <option value="">{t('none')}</option>
+                      {selectedProgramLevels.map((level) => (
+                        <option key={level.id} value={level.id}>
+                          {level.title}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-muted-foreground">
+                      {!selectedProgram
+                        ? t('selectProgramFirst')
+                        : selectedProgramLevels.length === 0
+                          ? t('noProgramLevelsInProgram')
+                          : t('levelOptionalDesc')}
+                    </p>
+                  </div>
                 </div>
+
+                {!hasProgramLevels && (
+                  <div className="rounded-lg border border-dashed bg-muted/20 p-3 text-xs text-muted-foreground">
+                    <p>{t('noLevelsConfigured')}</p>
+                    <Link
+                      href="/programs"
+                      className="mt-2 inline-flex font-medium text-primary hover:underline"
+                    >
+                      {t('managePrograms')}
+                    </Link>
+                  </div>
+                )}
                 <div className="rounded-lg border bg-muted/20 p-4 space-y-4">
                   <div className="flex items-start justify-between gap-4">
                     <div className="space-y-1">

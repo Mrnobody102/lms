@@ -10,6 +10,97 @@
       "inactive": "Inactive",
       "customDomains": "Custom domains"
     },
+    "ops": {
+      "loading": "Loading operations data...",
+      "eyebrow": "SaaS operations",
+      "demoBadge": "Demo view",
+      "lockedTitle": "Super Admin login required",
+      "lockedDesc": "Log in to view tenant operations, billing, and infrastructure data.",
+      "tenant": "Tenant",
+      "amount": "Amount",
+      "statusLabel": "Status",
+      "domain": "Domain",
+      "dns": "DNS",
+      "ssl": "SSL",
+      "incident": "Incident",
+      "severityLabel": "Severity",
+      "actor": "Actor",
+      "action": "Action",
+      "time": "Time",
+      "latency": "Latency",
+      "on": "On",
+      "off": "Off",
+      "contactSales": "Contact sales",
+      "planTenantCount": "{count} tenant(s) using this plan",
+      "status": {
+        "paid": "Paid",
+        "pending": "Pending",
+        "refunded": "Refunded",
+        "verified": "Verified",
+        "renewing": "Renewing",
+        "active": "Active",
+        "inactive": "Inactive",
+        "monitoring": "Monitoring",
+        "resolved": "Resolved",
+        "open": "Open",
+        "warning": "Warning",
+        "healthy": "Healthy"
+      },
+      "severity": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High"
+      },
+      "plansBilling": {
+        "title": "Plans & Billing",
+        "desc": "Demo tenant-level plans, subscriptions, and invoices for presenting the SaaS LMS model.",
+        "invoiceTitle": "Recent invoices"
+      },
+      "usageStorage": {
+        "title": "Usage & Storage",
+        "desc": "Track storage, requests, and AI quota per tenant at demo overview level.",
+        "storage": "Storage",
+        "storageDesc": "Demo media storage total",
+        "ai": "AI quota",
+        "aiDesc": "Average AI usage",
+        "requests": "API requests",
+        "requestsDesc": "Tenant traffic this period",
+        "tableTitle": "Usage by tenant"
+      },
+      "domains": {
+        "title": "Domains",
+        "desc": "Review custom domains, DNS verification, and SSL status per tenant.",
+        "tableTitle": "Domain health"
+      },
+      "featureFlags": {
+        "title": "Feature flags",
+        "desc": "Show tenant-level feature control for AI, roleplay, marketplace, billing, and media upload."
+      },
+      "incidents": {
+        "title": "Incidents",
+        "desc": "Sample operational incidents for demonstrating tenant impact tracking.",
+        "tableTitle": "Incident timeline",
+        "mediaLatency": "Media upload latency increased",
+        "emailDelay": "Notification email delay",
+        "storageQuota": "Tenant near storage quota"
+      },
+      "audit": {
+        "tableTitle": "Recent audit logs",
+        "planChanged": "Subscription plan changed",
+        "quotaUpdated": "Storage quota increased",
+        "domainVerified": "Domain verified",
+        "flagToggled": "Feature flag toggled",
+        "invoiceExported": "Invoice exported"
+      },
+      "auditLogs": {
+        "title": "Audit logs",
+        "desc": "Track Super Admin actions across tenants, billing, quotas, domains, and feature flags."
+      },
+      "infrastructure": {
+        "title": "Infrastructure",
+        "desc": "Demo health view for API, database, cache, storage, email, and realtime notifications."
+      }
+    },
     "sidebar": {
       "title": "Super Portal",
       "subtitle": "SaaS LMS operations",

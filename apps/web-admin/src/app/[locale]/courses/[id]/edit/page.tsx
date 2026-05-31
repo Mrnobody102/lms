@@ -851,7 +851,7 @@ export default function CourseEditorPage() {
                         value={localLevelId || ''}
                         onChange={(e) => setLocalLevelId(e.target.value)}
                         disabled={!canManageCourse || !hasProgramLevels}
-                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm outline-none transition-colors focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
                       >
                         <option value="">{t('none')}</option>
                         {programs?.map((p) => {
