@@ -127,6 +127,24 @@ function Get-CsrfToken {
   return $csrfCookie.Value
 }
 
+function Get-ApiData {
+  param($Response)
+
+  if (
+    $null -ne $Response -and
+    $Response.PSObject.Properties.Name -contains 'success' -and
+    $Response.PSObject.Properties.Name -contains 'data'
+  ) {
+    if ($Response.success -ne $true) {
+      throw 'API response reported success=false'
+    }
+
+    return $Response.data
+  }
+
+  return $Response
+}
+
 try {
   if (-not $SkipContainerCheck) {
     Write-Host 'Checking Docker services...'
@@ -167,33 +185,33 @@ try {
     password = $studentPassword
   } | ConvertTo-Json
 
-  $loginResponse = Invoke-RestMethod `
+  $loginResponse = Get-ApiData (Invoke-RestMethod `
     -Method Post `
     -Uri "$baseUrl/auth/login" `
     -Headers @{ 'x-tenant-id' = $tenantHint } `
     -ContentType 'application/json' `
     -Body $loginBody `
     -WebSession $session `
-    -TimeoutSec 10
+    -TimeoutSec 10)
 
   if (-not $loginResponse.user -or $loginResponse.user.email -ne $studentEmail) {
     throw 'Login smoke test failed'
   }
   $csrfToken = Get-CsrfToken -Session $session
 
-  $me = Invoke-RestMethod `
+  $me = Get-ApiData (Invoke-RestMethod `
     -Method Get `
     -Uri "$baseUrl/users/me" `
     -Headers @{ 'x-tenant-id' = $tenantHint } `
     -WebSession $session `
-    -TimeoutSec 10
+    -TimeoutSec 10)
 
-  $coursesResponse = Invoke-RestMethod `
+  $coursesResponse = Get-ApiData (Invoke-RestMethod `
     -Method Get `
     -Uri "$baseUrl/courses?page=1&limit=10" `
     -Headers @{ 'x-tenant-id' = $tenantHint } `
     -WebSession $session `
-    -TimeoutSec 10
+    -TimeoutSec 10)
 
   $courses = @()
   if ($coursesResponse.data) {
@@ -207,12 +225,12 @@ try {
   }
 
   $courseId = $courses[0].id
-  $courseDetail = Invoke-RestMethod `
+  $courseDetail = Get-ApiData (Invoke-RestMethod `
     -Method Get `
     -Uri "$baseUrl/courses/$courseId" `
     -Headers @{ 'x-tenant-id' = $tenantHint } `
     -WebSession $session `
-    -TimeoutSec 10
+    -TimeoutSec 10)
 
   if (-not $courseDetail.lessons -or $courseDetail.lessons.Count -eq 0) {
     throw 'Course detail did not include lessons'
@@ -224,21 +242,21 @@ try {
     status = 'COMPLETED'
   } | ConvertTo-Json
 
-  $progressUpdate = Invoke-RestMethod `
+  $progressUpdate = Get-ApiData (Invoke-RestMethod `
     -Method Post `
     -Uri "$baseUrl/progress/update" `
     -Headers @{ 'x-tenant-id' = $tenantHint; 'x-csrf-token' = $csrfToken } `
     -ContentType 'application/json' `
     -Body $progressUpdateBody `
     -WebSession $session `
-    -TimeoutSec 10
+    -TimeoutSec 10)
 
-  $progressList = Invoke-RestMethod `
+  $progressList = Get-ApiData (Invoke-RestMethod `
     -Method Get `
     -Uri "$baseUrl/progress/course/$courseId" `
     -Headers @{ 'x-tenant-id' = $tenantHint } `
     -WebSession $session `
-    -TimeoutSec 10
+    -TimeoutSec 10)
 
   if (-not $progressUpdate -or -not $progressList) {
     throw 'Progress smoke test failed'
