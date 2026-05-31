@@ -111,6 +111,9 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
         <div className="flex justify-end">
           <Link
             href="/forgot-password"
+            tabIndex={loading ? -1 : undefined}
+            aria-disabled={loading}
+            onClick={(e) => loading && e.preventDefault()}
             className={`text-xs font-medium transition-colors ${
               loading
                 ? 'text-muted-foreground pointer-events-none opacity-60'

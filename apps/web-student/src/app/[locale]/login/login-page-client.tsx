@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { CheckCircle2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { FullScreenLoader } from '@repo/ui';
 import { LoginForm } from '../../../features/auth/components/login-form';
 import { useAuthStore } from '../../../features/auth/auth.store';
 
@@ -13,8 +14,10 @@ export function LoginPageClient() {
   const t = useTranslations('Student');
   const registered = searchParams.get('registered') === '1';
   const { isAuthenticated, isInitialized } = useAuthStore();
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   const handleLoginSuccess = useCallback(() => {
+    setIsRedirecting(true);
     const returnUrl = searchParams.get('returnUrl') || searchParams.get('next');
     router.push(getSafeReturnUrl(returnUrl) ?? '/courses');
   }, [router, searchParams]);
@@ -34,6 +37,7 @@ export function LoginPageClient() {
         </div>
       )}
       <LoginForm onSuccess={handleLoginSuccess} />
+      <FullScreenLoader isOpen={isRedirecting} text={t('auth.redirecting')} />
     </div>
   );
 }

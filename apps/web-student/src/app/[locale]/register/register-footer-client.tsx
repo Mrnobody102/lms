@@ -13,7 +13,9 @@ export function RegisterFooterClient() {
       {t('auth.footerRegister')}{' '}
       <Link
         href="/login"
+        tabIndex={loading ? -1 : undefined}
         aria-disabled={loading}
+        onClick={(e) => loading && e.preventDefault()}
         className={`font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm ${
           loading
             ? 'text-muted-foreground pointer-events-none opacity-60'

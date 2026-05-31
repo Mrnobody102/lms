@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useAuthStore } from '../auth.store';
 import toast from 'react-hot-toast';
 import { Loader2, KeyRound, Eye, EyeOff } from 'lucide-react';
-import { GoogleSignInButton, LanguageToggle } from '@repo/ui';
+import { GoogleSignInButton, LanguageToggle, FullScreenLoader } from '@repo/ui';
 
 import { useLocale, useTranslations } from 'next-intl';
 
@@ -15,11 +15,13 @@ export function LoginModal() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const success = await login(email, password);
     if (success) {
+      setIsRedirecting(true);
       toast.success(t('welcome'));
     } else {
       toast.error(t('loginError'));
@@ -29,6 +31,7 @@ export function LoginModal() {
   const handleGoogleCredential = async (credential: string) => {
     const success = await loginWithGoogle(credential, 'super');
     if (success) {
+      setIsRedirecting(true);
       toast.success(t('welcome'));
     } else {
       toast.error(t('loginError'));
@@ -111,6 +114,7 @@ export function LoginModal() {
           </div>
         </form>
       </div>
+      <FullScreenLoader isOpen={isRedirecting} />
     </div>
   );
 }

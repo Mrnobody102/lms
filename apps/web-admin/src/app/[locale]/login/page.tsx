@@ -3,19 +3,30 @@
 import { Suspense } from 'react';
 import { useTranslations } from 'next-intl';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { FullScreenLoader } from '@repo/ui';
 import { LoginForm } from '@/features/auth/components/login-form';
 
 function AdminLoginClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
+  const t = useTranslations('Admin');
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
   // Redirect to dashboard after successful login
   const handleLoginSuccess = () => {
+    setIsRedirecting(true);
     const returnUrl = searchParams.get('returnUrl') || searchParams.get('next');
     router.push(getSafeReturnUrl(returnUrl) ?? '/');
   };
 
-  return <LoginForm onSuccess={handleLoginSuccess} />;
+  return (
+    <>
+      <LoginForm onSuccess={handleLoginSuccess} />
+      <FullScreenLoader isOpen={isRedirecting} text={t('auth.redirecting')} />
+    </>
+  );
 }
 
 export default function AdminLoginPage() {
