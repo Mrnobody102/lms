@@ -38,7 +38,7 @@ export default function NewProgramPage() {
     <AuthGuard>
       <div className="min-h-screen flex flex-col md:flex-row bg-background">
         <AdminSidebar />
-        <main className="flex-1 md:ml-64 p-6 lg:p-8">
+        <main className="flex-1 md:ml-[var(--admin-sidebar-width)] p-6 lg:p-8">
           <div className="max-w-2xl mx-auto">
             <div className="mb-8 flex items-center gap-4">
               <Link href="/programs">

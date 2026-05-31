@@ -49,6 +49,13 @@ export interface CreateInstructorPayload {
   isActive?: boolean;
 }
 
+export interface UpdateAdminUserPayload {
+  fullName?: string;
+  phoneNumber?: string | null;
+  avatarUrl?: string | null;
+  isActive?: boolean;
+}
+
 export interface AdminOverview {
   totals: {
     totalStudents: number;
@@ -123,6 +130,10 @@ export const adminUserApi = {
     return api.get(`/admin/users/${userId}`).then((r) => r.data as AdminUser);
   },
 
+  getUserById(userId: string) {
+    return api.get(`/admin/users/${userId}`).then((r) => r.data as AdminUser);
+  },
+
   getInstructors(params?: { page?: number; limit?: number; search?: string; isActive?: boolean }) {
     const hasExplicitActiveFilter = params ? 'isActive' in params : false;
 
@@ -141,6 +152,10 @@ export const adminUserApi = {
 
   createInstructor(payload: CreateInstructorPayload) {
     return api.post('/admin/users/instructors', payload).then((r) => r.data as AdminUser);
+  },
+
+  updateUser(userId: string, payload: UpdateAdminUserPayload) {
+    return api.patch(`/admin/users/${userId}`, payload).then((r) => r.data as AdminUser);
   },
 
   updateUserStatus(userId: string, isActive: boolean) {

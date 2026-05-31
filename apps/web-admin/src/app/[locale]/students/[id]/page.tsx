@@ -43,7 +43,7 @@ export default function StudentDetailPage() {
     <AuthGuard>
       <div className="min-h-screen flex flex-col md:flex-row bg-background">
         <AdminSidebar />
-        <main className="flex-1 md:ml-64 p-6 lg:p-8">
+        <main className="flex-1 md:ml-[var(--admin-sidebar-width)] p-6 lg:p-8">
           <div className="max-w-3xl mx-auto">
             <div className="mb-6">
               <Link
@@ -206,7 +206,7 @@ export default function StudentDetailPage() {
                   <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
                     <div className="border-b bg-muted/40 p-4 flex items-center gap-2">
                       <GraduationCap className="h-4 w-4 text-primary" />
-                      <h3 className="font-semibold">{t('cohorts')}</h3>
+                      <h3 className="font-semibold">{t('cohorts.navLabel')}</h3>
                     </div>
                     <div className="p-4">
                       {student.cohortMemberships && student.cohortMemberships.length > 0 ? (

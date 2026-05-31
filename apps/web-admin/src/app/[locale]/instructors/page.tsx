@@ -16,6 +16,7 @@ import { PASSWORD_COMPLEXITY_REGEX } from '@repo/shared';
 import {
   AlertCircle,
   CheckCircle2,
+  Eye,
   Loader2,
   Search,
   UserCheck2,
@@ -24,6 +25,7 @@ import {
   Users,
 } from 'lucide-react';
 import { useDebounce } from '@/hooks/use-debounce';
+import { Link } from '@/navigation';
 import type { AxiosError } from 'axios';
 
 type StatusFilter = 'all' | 'active' | 'inactive';
@@ -116,7 +118,7 @@ export default function AdminInstructorsPage() {
     <AuthGuard>
       <div className="min-h-screen flex flex-col md:flex-row bg-background">
         <AdminSidebar />
-        <main className="flex-1 md:ml-64 p-6 lg:p-8">
+        <main className="flex-1 md:ml-[var(--admin-sidebar-width)] p-6 lg:p-8">
           <div className="max-w-6xl mx-auto">
             <AdminHeader
               title={t('instructors.title')}
@@ -277,7 +279,7 @@ export default function AdminInstructorsPage() {
             ) : (
               <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
                 <div className="min-w-[640px]">
-                  <div className="grid grid-cols-[minmax(0,1.4fr)_130px_180px] gap-4 border-b bg-muted/30 px-5 py-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground items-center">
+                  <div className="grid grid-cols-[minmax(0,1.4fr)_130px_260px] gap-4 border-b bg-muted/30 px-5 py-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground items-center">
                     <span>{t('instructors.title')}</span>
                     <span>{t('status')}</span>
                     <span>{t('actions')}</span>
@@ -286,7 +288,7 @@ export default function AdminInstructorsPage() {
                     {instructors.map((instructor) => (
                       <div
                         key={instructor.id}
-                        className="grid grid-cols-[minmax(0,1.4fr)_130px_180px] gap-4 px-5 py-4 hover:bg-muted/50 transition-colors items-center"
+                        className="grid grid-cols-[minmax(0,1.4fr)_130px_260px] gap-4 px-5 py-4 hover:bg-muted/50 transition-colors items-center"
                       >
                         <div className="min-w-0">
                           <p className="truncate text-sm font-medium">
@@ -313,6 +315,12 @@ export default function AdminInstructorsPage() {
                           </Badge>
                         </div>
                         <div className="flex items-center gap-2">
+                          <Button asChild size="sm" variant="outline" className="gap-1.5">
+                            <Link href={`/instructors/${instructor.id}`}>
+                              <Eye className="h-4 w-4" />
+                              {t('instructors.viewDetails')}
+                            </Link>
+                          </Button>
                           <Button
                             type="button"
                             size="sm"

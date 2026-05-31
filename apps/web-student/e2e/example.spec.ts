@@ -546,7 +546,7 @@ test('student can register and return to login', async ({ page }) => {
   await waitForHydratedForm(page);
   await page.getByPlaceholder('e.g. Nguyen Van A').fill('Student User');
   await page.getByPlaceholder('email@example.com').fill('student@example.com');
-  await page.getByPlaceholder('e.g. Huyen@123').fill('Student@123');
+  await page.getByPlaceholder('e.g. Student@123').fill('Student@123');
   await page.getByRole('button', { name: 'Create Learning Account' }).click();
 
   await expect(page).toHaveURL(/\/en\/login\?registered=1$/, { timeout: navigationTimeout });

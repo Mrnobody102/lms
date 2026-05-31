@@ -31,7 +31,7 @@ export default function ProgramsPage() {
     <AuthGuard>
       <div className="min-h-screen flex flex-col md:flex-row bg-background">
         <AdminSidebar />
-        <main className="flex-1 md:ml-64 p-6 lg:p-8">
+        <main className="flex-1 md:ml-[var(--admin-sidebar-width)] p-6 lg:p-8">
           <div className="max-w-6xl mx-auto">
             <AdminHeader title={t('programs')} description={t('programsDesc')} />
 

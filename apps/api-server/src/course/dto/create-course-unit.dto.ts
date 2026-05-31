@@ -1,9 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import { IsInt, IsOptional, IsString, MaxLength, Min, MinLength } from 'class-validator';
 
 export class CreateCourseUnitDto {
   @ApiProperty({ example: 'Unit 1: Core vocabulary', description: 'Unit title' })
   @IsString()
+  @MinLength(2, { message: 'Unit title must be at least 2 characters' })
   @MaxLength(255, { message: 'Unit title must be at most 255 characters' })
   title: string;
 

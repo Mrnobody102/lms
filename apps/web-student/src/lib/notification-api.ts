@@ -66,21 +66,44 @@ export const notificationApi = {
       return () => undefined;
     }
 
+    let fallbackIntervalId: number | undefined;
+    const startFallbackPolling = () => {
+      if (fallbackIntervalId !== undefined) return;
+      onEvent({ kind: 'notifications.refresh' });
+      fallbackIntervalId = window.setInterval(() => {
+        onEvent({ kind: 'notifications.refresh' });
+      }, 10000);
+    };
+
     const eventSource = new EventSource(buildNotificationStreamUrl(), { withCredentials: true });
+    eventSource.onopen = () => {
+      if (fallbackIntervalId !== undefined) {
+        window.clearInterval(fallbackIntervalId);
+        fallbackIntervalId = undefined;
+      }
+    };
     eventSource.onmessage = (message) => {
       const event = parseNotificationStreamEvent(message.data);
       if (event) {
         onEvent(event);
       }
     };
+    eventSource.onerror = () => {
+      startFallbackPolling();
+    };
 
-    return () => eventSource.close();
+    return () => {
+      eventSource.close();
+      if (fallbackIntervalId !== undefined) {
+        window.clearInterval(fallbackIntervalId);
+      }
+    };
   },
 };
 
 function buildNotificationStreamUrl() {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, '');
-  const baseUrl = apiUrl ? `${apiUrl}/api/notifications/stream` : '/api/notifications/stream';
+  const streamUrl = process.env.NEXT_PUBLIC_NOTIFICATION_STREAM_URL?.trim().replace(/\/+$/, '');
+  const baseUrl = streamUrl || '/api/notifications/stream';
   const tenantId = process.env.NEXT_PUBLIC_TENANT_ID?.trim();
   return tenantId ? `${baseUrl}?tenantId=${encodeURIComponent(tenantId)}` : baseUrl;
 }

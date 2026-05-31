@@ -274,7 +274,7 @@ export default function PracticeAiReviewPage() {
     <AuthGuard>
       <div className="flex min-h-screen flex-col bg-background md:flex-row">
         <AdminSidebar />
-        <main className="flex-1 p-6 md:ml-64 lg:p-8">
+        <main className="flex-1 p-6 md:ml-[var(--admin-sidebar-width)] lg:p-8">
           <div className="mx-auto max-w-7xl">
             <AdminHeader title={t('aiReviewTitle')} description={t('aiReviewDesc')} />
 

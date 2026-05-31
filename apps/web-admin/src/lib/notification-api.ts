@@ -8,8 +8,8 @@ export interface BroadcastNotificationDto {
 }
 
 export function buildNotificationStreamUrl() {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, '');
-  const baseUrl = apiUrl ? `${apiUrl}/api/notifications/stream` : '/api/notifications/stream';
+  const streamUrl = process.env.NEXT_PUBLIC_NOTIFICATION_STREAM_URL?.trim().replace(/\/+$/, '');
+  const baseUrl = streamUrl || '/api/notifications/stream';
   const tenantId = process.env.NEXT_PUBLIC_TENANT_ID?.trim();
   return tenantId ? `${baseUrl}?tenantId=${encodeURIComponent(tenantId)}` : baseUrl;
 }

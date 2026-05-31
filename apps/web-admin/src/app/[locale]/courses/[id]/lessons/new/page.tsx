@@ -67,12 +67,7 @@ export default function NewLessonPage() {
     <AuthGuard>
       <div className="min-h-screen flex flex-col md:flex-row bg-background">
         <AdminSidebar />
-        <main className="flex-1 md:ml-64 relative bg-muted/20 flex h-screen overflow-hidden">
-          <LessonNavigationSidebar
-            courseId={courseId}
-            lessons={course.lessons ?? []}
-            units={course.units ?? []}
-          />
+        <main className="flex-1 md:ml-[var(--admin-sidebar-width)] relative bg-muted/20 flex h-screen overflow-hidden">
           <div className="flex-1 overflow-y-auto">
             {error && (
               <div className="max-w-4xl mx-auto mt-6 px-6">
@@ -93,6 +88,11 @@ export default function NewLessonPage() {
               saving={createLesson.isPending}
             />
           </div>
+          <LessonNavigationSidebar
+            courseId={courseId}
+            lessons={course.lessons ?? []}
+            units={course.units ?? []}
+          />
         </main>
       </div>
     </AuthGuard>

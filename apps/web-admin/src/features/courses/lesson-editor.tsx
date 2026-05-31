@@ -6,14 +6,18 @@ import { useTranslations } from 'next-intl';
 import { CourseUnit, Lesson, LessonType } from '@/lib/course-api';
 import { useExams } from '@/hooks/use-exams';
 import { usePracticeExerciseSets } from '@/hooks/use-practice';
+import { cn } from '@/lib/utils';
 import { Button, Input, Label } from '@/components/ui';
 import {
+  AlertCircle,
   ArrowLeft,
   BookOpen,
   CheckCircle2,
   Clock,
   FileText,
   Loader2,
+  PanelLeftClose,
+  PanelLeftOpen,
   Save,
   Video,
   Zap,
@@ -78,6 +82,7 @@ export function LessonEditor({
   const [examId, setExamId] = useState('');
   const [isDirty, setIsDirty] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isSettingsCollapsed, setIsSettingsCollapsed] = useState(false);
 
   const { data: practiceExerciseSets = [] } = usePracticeExerciseSets();
   const { data: exams = [] } = useExams();
@@ -188,6 +193,10 @@ export function LessonEditor({
   });
   const typeMeta = LESSON_TYPE_META[type];
   const TypeIcon = typeMeta.icon;
+  const readinessIssues = [
+    !title.trim() ? t('lessonMissingTitle') : null,
+    !isReady && title.trim() ? t('lessonNeedsMoreContent') : null,
+  ].filter((issue): issue is string => Boolean(issue));
 
   const lessonTypes: LessonType[] = [
     'text',
@@ -286,154 +295,212 @@ export function LessonEditor({
         </div>
       </header>
 
-      {/* ═══ TWO-PANEL LAYOUT ═══ */}
-      <div className="flex-1 overflow-hidden flex">
-        {/* LEFT SIDEBAR — Lesson Settings */}
-        <aside className="w-72 lg:w-80 shrink-0 bg-background border-r flex flex-col overflow-hidden">
-          <div className="flex-1 overflow-y-auto p-4 space-y-5">
-            {/* Title (mobile) */}
-            <div className="md:hidden space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                {t('lessonTitleLabel')}
-              </Label>
-              <Input
-                ref={titleRef}
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder={t('lessonTitlePlaceholder')}
-              />
-            </div>
-
-            {/* Lesson Type Selector */}
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                {t('contentType')}
-              </Label>
-              <div className="grid grid-cols-2 gap-1.5">
-                {lessonTypes.map((lt) => {
-                  const meta = LESSON_TYPE_META[lt];
-                  const Icon = meta.icon;
-                  const isSelected = type === lt;
-                  return (
-                    <button
-                      key={lt}
-                      type="button"
-                      onClick={() => setType(lt)}
-                      className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm font-medium transition-all ${
-                        isSelected
-                          ? 'border-primary bg-primary/5 text-primary shadow-sm'
-                          : 'border-input bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
-                      }`}
-                    >
-                      <Icon
-                        className={`h-4 w-4 shrink-0 ${isSelected ? 'text-primary' : meta.color}`}
-                      />
-                      <span className="truncate text-xs">
-                        {t(meta.labelKey as Parameters<typeof t>[0])}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Duration */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  {t('durationMinutes')}
-                </Label>
-                {type === 'text' && (
-                  <span className="text-[10px] text-muted-foreground italic">
-                    {t('textDurationHint')}
-                  </span>
-                )}
-                {type === 'video' && (
-                  <span className="text-[10px] text-muted-foreground italic">
-                    {t('videoDurationHint')}
-                  </span>
-                )}
-              </div>
-              <div className="relative">
-                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-                <Input
-                  type="number"
-                  min={1}
-                  value={duration}
-                  onChange={(e) => setDuration(parseInt(e.target.value) || 0)}
-                  className="pl-9"
-                  disabled={type === 'text'}
-                />
-              </div>
-              {duration <= 0 && (
-                <p className="text-[10px] text-destructive">{t('durationPositiveError')}</p>
-              )}
-            </div>
-
-            {/* Unit Assignment */}
-            {units.length > 0 && (
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  {t('unit')}
-                </Label>
-                <select
-                  value={unitId ?? ''}
-                  onChange={(e) => setUnitId(e.target.value || null)}
-                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                >
-                  <option value="">{t('ungroupedLessons')}</option>
-                  {units.map((unit) => (
-                    <option key={unit.id} value={unit.id}>
-                      {unit.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
+      {/* ═══ EDITOR LAYOUT ═══ */}
+      <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
+        {/* Lesson Settings */}
+        <aside
+          className={cn(
+            'shrink-0 bg-background border-r flex flex-col overflow-hidden transition-[width] duration-200',
+            isSettingsCollapsed
+              ? 'hidden md:flex md:w-12'
+              : 'w-full md:w-72 lg:w-80 max-h-[45vh] md:max-h-none',
+          )}
+        >
+          <div
+            className={cn(
+              'shrink-0 border-b p-3 flex items-center justify-between gap-2',
+              isSettingsCollapsed && 'justify-center px-2',
             )}
-
-            {/* Readiness Summary */}
-            <div
-              className={`rounded-xl border p-3 ${isReady ? 'border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-900' : 'border-dashed border-muted bg-muted/20'}`}
-            >
-              <div className="flex items-start gap-2.5">
-                {isReady ? (
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-                ) : (
-                  <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/40 shrink-0 mt-0.5" />
-                )}
-                <div>
-                  <p
-                    className={`text-xs font-medium ${isReady ? 'text-emerald-700 dark:text-emerald-400' : 'text-muted-foreground'}`}
-                  >
-                    {isReady ? t('lessonReadyToSave') : t('lessonNeedsContent')}
+          >
+            {isSettingsCollapsed ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsSettingsCollapsed(false)}
+                title={t('expandLessonSettings')}
+              >
+                <PanelLeftOpen className="h-4 w-4" />
+              </Button>
+            ) : (
+              <>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    {t('lessonSettings')}
                   </p>
-                  {!title.trim() && (
-                    <p className="text-xs text-muted-foreground mt-1">{t('lessonMissingTitle')}</p>
-                  )}
-                  {!isReady && title.trim() && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {t('lessonNeedsMoreContent')}
-                    </p>
+                  <p className="truncate text-sm font-medium text-foreground">
+                    {t(typeMeta.labelKey as Parameters<typeof t>[0])}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsSettingsCollapsed(true)}
+                  className="hidden h-8 w-8 md:inline-flex"
+                  title={t('collapseLessonSettings')}
+                >
+                  <PanelLeftClose className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+          </div>
+
+          {!isSettingsCollapsed && (
+            <>
+              <div className="flex-1 overflow-y-auto p-4 space-y-5">
+                {/* Title (mobile) */}
+                <div className="md:hidden space-y-1.5">
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    {t('lessonTitleLabel')}
+                  </Label>
+                  <Input
+                    ref={titleRef}
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder={t('lessonTitlePlaceholder')}
+                  />
+                </div>
+
+                {/* Lesson Type Selector */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    {t('contentType')}
+                  </Label>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {lessonTypes.map((lt) => {
+                      const meta = LESSON_TYPE_META[lt];
+                      const Icon = meta.icon;
+                      const isSelected = type === lt;
+                      return (
+                        <button
+                          key={lt}
+                          type="button"
+                          onClick={() => setType(lt)}
+                          className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm font-medium transition-all ${
+                            isSelected
+                              ? 'border-primary bg-primary/5 text-primary shadow-sm'
+                              : 'border-input bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
+                          }`}
+                        >
+                          <Icon
+                            className={`h-4 w-4 shrink-0 ${isSelected ? 'text-primary' : meta.color}`}
+                          />
+                          <span className="truncate text-xs">
+                            {t(meta.labelKey as Parameters<typeof t>[0])}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Duration */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      {t('durationMinutes')}
+                    </Label>
+                    {type === 'text' && (
+                      <span className="text-[10px] text-muted-foreground italic">
+                        {t('textDurationHint')}
+                      </span>
+                    )}
+                    {type === 'video' && (
+                      <span className="text-[10px] text-muted-foreground italic">
+                        {t('videoDurationHint')}
+                      </span>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                    <Input
+                      type="number"
+                      min={1}
+                      value={duration}
+                      onChange={(e) => setDuration(parseInt(e.target.value) || 0)}
+                      className="pl-9"
+                      disabled={type === 'text'}
+                    />
+                  </div>
+                  {duration <= 0 && (
+                    <p className="text-[10px] text-destructive">{t('durationPositiveError')}</p>
                   )}
                 </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Bottom action on mobile */}
-          <div className="sm:hidden shrink-0 border-t p-4 flex gap-2">
-            <Button variant="outline" onClick={onCancel} disabled={saving} className="flex-1">
-              {t('cancel')}
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={saving || !isReady || duration <= 0}
-              className="flex-1 gap-2"
-            >
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              {t('save')}
-            </Button>
-          </div>
+                {/* Unit Assignment */}
+                {units.length > 0 && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      {t('unit')}
+                    </Label>
+                    <select
+                      value={unitId ?? ''}
+                      onChange={(e) => setUnitId(e.target.value || null)}
+                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    >
+                      <option value="">{t('ungroupedLessons')}</option>
+                      {units.map((unit) => (
+                        <option key={unit.id} value={unit.id}>
+                          {unit.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Readiness Summary */}
+                <div
+                  className={`rounded-xl border p-3 ${isReady ? 'border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-900' : 'border-dashed border-muted bg-muted/20'}`}
+                >
+                  <div className="flex items-start gap-2.5">
+                    {isReady ? (
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                    )}
+                    <div>
+                      <p
+                        className={`text-xs font-medium ${isReady ? 'text-emerald-700 dark:text-emerald-400' : 'text-muted-foreground'}`}
+                      >
+                        {isReady ? t('lessonReadyToSave') : t('lessonNeedsContent')}
+                      </p>
+                      {readinessIssues.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          {readinessIssues.map((issue) => (
+                            <div
+                              key={issue}
+                              className="flex items-start gap-1.5 text-xs text-muted-foreground"
+                            >
+                              <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/60" />
+                              <span>{issue}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom action on mobile */}
+              <div className="sm:hidden shrink-0 border-t p-4 flex gap-2">
+                <Button variant="outline" onClick={onCancel} disabled={saving} className="flex-1">
+                  {t('cancel')}
+                </Button>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={saving || !isReady || duration <= 0}
+                  className="flex-1 gap-2"
+                >
+                  {saving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  {t('save')}
+                </Button>
+              </div>
+            </>
+          )}
         </aside>
 
         {/* MAIN CONTENT AREA */}
@@ -453,7 +520,7 @@ export function LessonEditor({
             )}
           </div>
 
-          <div className="p-6 lg:p-8 max-w-4xl">
+          <div className="mx-auto w-full max-w-4xl p-6 lg:p-8">
             {/* Title field in main area if desktop */}
             <div className="hidden md:block mb-6 space-y-1.5">
               <Label className="text-sm font-medium">{t('lessonTitleLabel')}</Label>

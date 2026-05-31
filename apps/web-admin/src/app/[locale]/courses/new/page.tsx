@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AdminHeader } from '@/components/layout/admin-header';
@@ -22,6 +22,10 @@ export default function NewCoursePage() {
   const { mutate: createCourse, isPending: loading, error: createError } = useCreateCourse();
   const { data: programs } = usePrograms();
   const [localError, setLocalError] = useState<string | null>(null);
+  const hasProgramLevels = useMemo(
+    () => programs?.some((program) => (program.levels?.length ?? 0) > 0) ?? false,
+    [programs],
+  );
 
   const handleCreateCourse = (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,7 +54,7 @@ export default function NewCoursePage() {
     <AuthGuard>
       <div className="min-h-screen flex flex-col md:flex-row bg-background">
         <AdminSidebar />
-        <main className="flex-1 md:ml-64 p-6 lg:p-8">
+        <main className="flex-1 md:ml-[var(--admin-sidebar-width)] p-6 lg:p-8">
           <div className="max-w-xl mx-auto">
             <AdminHeader title={t('createNewCourse')} description={t('createNewCourseDesc')} />
             <Link
@@ -96,6 +100,7 @@ export default function NewCoursePage() {
                   <select
                     value={levelId}
                     onChange={(e) => setLevelId(e.target.value)}
+                    disabled={!hasProgramLevels}
                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
                   >
                     <option value="">{t('none')}</option>
@@ -112,7 +117,19 @@ export default function NewCoursePage() {
                       );
                     })}
                   </select>
-                  <p className="text-xs text-muted-foreground">{t('levelOptionalDesc')}</p>
+                  {hasProgramLevels ? (
+                    <p className="text-xs text-muted-foreground">{t('levelOptionalDesc')}</p>
+                  ) : (
+                    <div className="rounded-lg border border-dashed bg-muted/20 p-3 text-xs text-muted-foreground">
+                      <p>{t('noLevelsConfigured')}</p>
+                      <Link
+                        href="/programs"
+                        className="mt-2 inline-flex font-medium text-primary hover:underline"
+                      >
+                        {t('managePrograms')}
+                      </Link>
+                    </div>
+                  )}
                 </div>
                 <div className="rounded-lg border bg-muted/20 p-4 space-y-4">
                   <div className="flex items-start justify-between gap-4">

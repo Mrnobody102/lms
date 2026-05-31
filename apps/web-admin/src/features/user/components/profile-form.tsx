@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Loader2, User, Mail, Phone, Image as ImageIcon, Save } from 'lucide-react';
-import { Button, Input, Label } from '@repo/ui';
+import { Button, ImageUpload, Input, Label } from '@repo/ui';
 import api from '@/lib/api';
+import { uploadMediaFile } from '@/lib/media-upload';
 import { useAuthStore } from '../../auth/auth.store';
 
 export function ProfileForm() {
@@ -128,6 +129,17 @@ export function ProfileForm() {
         {/* Avatar URL */}
         <div className="space-y-2">
           <Label>{t('settings.profile.avatar')}</Label>
+          <ImageUpload
+            value={avatarUrl}
+            onValueChange={setAvatarUrl}
+            onUpload={uploadMediaFile}
+            onUploadError={() => setError(t('settings.profile.avatarUploadError'))}
+            emptyLabel={t('settings.profile.avatarUpload')}
+            changeLabel={t('settings.profile.avatarChange')}
+            uploadingLabel={t('settings.profile.avatarUploading')}
+            helperText={t('settings.profile.avatarHelper')}
+            uploadedImageAlt={t('settings.profile.avatar')}
+          />
           <div className="relative">
             <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted-foreground">
               <ImageIcon className="h-4 w-4" />

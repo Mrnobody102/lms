@@ -18,6 +18,8 @@ import {
   Menu,
   Store,
   PackageSearch,
+  PanelLeftClose,
+  PanelLeftOpen,
   type LucideIcon,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -38,6 +40,10 @@ interface MenuGroup {
   items: MenuItem[];
 }
 
+const SIDEBAR_COLLAPSED_STORAGE_KEY = 'lms-admin-sidebar-collapsed';
+const EXPANDED_SIDEBAR_WIDTH = '16rem';
+const COLLAPSED_SIDEBAR_WIDTH = '4.5rem';
+
 export function AdminSidebar() {
   const t = useTranslations('Admin');
   const pathname = usePathname();
@@ -45,6 +51,7 @@ export function AdminSidebar() {
   const { user, logout } = useAuthStore();
   const { theme, setTheme } = useTheme();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(min-width: 768px)');
@@ -58,6 +65,19 @@ export function AdminSidebar() {
     mediaQuery.addEventListener('change', closeOnDesktop);
     return () => mediaQuery.removeEventListener('change', closeOnDesktop);
   }, []);
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY);
+    if (stored) {
+      setIsCollapsed(stored === 'true');
+    }
+  }, []);
+
+  useEffect(() => {
+    const width = isCollapsed ? COLLAPSED_SIDEBAR_WIDTH : EXPANDED_SIDEBAR_WIDTH;
+    document.documentElement.style.setProperty('--admin-sidebar-width', width);
+    window.localStorage.setItem(SIDEBAR_COLLAPSED_STORAGE_KEY, String(isCollapsed));
+  }, [isCollapsed]);
 
   const fullMenuGroups: MenuGroup[] = [
     {
@@ -128,40 +148,50 @@ export function AdminSidebar() {
     setTheme(theme === 'light' ? 'dark' : 'light');
   };
 
-  const sidebarContent = (
+  const renderSidebarContent = (collapsed: boolean) => (
     <>
       {/* Logo */}
-      <div className="px-6 py-5 border-b border-border">
-        <Link href="/" className="flex items-center gap-2.5">
+      <div className={cn('border-b border-border py-5', collapsed ? 'px-3' : 'px-6')}>
+        <Link
+          href="/"
+          className={cn('flex items-center gap-2.5', collapsed && 'justify-center')}
+          title={collapsed ? t('brandName') : undefined}
+        >
           <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold shadow">
             C
           </div>
-          <span className="font-semibold text-base">{t('brandName')}</span>
+          {!collapsed && <span className="font-semibold text-base">{t('brandName')}</span>}
         </Link>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-3 pb-5 space-y-4 overflow-y-auto">
+      <nav
+        className={cn('flex-1 pb-5 overflow-y-auto', collapsed ? 'p-2 space-y-2' : 'p-3 space-y-4')}
+      >
         {menuGroups.map((group) => (
           <div key={group.label} className="space-y-0.5">
-            <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-              {group.label}
-            </p>
+            {!collapsed && (
+              <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                {group.label}
+              </p>
+            )}
             {group.items.map((item) => {
               const active = isActive(item.href);
               return (
                 <Link
                   key={item.href}
                   href={item.href}
+                  title={collapsed ? item.name : undefined}
                   className={cn(
-                    'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                    'flex items-center rounded-lg text-sm font-medium transition-colors',
+                    collapsed ? 'justify-center px-0 py-3' : 'gap-3 px-3 py-2.5',
                     active
                       ? 'bg-primary text-primary-foreground'
                       : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                   )}
                 >
                   <item.icon className="w-4 h-4 shrink-0" />
-                  {item.name}
+                  {!collapsed && item.name}
                 </Link>
               );
             })}
@@ -170,25 +200,34 @@ export function AdminSidebar() {
       </nav>
 
       {/* Footer Section */}
-      <div className="relative z-30 flex flex-col gap-3 border-t border-border bg-card p-4 shadow-[0_-8px_18px_rgba(15,23,42,0.04)]">
+      <div
+        className={cn(
+          'relative z-30 flex flex-col gap-3 border-t border-border bg-card shadow-[0_-8px_18px_rgba(15,23,42,0.04)]',
+          collapsed ? 'items-center p-2' : 'p-4',
+        )}
+      >
         {/* User Profile Section */}
-        <div className="flex items-center gap-3 px-1">
+        <div className={cn('flex items-center gap-3 px-1', collapsed && 'justify-center px-0')}>
           <div className="w-10 h-10 shrink-0 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-sm font-bold">
             {user?.fullName?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || '?'}
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-foreground">
-              {user?.fullName || t('profileNameFallback')}
-            </p>
-            <p className="truncate text-xs text-muted-foreground">
-              {user?.email || t('profileEmailFallback')}
-            </p>
-          </div>
+          {!collapsed && (
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-foreground">
+                {user?.fullName || t('profileNameFallback')}
+              </p>
+              <p className="truncate text-xs text-muted-foreground">
+                {user?.email || t('profileEmailFallback')}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Quick Actions Row */}
-        <div className="flex items-center justify-between pt-1">
-          <div className="flex items-center gap-1">
+        <div
+          className={cn('flex items-center pt-1', collapsed ? 'flex-col gap-1' : 'justify-between')}
+        >
+          <div className={cn('flex items-center gap-1', collapsed && 'flex-col')}>
             <button
               onClick={toggleTheme}
               className="flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
@@ -234,7 +273,7 @@ export function AdminSidebar() {
               aria-describedby={undefined}
             >
               <SheetTitle className="sr-only">{t('common.menu')}</SheetTitle>
-              {sidebarContent}
+              {renderSidebarContent(false)}
             </SheetContent>
           </Sheet>
           <span className="font-semibold text-sm">{t('brandName')}</span>
@@ -247,8 +286,26 @@ export function AdminSidebar() {
       </div>
 
       {/* Desktop Sidebar */}
-      <aside className="w-64 bg-card border-r fixed h-full hidden md:flex flex-col z-20">
-        {sidebarContent}
+      <aside
+        className={cn(
+          'bg-card border-r fixed h-full hidden md:flex flex-col z-20 transition-[width] duration-200',
+          isCollapsed ? 'w-[4.5rem]' : 'w-64',
+        )}
+      >
+        <button
+          type="button"
+          onClick={() => setIsCollapsed((current) => !current)}
+          className="absolute -right-3 top-6 z-30 flex h-7 w-7 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-colors hover:text-foreground"
+          title={isCollapsed ? t('expandSidebar') : t('collapseSidebar')}
+          aria-label={isCollapsed ? t('expandSidebar') : t('collapseSidebar')}
+        >
+          {isCollapsed ? (
+            <PanelLeftOpen className="h-4 w-4" />
+          ) : (
+            <PanelLeftClose className="h-4 w-4" />
+          )}
+        </button>
+        {renderSidebarContent(isCollapsed)}
       </aside>
     </>
   );

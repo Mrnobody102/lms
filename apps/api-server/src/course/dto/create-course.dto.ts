@@ -6,19 +6,23 @@ import {
   IsBoolean,
   IsUrl,
   Matches,
+  Max,
   MaxLength,
+  Min,
+  MinLength,
   IsObject,
   IsUUID,
 } from 'class-validator';
 
 export class CreateCourseDto {
-  @ApiProperty({ example: 'Lập trình Next.js cơ bản', description: 'Course title' })
+  @ApiProperty({ example: 'Tiếng Anh giao tiếp cơ bản', description: 'Course title' })
   @IsString()
+  @MinLength(2, { message: 'Course title must be at least 2 characters' })
   @MaxLength(255, { message: 'Course title must be at most 255 characters' })
   title: string;
 
   @ApiPropertyOptional({
-    example: 'khoa-hoc-nextjs',
+    example: 'tieng-anh-giao-tiep-co-ban',
     description: 'SEO-friendly slug (unique per tenant)',
   })
   @IsString()
@@ -29,7 +33,10 @@ export class CreateCourseDto {
   })
   slug?: string;
 
-  @ApiPropertyOptional({ example: 'Khóa học lập trình web...', description: 'Course description' })
+  @ApiPropertyOptional({
+    example: 'Khóa học luyện giao tiếp theo tình huống...',
+    description: 'Course description',
+  })
   @IsString()
   @IsOptional()
   @MaxLength(5000, { message: 'Description must be at most 5000 characters' })
@@ -38,6 +45,8 @@ export class CreateCourseDto {
   @ApiPropertyOptional({ example: 30, description: 'Total duration in minutes' })
   @IsInt()
   @IsOptional()
+  @Min(0, { message: 'Total duration must not be negative' })
+  @Max(100000, { message: 'Total duration must be at most 100000 minutes' })
   totalDuration?: number;
 
   @ApiPropertyOptional({

@@ -7,13 +7,16 @@ import {
   MaxLength,
   IsEnum,
   IsUrl,
+  Max,
   Min,
+  MinLength,
 } from 'class-validator';
 import { LessonType } from '@repo/database';
 
 export class CreateLessonDto {
-  @ApiProperty({ example: 'Introduction to NestJS', description: 'Lesson title' })
+  @ApiProperty({ example: 'Greetings and small talk', description: 'Lesson title' })
   @IsString()
+  @MinLength(2, { message: 'Lesson title must be at least 2 characters' })
   @MaxLength(255, { message: 'Lesson title must be at most 255 characters' })
   title: string;
 
@@ -34,6 +37,7 @@ export class CreateLessonDto {
   @IsInt()
   @IsOptional()
   @Min(0)
+  @Max(10000)
   order?: number;
 
   @ApiProperty({ example: 'uuid-of-course', description: 'Course ID' })
@@ -55,7 +59,8 @@ export class CreateLessonDto {
   @ApiPropertyOptional({ example: 10, description: 'Duration in minutes' })
   @IsInt()
   @IsOptional()
-  @Min(0)
+  @Min(1)
+  @Max(1440)
   duration?: number;
 
   @ApiPropertyOptional({ example: 'uuid-of-practice', description: 'Practice Exercise Set ID' })

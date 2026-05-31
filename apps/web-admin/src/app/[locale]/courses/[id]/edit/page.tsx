@@ -45,7 +45,8 @@ import {
   buildCourseAiSettings,
   normalizeCourseAiSettings,
 } from '@/lib/course-api';
-import { Button, Alert, AlertDescription, Badge, Label } from '@/components/ui';
+import { uploadMediaFile } from '@/lib/media-upload';
+import { Button, Alert, AlertDescription, Badge, ImageUpload, Label } from '@/components/ui';
 import {
   AlertCircle,
   ArrowLeft,
@@ -60,6 +61,7 @@ import {
   Mic2,
   Globe,
   EyeOff,
+  UploadCloud,
 } from 'lucide-react';
 import { Link } from '@/navigation';
 
@@ -97,16 +99,18 @@ export default function CourseEditorPage() {
   const [localAiEnabled, setLocalAiEnabled] = useState(false);
   const [localAiPrompt, setLocalAiPrompt] = useState('');
   const [localCoverImageUrl, setLocalCoverImageUrl] = useState('');
+  const [sourceUpload, setSourceUpload] = useState<{ fileName: string; url: string } | null>(null);
+  const [sourceUploading, setSourceUploading] = useState(false);
 
   const toggleCourseStatus = useToggleCourseStatus();
   const courseIsActive = course?.isActive !== false;
   const canManageCourse = user?.role !== 'INSTRUCTOR';
 
   useEffect(() => {
-    if (!canManageCourse) {
-      setActiveTab('students');
+    if (!canManageCourse && !['curriculum', 'students'].includes(activeTab)) {
+      setActiveTab('curriculum');
     }
-  }, [canManageCourse]);
+  }, [activeTab, canManageCourse]);
 
   useEffect(() => {
     if (!course) return;
@@ -118,6 +122,24 @@ export default function CourseEditorPage() {
     setLocalAiEnabled(aiSettings.enabled);
     setLocalAiPrompt(aiSettings.prompt);
   }, [course]);
+
+  const settingsDirty = useMemo(() => {
+    if (!course) return false;
+
+    const aiSettings = normalizeCourseAiSettings(course.aiSettings);
+    return (
+      localTitle !== course.title ||
+      localLevelId !== (course.levelId || '') ||
+      localCoverImageUrl.trim() !== (course.coverImageUrl || '') ||
+      localAiEnabled !== aiSettings.enabled ||
+      localAiPrompt !== aiSettings.prompt
+    );
+  }, [course, localAiEnabled, localAiPrompt, localCoverImageUrl, localLevelId, localTitle]);
+
+  const hasProgramLevels = useMemo(
+    () => programs?.some((program) => (program.levels?.length ?? 0) > 0) ?? false,
+    [programs],
+  );
 
   const showMsg = (
     type: 'success' | 'error',
@@ -150,6 +172,17 @@ export default function CourseEditorPage() {
     );
   };
 
+  const handleResetCourseSettings = () => {
+    if (!course) return;
+
+    setLocalTitle(course.title);
+    setLocalLevelId(course.levelId || '');
+    setLocalCoverImageUrl(course.coverImageUrl || '');
+    const aiSettings = normalizeCourseAiSettings(course.aiSettings);
+    setLocalAiEnabled(aiSettings.enabled);
+    setLocalAiPrompt(aiSettings.prompt);
+  };
+
   const handleToggleStatus = () => {
     toggleCourseStatus.mutate(
       { id: courseId, isActive: !courseIsActive },
@@ -159,6 +192,21 @@ export default function CourseEditorPage() {
         onError: () => showMsg('error', 'courseStatusError'),
       },
     );
+  };
+
+  const handleSourceUpload = async (file: File | undefined) => {
+    if (!file) return;
+
+    try {
+      setSourceUploading(true);
+      const result = await uploadMediaFile(file);
+      setSourceUpload({ fileName: file.name, url: result.url });
+      showMsg('success', 'contentImportUploaded');
+    } catch {
+      showMsg('error', 'contentImportUploadError');
+    } finally {
+      setSourceUploading(false);
+    }
   };
 
   const handleAddLessonClick = (unitId?: string | null) => {
@@ -482,7 +530,7 @@ export default function CourseEditorPage() {
     <AuthGuard>
       <div className="min-h-screen flex flex-col md:flex-row bg-background">
         <AdminSidebar />
-        <main className="flex-1 md:ml-64 relative">
+        <main className="flex-1 md:ml-[var(--admin-sidebar-width)] relative">
           {/* Sticky Header with Title Edit and Tabs */}
           <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-xl border-b pt-4 px-6 lg:px-8">
             <div className="max-w-6xl mx-auto flex flex-col gap-4">
@@ -501,11 +549,18 @@ export default function CourseEditorPage() {
                     <input
                       value={localTitle}
                       onChange={(e) => setLocalTitle(e.target.value)}
-                      onBlur={canManageCourse ? handleUpdateCourse : undefined}
                       readOnly={!canManageCourse}
                       className="text-2xl font-bold bg-transparent border-none outline-none focus:ring-2 focus:ring-primary/20 rounded px-2 -ml-2 transition-all w-full sm:w-auto sm:min-w-[300px] sm:max-w-md truncate"
                       placeholder={t('courseName')}
                     />
+                    {settingsDirty && canManageCourse && (
+                      <Badge
+                        variant="warning"
+                        className="cursor-default pointer-events-none mt-1 sm:mt-0"
+                      >
+                        {t('settingsDirty')}
+                      </Badge>
+                    )}
                     <Badge
                       variant={lessonReadiness.isReady ? 'success' : 'outline'}
                       className="cursor-default pointer-events-none mt-1 sm:mt-0"
@@ -554,7 +609,7 @@ export default function CourseEditorPage() {
                       </Button>
                       <Button
                         onClick={handleUpdateCourse}
-                        disabled={updateCourse.isPending}
+                        disabled={updateCourse.isPending || !settingsDirty || !localTitle.trim()}
                         size="sm"
                         className="gap-1.5 rounded-full shadow-sm"
                       >
@@ -572,19 +627,19 @@ export default function CourseEditorPage() {
 
               {/* Tabs */}
               <div className="flex items-center gap-8 overflow-x-auto no-scrollbar">
+                <button
+                  onClick={() => setActiveTab('curriculum')}
+                  className={`flex items-center gap-2 pb-3 text-sm font-medium transition-all border-b-2 whitespace-nowrap ${
+                    activeTab === 'curriculum'
+                      ? 'border-primary text-foreground'
+                      : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30'
+                  }`}
+                >
+                  <BookOpen className="w-4 h-4" />
+                  {t('curriculumTab')}
+                </button>
                 {canManageCourse && (
                   <>
-                    <button
-                      onClick={() => setActiveTab('curriculum')}
-                      className={`flex items-center gap-2 pb-3 text-sm font-medium transition-all border-b-2 whitespace-nowrap ${
-                        activeTab === 'curriculum'
-                          ? 'border-primary text-foreground'
-                          : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30'
-                      }`}
-                    >
-                      <BookOpen className="w-4 h-4" />
-                      {t('curriculumTab')}
-                    </button>
                     <button
                       onClick={() => setActiveTab('practice')}
                       className={`flex items-center gap-2 pb-3 text-sm font-medium transition-all border-b-2 whitespace-nowrap ${
@@ -651,6 +706,50 @@ export default function CourseEditorPage() {
             <div
               className={`transition-all duration-300 animate-in fade-in ${activeTab === 'curriculum' ? 'block' : 'hidden'}`}
             >
+              {canManageCourse && (
+                <div className="mb-5 rounded-xl border bg-card p-5 shadow-sm">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h2 className="text-base font-semibold">{t('contentImportTitle')}</h2>
+                      <p className="mt-1 text-sm text-muted-foreground">{t('contentImportDesc')}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {t('contentImportSupported')}
+                      </p>
+                    </div>
+                    <label className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border border-input bg-background px-4 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground">
+                      {sourceUploading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <UploadCloud className="h-4 w-4" />
+                      )}
+                      {sourceUploading ? t('contentImportUploading') : t('contentImportUpload')}
+                      <input
+                        type="file"
+                        accept=".pdf,.csv,.xlsx,.xls,.json,application/pdf,text/csv,application/json,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        className="hidden"
+                        disabled={sourceUploading}
+                        onChange={(event) => {
+                          void handleSourceUpload(event.target.files?.[0]);
+                          event.target.value = '';
+                        }}
+                      />
+                    </label>
+                  </div>
+                  {sourceUpload && (
+                    <div className="mt-4 rounded-lg border bg-muted/20 p-3 text-sm">
+                      <p className="font-medium">{sourceUpload.fileName}</p>
+                      <a
+                        href={sourceUpload.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-1 block truncate text-xs text-primary hover:underline"
+                      >
+                        {sourceUpload.url}
+                      </a>
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="bg-card border rounded-2xl shadow-sm p-2 sm:p-6">
                 <LessonList
                   lessons={lessons}
@@ -667,6 +766,7 @@ export default function CourseEditorPage() {
                   onDuplicate={handleDuplicateLesson}
                   onBulkDelete={handleBulkDeleteLessons}
                   getPreviewUrl={getLessonPreviewUrl}
+                  readOnly={!canManageCourse}
                 />
               </div>
             </div>
@@ -704,27 +804,26 @@ export default function CourseEditorPage() {
 
                     <div className="space-y-1.5">
                       <Label className="text-sm font-medium">{t('coverImageUrl')}</Label>
+                      <ImageUpload
+                        value={localCoverImageUrl}
+                        onValueChange={setLocalCoverImageUrl}
+                        onUpload={uploadMediaFile}
+                        onUploadError={() => showMsg('error', 'coverImageUploadError')}
+                        disabled={!canManageCourse}
+                        emptyLabel={t('coverImageUpload')}
+                        changeLabel={t('coverImageChange')}
+                        uploadingLabel={t('coverImageUploading')}
+                        helperText={t('coverImageHelper')}
+                        uploadedImageAlt={t('coverImageUrl')}
+                      />
                       <input
                         type="url"
                         value={localCoverImageUrl}
                         onChange={(e) => setLocalCoverImageUrl(e.target.value)}
-                        onBlur={handleUpdateCourse}
+                        readOnly={!canManageCourse}
                         placeholder={t('coverImageUrlPlaceholder')}
                         className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
                       />
-                      {localCoverImageUrl && (
-                        <div className="mt-2 rounded-lg overflow-hidden border aspect-video bg-muted relative">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={localCoverImageUrl}
-                            alt="Course cover preview"
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
-                        </div>
-                      )}
                       <p className="text-xs text-muted-foreground">{t('coverImageUrlDesc')}</p>
                     </div>
 
@@ -733,7 +832,7 @@ export default function CourseEditorPage() {
                       <select
                         value={localLevelId || ''}
                         onChange={(e) => setLocalLevelId(e.target.value)}
-                        onBlur={handleUpdateCourse}
+                        disabled={!canManageCourse || !hasProgramLevels}
                         className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
                       >
                         <option value="">{t('none')}</option>
@@ -750,7 +849,19 @@ export default function CourseEditorPage() {
                           );
                         })}
                       </select>
-                      <p className="text-xs text-muted-foreground">{t('levelOptionalDesc')}</p>
+                      {hasProgramLevels ? (
+                        <p className="text-xs text-muted-foreground">{t('levelOptionalDesc')}</p>
+                      ) : (
+                        <div className="rounded-lg border border-dashed bg-muted/20 p-3 text-xs text-muted-foreground">
+                          <p>{t('noLevelsConfigured')}</p>
+                          <Link
+                            href="/programs"
+                            className="mt-2 inline-flex font-medium text-primary hover:underline"
+                          >
+                            {t('managePrograms')}
+                          </Link>
+                        </div>
+                      )}
                     </div>
 
                     <div className="rounded-xl border bg-muted/20 p-5 space-y-4">
@@ -763,10 +874,8 @@ export default function CourseEditorPage() {
                           <input
                             type="checkbox"
                             checked={localAiEnabled}
-                            onChange={(event) => {
-                              setLocalAiEnabled(event.target.checked);
-                              // We don't auto-save immediately on checkbox to prevent jitter, rely on Save button
-                            }}
+                            onChange={(event) => setLocalAiEnabled(event.target.checked)}
+                            disabled={!canManageCourse}
                             className="h-4 w-4 rounded border-input text-primary focus:ring-primary/20 cursor-pointer"
                           />
                           {t('aiEnabled')}
@@ -777,12 +886,38 @@ export default function CourseEditorPage() {
                         <textarea
                           value={localAiPrompt}
                           onChange={(event) => setLocalAiPrompt(event.target.value)}
-                          onBlur={handleUpdateCourse}
+                          readOnly={!canManageCourse}
                           placeholder={t('aiPromptPlaceholder')}
                           className="min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary/40 focus:ring-2 focus:ring-primary/10 resize-y"
                         />
                       </div>
                     </div>
+
+                    {canManageCourse && (
+                      <div className="flex flex-wrap items-center justify-end gap-2 border-t pt-4">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleResetCourseSettings}
+                          disabled={!settingsDirty || updateCourse.isPending}
+                        >
+                          {t('resetChanges')}
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={handleUpdateCourse}
+                          disabled={!settingsDirty || updateCourse.isPending || !localTitle.trim()}
+                          className="gap-2"
+                        >
+                          {updateCourse.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Save className="h-4 w-4" />
+                          )}
+                          {t('save')}
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
 

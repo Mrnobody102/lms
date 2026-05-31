@@ -155,7 +155,7 @@ export default function AdminStudentsPage() {
     <AuthGuard>
       <div className="min-h-screen flex flex-col md:flex-row bg-background">
         <AdminSidebar />
-        <main className="min-w-0 flex-1 p-6 md:ml-64 md:w-[calc(100%-16rem)] md:max-w-[calc(100%-16rem)] lg:p-8">
+        <main className="min-w-0 flex-1 p-6 md:ml-[var(--admin-sidebar-width)] md:w-[calc(100%-var(--admin-sidebar-width))] md:max-w-[calc(100%-var(--admin-sidebar-width))] lg:p-8">
           <div className="mx-auto max-w-6xl min-w-0">
             <AdminHeader title={t('students')} description={t('manageStudentsDesc')} />
 

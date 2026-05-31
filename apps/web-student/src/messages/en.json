@@ -617,7 +617,7 @@
       "emailRequired": "Please enter your email address.",
       "password": "Password",
       "passwordPlaceholder": "At least 8 characters",
-      "registerPasswordPlaceholder": "e.g. Huyen@123",
+      "registerPasswordPlaceholder": "e.g. Student@123",
       "passwordRequirement": "Use 8-128 characters with uppercase, lowercase, number, and special character (@$!%*?&).",
       "passwordInvalid": "Password does not meet the requirement. Add uppercase, lowercase, number, and special character (@$!%*?&).",
       "emailAlreadyRegistered": "This email is already registered. Please sign in or use another email.",

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import {
   AlertCircle,
@@ -11,6 +11,7 @@ import {
   FileDown,
   KeyRound,
   Loader2,
+  Save,
   ShieldCheck,
   TicketCheck,
   TrendingUp,
@@ -20,18 +21,52 @@ import type { LucideIcon } from 'lucide-react';
 import { AdminHeader } from '@/components/layout/admin-header';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
-import { Alert, AlertDescription, Badge } from '@/components/ui';
+import { Alert, AlertDescription, Badge, Button, Input, Label } from '@/components/ui';
 import { useActivationCodes } from '@/hooks/use-activation-codes';
 import { useAdminOverview } from '@/hooks/use-admin-users';
+import { useBillingConfig, useUpdateBillingConfig } from '@/hooks/use-billing';
 import type { ActivationCodeSummary } from '@/lib/activation-api';
+import type { BillingConfig } from '@/lib/billing-api';
+
+const DEFAULT_BILLING_CONFIG: BillingConfig = {
+  paymentProvider: 'none',
+  paymentPublicKey: '',
+  paymentMerchantId: '',
+  paymentWebhookUrl: '',
+  currency: 'VND',
+  baseCoursePriceMinor: 0,
+  discountPercent: 0,
+  taxPercent: 0,
+  invoicePrefix: 'INV',
+  exportFormat: 'csv',
+  updatedAt: null,
+};
 
 export default function FinancePage() {
   const t = useTranslations('Admin.financePage');
   const locale = useLocale();
   const overviewQuery = useAdminOverview();
   const activationQuery = useActivationCodes();
+  const billingQuery = useBillingConfig();
+  const updateBilling = useUpdateBillingConfig();
+  const [billingForm, setBillingForm] = useState<BillingConfig>(DEFAULT_BILLING_CONFIG);
+  const [billingMessage, setBillingMessage] = useState<string | null>(null);
 
   const activationCodes = useMemo(() => activationQuery.data ?? [], [activationQuery.data]);
+
+  useEffect(() => {
+    if (billingQuery.data) {
+      setBillingForm(billingQuery.data);
+    }
+  }, [billingQuery.data]);
+
+  const billingDirty = useMemo(() => {
+    const source = billingQuery.data ?? DEFAULT_BILLING_CONFIG;
+    return (
+      JSON.stringify({ ...billingForm, updatedAt: null }) !==
+      JSON.stringify({ ...source, updatedAt: null })
+    );
+  }, [billingForm, billingQuery.data]);
 
   const metrics = useMemo(() => {
     const issued = activationCodes.reduce((total, code) => total + code.maxUses, 0);
@@ -78,14 +113,38 @@ export default function FinancePage() {
     },
   ];
 
-  const isLoading = overviewQuery.isLoading || activationQuery.isLoading;
-  const hasError = overviewQuery.isError || activationQuery.isError;
+  const isLoading = overviewQuery.isLoading || activationQuery.isLoading || billingQuery.isLoading;
+  const hasError = overviewQuery.isError || activationQuery.isError || billingQuery.isError;
+
+  const handleSaveBilling = () => {
+    updateBilling.mutate(
+      {
+        paymentProvider: billingForm.paymentProvider,
+        paymentPublicKey: billingForm.paymentPublicKey,
+        paymentMerchantId: billingForm.paymentMerchantId,
+        paymentWebhookUrl: billingForm.paymentWebhookUrl,
+        currency: billingForm.currency,
+        baseCoursePriceMinor: billingForm.baseCoursePriceMinor,
+        discountPercent: billingForm.discountPercent,
+        taxPercent: billingForm.taxPercent,
+        invoicePrefix: billingForm.invoicePrefix,
+        exportFormat: billingForm.exportFormat,
+      },
+      {
+        onSuccess: (config) => {
+          setBillingForm(config);
+          setBillingMessage(t('billingSaveSuccess'));
+        },
+        onError: () => setBillingMessage(t('billingSaveError')),
+      },
+    );
+  };
 
   return (
     <AuthGuard>
       <div className="min-h-screen flex flex-col md:flex-row bg-background">
         <AdminSidebar />
-        <main className="flex-1 md:ml-64 p-6 lg:p-8">
+        <main className="flex-1 md:ml-[var(--admin-sidebar-width)] p-6 lg:p-8">
           <div className="max-w-6xl mx-auto">
             <AdminHeader title={t('title')} description={t('desc')} />
 
@@ -109,7 +168,22 @@ export default function FinancePage() {
 
                 <section className="mt-8 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
                   <ActivationCodeTable codes={activationCodes} locale={locale} />
-                  <FinanceReadiness />
+                  <FinanceReadiness config={billingForm} />
+                </section>
+
+                <section className="mt-8">
+                  {billingMessage && (
+                    <div className="mb-4 rounded-lg border bg-muted/20 p-3 text-sm text-muted-foreground">
+                      {billingMessage}
+                    </div>
+                  )}
+                  <BillingConfigPanel
+                    config={billingForm}
+                    dirty={billingDirty}
+                    saving={updateBilling.isPending}
+                    onChange={setBillingForm}
+                    onSave={handleSaveBilling}
+                  />
                 </section>
               </>
             )}
@@ -144,26 +218,34 @@ function FinanceStatCard({ stat }: { stat: FinanceStat }) {
   );
 }
 
-function FinanceReadiness() {
+function FinanceReadiness({ config }: { config: BillingConfig }) {
   const t = useTranslations('Admin.financePage');
+  const providerConfigured =
+    config.paymentProvider === 'manual' ||
+    (config.paymentProvider !== 'none' &&
+      Boolean(config.paymentPublicKey.trim() || config.paymentMerchantId.trim()));
+  const pricingConfigured = config.baseCoursePriceMinor > 0;
   const items = [
     {
       icon: CreditCard,
       title: t('billingProviderTitle'),
       desc: t('billingProviderDesc'),
-      status: t('notConfigured'),
+      status: providerConfigured ? t('configured') : t('notConfigured'),
+      ready: providerConfigured,
     },
     {
       icon: BarChart3,
       title: t('pricingRulesTitle'),
       desc: t('pricingRulesDesc'),
-      status: t('notConfigured'),
+      status: pricingConfigured ? t('configured') : t('notConfigured'),
+      ready: pricingConfigured,
     },
     {
       icon: FileDown,
       title: t('exportTitle'),
       desc: t('exportDesc'),
-      status: t('availableSoon'),
+      status: config.exportFormat.toUpperCase(),
+      ready: true,
     },
   ];
 
@@ -190,12 +272,172 @@ function FinanceReadiness() {
                   <p className="mt-1 text-xs text-muted-foreground">{item.desc}</p>
                 </div>
               </div>
-              <Badge variant="outline" className="shrink-0 text-[11px]">
+              <Badge variant={item.ready ? 'success' : 'outline'} className="shrink-0 text-[11px]">
                 {item.status}
               </Badge>
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function BillingConfigPanel({
+  config,
+  dirty,
+  saving,
+  onChange,
+  onSave,
+}: {
+  config: BillingConfig;
+  dirty: boolean;
+  saving: boolean;
+  onChange: (config: BillingConfig) => void;
+  onSave: () => void;
+}) {
+  const t = useTranslations('Admin.financePage');
+  const update = <Key extends keyof BillingConfig>(key: Key, value: BillingConfig[Key]) => {
+    onChange({ ...config, [key]: value });
+  };
+
+  return (
+    <div className="rounded-xl border bg-card p-5 shadow-sm">
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-base font-semibold">{t('billingConfigTitle')}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{t('billingConfigDesc')}</p>
+        </div>
+        {dirty && <Badge variant="warning">{t('unsavedBilling')}</Badge>}
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-3">
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold">{t('paymentSection')}</h3>
+          <div className="space-y-1.5">
+            <Label>{t('paymentProvider')}</Label>
+            <select
+              value={config.paymentProvider}
+              onChange={(event) =>
+                update('paymentProvider', event.target.value as BillingConfig['paymentProvider'])
+              }
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            >
+              {(['none', 'manual', 'stripe', 'payos', 'vnpay', 'momo'] as const).map((provider) => (
+                <option key={provider} value={provider}>
+                  {t(`paymentProviders.${provider}`)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>{t('paymentPublicKey')}</Label>
+            <Input
+              value={config.paymentPublicKey}
+              onChange={(event) => update('paymentPublicKey', event.target.value)}
+              placeholder="pk_..."
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>{t('paymentMerchantId')}</Label>
+            <Input
+              value={config.paymentMerchantId}
+              onChange={(event) => update('paymentMerchantId', event.target.value)}
+              placeholder="merchant-id"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>{t('paymentWebhookUrl')}</Label>
+            <Input
+              type="url"
+              value={config.paymentWebhookUrl}
+              onChange={(event) => update('paymentWebhookUrl', event.target.value)}
+              placeholder="https://..."
+            />
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold">{t('pricingSection')}</h3>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>{t('currency')}</Label>
+              <Input
+                value={config.currency}
+                onChange={(event) => update('currency', event.target.value.toUpperCase())}
+                maxLength={3}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t('baseCoursePrice')}</Label>
+              <Input
+                type="number"
+                min={0}
+                value={config.baseCoursePriceMinor}
+                onChange={(event) =>
+                  update('baseCoursePriceMinor', Number(event.target.value || 0))
+                }
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>{t('discountPercent')}</Label>
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                value={config.discountPercent}
+                onChange={(event) => update('discountPercent', Number(event.target.value || 0))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t('taxPercent')}</Label>
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                value={config.taxPercent}
+                onChange={(event) => update('taxPercent', Number(event.target.value || 0))}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold">{t('exportSection')}</h3>
+          <div className="space-y-1.5">
+            <Label>{t('invoicePrefix')}</Label>
+            <Input
+              value={config.invoicePrefix}
+              onChange={(event) => update('invoicePrefix', event.target.value.toUpperCase())}
+              maxLength={12}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>{t('exportFormat')}</Label>
+            <select
+              value={config.exportFormat}
+              onChange={(event) =>
+                update('exportFormat', event.target.value as BillingConfig['exportFormat'])
+              }
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            >
+              <option value="csv">CSV</option>
+              <option value="xlsx">XLSX</option>
+            </select>
+          </div>
+          <div className="rounded-lg border bg-muted/20 p-3 text-xs text-muted-foreground">
+            {t('secretKeyNotice')}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-5 flex justify-end border-t pt-4">
+        <Button onClick={onSave} disabled={!dirty || saving} className="gap-2">
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          {t('saveBilling')}
+        </Button>
       </div>
     </div>
   );

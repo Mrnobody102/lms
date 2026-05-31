@@ -8,13 +8,14 @@ import {
   ChevronLeft,
   ChevronRight,
   FileText,
+  Menu,
   Video,
   PlayCircle,
   Layers,
   CheckSquare,
   PlusCircle,
 } from 'lucide-react';
-import { Button } from '@repo/ui';
+import { Button, Sheet, SheetContent, SheetTitle, SheetTrigger } from '@repo/ui';
 
 interface LessonNavigationSidebarProps {
   courseId: string;
@@ -52,32 +53,18 @@ export function LessonNavigationSidebar({
   const sortedUnits = [...units].sort((a, b) => a.order - b.order);
   const unassignedLessons = lessons.filter((l) => !l.unitId).sort((a, b) => a.order - b.order);
 
-  if (isCollapsed) {
-    return (
-      <div className="w-12 border-r bg-background flex flex-col items-center py-4 shrink-0 h-full transition-all duration-300">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setIsCollapsed(false)}
-          title={t('expandSidebar')}
-        >
-          <ChevronRight className="w-5 h-5" />
-        </Button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="w-64 xl:w-72 border-r bg-background flex flex-col h-full shrink-0 transition-all duration-300">
+  const navigationContent = (
+    <>
       <div className="p-4 border-b flex items-center justify-between shrink-0">
-        <h3 className="font-semibold text-sm truncate">{t('lessons')}</h3>
+        <h3 className="font-semibold text-sm truncate">{t('lessonNavigationTitle')}</h3>
         <Button
           variant="ghost"
           size="icon"
           onClick={() => setIsCollapsed(true)}
-          className="h-8 w-8"
+          className="hidden h-8 w-8 lg:inline-flex"
+          title={t('collapseSidebar')}
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronRight className="w-4 h-4" />
         </Button>
       </div>
 
@@ -164,6 +151,50 @@ export function LessonNavigationSidebar({
           </div>
         )}
       </div>
+    </>
+  );
+
+  const mobileNavigation = (
+    <div className="fixed bottom-4 right-4 z-40 lg:hidden">
+      <Sheet>
+        <SheetTrigger asChild>
+          <Button className="h-11 rounded-full shadow-lg">
+            <Menu className="mr-2 h-4 w-4" />
+            {t('lessonNavigationTitle')}
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="right" className="flex w-[320px] max-w-[92vw] flex-col p-0">
+          <SheetTitle className="sr-only">{t('lessonNavigationTitle')}</SheetTitle>
+          {navigationContent}
+        </SheetContent>
+      </Sheet>
     </div>
+  );
+
+  if (isCollapsed) {
+    return (
+      <>
+        {mobileNavigation}
+        <div className="hidden h-full w-12 shrink-0 flex-col items-center border-l bg-background py-4 transition-all duration-300 lg:flex">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsCollapsed(false)}
+            title={t('expandSidebar')}
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </Button>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      {mobileNavigation}
+      <div className="hidden h-full w-64 shrink-0 flex-col border-l bg-background transition-all duration-300 lg:flex xl:w-72">
+        {navigationContent}
+      </div>
+    </>
   );
 }

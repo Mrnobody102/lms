@@ -23,6 +23,7 @@ import {
 import { getScopedTenantId } from '../common/utils/tenant-request.util';
 import { AdminUserQueryDto } from './dto/admin-user-query.dto';
 import { CreateInstructorDto } from './dto/create-instructor.dto';
+import { UpdateAdminUserDto } from './dto/update-admin-user.dto';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
 
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
@@ -70,6 +71,20 @@ export class AdminController {
     @Param('id', ParseUUIDPipe) userId: string,
   ) {
     return this.userAdminService.getUserById(user, userId);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: "Update a user's editable profile fields" })
+  @ApiResponse({ status: 200, description: 'User updated successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async updateUser(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) userId: string,
+    @Body() updateAdminUserDto: UpdateAdminUserDto,
+  ) {
+    return this.userAdminService.updateUser(user, userId, updateAdminUserDto);
   }
 
   @Patch(':id/status')

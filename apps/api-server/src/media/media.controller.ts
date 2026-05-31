@@ -5,22 +5,32 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Role } from '@repo/database';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiProperty } from '@nestjs/swagger';
 
-import { IsString, IsNotEmpty, IsNumber, Min } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, Matches, Max, MaxLength, Min } from 'class-validator';
+
+const MAX_UPLOAD_BYTES = 500 * 1024 * 1024;
+const SUPPORTED_UPLOAD_MIME_REGEX =
+  /^(image|audio|video)\/[a-z0-9.+-]+$|^application\/(pdf|json)$|^text\/csv$|^application\/vnd\.(ms-excel|openxmlformats-officedocument\.spreadsheetml\.sheet)$/i;
 
 class CreatePresignedUrlDto {
   @ApiProperty({ description: 'The name of the file' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(255)
   filename: string;
 
   @ApiProperty({ description: 'The MIME type of the file' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(120)
+  @Matches(SUPPORTED_UPLOAD_MIME_REGEX, {
+    message: 'Unsupported file type',
+  })
   mimeType: string;
 
   @ApiProperty({ description: 'The size of the file in bytes' })
   @IsNumber()
   @Min(1)
+  @Max(MAX_UPLOAD_BYTES, { message: 'File is too large' })
   sizeBytes: number;
 }
 
