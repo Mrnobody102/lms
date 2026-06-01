@@ -189,14 +189,14 @@ curl -X POST http://localhost:4000/api/auth/logout \
 
 Trạng thái sản phẩm và lộ trình chi tiết nằm ở:
 
+- [Current work](product/CURRENT-WORK.md)
 - [Product plan](product/PLAN.md)
-- [Feature map](product/features.md)
-- [Engineering backlog](product/ENGINEERING-BACKLOG.md)
+- [AI-native roadmap](product/AI-NATIVE-LMS-ROADMAP.md)
 
 Thứ tự làm tiếp hiện tại:
 
-1. Student report V2 polish: compare course, giải thích điểm yếu và CTA luyện tập.
-2. Admin report V2 polish: compare cohort, risk flags, export/filter nâng cao.
-3. AI-generated practice và AI conversation roleplay.
-4. Reporting nâng cao theo unit/practice/exam.
-5. Mở rộng question types cho practice/exam.
+1. Cross-tenant deny tests for high-risk APIs.
+2. Shared loading/empty/error states for admin practice, exam, and reports.
+3. Post-deploy smoke checks for API readiness and portal login routes.
+4. Read-only data integrity checks for orphan progress, enrollment, tenant relations, and soft-delete consistency.
+5. Pagination or bounded rendering for remaining large lists.

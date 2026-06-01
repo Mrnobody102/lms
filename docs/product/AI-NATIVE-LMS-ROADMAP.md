@@ -1,16 +1,15 @@
 # AI-Native LMS Roadmap (2026–2028)
 
-Cập nhật lần cuối: 2026-05-30
+Cập nhật lần cuối: 2026-06-01
 
 ## Mục tiêu
 
 Tài liệu này là plan chiến lược cấp sản phẩm + kỹ thuật để chuyển LMS Platform từ mô hình “LMS có thêm AI” sang **AI-native LMS**: AI giải quyết painpoint thực tế theo từng role, có kiểm soát chất lượng, bảo mật tenant và hiệu quả chi phí.
 
 Tài liệu này bổ sung cho:
+
 - [PLAN.md](PLAN.md)
-- [ENGINEERING-BACKLOG.md](ENGINEERING-BACKLOG.md)
-- [features.md](features.md)
-- [architecture-plan.md](architecture-plan.md)
+- [CURRENT-WORK.md](CURRENT-WORK.md)
 
 ## North-star outcomes
 
@@ -43,22 +42,26 @@ Tài liệu này bổ sung cho:
 ## Role-based AI applications
 
 ### Student
+
 - In-context tutor cho practice/exam/lesson context.
 - AI roleplay coach (text/audio), pronunciation feedback.
 - Remediation planner theo skill yếu + SRS due.
 
 ### Instructor
+
 - Course/lesson drafting from prompt.
 - Assignment/question draft generation with review workflow.
 - AI grading assistant (draft scoring + explanation), instructor final approval.
 - Class intervention suggestions từ risk/mastery signals.
 
 ### Admin (center)
+
 - Cohort risk and intervention assistant.
 - Enrollment and schedule operations copilot.
 - Reporting copilot (insight + recommended actions).
 
 ### Super Admin
+
 - Tenant adoption/usage intelligence.
 - Quota/package anomaly detection.
 
@@ -75,21 +78,25 @@ Tài liệu này bổ sung cho:
 ## Phased roadmap
 
 ## Phase A (Now): Strategic alignment + docs governance
+
 - Đồng bộ docs product/architecture/backlog theo hướng AI-native.
 - Chuẩn hóa capability matrix theo role.
 
 ## Phase B (Near-term quick wins)
+
 - Seed demo instructor + assignment + roleplay samples.
 - Audit log cho instructor-sensitive actions.
 - Test edge cases tenant/role/course-assignment.
 
 ## Phase C (Core domain foundation)
+
 - Additive schema cho modality/run/session:
   - `SELF_PACED`, `INSTRUCTOR_LED_ONLINE`, `INSTRUCTOR_LED_OFFLINE`, `HYBRID`.
 - Scheduling + attendance primitives (online/offline).
 - Enrollment lifecycle tách nhánh self-paced vs instructor-led.
 
 ## Phase D (AI copilots + commercialization)
+
 - Instructor/Student/Admin copilots với policy guardrails.
 - Nâng quota từ per-user coarse limit lên package-aware metering:
   - tenant package
@@ -99,6 +106,7 @@ Tài liệu này bổ sung cho:
 - Prompt governance + usage/cost analytics.
 
 ## Phase E (Scale & competitiveness)
+
 - Tenant customization policy bundles.
 - Outcome-driven optimization loops (A/B prompts, intervention efficacy).
 - Platform moat: analytics depth + domain-specific AI workflows.

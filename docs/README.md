@@ -1,99 +1,69 @@
-# Tài Liệu Dự Án LMS Platform
+# LMS Platform Docs
 
-Chào mừng bạn đến với hệ thống tài liệu của LMS Platform. Dưới đây là lộ trình đọc được đề xuất tùy theo vai trò và mục đích của bạn.
+This folder is intentionally small. Use this page as the docs index and avoid
+adding new planning files unless they become a durable source of truth.
 
-## Đọc Theo Thứ Tự
+## Read First
 
-### Dev Mới — Bắt Đầu Từ Đây
+| Need                               | Read                                                                 |
+| ---------------------------------- | -------------------------------------------------------------------- |
+| What is being worked on now        | [product/CURRENT-WORK.md](product/CURRENT-WORK.md)                   |
+| Product roadmap and current phase  | [product/PLAN.md](product/PLAN.md)                                   |
+| Long-term AI strategy              | [product/AI-NATIVE-LMS-ROADMAP.md](product/AI-NATIVE-LMS-ROADMAP.md) |
+| System boundaries and tenant model | [ARCHITECTURE.md](ARCHITECTURE.md)                                   |
+| API contracts                      | [api-documentation.md](api-documentation.md)                         |
+| Agent workflow                     | [ai-agent/SOP.md](ai-agent/SOP.md)                                   |
+| Release validation                 | [ops/release-check.md](ops/release-check.md)                         |
 
-Nếu bạn mới tham gia dự án, hãy đọc theo thứ tự:
+## Docs Map
 
-1. **[README](../README.md)** — Tổng quan dự án, cách cài đặt và chạy ứng dụng.
-2. **[PROJECT_STRUCTURE.md](../PROJECT_STRUCTURE.md)** — Cấu trúc thư mục chi tiết của toàn bộ monorepo.
-3. **[docs/quick-start.md](quick-start.md)** — Hướng dẫn nhanh: cài đặt Docker, chạy DB, start dev server.
-4. **[docs/ARCHITECTURE.md](ARCHITECTURE.md)** — Tổng quan kiến trúc hệ thống (multi-tenancy, scalability, codebase).
-5. **[docs/tech-stack.md](tech-stack.md)** — Danh sách các công nghệ sử dụng và lý do chọn.
-
-### Dev Backend (API Server)
-
-1. **[docs/api-documentation.md](api-documentation.md)** — Tài liệu chi tiết tất cả API endpoints (Auth, User, Admin, Tenant).
-2. **[docs/guides/database-guide.md](guides/database-guide.md)** — Cách quản lý Prisma migrations và schema.
-3. **[docs/tech-analysis.md](tech-analysis.md)** — Phân tích sâu về kiến trúc và tech stack backend.
-4. **[docs/product/architecture-plan.md](product/architecture-plan.md)** — Production readiness roadmap, checklist tiến độ các phase cải thiện.
-
-### Product / Roadmap
-
-1. **[docs/product/PLAN.md](product/PLAN.md)** — Lộ trình tổng thể từ LMS foundation tới dashboard, practice, exam, reports, activation và AI.
-2. **[docs/product/AI-NATIVE-LMS-ROADMAP.md](product/AI-NATIVE-LMS-ROADMAP.md)** — Roadmap AI-native 2026–2028: role-based AI workflows, quota/package governance, và competitiveness strategy.
-3. **[docs/product/features.md](product/features.md)** — Feature map theo actor/module và trạng thái hiện tại.
-4. **[docs/product/ENGINEERING-BACKLOG.md](product/ENGINEERING-BACKLOG.md)** — Backlog kỹ thuật và tiến độ đã verify.
-5. **[docs/product/architecture-plan.md](product/architecture-plan.md)** — Kiến trúc domain cần giữ khi mở rộng feature.
-
-### Dev Frontend (Web Apps)
-
-1. **[docs/ARCHITECTURE.md](ARCHITECTURE.md)** — Hiểu cách frontend apps giao tiếp với API.
-2. **[docs/guides/testing.md](guides/testing.md)** — Hướng dẫn viết và chạy Vitest (unit) và Playwright (E2E).
-
-### Dev / Ops — Triển Khai & Vận Hành
-
-1. **[docs/ops/deployment.md](ops/deployment.md)** — Hướng dẫn triển khai local và production (Vercel + Docker VPS).
-2. **[docs/troubleshooting.md](troubleshooting.md)** — Giải quyết các lỗi thường gặp (Docker, i18n, monorepo, Tailwind).
-
-### Người Dùng AI Agent / Coding Agent
-
-1. **[AGENTS.md](../AGENTS.md)** — Entry point cho mọi AI coding agent trong repo.
-2. **[CLAUDE.md](../CLAUDE.md)** — Memory entrypoint cho Claude Code, trỏ về `AGENTS.md`.
-3. **[docs/ai-agent/SOP.md](ai-agent/SOP.md)** — Quy trình làm việc chuẩn: intake, plan, implementation, validation, handoff.
-4. **[docs/ai-agent/prompts/README.md](ai-agent/prompts/README.md)** — Thư viện prompt templates cho AI Agent.
-5. **[agent-knowledge/lms-platform/CONTEXT.md](../agent-knowledge/lms-platform/CONTEXT.md)** — Ngữ cảnh nghiệp vụ LMS.
-6. **[agent-knowledge/lms-platform/SKILL.md](../agent-knowledge/lms-platform/SKILL.md)** — Skill map để chọn đúng skill theo loại task.
-
-## Cấu Trúc Thư Mục Tài Liệu
-
-```
+```text
 docs/
-├── README.md                  # ⭐ Bạn đang ở đây — chỉ đường cho dev mới
-├── ARCHITECTURE.md           # Tổng quan kiến trúc
-├── tech-stack.md             # Công nghệ sử dụng
-├── tech-analysis.md          # Phân tích kỹ thuật chuyên sâu
-├── quick-start.md            # Hướng dẫn bắt đầu nhanh
-├── api-documentation.md      # Tài liệu chi tiết API endpoints
-├── troubleshooting.md        # Xử lý sự cố thường gặp
-│
-├── guides/                   # Hướng dẫn kỹ thuật chuyên biệt
-│   ├── database-guide.md    # Prisma migrations, seed, docker
-│   └── testing.md           # Vitest + Playwright
-│
-├── ops/                      # Vận hành & triển khai
-│   └── deployment.md         # Local dev + Production deployment
-│
-├── product/                  # Tài liệu sản phẩm
-│   ├── features.md          # Danh sách tính năng theo Actor
-│   ├── PLAN.md              # Kế hoạch phát triển tổng thể
-│   ├── ENGINEERING-BACKLOG.md # Tiến độ kỹ thuật và backlog
-│   └── architecture-plan.md # Production readiness roadmap
-│
-└── ai-agent/                 # Tài liệu AI Agent (nội bộ)
-    ├── SOP.md
-    ├── ai-agent-architecture.md
-    ├── overnight-command-template.md
-    └── prompts/              # Thư viện prompt templates
-        ├── README.md         # Index các prompt templates
-        └── codebase-audit.md # Prompt chuẩn cho Codebase Audit
+├── README.md                         # This index
+├── ARCHITECTURE.md                   # System architecture and tenant model
+├── api-documentation.md              # API contract reference
+├── quick-start.md                    # Fast local setup
+├── tech-stack.md                     # Stack choices
+├── troubleshooting.md                # Common failures and fixes
+├── product/
+│   ├── CURRENT-WORK.md               # Active task, batch, checklist
+│   ├── PLAN.md                       # Product roadmap source of truth
+│   └── AI-NATIVE-LMS-ROADMAP.md      # Long-term AI direction
+├── ai-agent/
+│   ├── SOP.md                        # Agent operating procedure
+│   └── prompts/                      # Reusable prompt templates
+├── guides/
+│   ├── database-guide.md
+│   └── testing.md
+├── ops/
+│   ├── deployment.md
+│   ├── monitoring.md
+│   ├── release-check.md
+│   └── super-portal-operator-guide.md
+└── runbooks/
+    └── database-migration-runbook.md
 ```
 
-## Các File Quan Trọng Khác
+## Documentation Rules
 
-| File                                               | Mục đích                                                   |
-| -------------------------------------------------- | ---------------------------------------------------------- |
-| [../CONTRIBUTING.md](../CONTRIBUTING.md)           | Quy tắc đóng góp (commit convention, code style, workflow) |
-| [../PROJECT_STRUCTURE.md](../PROJECT_STRUCTURE.md) | Cấu trúc code chi tiết (apps, packages, scripts)           |
-| [../AGENTS.md](../AGENTS.md)                       | Hướng dẫn chính cho AI coding agents                       |
-| [../CLAUDE.md](../CLAUDE.md)                       | Entrypoint cho Claude Code                                 |
-| [../agent-knowledge/](../agent-knowledge/)         | Knowledge base và skill files cho AI agents                |
+- Keep active planning in [product/CURRENT-WORK.md](product/CURRENT-WORK.md).
+- Keep durable roadmap decisions in [product/PLAN.md](product/PLAN.md).
+- Keep agent process rules in [ai-agent/SOP.md](ai-agent/SOP.md) or `AGENTS.md`.
+- Prefer updating an existing source-of-truth file over creating a new one.
+- Delete stale planning/audit notes once their useful decisions are merged.
+- If a rule must always be enforced, prefer a script/check over prose only.
+- Use git history for old audits and batch notes; do not keep outdated docs in
+  the active docs tree.
 
-## Đóng Góp Tài Liệu
+## Agent Workflow
 
-- Các file docs sử dụng **tiếng Việt** làm ngôn ngữ chính.
-- README.md ở root và một số file kỹ thuật có thể dùng **tiếng Anh** để thuận tiện tra cứu.
-- Thứ tự đọc trong file này nên được cập nhật nếu có file mới được thêm vào.
+AI coding agents should load context progressively:
+
+1. `AGENTS.md`
+2. [product/CURRENT-WORK.md](product/CURRENT-WORK.md) for current scope
+3. [ai-agent/SOP.md](ai-agent/SOP.md) for workflow
+4. Relevant skill files under `agent-knowledge/skills/`
+5. Nearby source files and tests
+
+This follows the same shape as mature developer hubs: short entrypoints,
+task-oriented docs, and deeper references only when needed.

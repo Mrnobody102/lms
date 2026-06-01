@@ -265,8 +265,8 @@ pnpm run test
 | [API Documentation](docs/api-documentation.md)  | Standardized API contracts                 |
 | [Database Guide](docs/guides/database-guide.md) | Prisma usage, migrations, seeding          |
 | [Testing Guide](docs/guides/testing.md)         | Testing strategy and patterns              |
-| [Feature List](docs/product/features.md)        | Complete feature inventory with status     |
-| [Product Roadmap](docs/product/PLAN.md)         | Development phases and backlog             |
+| [Current Work](docs/product/CURRENT-WORK.md)    | Active batch, next scope, checklist        |
+| [Product Roadmap](docs/product/PLAN.md)         | Development phases and product direction   |
 | [Deployment Guide](docs/ops/deployment.md)      | Production deployment with Docker          |
 | [Quick Start](docs/quick-start.md)              | Fastest path to a running system           |
 | [Contributing](CONTRIBUTING.md)                 | Code standards, PR workflow                |

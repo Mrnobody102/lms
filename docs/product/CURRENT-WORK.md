@@ -6,9 +6,9 @@ Last updated: 2026-06-01
 
 | Area               | State       | Notes                                                                                             |
 | ------------------ | ----------- | ------------------------------------------------------------------------------------------------- |
-| Latest commit      | Done        | `7ed9735 chore: harden production readiness batch`                                                |
-| Remote sync        | Done        | `main` is aligned with `origin/main`                                                              |
-| Validation         | Done        | `pnpm lint`, `pnpm run typecheck`, `pnpm run test`, `pnpm run build` passed                       |
+| Batch 15           | Done        | Production-readiness hardening is merged and pushed                                               |
+| Docs cleanup       | Done        | Active product docs are consolidated to current work, product plan, and AI-native roadmap         |
+| Validation         | Done        | `pnpm lint`, `pnpm run typecheck`, `pnpm run test`, `pnpm run build` passed for Batch 15          |
 | TypeScript hygiene | Improved    | Removed explicit `any` casts in API bootstrap; shared AI bulk count constants                     |
 | Product readiness  | In progress | Next work should stay focused on tenant isolation, bounded lists, real metrics, and repeatable CI |
 
@@ -49,6 +49,21 @@ Watch:
 - Super-admin global queries must stay intentional and documented because they bypass ordinary tenant scoping by design.
 - Operational metrics should be real, source-labeled, or hidden. Do not add placeholder/fake metrics.
 - Long list screens should default to server pagination or bounded rendering.
+
+## Docs Operating Model
+
+Active docs:
+
+- [CURRENT-WORK.md](CURRENT-WORK.md): current batch, next batch, checklist, recent validation.
+- [PLAN.md](PLAN.md): durable product roadmap and phase status.
+- [AI-NATIVE-LMS-ROADMAP.md](AI-NATIVE-LMS-ROADMAP.md): long-term AI product direction.
+
+Rules:
+
+- Put short-lived batch status here, not in scattered audit files.
+- Merge useful decisions into `PLAN.md` or `AGENTS.md`/`SOP.md`.
+- Delete old planning docs once their decisions are merged; git history is the archive.
+- Convert repeated rules into scripts or checks when possible.
 
 ## Next Batch: Batch 16
 

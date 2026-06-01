@@ -83,14 +83,15 @@ Hệ thống AI Skills được tổ chức theo hướng **Modular** trong `age
 
 ## 7. Tài liệu tham khảo nhanh
 
-| Tài liệu           | Đường dẫn                           |
-| ------------------ | ----------------------------------- |
-| Tổng quan dự án    | `README.md`                         |
-| Cấu trúc code      | `PROJECT_STRUCTURE.md`              |
-| Kiến trúc hệ thống | `docs/ARCHITECTURE.md`              |
-| Hướng dẫn bắt đầu  | `docs/quick-start.md`               |
-| API Documentation  | `docs/api-documentation.md`         |
-| Production roadmap | `docs/product/architecture-plan.md` |
+| Tài liệu           | Đường dẫn                      |
+| ------------------ | ------------------------------ |
+| Tổng quan dự án    | `README.md`                    |
+| Cấu trúc code      | `PROJECT_STRUCTURE.md`         |
+| Kiến trúc hệ thống | `docs/ARCHITECTURE.md`         |
+| Hướng dẫn bắt đầu  | `docs/quick-start.md`          |
+| API Documentation  | `docs/api-documentation.md`    |
+| Current work       | `docs/product/CURRENT-WORK.md` |
+| Product roadmap    | `docs/product/PLAN.md`         |
 
 ---
 
