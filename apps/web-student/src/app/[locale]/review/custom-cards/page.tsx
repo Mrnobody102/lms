@@ -50,7 +50,7 @@ export default function CustomCardsPage() {
   const [apiError, setApiError] = useState<string | null>(null);
 
   const [isBulkOpen, setIsBulkOpen] = useState(false);
-  const [bulkData, setBulkData] = useState({ topic: '', count: 5, context: '' });
+  const [bulkData, setBulkData] = useState({ topic: '', count: '5', context: '' });
   const [bulkPreviewCards, setBulkPreviewCards] = useState<
     { front: string; back: string; phonetics: string; example: string }[]
   >([]);
@@ -140,7 +140,7 @@ export default function CustomCardsPage() {
     try {
       const res = await api.post('/ai/generate-flashcards-bulk', {
         topic: bulkData.topic.trim(),
-        count: bulkData.count,
+        count: normalizeBulkCount(bulkData.count),
         context: bulkData.context.trim() || undefined,
       });
       setBulkPreviewCards(
@@ -171,7 +171,7 @@ export default function CustomCardsPage() {
         ),
       );
       setBulkPreviewCards([]);
-      setBulkData({ topic: '', count: 5, context: '' });
+      setBulkData({ topic: '', count: '5', context: '' });
       setIsBulkOpen(false);
     } catch (_error) {
       setApiError(t('reviewSubmitError'));
@@ -442,22 +442,24 @@ export default function CustomCardsPage() {
                           <label className="mb-1 block text-sm font-medium">
                             {t('bulkGenerateCount')}
                           </label>
-                          <div className="relative">
-                            <input
-                              type="number"
-                              min="1"
-                              max="20"
-                              required
-                              value={bulkData.count}
-                              onChange={(e) =>
-                                setBulkData({ ...bulkData, count: parseInt(e.target.value) || 5 })
-                              }
-                              className="w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                            />
-                            <span className="absolute right-3 top-2 text-xs text-muted-foreground">
-                              {t('bulkGenerateCountHelp')}
-                            </span>
-                          </div>
+                          <input
+                            type="number"
+                            min="1"
+                            max="20"
+                            required
+                            value={bulkData.count}
+                            onBlur={() =>
+                              setBulkData((current) => ({
+                                ...current,
+                                count: String(normalizeBulkCount(current.count)),
+                              }))
+                            }
+                            onChange={(e) => setBulkData({ ...bulkData, count: e.target.value })}
+                            className="w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                          />
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {t('bulkGenerateCountHelp')}
+                          </p>
                         </div>
                       </div>
                       <div>
@@ -611,4 +613,13 @@ export default function CustomCardsPage() {
       </main>
     </div>
   );
+}
+
+function normalizeBulkCount(value: string) {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed)) {
+    return 5;
+  }
+
+  return Math.min(20, Math.max(1, parsed));
 }
