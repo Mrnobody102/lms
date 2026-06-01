@@ -19,7 +19,7 @@ export function PortalSidebar() {
   const t = useTranslations('SuperPortal.sidebar');
   const items = [
     { label: t('overview'), icon: Activity, href: '/' },
-    { label: t('tenants'), icon: Building2, href: '/' },
+    { label: t('tenants'), icon: Building2, href: '/tenants' },
     { label: t('billing'), icon: CreditCard, href: '/plans-billing' },
     { label: t('usage'), icon: HardDrive, href: '/usage-storage' },
     { label: t('domains'), icon: Globe2, href: '/domains' },

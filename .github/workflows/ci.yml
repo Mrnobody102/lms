@@ -73,6 +73,7 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @repo/database generate
+      - run: pnpm --filter @repo/shared build && pnpm --filter @repo/api-client build
       - run: pnpm run playwright:install:chromium
       - run: pnpm --filter web-student test:e2e
       - run: pnpm --filter web-sales test:e2e

@@ -1,9 +1,19 @@
 {
   "SuperPortal": {
-    "title": "Systems & Tenants",
+    "title": "System Overview",
     "subtitle": "Monitoring status of {date}",
     "newTenant": "New Tenant",
     "loading": "Loading Super Portal...",
+    "tenantsPage": {
+      "title": "Tenants",
+      "subtitle": "Manage tenant records, operational status, custom domains, and partner configuration across the platform."
+    },
+    "dataSource": {
+      "database": "Real DB data",
+      "runtime": "Live runtime",
+      "inMemory": "In-memory per instance",
+      "derived": "Derived from real signals"
+    },
     "tenantSummary": {
       "total": "Total tenants",
       "active": "Active",

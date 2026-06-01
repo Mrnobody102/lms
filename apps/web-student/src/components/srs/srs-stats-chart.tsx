@@ -32,7 +32,7 @@ export function SrsStatsChart({ enabled = true }: { enabled?: boolean }) {
     <div className="rounded-xl border bg-card p-6 shadow-sm">
       <h3 className="mb-4 text-lg font-bold">{t('title')}</h3>
       <div className="h-64">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
           <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <XAxis dataKey="date" fontSize={12} tickLine={false} axisLine={false} />
             <YAxis fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />

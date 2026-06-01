@@ -451,6 +451,7 @@ export class SrsService {
     return this.prisma.reviewCard.findMany({
       where: { tenantId, userId, sourceType: ReviewCardSource.CUSTOM },
       orderBy: { createdAt: 'desc' },
+      take: MAX_CUSTOM_CARDS,
     });
   }
 

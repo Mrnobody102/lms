@@ -100,10 +100,13 @@ export function SystemTelemetryDashboard() {
   return (
     <div className="space-y-6 mb-10">
       <div>
-        <h2 className="text-xl font-bold flex items-center gap-2 mb-4">
-          <Server className="w-5 h-5 text-primary" />
-          {t('systemTelemetry')}
-        </h2>
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <h2 className="flex items-center gap-2 text-xl font-bold">
+            <Server className="h-5 w-5 text-primary" />
+            {t('systemTelemetry')}
+          </h2>
+          <DataSourceBadge label={t('dataSource.database')} />
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((stat, i) => (
             <div
@@ -128,9 +131,12 @@ export function SystemTelemetryDashboard() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
         {infraStats.map((stat) => (
           <div key={stat.label} className="rounded-lg border bg-card p-4">
-            <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-              <stat.icon className="h-4 w-4 text-primary" />
-              {stat.label}
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                <stat.icon className="h-4 w-4 text-primary" />
+                {stat.label}
+              </div>
+              <DataSourceBadge label={t('dataSource.runtime')} />
             </div>
             <div className="text-2xl font-bold">{stat.value}</div>
             <div className="mt-1 text-xs text-muted-foreground">{stat.subValue}</div>
@@ -143,6 +149,7 @@ export function SystemTelemetryDashboard() {
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
             <Gauge className="h-4 w-4 text-primary" />
             {t('system.tenantTraffic')}
+            <DataSourceBadge label={t('dataSource.inMemory')} />
           </div>
           {busiestTenant ? (
             <div className="space-y-2 text-sm">
@@ -168,6 +175,7 @@ export function SystemTelemetryDashboard() {
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
             <AlertTriangle className="h-4 w-4 text-amber-500" />
             {t('system.alerts')}
+            <DataSourceBadge label={t('dataSource.derived')} />
           </div>
           {telemetry.alerts.length > 0 ? (
             <div className="space-y-2">
@@ -184,6 +192,14 @@ export function SystemTelemetryDashboard() {
         </div>
       </div>
     </div>
+  );
+}
+
+function DataSourceBadge({ label }: { label: string }) {
+  return (
+    <span className="rounded-full border bg-muted/40 px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+      {label}
+    </span>
   );
 }
 

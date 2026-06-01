@@ -1,6 +1,9 @@
 import type { ModelMessage } from 'ai';
 import { PracticeQuestionType } from '@repo/database';
 
+export const MIN_BULK_FLASHCARD_COUNT = 1;
+export const MAX_BULK_FLASHCARD_COUNT = 20;
+
 export interface GenerateExplanationOptions {
   questionPrompt: string;
   correctAnswer: unknown;

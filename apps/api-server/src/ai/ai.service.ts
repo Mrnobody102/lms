@@ -1,8 +1,19 @@
-import { Injectable, Logger, Inject, BadRequestException } from '@nestjs/common';
+import {
+  BadGatewayException,
+  BadRequestException,
+  Injectable,
+  Logger,
+  Inject,
+} from '@nestjs/common';
 import type { ModelMessage } from 'ai';
 import { PrismaService } from '../common/services/prisma.service';
 import { SkillMasteryService } from '../skill/skill-mastery.service';
-import { IAiProvider, AI_PROVIDER_TOKEN } from './interfaces/ai-provider.interface';
+import {
+  AI_PROVIDER_TOKEN,
+  MAX_BULK_FLASHCARD_COUNT,
+  MIN_BULK_FLASHCARD_COUNT,
+  type IAiProvider,
+} from './interfaces/ai-provider.interface';
 
 @Injectable()
 export class AiService {
@@ -106,11 +117,19 @@ export class AiService {
     count: number,
     context?: string,
   ) {
+    const safeCount = normalizeFlashcardCount(count);
     await this.consumeQuota(tenantId, userId);
-    // Limit count to max 20 to prevent abuse
-    const safeCount = Math.min(Math.max(1, count), 20);
 
-    return this.aiProvider.generateFlashcardsBulk({ topic, count: safeCount, context });
+    try {
+      return await this.aiProvider.generateFlashcardsBulk({ topic, count: safeCount, context });
+    } catch (error) {
+      this.logger.warn(
+        `Bulk flashcard generation failed for tenant=${tenantId} user=${userId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      throw new BadGatewayException('Không thể sinh thẻ bằng AI lúc này. Hãy thử lại sau.');
+    }
   }
 
   async generateDailyQuest(
@@ -161,4 +180,18 @@ export class AiService {
     await this.consumeQuota(tenantId, userId);
     return this.aiProvider.evaluateRoleplaySession(messages, scenario);
   }
+}
+
+function normalizeFlashcardCount(count: number): number {
+  if (
+    !Number.isInteger(count) ||
+    count < MIN_BULK_FLASHCARD_COUNT ||
+    count > MAX_BULK_FLASHCARD_COUNT
+  ) {
+    throw new BadRequestException(
+      'Số lượng thẻ phải từ ' + MIN_BULK_FLASHCARD_COUNT + ' đến ' + MAX_BULK_FLASHCARD_COUNT + '.',
+    );
+  }
+
+  return count;
 }

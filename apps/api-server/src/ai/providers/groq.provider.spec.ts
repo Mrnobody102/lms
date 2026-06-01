@@ -114,6 +114,52 @@ describe('GroqProvider', () => {
     ]);
   });
 
+  it('should tolerate extra bulk flashcards and optional missing fields', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          choices: [
+            {
+              message: {
+                content: JSON.stringify({
+                  flashcards: [
+                    {
+                      front: 'mitigate',
+                      back: 'làm giảm mức độ nghiêm trọng',
+                    },
+                    {
+                      front: 'substantial',
+                      back: 'đáng kể',
+                      phonetics: '/səbˈstænʃəl/',
+                      example: 'The course made substantial progress.',
+                    },
+                  ],
+                }),
+              },
+            },
+          ],
+        }),
+      }),
+    );
+    vi.stubEnv('AI_PROVIDER', 'groq');
+    vi.stubEnv('GROQ_API_KEY', 'groq-secret-key');
+
+    const provider = new GroqProvider();
+
+    await expect(
+      provider.generateFlashcardsBulk({ topic: 'IELTS vocabulary', count: 1 }),
+    ).resolves.toEqual([
+      {
+        front: 'mitigate',
+        back: 'làm giảm mức độ nghiêm trọng',
+        phonetics: '',
+        example: '',
+      },
+    ]);
+  });
+
   it('should fail clearly when Groq is selected without an API key', async () => {
     const errorSpy = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
     vi.stubEnv('AI_PROVIDER', 'groq');

@@ -187,6 +187,54 @@ Next recommended slice:
 4. Add read-only data integrity checks for orphan progress, enrollment, and
    tenant relation consistency.
 
+## Batch 15: Current Feature Completion Mega Batch
+
+Goal: close the current production gaps discovered during CI, student SRS/AI
+usage, and Super Portal operations review without starting unrelated product
+areas.
+
+Scope:
+
+- CI closure: remove type inference drift in platform usage aggregation and
+  make E2E jobs build workspace packages required by Next.js proxy/runtime
+  imports.
+- Student SRS/AI reliability: validate bulk flashcard counts server-side,
+  tolerate provider JSON shape variance where safe, avoid raw 500s for bulk AI
+  generation, and keep large custom-card lists bounded in the UI and API.
+- Student dashboard list limits: cap dashboard queues, feedback, and course
+  snapshots to recent/actionable items so the first screen stays bounded.
+- Super Portal information architecture: split global system overview and
+  partner/tenant management into separate routes instead of sharing the same
+  dashboard surface.
+- Super Portal data provenance: label operational metrics by source so
+  operators can distinguish persisted database counts, live runtime telemetry,
+  in-memory per-instance request metrics, and derived alerts.
+- Operational documentation: record the completed mega batch and keep the next
+  production-readiness work anchored to real data, tenant isolation, and CI
+  repeatability.
+
+Acceptance:
+
+- CI no longer fails on `AdminPlatformService.getUsage` implicit `any` or
+  Playwright web-server module resolution for `@repo/shared`.
+- `/` in Super Portal is only the system overview, while `/tenants` is the
+  partner/tenant management surface.
+- Super Portal metrics are either real, explicitly source-labeled, or hidden.
+  No new fake operational metric is introduced.
+- Bulk AI flashcards fail with actionable API errors instead of generic
+  internal server errors where the provider/config is the cause.
+- `pnpm lint`, `pnpm run typecheck`, `pnpm run test`, and the full build pass
+  before handoff.
+
+Implemented in this batch:
+
+- Added typed platform usage aggregation rows for tenant/media/ledger data.
+- Added CI E2E dependency build step for `@repo/shared` and `@repo/api-client`.
+- Split Super Portal tenant management into `/tenants`.
+- Added Super Portal data-source badges for database, runtime, in-memory, and
+  derived telemetry.
+- Hardened student bulk flashcard generation and custom-card list rendering.
+
 ## Latest Completed Slice
 
 - Split the public course sales experience out of `web-student` into the new

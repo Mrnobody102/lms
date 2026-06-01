@@ -477,20 +477,34 @@ function readFlashcard(value: unknown) {
 }
 
 function readFlashcards(value: unknown, count: number) {
-  const record = readRequiredRecord(value, 'flashcards');
-  if (!Array.isArray(record.cards) || record.cards.length !== count) {
-    throw new Error(`Expected exactly ${count} flashcards`);
+  const cards = readFlashcardArray(value);
+  if (cards.length === 0) {
+    throw new Error('Expected at least one flashcard');
   }
 
-  return record.cards.map((card) => {
+  return cards.slice(0, count).map((card) => {
     const cardRecord = readRequiredRecord(card, 'flashcard');
     return {
       front: readRequiredString(cardRecord.front, 'flashcard.front'),
       back: readRequiredString(cardRecord.back, 'flashcard.back'),
-      phonetics: readRequiredString(cardRecord.phonetics, 'flashcard.phonetics'),
-      example: readRequiredString(cardRecord.example, 'flashcard.example'),
+      phonetics: readOptionalString(cardRecord.phonetics),
+      example: readOptionalString(cardRecord.example),
     };
   });
+}
+
+function readFlashcardArray(value: unknown) {
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  const record = readRequiredRecord(value, 'flashcards');
+  const cards = record.cards ?? record.flashcards;
+  if (!Array.isArray(cards)) {
+    throw new Error('Expected flashcards response to include a cards array');
+  }
+
+  return cards;
 }
 
 function readRoleplayEvaluation(value: unknown): RoleplayEvaluation {
@@ -564,6 +578,10 @@ function readRequiredString(value: unknown, label: string) {
   }
 
   return value;
+}
+
+function readOptionalString(value: unknown) {
+  return typeof value === 'string' ? value : '';
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

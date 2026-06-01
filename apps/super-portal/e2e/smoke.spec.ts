@@ -317,6 +317,7 @@ test('super admin can login and view tenants', async ({ page }) => {
   await page.locator('input[type="password"]').fill('Super@123');
   await page.locator('form button[type="submit"]').click();
 
+  await page.goto('/en/tenants');
   await expect(page.getByText('North Campus')).toBeVisible({ timeout: 15000 });
   await expect(page.getByText('north.example.com')).toBeVisible();
   await expect(page.getByText('South Campus')).toBeVisible();
@@ -338,6 +339,7 @@ test('super admin can review and edit tenant settings', async ({ page }) => {
   await page.locator('input[type="password"]').fill('Super@123');
   await page.locator('form button[type="submit"]').click();
 
+  await page.goto('/en/tenants');
   await expect(page.getByText('North Campus')).toBeVisible({ timeout: 15000 });
   await page.getByLabel('View details').first().click();
 
@@ -364,6 +366,7 @@ test('super admin can inspect real operations pages and toggle a feature flag', 
   await page.locator('input[type="password"]').fill('Super@123');
   await page.locator('form button[type="submit"]').click();
 
+  await page.goto('/en/tenants');
   await expect(page.getByText('North Campus')).toBeVisible({ timeout: 15000 });
 
   await page.goto('/en/plans-billing');

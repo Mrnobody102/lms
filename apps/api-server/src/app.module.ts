@@ -1,6 +1,6 @@
 import { Module, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { CacheModule } from '@nestjs/cache-manager';
+import { CacheModule, type CacheOptions } from '@nestjs/cache-manager';
 import KeyvRedis from '@keyv/redis';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD, APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
@@ -37,7 +37,7 @@ import { SrsModule } from './srs/srs.module';
 import { MetricsModule } from './common/metrics/metrics.module';
 import { MailModule } from './mail/mail.module';
 import { AiModule } from './ai/ai.module';
-import { BullModule } from '@nestjs/bullmq';
+import { BullModule, type BullRootModuleOptions } from '@nestjs/bullmq';
 import { CertificateModule } from './certificate/certificate.module';
 import { StorageModule } from './storage/storage.module';
 import { MediaModule } from './media/media.module';
@@ -114,7 +114,7 @@ import { StudentModule } from './student/student.module';
     AiModule,
     BullModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => {
+      useFactory: (configService: ConfigService): BullRootModuleOptions => {
         const redisUrl = configService.get<string>('REDIS_URL');
         if (!redisUrl) {
           throw new Error('REDIS_URL is required for BullModule');
@@ -129,16 +129,14 @@ import { StudentModule } from './student/student.module';
     CacheModule.registerAsync({
       isGlobal: true,
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => {
+      useFactory: (configService: ConfigService): CacheOptions => {
         const redisUrl = configService.get<string>('REDIS_URL');
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if (!redisUrl) return {} as any; // fallback to in-memory if no redis
+        if (!redisUrl) return {};
 
         return {
           stores: [new KeyvRedis(redisUrl)],
           ttl: 60000,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any;
+        };
       },
     }),
     StorageModule,

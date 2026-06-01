@@ -28,6 +28,8 @@ import type { ReviewCard } from '@/lib/srs-api';
 import { defaultApiClient as api } from '@repo/api-client';
 import { Link } from '@/navigation';
 
+const CUSTOM_CARDS_PAGE_SIZE = 25;
+
 export default function CustomCardsPage() {
   const t = useTranslations('Student.srs.customCards');
   const { isAuthenticated, isInitialized } = useAuthStore();
@@ -56,6 +58,11 @@ export default function CustomCardsPage() {
   >([]);
   const [isBulkGenerating, setIsBulkGenerating] = useState(false);
   const [isBulkSaving, setIsBulkSaving] = useState(false);
+  const [visibleCardsCount, setVisibleCardsCount] = useState(CUSTOM_CARDS_PAGE_SIZE);
+
+  const customCards = cards ?? [];
+  const visibleCards = customCards.slice(0, visibleCardsCount);
+  const hasMoreCards = customCards.length > visibleCards.length;
 
   const resetForm = () => {
     setFormData({ front: '', back: '', phonetics: '', example: '', skillCode: '' });
@@ -231,69 +238,86 @@ export default function CustomCardsPage() {
                 <div className="py-12 text-center text-muted-foreground animate-pulse">
                   {t('loading')}
                 </div>
-              ) : cards?.length === 0 ? (
+              ) : customCards.length === 0 ? (
                 <div className="rounded-xl border border-dashed p-12 text-center text-muted-foreground">
                   <BrainCircuit className="mx-auto h-12 w-12 opacity-20 mb-4" />
                   <p>{t('noCards')}</p>
                 </div>
               ) : (
-                cards?.map((card) => {
-                  const content = card.customContent;
-                  return (
-                    <div
-                      key={card.id}
-                      className="group flex flex-col justify-between rounded-xl border bg-card p-4 shadow-sm transition-shadow hover:shadow-md sm:flex-row sm:items-center"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-baseline gap-3 mb-1">
-                          <h3 className="truncate text-lg font-bold">{content?.front}</h3>
-                          {content?.phonetics && (
-                            <span className="text-sm font-medium text-primary">
-                              {content.phonetics}
-                            </span>
+                <>
+                  {visibleCards.map((card) => {
+                    const content = card.customContent;
+                    return (
+                      <div
+                        key={card.id}
+                        className="group flex flex-col justify-between rounded-xl border bg-card p-4 shadow-sm transition-shadow hover:shadow-md sm:flex-row sm:items-center"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-baseline gap-3 mb-1">
+                            <h3 className="truncate text-lg font-bold">{content?.front}</h3>
+                            {content?.phonetics && (
+                              <span className="text-sm font-medium text-primary">
+                                {content.phonetics}
+                              </span>
+                            )}
+                            {card.skillCodes?.length > 0 && (
+                              <span className="text-xs bg-muted px-2 py-0.5 rounded-full text-muted-foreground">
+                                {card.skillCodes[0]}
+                              </span>
+                            )}
+                          </div>
+                          {content?.back && (
+                            <p className="truncate text-sm text-muted-foreground">{content.back}</p>
                           )}
-                          {card.skillCodes?.length > 0 && (
-                            <span className="text-xs bg-muted px-2 py-0.5 rounded-full text-muted-foreground">
-                              {card.skillCodes[0]}
-                            </span>
+                          {content?.example && (
+                            <p className="mt-1 truncate text-xs italic text-muted-foreground">
+                              {content.example}
+                            </p>
                           )}
                         </div>
-                        {content?.back && (
-                          <p className="truncate text-sm text-muted-foreground">{content.back}</p>
-                        )}
-                        {content?.example && (
-                          <p className="mt-1 truncate text-xs italic text-muted-foreground">
-                            {content.example}
-                          </p>
-                        )}
-                      </div>
-                      <div className="mt-4 flex items-center gap-2 opacity-100 transition-opacity sm:mt-0 sm:opacity-0 sm:group-hover:opacity-100">
-                        <button
-                          onClick={() => handleEdit(card)}
-                          className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-colors"
-                          title={t('edit')}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <ConfirmDialog
-                          description={t('deleteConfirm')}
-                          confirmLabel={t('delete')}
-                          cancelLabel={t('cancel')}
-                          destructive
-                          onConfirm={() => deleteCard.mutate(card.id)}
-                        >
+                        <div className="mt-4 flex items-center gap-2 opacity-100 transition-opacity sm:mt-0 sm:opacity-0 sm:group-hover:opacity-100">
                           <button
-                            type="button"
-                            className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-500/10 rounded-md transition-colors"
-                            title={t('delete')}
+                            onClick={() => handleEdit(card)}
+                            className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-colors"
+                            title={t('edit')}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Pencil className="h-4 w-4" />
                           </button>
-                        </ConfirmDialog>
+                          <ConfirmDialog
+                            description={t('deleteConfirm')}
+                            confirmLabel={t('delete')}
+                            cancelLabel={t('cancel')}
+                            destructive
+                            onConfirm={() => deleteCard.mutate(card.id)}
+                          >
+                            <button
+                              type="button"
+                              className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-500/10 rounded-md transition-colors"
+                              title={t('delete')}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </ConfirmDialog>
+                        </div>
                       </div>
+                    );
+                  })}
+                  {hasMoreCards && (
+                    <div className="flex justify-center pt-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setVisibleCardsCount((count) => count + CUSTOM_CARDS_PAGE_SIZE)
+                        }
+                        className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
+                      >
+                        {t('showMoreCards', {
+                          count: customCards.length - visibleCards.length,
+                        })}
+                      </button>
                     </div>
-                  );
-                })
+                  )}
+                </>
               )}
             </div>
 
@@ -518,7 +542,7 @@ export default function CustomCardsPage() {
                             <div className="grid grid-cols-2 gap-3 mb-2">
                               <div>
                                 <label className="text-xs font-medium text-muted-foreground">
-                                  Front
+                                  {t('front')}
                                 </label>
                                 <input
                                   type="text"
@@ -533,7 +557,7 @@ export default function CustomCardsPage() {
                               </div>
                               <div>
                                 <label className="text-xs font-medium text-muted-foreground">
-                                  Back
+                                  {t('back')}
                                 </label>
                                 <input
                                   type="text"
@@ -550,7 +574,7 @@ export default function CustomCardsPage() {
                             <div className="grid grid-cols-2 gap-3">
                               <div>
                                 <label className="text-xs font-medium text-muted-foreground">
-                                  Phonetics
+                                  {t('phonetics')}
                                 </label>
                                 <input
                                   type="text"
@@ -565,7 +589,7 @@ export default function CustomCardsPage() {
                               </div>
                               <div>
                                 <label className="text-xs font-medium text-muted-foreground">
-                                  Example
+                                  {t('example')}
                                 </label>
                                 <input
                                   type="text"

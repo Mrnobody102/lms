@@ -19,6 +19,18 @@ const FEATURE_FLAG_KEYS = [
 
 type FeatureFlagKey = (typeof FEATURE_FLAG_KEYS)[number];
 type FeatureFlags = Record<FeatureFlagKey, boolean>;
+type PlatformUsageTenant = { id: string; name: string; slug: string; isActive: boolean };
+type PlatformMediaUsage = {
+  tenantId: string;
+  mediaAssets: number;
+  mediaStorageBytes: string;
+};
+type PlatformLedgerUsage = {
+  tenantId: string;
+  type: string;
+  unit: string;
+  quantity: string;
+};
 
 const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
   aiTutorEnabled: false,
@@ -142,24 +154,33 @@ export class AdminPlatformService {
 
   async getUsage(query: PlatformTenantQueryDto) {
     const tenantWhere = this.tenantWhere(query);
-    const [tenants, mediaUsage, ledgerUsage] = await Promise.all([
-      this.prisma.tenant.findMany({
-        where: tenantWhere,
-        orderBy: { createdAt: 'desc' },
-        select: { id: true, name: true, slug: true, isActive: true },
-      }),
-      this.prisma.mediaAsset.groupBy({
-        by: ['tenantId'],
-        where: query.tenantId ? { tenantId: query.tenantId } : undefined,
-        _count: { _all: true },
-        _sum: { sizeBytes: true },
-      }),
-      this.prisma.usageLedger.groupBy({
-        by: ['tenantId', 'type', 'unit'],
-        where: query.tenantId ? { tenantId: query.tenantId } : undefined,
-        _sum: { quantity: true },
-      }),
-    ]);
+    const tenants: PlatformUsageTenant[] = await this.prisma.tenant.findMany({
+      where: tenantWhere,
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, name: true, slug: true, isActive: true },
+    });
+    const tenantFilterSql = query.tenantId
+      ? Prisma.sql`WHERE "tenantId" = ${query.tenantId}`
+      : Prisma.empty;
+    const mediaUsage = await this.prisma.$queryRaw<PlatformMediaUsage[]>`
+      SELECT
+        "tenantId",
+        count(*)::int AS "mediaAssets",
+        COALESCE(sum("sizeBytes"), 0)::text AS "mediaStorageBytes"
+      FROM "MediaAsset"
+      ${tenantFilterSql}
+      GROUP BY "tenantId"
+    `;
+    const ledgerUsage = await this.prisma.$queryRaw<PlatformLedgerUsage[]>`
+      SELECT
+        "tenantId",
+        "type",
+        "unit",
+        COALESCE(sum("quantity"), 0)::text AS "quantity"
+      FROM "UsageLedger"
+      ${tenantFilterSql}
+      GROUP BY "tenantId", "type", "unit"
+    `;
     const requestMetrics = this.metrics.getSnapshot();
 
     return tenants.map((tenant) => {
@@ -169,14 +190,14 @@ export class AdminPlatformService {
         .map((item) => ({
           type: item.type,
           unit: item.unit,
-          quantity: (item._sum.quantity ?? BigInt(0)).toString(),
+          quantity: item.quantity,
         }));
       const traffic = requestMetrics.tenantTraffic.find((item) => item.tenantId === tenant.id);
 
       return {
         tenant,
-        mediaAssets: media?._count._all ?? 0,
-        mediaStorageBytes: media?._sum.sizeBytes ?? 0,
+        mediaAssets: media?.mediaAssets ?? 0,
+        mediaStorageBytes: Number(media?.mediaStorageBytes ?? 0),
         ledger,
         requestMetrics: traffic
           ? {

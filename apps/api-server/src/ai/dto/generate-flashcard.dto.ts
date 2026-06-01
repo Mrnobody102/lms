@@ -1,5 +1,10 @@
-import { IsString, IsNotEmpty, IsOptional, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { IsInt, IsNotEmpty, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import {
+  MAX_BULK_FLASHCARD_COUNT,
+  MIN_BULK_FLASHCARD_COUNT,
+} from '../interfaces/ai-provider.interface';
 
 export class GenerateFlashcardDto {
   @ApiProperty({
@@ -33,8 +38,14 @@ export class GenerateFlashcardsBulkDto {
   @ApiProperty({
     description: 'The number of flashcards to generate',
     example: 5,
+    minimum: MIN_BULK_FLASHCARD_COUNT,
+    maximum: MAX_BULK_FLASHCARD_COUNT,
   })
   @IsNotEmpty()
+  @Type(() => Number)
+  @IsInt()
+  @Min(MIN_BULK_FLASHCARD_COUNT)
+  @Max(MAX_BULK_FLASHCARD_COUNT)
   count: number;
 
   @ApiPropertyOptional({

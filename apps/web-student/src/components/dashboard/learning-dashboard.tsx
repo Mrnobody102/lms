@@ -23,6 +23,10 @@ import { Link } from '../../navigation';
 
 type StudentTranslator = ReturnType<typeof useTranslations>;
 
+const DASHBOARD_TASK_LIMIT = 5;
+const DASHBOARD_FEEDBACK_LIMIT = 5;
+const DASHBOARD_COURSE_LIMIT = 5;
+
 export default function LearningDashboard({ data }: { data: StudentTodayResponse | null }) {
   const t = useTranslations('Student');
   const locale = useLocale();
@@ -50,7 +54,7 @@ export default function LearningDashboard({ data }: { data: StudentTodayResponse
     ...(data?.recentFeedback.exams ?? []).map((item) => ({ ...item, kind: 'exam' as const })),
   ]
     .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())
-    .slice(0, 6);
+    .slice(0, DASHBOARD_FEEDBACK_LIMIT);
 
   return (
     <div className="min-h-screen bg-background font-sans">
@@ -87,7 +91,7 @@ export default function LearningDashboard({ data }: { data: StudentTodayResponse
                 </div>
               </div>
               <div className="space-y-3">
-                {tasks.map((task) => (
+                {tasks.slice(0, DASHBOARD_TASK_LIMIT).map((task) => (
                   <TaskRow key={task.id} task={task} locale={locale} />
                 ))}
               </div>
@@ -127,7 +131,7 @@ export default function LearningDashboard({ data }: { data: StudentTodayResponse
                 </div>
               ) : (
                 <div className="mt-4 space-y-4">
-                  {courses.slice(0, 5).map((course) => (
+                  {courses.slice(0, DASHBOARD_COURSE_LIMIT).map((course) => (
                     <CourseSnapshot key={course.course.id} course={course} />
                   ))}
                 </div>

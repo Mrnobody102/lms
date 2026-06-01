@@ -459,7 +459,8 @@
         "bulkGenerateGenerating": "Generating cards...",
         "bulkGenerateError": "Failed to generate bulk cards.",
         "bulkGeneratePreview": "Preview Results",
-        "bulkGenerateSaveAll": "Save All Cards"
+        "bulkGenerateSaveAll": "Save All Cards",
+        "showMoreCards": "Show {count} more cards"
       },
       "stats": {
         "title": "Review activity (last 30 days)",

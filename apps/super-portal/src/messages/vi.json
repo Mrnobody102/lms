@@ -1,9 +1,19 @@
 {
   "SuperPortal": {
-    "title": "Hệ thống & Đối tác",
+    "title": "Tổng quan hệ thống",
     "subtitle": "Giám sát trạng thái hệ thống ngày {date}",
     "newTenant": "Thêm Đối tác",
     "loading": "Đang tải Super Portal...",
+    "tenantsPage": {
+      "title": "Đối tác",
+      "subtitle": "Quản lý tenant, trạng thái hoạt động, tên miền và cấu hình đối tác trên toàn nền tảng."
+    },
+    "dataSource": {
+      "database": "Dữ liệu DB thật",
+      "runtime": "Runtime live",
+      "inMemory": "In-memory theo instance",
+      "derived": "Tính từ cảnh báo thật"
+    },
     "tenantSummary": {
       "total": "Tổng tenant",
       "active": "Đang hoạt động",

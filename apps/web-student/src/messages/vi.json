@@ -459,7 +459,8 @@
         "bulkGenerateGenerating": "Đang sinh thẻ...",
         "bulkGenerateError": "Lỗi khi sinh thẻ hàng loạt.",
         "bulkGeneratePreview": "Xem trước kết quả",
-        "bulkGenerateSaveAll": "Lưu tất cả"
+        "bulkGenerateSaveAll": "Lưu tất cả",
+        "showMoreCards": "Xem thêm {count} thẻ"
       },
       "stats": {
         "title": "Hoạt động ôn tập (30 ngày gần nhất)",
