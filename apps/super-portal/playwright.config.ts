@@ -1,6 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 import path from 'path';
 
+const baseURL = process.env.SUPER_PORTAL_BASE_URL ?? 'http://127.0.0.1:3102';
+const useExternalServer = Boolean(process.env.SUPER_PORTAL_BASE_URL);
+
 export default defineConfig({
   testDir: path.join(__dirname, 'e2e'),
   fullyParallel: true,
@@ -13,7 +16,7 @@ export default defineConfig({
     timeout: 30 * 1000,
   },
   use: {
-    baseURL: 'http://127.0.0.1:3102',
+    baseURL,
     trace: 'on-first-retry',
   },
   projects: [
@@ -34,10 +37,12 @@ export default defineConfig({
       use: { ...devices['Pixel 5'] },
     },
   ],
-  webServer: {
-    command: 'pnpm exec next dev --webpack -H 127.0.0.1 -p 3102',
-    url: 'http://127.0.0.1:3102/en',
-    reuseExistingServer: false,
-    timeout: 240 * 1000,
-  },
+  webServer: useExternalServer
+    ? undefined
+    : {
+        command: 'pnpm exec next dev --webpack -H 127.0.0.1 -p 3102',
+        url: 'http://127.0.0.1:3102/en',
+        reuseExistingServer: false,
+        timeout: 240 * 1000,
+      },
 });

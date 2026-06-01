@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SubscriptionStatus } from '@repo/database';
 import { AuditAction, AuditStatus } from '../common/services/audit-log.service';
 import { AdminPlatformService } from './admin-platform.service';
@@ -49,6 +49,10 @@ function createService(prismaOverrides: Record<string, unknown> = {}) {
 }
 
 describe('AdminPlatformService', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('builds tenant overview from tenant-scoped aggregates', async () => {
     const { prisma, service } = createService();
     prisma.tenant.findUnique.mockResolvedValue({
@@ -185,5 +189,24 @@ describe('AdminPlatformService', () => {
         status: AuditStatus.SUCCESS,
       }),
     );
+  });
+
+  it('reports env-managed Groq AI status without exposing the API key', () => {
+    vi.stubEnv('AI_PROVIDER', 'groq');
+    vi.stubEnv('GROQ_API_KEY', 'gsk_test_secret_value');
+    vi.stubEnv('GROQ_MODEL', 'llama-3.1-8b-instant');
+
+    const { service } = createService();
+
+    expect(service.getAiStatus()).toEqual({
+      mode: 'env-managed',
+      provider: 'groq',
+      configured: true,
+      model: 'llama-3.1-8b-instant',
+      dynamicConfigEnabled: false,
+      keyStorage: 'render-env',
+      keyMasked: 'configured',
+      frontendExposureAllowed: false,
+    });
   });
 });

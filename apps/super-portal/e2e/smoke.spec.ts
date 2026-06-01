@@ -97,6 +97,12 @@ async function installSuperPortalApiMocks(page: Page) {
       return json(200, { user: currentUser });
     }
 
+    if (path.endsWith('/api/auth/refresh') && method === 'POST') {
+      return currentUser
+        ? json(200, { user: currentUser })
+        : json(401, { statusCode: 401, message: 'Unauthorized' });
+    }
+
     if (path.endsWith('/api/admin/tenants') && method === 'GET') {
       return json(200, tenantRecords);
     }
@@ -235,6 +241,19 @@ async function installSuperPortalApiMocks(page: Page) {
       return json(200, []);
     }
 
+    if (path.endsWith('/api/admin/platform/ai-status') && method === 'GET') {
+      return json(200, {
+        mode: 'env-managed',
+        provider: 'groq',
+        configured: true,
+        model: 'llama-3.1-8b-instant',
+        dynamicConfigEnabled: false,
+        keyStorage: 'render-env',
+        keyMasked: 'configured',
+        frontendExposureAllowed: false,
+      });
+    }
+
     const overviewMatch = path.match(/\/api\/admin\/tenants\/([^/]+)\/overview$/);
     if (overviewMatch && method === 'GET') {
       const tenant = tenantRecords.find((item) => item.id === overviewMatch[1]);
@@ -362,4 +381,8 @@ test('super admin can inspect real operations pages and toggle a feature flag', 
 
   await page.goto('/en/audit-logs');
   await expect(page.getByText('PLATFORM_FEATURE_FLAGS_UPDATE')).toBeVisible();
+
+  await page.goto('/en/ai-settings');
+  await expect(page.getByText('AI provider safety status')).toBeVisible();
+  await expect(page.getByText('llama-3.1-8b-instant')).toBeVisible();
 });

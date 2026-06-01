@@ -55,7 +55,20 @@ pnpm db:status
 pnpm test:e2e
 ```
 
-9. Nếu cần chạy một lệnh duy nhất:
+9. Smoke staging thật trên Vercel/Render/Supabase khi chuẩn bị release production.
+   Các lệnh này không mock API và yêu cầu tài khoản test thật:
+
+```bash
+WEB_STUDENT_BASE_URL=https://<student-app> \
+STAGING_STUDENT_EMAIL=<student-email> \
+STAGING_STUDENT_PASSWORD=<student-password> \
+SUPER_PORTAL_BASE_URL=https://<super-portal> \
+STAGING_SUPER_EMAIL=<super-admin-email> \
+STAGING_SUPER_PASSWORD=<super-admin-password> \
+pnpm run test:e2e:staging
+```
+
+10. Nếu cần chạy một lệnh duy nhất:
 
 ```bash
 pnpm run release:check
@@ -67,3 +80,5 @@ pnpm run release:check
 - `db:push` chỉ nên dùng cho local/dev có chủ đích.
 - Production phải dùng `pnpm db:deploy`; baseline hoặc recovery đi theo runbook migration riêng.
 - `ports:free` chỉ dừng process thuộc repo này, không kill bừa tiến trình ngoài workspace.
+- Groq key chỉ đặt ở Render `api-server` (`GROQ_API_KEY` hoặc `AI_API_KEY`). Không tạo
+  biến `NEXT_PUBLIC_GROQ_*` trên Vercel.

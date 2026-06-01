@@ -136,6 +136,18 @@ function assertOptionalOrigin(env, key, errors) {
   }
 }
 
+function assertOptionalUrl(env, key, errors) {
+  if (!isPresent(env, key)) return;
+  try {
+    const parsed = new URL(env[key].trim());
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+      throw new Error('invalid URL');
+    }
+  } catch {
+    errors.push(`${key} must be a valid http(s) URL`);
+  }
+}
+
 function assertGooglePair(env, errors) {
   const hasApiGoogle = isPresent(env, 'GOOGLE_CLIENT_ID') || isPresent(env, 'GOOGLE_CLIENT_IDS');
   const hasBrowserGoogle = isPresent(env, 'NEXT_PUBLIC_GOOGLE_CLIENT_ID');
@@ -144,6 +156,37 @@ function assertGooglePair(env, errors) {
     errors.push(
       'Google login requires both API GOOGLE_CLIENT_ID(S) and portal NEXT_PUBLIC_GOOGLE_CLIENT_ID',
     );
+  }
+}
+
+function assertNoFrontendSecrets(env, errors) {
+  const forbiddenPrefixes = ['NEXT_PUBLIC_GROQ_', 'NEXT_PUBLIC_OPENAI_', 'NEXT_PUBLIC_AI_API_KEY'];
+  for (const key of Object.keys(env)) {
+    if (forbiddenPrefixes.some((prefix) => key.startsWith(prefix)) && isPresent(env, key)) {
+      errors.push(`${key} must not be exposed to frontend runtime env`);
+    }
+  }
+}
+
+function assertAiProvider(env, errors) {
+  if (!isPresent(env, 'AI_PROVIDER') || env.AI_PROVIDER === 'off') {
+    return;
+  }
+
+  if (!['gateway', 'groq'].includes(env.AI_PROVIDER)) {
+    errors.push('AI_PROVIDER must be off, gateway, or groq');
+    return;
+  }
+
+  if (env.AI_PROVIDER === 'gateway') {
+    assertRequired(env, 'AI_ENDPOINT_URL', errors);
+  }
+
+  if (env.AI_PROVIDER === 'groq') {
+    if (!isPresent(env, 'GROQ_API_KEY') && !isPresent(env, 'AI_API_KEY')) {
+      errors.push('GROQ_API_KEY or AI_API_KEY is required when AI_PROVIDER=groq');
+    }
+    assertOptionalUrl(env, 'GROQ_BASE_URL', errors);
   }
 }
 
@@ -170,6 +213,8 @@ assertOptionalOrigin(env, 'APP_PUBLIC_URL', errors);
 assertOptionalOrigin(env, 'NEXT_PUBLIC_WEB_STUDENT_URL', errors);
 assertOptionalOrigin(env, 'NEXT_PUBLIC_WEB_SALES_URL', errors);
 assertGooglePair(env, errors);
+assertNoFrontendSecrets(env, errors);
+assertAiProvider(env, errors);
 
 if (isPresent(env, 'AUTH_COOKIE_SAME_SITE')) {
   const sameSite = env.AUTH_COOKIE_SAME_SITE.trim();

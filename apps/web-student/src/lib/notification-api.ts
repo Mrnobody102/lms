@@ -75,7 +75,17 @@ export const notificationApi = {
       }, 10000);
     };
 
-    const eventSource = new EventSource(buildNotificationStreamUrl(), { withCredentials: true });
+    const streamUrl = buildNotificationStreamUrl();
+    if (streamUrl === null) {
+      startFallbackPolling();
+      return () => {
+        if (fallbackIntervalId !== undefined) {
+          window.clearInterval(fallbackIntervalId);
+        }
+      };
+    }
+
+    const eventSource = new EventSource(streamUrl, { withCredentials: true });
     eventSource.onopen = () => {
       if (fallbackIntervalId !== undefined) {
         window.clearInterval(fallbackIntervalId);
@@ -103,6 +113,9 @@ export const notificationApi = {
 
 function buildNotificationStreamUrl() {
   const streamUrl = process.env.NEXT_PUBLIC_NOTIFICATION_STREAM_URL?.trim().replace(/\/+$/, '');
+  if (streamUrl === 'off') {
+    return null;
+  }
   const baseUrl = streamUrl || '/api/notifications/stream';
   const tenantId = process.env.NEXT_PUBLIC_TENANT_ID?.trim();
   return tenantId ? `${baseUrl}?tenantId=${encodeURIComponent(tenantId)}` : baseUrl;

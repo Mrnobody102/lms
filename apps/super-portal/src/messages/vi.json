@@ -29,6 +29,7 @@
       "latency": "Độ trễ",
       "errors": "Lỗi",
       "quota": "Quota",
+      "value": "Giá trị",
       "plan": "Gói",
       "invoice": "Invoice",
       "empty": "Chưa có dữ liệu vận hành thật cho màn hình này.",
@@ -123,6 +124,22 @@
         "title": "Audit logs",
         "desc": "Theo dõi các thao tác Super Admin trên tenant, billing, quota, domain và feature flag."
       },
+      "aiSettings": {
+        "title": "Cài đặt AI",
+        "desc": "Trạng thái chỉ đọc của AI provider đang quản lý bằng biến môi trường. API key vẫn nằm trong Render env cho tới khi có cấu hình mã hóa trong Super Portal.",
+        "provider": "Provider",
+        "configured": "Đã cấu hình",
+        "model": "Model",
+        "envManaged": "Quản lý bằng biến môi trường backend",
+        "keyConfigured": "Đã có provider key",
+        "keyMissing": "Thiếu provider key",
+        "noUiKeyStorage": "Không lưu API key trong giao diện Super Portal",
+        "tableTitle": "Trạng thái an toàn AI provider",
+        "mode": "Chế độ",
+        "dynamicConfig": "Cấu hình động bằng UI",
+        "keyStorage": "Nơi lưu key",
+        "frontendExposure": "Lộ key ra frontend"
+      },
       "infrastructure": {
         "title": "Hạ tầng",
         "desc": "Telemetry runtime từ API process và request metrics.",
@@ -145,6 +162,7 @@
       "flags": "Feature flags",
       "incidents": "Sự cố",
       "audit": "Audit logs",
+      "aiSettings": "Cài đặt AI",
       "infrastructure": "Hạ tầng"
     },
     "themeToggle": "Đổi giao diện",

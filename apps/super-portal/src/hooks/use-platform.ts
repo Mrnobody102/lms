@@ -110,6 +110,17 @@ export interface PlatformIncident {
   createdAt: string;
 }
 
+export interface PlatformAiStatus {
+  mode: 'env-managed';
+  provider: 'off' | 'gateway' | 'groq';
+  configured: boolean;
+  model: string | null;
+  dynamicConfigEnabled: boolean;
+  keyStorage: 'render-env';
+  keyMasked: 'configured' | 'missing';
+  frontendExposureAllowed: boolean;
+}
+
 export interface TenantOverview {
   tenant: Tenant;
   counts: {
@@ -232,6 +243,18 @@ export function usePlatformIncidents(enabled = true) {
     },
     enabled,
     staleTime: 30 * 1000,
+  });
+}
+
+export function usePlatformAiStatus(enabled = true) {
+  return useQuery({
+    queryKey: ['platform', 'ai-status'],
+    queryFn: async () => {
+      const response = await api.get<PlatformAiStatus>('/admin/platform/ai-status');
+      return response.data;
+    },
+    enabled,
+    staleTime: 60 * 1000,
   });
 }
 

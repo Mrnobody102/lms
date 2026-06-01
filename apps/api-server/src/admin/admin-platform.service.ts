@@ -401,6 +401,23 @@ export class AdminPlatformService {
     return [...alerts, ...metricIncidents];
   }
 
+  getAiStatus() {
+    const provider = normalizeAiProvider(process.env.AI_PROVIDER);
+    const model = readAiModel(provider, process.env);
+    const configured = isAiConfigured(provider, process.env);
+
+    return {
+      mode: 'env-managed',
+      provider,
+      configured,
+      model,
+      dynamicConfigEnabled: false,
+      keyStorage: 'render-env',
+      keyMasked: configured ? 'configured' : 'missing',
+      frontendExposureAllowed: false,
+    };
+  }
+
   private async getRuntimeAlerts() {
     const recentFailures = await this.prisma.auditLog.findMany({
       where: {
@@ -463,4 +480,38 @@ function toRecord(value: unknown): Record<string, unknown> {
 function omitSettings<T extends { settings: unknown }>(value: T): Omit<T, 'settings'> {
   const { settings: _settings, ...rest } = value;
   return rest;
+}
+
+function normalizeAiProvider(value: string | undefined) {
+  if (value === 'groq' || value === 'gateway') {
+    return value;
+  }
+  return 'off';
+}
+
+function readAiModel(provider: string, env: NodeJS.ProcessEnv) {
+  if (provider === 'groq') {
+    return normalizeOptionalString(env.GROQ_MODEL) ?? normalizeOptionalString(env.AI_MODEL) ?? null;
+  }
+  if (provider === 'gateway') {
+    return normalizeOptionalString(env.AI_MODEL) ?? null;
+  }
+  return null;
+}
+
+function isAiConfigured(provider: string, env: NodeJS.ProcessEnv) {
+  if (provider === 'groq') {
+    return Boolean(
+      normalizeOptionalString(env.GROQ_API_KEY) ?? normalizeOptionalString(env.AI_API_KEY),
+    );
+  }
+  if (provider === 'gateway') {
+    return Boolean(normalizeOptionalString(env.AI_ENDPOINT_URL));
+  }
+  return false;
+}
+
+function normalizeOptionalString(value: string | undefined) {
+  const normalized = value?.trim();
+  return normalized ? normalized : undefined;
 }

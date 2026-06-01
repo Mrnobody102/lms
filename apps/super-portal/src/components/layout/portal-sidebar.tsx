@@ -2,6 +2,7 @@
 
 import {
   Activity,
+  Bot,
   Building2,
   CreditCard,
   Database,
@@ -25,6 +26,7 @@ export function PortalSidebar() {
     { label: t('flags'), icon: Flag, href: '/feature-flags' },
     { label: t('incidents'), icon: ListChecks, href: '/incidents' },
     { label: t('audit'), icon: Database, href: '/audit-logs' },
+    { label: t('aiSettings'), icon: Bot, href: '/ai-settings' },
     { label: t('infrastructure'), icon: ServerCog, href: '/infrastructure' },
   ];
 

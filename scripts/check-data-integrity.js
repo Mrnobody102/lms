@@ -265,6 +265,88 @@ const checks = [
       LIMIT $1
     `,
   },
+  {
+    name: 'practice lessons reference same-tenant non-deleted exercise sets',
+    countSql: `
+      SELECT COUNT(*)::int AS count
+      FROM "Lesson" lesson
+      LEFT JOIN "PracticeExerciseSet" exercise_set
+        ON exercise_set.id = lesson."practiceExerciseSetId"
+       AND exercise_set."tenantId" = lesson."tenantId"
+       AND exercise_set."deletedAt" IS NULL
+      WHERE lesson."deletedAt" IS NULL
+        AND lesson.type = 'practice'
+        AND (lesson."practiceExerciseSetId" IS NULL OR exercise_set.id IS NULL)
+    `,
+    sampleSql: `
+      SELECT lesson.id
+      FROM "Lesson" lesson
+      LEFT JOIN "PracticeExerciseSet" exercise_set
+        ON exercise_set.id = lesson."practiceExerciseSetId"
+       AND exercise_set."tenantId" = lesson."tenantId"
+       AND exercise_set."deletedAt" IS NULL
+      WHERE lesson."deletedAt" IS NULL
+        AND lesson.type = 'practice'
+        AND (lesson."practiceExerciseSetId" IS NULL OR exercise_set.id IS NULL)
+      ORDER BY lesson.id
+      LIMIT $1
+    `,
+  },
+  {
+    name: 'exam lessons reference same-tenant non-deleted exams',
+    countSql: `
+      SELECT COUNT(*)::int AS count
+      FROM "Lesson" lesson
+      LEFT JOIN "Exam" exam
+        ON exam.id = lesson."examId"
+       AND exam."tenantId" = lesson."tenantId"
+       AND exam."deletedAt" IS NULL
+      WHERE lesson."deletedAt" IS NULL
+        AND lesson.type = 'exam'
+        AND (lesson."examId" IS NULL OR exam.id IS NULL)
+    `,
+    sampleSql: `
+      SELECT lesson.id
+      FROM "Lesson" lesson
+      LEFT JOIN "Exam" exam
+        ON exam.id = lesson."examId"
+       AND exam."tenantId" = lesson."tenantId"
+       AND exam."deletedAt" IS NULL
+      WHERE lesson."deletedAt" IS NULL
+        AND lesson.type = 'exam'
+        AND (lesson."examId" IS NULL OR exam.id IS NULL)
+      ORDER BY lesson.id
+      LIMIT $1
+    `,
+  },
+  {
+    name: 'enrolled courses have at least one non-deleted lesson',
+    countSql: `
+      SELECT COUNT(*)::int AS count
+      FROM (
+        SELECT enrollment."courseId", enrollment."tenantId"
+        FROM "CourseEnrollment" enrollment
+        LEFT JOIN "Lesson" lesson
+          ON lesson."courseId" = enrollment."courseId"
+         AND lesson."tenantId" = enrollment."tenantId"
+         AND lesson."deletedAt" IS NULL
+        GROUP BY enrollment."courseId", enrollment."tenantId"
+        HAVING COUNT(lesson.id) = 0
+      ) orphaned_course
+    `,
+    sampleSql: `
+      SELECT enrollment."courseId" AS id
+      FROM "CourseEnrollment" enrollment
+      LEFT JOIN "Lesson" lesson
+        ON lesson."courseId" = enrollment."courseId"
+       AND lesson."tenantId" = enrollment."tenantId"
+       AND lesson."deletedAt" IS NULL
+      GROUP BY enrollment."courseId", enrollment."tenantId"
+      HAVING COUNT(lesson.id) = 0
+      ORDER BY enrollment."courseId"
+      LIMIT $1
+    `,
+  },
 ];
 
 async function runCheck(check) {

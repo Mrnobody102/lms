@@ -3,6 +3,7 @@
 import {
   Activity,
   AlertTriangle,
+  Bot,
   CheckCircle2,
   CreditCard,
   Database,
@@ -27,6 +28,7 @@ import {
   PlatformFeatureFlagRow,
   PlatformUsageRow,
   usePlatformAuditLogs,
+  usePlatformAiStatus,
   usePlatformBilling,
   usePlatformDomains,
   usePlatformFeatureFlags,
@@ -43,6 +45,7 @@ export type OpsPageKind =
   | 'featureFlags'
   | 'incidents'
   | 'auditLogs'
+  | 'aiSettings'
   | 'infrastructure';
 
 const PAGE_CONFIG: Record<OpsPageKind, { icon: LucideIcon; tone: string }> = {
@@ -52,6 +55,7 @@ const PAGE_CONFIG: Record<OpsPageKind, { icon: LucideIcon; tone: string }> = {
   featureFlags: { icon: Flag, tone: 'bg-violet-500/10 text-violet-600' },
   incidents: { icon: ListChecks, tone: 'bg-amber-500/10 text-amber-600' },
   auditLogs: { icon: Database, tone: 'bg-slate-500/10 text-slate-600' },
+  aiSettings: { icon: Bot, tone: 'bg-fuchsia-500/10 text-fuchsia-600' },
   infrastructure: { icon: ServerCog, tone: 'bg-indigo-500/10 text-indigo-600' },
 };
 
@@ -122,6 +126,7 @@ function OpsContent({ kind }: { kind: OpsPageKind }) {
   if (kind === 'featureFlags') return <FeatureFlags />;
   if (kind === 'incidents') return <Incidents />;
   if (kind === 'auditLogs') return <AuditLogs />;
+  if (kind === 'aiSettings') return <AiSettings />;
   return <Infrastructure />;
 }
 
@@ -340,6 +345,54 @@ function AuditLogs() {
         formatDate(log.createdAt),
       ])}
     />
+  );
+}
+
+function AiSettings() {
+  const t = useTranslations('SuperPortal.ops');
+  const { data, isLoading, isError } = usePlatformAiStatus();
+
+  if (isLoading) return <LoadingGrid />;
+  if (isError || !data) return <ErrorState />;
+
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-3">
+        <SummaryCard
+          icon={Bot}
+          label={t('aiSettings.provider')}
+          value={data.provider}
+          helper={t('aiSettings.envManaged')}
+        />
+        <SummaryCard
+          icon={CheckCircle2}
+          label={t('aiSettings.configured')}
+          value={data.configured ? t('status.configured') : t('status.missing')}
+          helper={
+            data.keyMasked === 'configured'
+              ? t('aiSettings.keyConfigured')
+              : t('aiSettings.keyMissing')
+          }
+        />
+        <SummaryCard
+          icon={Database}
+          label={t('aiSettings.model')}
+          value={data.model ?? t('notConfigured')}
+          helper={t('aiSettings.noUiKeyStorage')}
+        />
+      </div>
+      <DataTable
+        title={t('aiSettings.tableTitle')}
+        empty={t('empty')}
+        headers={[t('statusLabel'), t('value')]}
+        rows={[
+          [t('aiSettings.mode'), data.mode],
+          [t('aiSettings.dynamicConfig'), data.dynamicConfigEnabled ? t('on') : t('off')],
+          [t('aiSettings.keyStorage'), data.keyStorage],
+          [t('aiSettings.frontendExposure'), data.frontendExposureAllowed ? t('on') : t('off')],
+        ]}
+      />
+    </div>
   );
 }
 

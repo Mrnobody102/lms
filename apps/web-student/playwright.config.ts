@@ -1,6 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 import path from 'path';
 
+const baseURL = process.env.WEB_STUDENT_BASE_URL ?? 'http://127.0.0.1:3100';
+const useExternalServer = Boolean(process.env.WEB_STUDENT_BASE_URL);
+
 export default defineConfig({
   testDir: path.join(__dirname, 'e2e'),
   fullyParallel: true,
@@ -13,7 +16,7 @@ export default defineConfig({
     timeout: 30 * 1000,
   },
   use: {
-    baseURL: 'http://127.0.0.1:3100',
+    baseURL,
     trace: 'on-first-retry',
   },
   projects: [
@@ -34,10 +37,13 @@ export default defineConfig({
       use: { ...devices['Pixel 5'] },
     },
   ],
-  webServer: {
-    command: 'pnpm exec next dev --webpack -H 127.0.0.1 -p 3100',
-    url: 'http://127.0.0.1:3100/en',
-    reuseExistingServer: !process.env.CI,
-    timeout: 240 * 1000,
-  },
+  webServer: useExternalServer
+    ? undefined
+    : {
+        command:
+          'NEXT_PUBLIC_NOTIFICATION_STREAM_URL=off pnpm exec next dev --webpack -H 127.0.0.1 -p 3100',
+        url: 'http://127.0.0.1:3100/en',
+        reuseExistingServer: !process.env.CI,
+        timeout: 240 * 1000,
+      },
 });

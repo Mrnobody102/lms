@@ -9,6 +9,7 @@
     "lint": "eslint \"src/**/*.{ts,tsx}\" \"e2e/**/*.ts\"",
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test --project=chromium --workers=1",
+    "test:e2e:staging": "playwright test e2e/staging-smoke.spec.ts --project=chromium --workers=1",
     "test:e2e:all": "playwright test"
   },
   "dependencies": {

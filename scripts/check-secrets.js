@@ -10,6 +10,7 @@ const excludedPaths = new Set(['.env.example']);
 
 const tokenPatterns = [
   { name: 'OpenAI API key', pattern: /sk-[A-Za-z0-9_-]{20,}/g },
+  { name: 'Groq API key', pattern: /gsk_[A-Za-z0-9_-]{20,}/g },
   { name: 'AWS access key', pattern: /AKIA[0-9A-Z]{16}/g },
   { name: 'Google API key', pattern: /AIza[0-9A-Za-z_-]{35}/g },
   { name: 'GitHub token', pattern: /gh[pousr]_[A-Za-z0-9_]{30,}/g },
@@ -21,7 +22,10 @@ const tokenPatterns = [
 ];
 
 const sensitiveAssignments =
-  /\b(?:DATABASE_URL|REDIS_URL|JWT_SECRET|JWT_RESET_SECRET|OPENAI_API_KEY|GEMINI_API_KEY|SUPABASE_SERVICE_ROLE_KEY|STRIPE_SECRET_KEY|STRIPE_WEBHOOK_SECRET)\s*[:=]\s*["']?([^"'\s]+)/g;
+  /\b(?:DATABASE_URL|REDIS_URL|JWT_SECRET|JWT_RESET_SECRET|OPENAI_API_KEY|GEMINI_API_KEY|GROQ_API_KEY|AI_API_KEY|SUPABASE_SERVICE_ROLE_KEY|STRIPE_SECRET_KEY|STRIPE_WEBHOOK_SECRET)\s*[:=]\s*["']?([^"'\s]+)/g;
+
+const forbiddenPublicSecretAssignments =
+  /\b(?:NEXT_PUBLIC_GROQ_[A-Z0-9_]*|NEXT_PUBLIC_OPENAI_[A-Z0-9_]*|NEXT_PUBLIC_AI_API_KEY)\s*[:=]\s*["']?([^"'\s]+)/g;
 
 const placeholderValues = [
   'your_',
@@ -38,6 +42,8 @@ const placeholderValues = [
   'schema',
   'localhost',
   '127.0.0.1',
+  'secret-key',
+  'groq-secret',
   'z.',
   '${',
   '<',
@@ -57,7 +63,10 @@ function shouldScan(file) {
 
 function isPlaceholder(value) {
   const normalized = value.trim().toLowerCase();
-  return placeholderValues.some((placeholder) => normalized.includes(placeholder));
+  return (
+    /^x+$/.test(normalized) ||
+    placeholderValues.some((placeholder) => normalized.includes(placeholder))
+  );
 }
 
 const findings = [];
@@ -80,6 +89,15 @@ for (const file of listTrackedFiles()) {
     if (!isPlaceholder(value)) {
       findings.push({ file, name: 'Sensitive environment assignment', value: value.slice(0, 12) });
     }
+  }
+
+  forbiddenPublicSecretAssignments.lastIndex = 0;
+  for (const match of content.matchAll(forbiddenPublicSecretAssignments)) {
+    findings.push({
+      file,
+      name: 'Frontend-exposed AI secret assignment',
+      value: match[1].slice(0, 12),
+    });
   }
 }
 

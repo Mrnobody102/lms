@@ -91,4 +91,11 @@ export class AdminPlatformController {
   getIncidents() {
     return this.adminPlatformService.getIncidents();
   }
+
+  @Get('ai-status')
+  @ApiOperation({ summary: 'Get platform AI provider status from environment-managed config' })
+  @ApiResponse({ status: 200, description: 'AI provider status retrieved successfully' })
+  getAiStatus() {
+    return this.adminPlatformService.getAiStatus();
+  }
 }

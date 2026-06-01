@@ -29,6 +29,7 @@
       "latency": "Latency",
       "errors": "Errors",
       "quota": "Quota",
+      "value": "Value",
       "plan": "Plan",
       "invoice": "Invoice",
       "empty": "No real operational data is available for this view yet.",
@@ -123,6 +124,22 @@
         "title": "Audit logs",
         "desc": "Track Super Admin actions across tenants, billing, quotas, domains, and feature flags."
       },
+      "aiSettings": {
+        "title": "AI Settings",
+        "desc": "Read-only status for the environment-managed AI provider. API keys stay in Render env until encrypted Super Portal settings are added.",
+        "provider": "Provider",
+        "configured": "Configured",
+        "model": "Model",
+        "envManaged": "Managed by backend environment variables",
+        "keyConfigured": "Provider key is present",
+        "keyMissing": "Provider key is missing",
+        "noUiKeyStorage": "No API key is stored in Super Portal UI",
+        "tableTitle": "AI provider safety status",
+        "mode": "Mode",
+        "dynamicConfig": "Dynamic UI config",
+        "keyStorage": "Key storage",
+        "frontendExposure": "Frontend key exposure"
+      },
       "infrastructure": {
         "title": "Infrastructure",
         "desc": "Runtime telemetry from the API process and request metrics.",
@@ -145,6 +162,7 @@
       "flags": "Feature flags",
       "incidents": "Incidents",
       "audit": "Audit logs",
+      "aiSettings": "AI settings",
       "infrastructure": "Infrastructure"
     },
     "themeToggle": "Toggle theme",

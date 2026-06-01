@@ -140,4 +140,31 @@ describe('createApiClient', () => {
     expect(calls).toEqual(['/users/me', '/auth/refresh']);
     expect(window.location.assign).not.toHaveBeenCalled();
   });
+
+  it('clears legacy token storage and redirects after refresh fails for protected requests', async () => {
+    const api = createApiClient({ baseURL: '/api' });
+    const calls: string[] = [];
+    localStorage.setItem('token', 'legacy-token');
+    localStorage.setItem('user', '{"id":"user-1"}');
+    localStorage.setItem('tenantId', 'tenant-1');
+
+    api.defaults.adapter = async (config) => {
+      const requestConfig: InternalAxiosRequestConfig = {
+        ...config,
+        headers: AxiosHeaders.from(config.headers),
+      };
+      const url = requestConfig.url ?? '';
+      calls.push(url);
+      return rejectWithStatus(requestConfig, 401);
+    };
+
+    await expect(api.get('/courses')).rejects.toThrow('Request failed');
+
+    expect(calls).toEqual(['/courses', '/auth/refresh']);
+    expect(localStorage.getItem('token')).toBeNull();
+    expect(localStorage.getItem('user')).toBeNull();
+    expect(localStorage.getItem('tenantId')).toBeNull();
+    expect(window.dispatchEvent).toHaveBeenCalled();
+    expect(window.location.assign).toHaveBeenCalledWith('/en/login?returnUrl=%2Fen%2Fdashboard');
+  });
 });
