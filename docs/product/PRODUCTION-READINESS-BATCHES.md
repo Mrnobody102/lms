@@ -1,5 +1,7 @@
 # Production Readiness Batch Plan
 
+Current short-form tracker: [CURRENT-WORK.md](CURRENT-WORK.md).
+
 This plan turns the remaining large batches into executable work. Batch 1
 session hardening and Batch 3 tenant UX V2 are already complete. The remaining
 work should be shipped as small vertical slices with tests and operational

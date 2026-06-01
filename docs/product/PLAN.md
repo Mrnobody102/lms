@@ -1,6 +1,8 @@
 # Kế Hoạch Triển Khai LMS Platform
 
-Cập nhật lần cuối: 2026-05-31 (bổ sung P11 Mobile Student App, Expo native direction)
+Cập nhật lần cuối: 2026-06-01 (bổ sung current work tracker)
+
+Tracker ngắn cho task/batch hiện tại: [CURRENT-WORK.md](CURRENT-WORK.md).
 
 ## Định hướng sản phẩm
 
