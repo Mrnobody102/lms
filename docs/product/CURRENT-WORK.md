@@ -1,108 +1,100 @@
-# Current Work Summary
+# Current Work
 
 Last updated: 2026-06-01
 
-## Status
+## At A Glance
 
-| Area               | State       | Notes                                                                                             |
-| ------------------ | ----------- | ------------------------------------------------------------------------------------------------- |
-| Batch 15           | Done        | Production-readiness hardening is merged and pushed                                               |
-| Docs cleanup       | Done        | Active product docs are consolidated to current work, product plan, and AI-native roadmap         |
-| Validation         | Done        | `pnpm lint`, `pnpm run typecheck`, `pnpm run test`, `pnpm run build` passed for Batch 15          |
-| TypeScript hygiene | Improved    | Removed explicit `any` casts in API bootstrap; shared AI bulk count constants                     |
-| Product readiness  | In progress | Next work should stay focused on tenant isolation, bounded lists, real metrics, and repeatable CI |
+| Item                           | Status | Progress            | Notes                                                |
+| ------------------------------ | ------ | ------------------- | ---------------------------------------------------- |
+| Batch 15: production readiness | Done   | `[##########] 100%` | Merged and pushed                                    |
+| Docs cleanup                   | Done   | `[##########] 100%` | Active product docs reduced to 3 files               |
+| Batch 16: contract hardening   | Next   | `[----------] 0%`   | Tenant tests, shared states, smoke checks            |
+| Product readiness              | Active | `[#######---] 70%`  | Keep improving isolation, CI, metrics, bounded lists |
 
-## Completed Slice: Batch 15
+## What Just Shipped
 
-Goal: close production gaps found around CI, student SRS/AI, and Super Portal operations without starting unrelated product areas.
+Batch 15 closed the immediate production-readiness gaps:
 
-Delivered:
+| Area              | Result                                                            |
+| ----------------- | ----------------------------------------------------------------- |
+| CI                | E2E jobs build workspace runtime packages first                   |
+| API usage metrics | Tenant/media/ledger aggregation is typed                          |
+| AI/SRS            | Bulk flashcards validate count and handle provider shape variance |
+| Student UI        | Dashboard and custom-card lists are bounded                       |
+| Super Portal      | `/` is system overview; `/tenants` is tenant management           |
+| Operations        | Metrics are real or source-labeled                                |
+| TypeScript        | Removed API bootstrap `as any`; shared AI count constants         |
 
-- CI E2E now builds workspace runtime dependencies before portal smoke jobs.
-- `AdminPlatformService.getUsage` uses typed aggregation rows for tenant/media/ledger usage.
-- AI bulk flashcard generation validates count server-side and returns actionable provider errors.
-- Groq bulk flashcard parsing tolerates safe provider JSON variance.
-- Student custom-card and dashboard lists are bounded for maintainable rendering.
-- Super Portal split system overview (`/`) from tenant management (`/tenants`).
-- Super Portal operational metrics now show data-source labels: database, runtime, in-memory, derived.
-- API bootstrap no longer needs `as any` for cache setup.
+Validated with:
 
-Validation:
+```bash
+pnpm lint
+pnpm run typecheck
+pnpm run test
+pnpm run build
+```
 
-- `pnpm lint`
-- `pnpm run typecheck`
-- `pnpm run test`
-- `pnpm run build`
+## Next Batch
 
-## Code Quality Snapshot
+Batch 16 theme: contract hardening and workflow polish.
 
-Good:
+| Order | Work                     | Target                                                                 |
+| ----- | ------------------------ | ---------------------------------------------------------------------- |
+| 1     | Cross-tenant deny tests  | Student, course, enrollment, practice, exam APIs                       |
+| 2     | Shared UI states         | Admin practice, exam, report screens use `@repo/ui` primitives         |
+| 3     | Post-deploy smoke checks | API readiness and portal login routes                                  |
+| 4     | Data integrity checks    | Orphan progress, enrollment, tenant relations, soft-delete consistency |
+| 5     | Bounded list audit       | Pagination or capped rendering for remaining large lists               |
 
-- Strict linting is active and currently passes across the workspace.
-- Explicit `any` usage in app source is cleared by lint; remaining `expect.any(...)` usage is test matcher usage, not unsafe typing.
-- Main UI text touched in this slice is synced in `en.json` and `vi.json`.
-- Core thresholds added in this slice are named constants where they cross service/DTO boundaries.
+Done means:
 
-Watch:
+- Tenant-scoped reads/writes have explicit tenant context and focused tests.
+- UI text is synced in `vi.json` and `en.json`.
+- No new `any`, typing lint disables, or fake operational metrics.
+- `pnpm run check:contracts`, focused tests, and relevant smoke/build checks pass.
 
-- Some feature-local constants are acceptable today, but promote them when reused by API and UI or multiple feature modules.
-- Super-admin global queries must stay intentional and documented because they bypass ordinary tenant scoping by design.
-- Operational metrics should be real, source-labeled, or hidden. Do not add placeholder/fake metrics.
-- Long list screens should default to server pagination or bounded rendering.
+## Roadmap Dashboard
 
-## Docs Operating Model
+| Priority | Focus                    | Progress           | Next output                                            |
+| -------- | ------------------------ | ------------------ | ------------------------------------------------------ |
+| P0       | Foundation hardening     | `[########--] 80%` | Production env, release, CI gates stay green           |
+| P1       | Tenant/security boundary | `[######----] 60%` | Cross-tenant deny tests and audit coverage             |
+| P2       | Admin/student workflows  | `[#######---] 70%` | Daily-use flows with deterministic smoke tests         |
+| P3       | Operations visibility    | `[#####-----] 50%` | Tenant health, real usage, alerts, request correlation |
+| P4       | Scale/data integrity     | `[####------] 40%` | Bounded lists, integrity checks, index review          |
+| P5       | Shared maintainability   | `[#####-----] 50%` | Shared primitives after duplication is proven          |
 
-Active docs:
+## Quality Rules
 
-- [CURRENT-WORK.md](CURRENT-WORK.md): current batch, next batch, checklist, recent validation.
-- [PLAN.md](PLAN.md): durable product roadmap and phase status.
-- [AI-NATIVE-LMS-ROADMAP.md](AI-NATIVE-LMS-ROADMAP.md): long-term AI product direction.
+| Rule                         | Current state                          |
+| ---------------------------- | -------------------------------------- |
+| Explicit `any` in app source | Cleared by lint                        |
+| i18n for touched UI          | Sync both locales                      |
+| Operational metrics          | Real, source-labeled, or hidden        |
+| Large lists                  | Server pagination or bounded rendering |
+| Super-admin global queries   | Intentional and documented             |
 
-Rules:
+## Docs Model
 
-- Put short-lived batch status here, not in scattered audit files.
-- Merge useful decisions into `PLAN.md` or `AGENTS.md`/`SOP.md`.
-- Delete old planning docs once their decisions are merged; git history is the archive.
-- Convert repeated rules into scripts or checks when possible.
+| File                                                 | Purpose                                                 |
+| ---------------------------------------------------- | ------------------------------------------------------- |
+| [CURRENT-WORK.md](CURRENT-WORK.md)                   | Current batch, next batch, checklist, recent validation |
+| [PLAN.md](PLAN.md)                                   | Durable product roadmap and phase status                |
+| [AI-NATIVE-LMS-ROADMAP.md](AI-NATIVE-LMS-ROADMAP.md) | Long-term AI product direction                          |
 
-## Next Batch: Batch 16
+Docs rules:
 
-Theme: contract hardening and workflow polish.
+- Keep short-lived batch status here.
+- Merge durable decisions into `PLAN.md`, `AGENTS.md`, or `SOP.md`.
+- Delete stale planning notes after useful decisions are merged; git history is the archive.
+- Promote repeated rules into scripts/checks when possible.
 
-Recommended scope:
+## Handoff Checklist
 
-1. Add high-risk cross-tenant deny tests for student/course/enrollment/practice/exam APIs.
-2. Continue replacing duplicated loading/empty/error UI states with `@repo/ui` primitives in admin practice, exam, and report screens.
-3. Add post-deploy smoke checks for API readiness and portal login routes.
-4. Add read-only data integrity checks for orphan progress, enrollment, tenant relations, and soft-delete consistency.
-5. Review remaining list endpoints/screens for unbounded reads and add pagination where needed.
-
-Definition of done:
-
-- Tenant-scoped reads/writes have explicit tenant context and focused regression tests.
-- New or touched UI strings update both `vi.json` and `en.json`.
-- No new `any`, no lint disables for typing shortcuts, and no fake metrics.
-- `pnpm run check:contracts`, focused tests, and relevant portal smoke/build checks pass.
-
-## Roadmap Focus
-
-| Priority | Focus                    | Next useful output                                                       |
-| -------- | ------------------------ | ------------------------------------------------------------------------ |
-| P0       | Foundation hardening     | Production env, CI, release, contract checks stay green                  |
-| P1       | Tenant/security boundary | Cross-tenant deny tests and audit coverage                               |
-| P2       | Admin/student workflows  | Complete daily-use flows with deterministic smoke tests                  |
-| P3       | Operations visibility    | Tenant health, real usage, alerts, request correlation                   |
-| P4       | Scale/data integrity     | Bounded lists, integrity checks, index review                            |
-| P5       | Shared maintainability   | Shared UI primitives and documented patterns after duplication is proven |
-
-## Working Checklist
-
-Before each handoff:
-
-- [ ] Confirm `git status --short` and staged files are intentional.
+- [ ] Confirm `git status --short`.
 - [ ] Run `pnpm lint`.
 - [ ] Run `pnpm run typecheck`.
-- [ ] Run focused tests; run `pnpm run test` for shared/backend changes.
+- [ ] Run focused tests; use `pnpm run test` for shared/backend changes.
 - [ ] Run `pnpm run build` when CI, routing, package boundaries, or Next.js apps change.
 - [ ] Update both locales for UI text.
 - [ ] Update this file when batch status or next scope changes.

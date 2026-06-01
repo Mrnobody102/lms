@@ -1,8 +1,27 @@
 # Kế Hoạch Triển Khai LMS Platform
 
-Cập nhật lần cuối: 2026-06-01 (bổ sung current work tracker)
+Cập nhật lần cuối: 2026-06-01 (tối ưu docs dashboard)
 
 Tracker ngắn cho task/batch hiện tại: [CURRENT-WORK.md](CURRENT-WORK.md).
+
+## Tóm Tắt Nhanh
+
+| Mảng                        | Tiến độ            | Trạng thái ngắn                                  |
+| --------------------------- | ------------------ | ------------------------------------------------ |
+| Foundation / CI / release   | `[########--] 80%` | Đã ổn nền tảng, tiếp tục giữ gate xanh           |
+| Tenant isolation / security | `[######----] 60%` | Cần thêm cross-tenant deny tests                 |
+| Student learning core       | `[#######---] 70%` | Dashboard, SRS, practice, exam đã có MVP         |
+| Admin operations            | `[######----] 60%` | Cần polish workflow và shared UI states          |
+| Super Portal operations     | `[#####-----] 50%` | Đã tách overview/tenants, cần real health deeper |
+| AI-native roadmap           | `[####------] 40%` | MVP tutor/roleplay có nền, cần governance/quota  |
+
+Hiện tại ưu tiên **Batch 16**:
+
+1. Cross-tenant deny tests cho API rủi ro cao.
+2. Shared loading/empty/error states cho admin practice, exam, reports.
+3. Post-deploy smoke checks cho API readiness và portal login.
+4. Read-only integrity checks cho dữ liệu học tập/tenant.
+5. Pagination hoặc bounded rendering cho list lớn còn lại.
 
 ## Định hướng sản phẩm
 

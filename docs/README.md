@@ -5,6 +5,8 @@ adding new planning files unless they become a durable source of truth.
 
 ## Read First
 
+Start with the dashboard, then jump only to the reference you need.
+
 | Need                               | Read                                                                 |
 | ---------------------------------- | -------------------------------------------------------------------- |
 | What is being worked on now        | [product/CURRENT-WORK.md](product/CURRENT-WORK.md)                   |
@@ -49,6 +51,7 @@ docs/
 - Keep active planning in [product/CURRENT-WORK.md](product/CURRENT-WORK.md).
 - Keep durable roadmap decisions in [product/PLAN.md](product/PLAN.md).
 - Keep agent process rules in [ai-agent/SOP.md](ai-agent/SOP.md) or `AGENTS.md`.
+- Put visual status at the top: tables, checklists, and ASCII progress bars before long prose.
 - Prefer updating an existing source-of-truth file over creating a new one.
 - Delete stale planning/audit notes once their useful decisions are merged.
 - If a rule must always be enforced, prefer a script/check over prose only.
