@@ -7,10 +7,10 @@ import {
   Clock3,
   FileCheck2,
   History,
-  Loader2,
   PlayCircle,
   RotateCcw,
 } from 'lucide-react';
+import { EmptyState, ErrorState, LoadingState } from '@repo/ui';
 import { ReactNode, useEffect, useMemo, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { AuthRequiredPanel } from '@/components/auth/auth-required-panel';
@@ -113,24 +113,16 @@ export default function ExamsPage() {
             </header>
 
             {!isInitialized || isLoading ? (
-              <div className="flex items-center gap-2 rounded-md border p-4 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                {t('exam.loading')}
-              </div>
+              <LoadingState title={t('exam.loading')} className="rounded-md border bg-card" />
             ) : isError ? (
-              <div className="rounded-md border border-destructive/20 bg-destructive/5 p-5 text-sm text-destructive">
-                {t('exam.loadError')}
-              </div>
+              <ErrorState title={t('exam.loadError')} className="rounded-md" />
             ) : exams.length === 0 ? (
-              <section className="rounded-md border border-dashed p-8 text-center">
-                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-primary/10 text-primary">
-                  <FileCheck2 className="h-5 w-5" />
-                </div>
-                <h2 className="text-lg font-semibold">{t('exam.emptyTitle')}</h2>
-                <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-                  {t('exam.emptyDesc')}
-                </p>
-              </section>
+              <EmptyState
+                icon={FileCheck2}
+                title={t('exam.emptyTitle')}
+                description={t('exam.emptyDesc')}
+                className="rounded-md border border-dashed bg-card"
+              />
             ) : (
               <div className="space-y-10">
                 {!isAttemptsLoading && !isAttemptsError && (
@@ -227,26 +219,27 @@ export default function ExamsPage() {
                   </div>
 
                   {isAttemptsLoading ? (
-                    <div className="flex items-center gap-2 rounded-md border p-4 text-sm text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      {t('exam.loadingAttempts')}
-                    </div>
+                    <LoadingState title={t('exam.loadingAttempts')} className="rounded-md border" />
                   ) : isAttemptsError ? (
-                    <div className="rounded-md border border-destructive/20 bg-destructive/5 p-5 text-sm text-destructive">
-                      <div>{t('exam.attemptsLoadError')}</div>
-                      <button
-                        type="button"
-                        onClick={() => void refetchAttempts()}
-                        className="mt-3 inline-flex h-9 items-center justify-center gap-2 rounded-md border border-destructive/20 bg-background px-3 text-xs font-semibold text-foreground hover:bg-muted"
-                      >
-                        <RotateCcw className="h-4 w-4" />
-                        {t('exam.retry')}
-                      </button>
-                    </div>
+                    <ErrorState
+                      title={t('exam.attemptsLoadError')}
+                      action={
+                        <button
+                          type="button"
+                          onClick={() => void refetchAttempts()}
+                          className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-destructive/20 bg-background px-3 text-xs font-semibold text-foreground hover:bg-muted"
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                          {t('exam.retry')}
+                        </button>
+                      }
+                    />
                   ) : filteredAttempts.length === 0 ? (
-                    <div className="rounded-md border border-dashed p-5 text-sm text-muted-foreground">
-                      {t('exam.noAttempts')}
-                    </div>
+                    <EmptyState
+                      icon={History}
+                      title={t('exam.noAttempts')}
+                      className="rounded-md border border-dashed"
+                    />
                   ) : (
                     <div className="space-y-3">
                       {filteredAttempts.map((attempt) => {

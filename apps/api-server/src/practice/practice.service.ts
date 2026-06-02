@@ -672,7 +672,7 @@ export class PracticeService {
 
     const sets = await this.prisma.practiceExerciseSet.findMany({
       where,
-      take: Math.min(query.limit ?? 12, 24),
+      take: Math.min(Math.max(query.limit ?? 12, 1), 24),
       include: {
         _count: { select: { questions: true, attempts: true } },
         course: { select: { id: true, title: true } },
@@ -780,6 +780,7 @@ export class PracticeService {
     user: PracticeUser,
     query: { courseId?: string; exerciseSetId?: string; limit?: number },
   ) {
+    const limit = this.getAttemptLimit(query.limit);
     const where: Prisma.PracticeAttemptWhereInput = {
       tenantId,
       courseId: query.courseId,
@@ -817,7 +818,7 @@ export class PracticeService {
         },
       },
       orderBy: { submittedAt: 'desc' },
-      take: query.limit ?? 10,
+      take: limit,
     });
 
     const attemptSummaries = attempts.map((attempt) => this.toAttemptSummary(attempt));
@@ -1215,6 +1216,10 @@ export class PracticeService {
       limit,
       skip: (page - 1) * limit,
     };
+  }
+
+  private getAttemptLimit(limit?: number) {
+    return Math.min(Math.max(limit ?? 10, 1), 20);
   }
 
   private toPaginatedResult<T>(

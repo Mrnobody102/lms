@@ -202,6 +202,49 @@ async function installAdminApiMocks(page: Page) {
       });
     }
 
+    if (path.endsWith('/api/activation') && method === 'GET') {
+      return json(200, [
+        {
+          id: 'activation-1',
+          code: 'NORTH-2026',
+          description: 'Spring cohort',
+          maxUses: 30,
+          usedCount: 12,
+          expiresAt: null,
+          courseId: 'course-1',
+          isActive: true,
+          createdAt: '2026-04-21T12:00:00.000Z',
+          updatedAt: '2026-04-21T12:00:00.000Z',
+          course: { title: 'IELTS Foundations' },
+          _count: { redemptions: 12 },
+        },
+      ]);
+    }
+
+    if (path.endsWith('/api/admin/billing/config') && method === 'GET') {
+      return json(200, {
+        paymentProvider: 'none',
+        paymentPublicKey: '',
+        paymentMerchantId: '',
+        paymentWebhookUrl: '',
+        currency: 'VND',
+        baseCoursePriceMinor: 0,
+        discountPercent: 0,
+        taxPercent: 0,
+        invoicePrefix: 'INV',
+        exportFormat: 'csv',
+        updatedAt: null,
+      });
+    }
+
+    if (path.endsWith('/api/admin/billing/overview') && method === 'GET') {
+      return json(200, {
+        subscription: null,
+        invoices: [],
+        payments: [],
+      });
+    }
+
     return route.continue();
   });
 }
@@ -210,6 +253,7 @@ test('admin can login and view dashboard overview', async ({ page }) => {
   await installAdminApiMocks(page);
 
   await page.goto('/en/login');
+  await expect(page.getByRole('button', { name: 'Login', exact: true })).toBeEnabled();
   await page.locator('input[type="email"]').fill('admin@example.com');
   await page.locator('input[type="password"]').fill('Admin@123');
   await page.getByRole('button', { name: 'Login', exact: true }).click();
@@ -224,6 +268,11 @@ test('admin can login and view dashboard overview', async ({ page }) => {
   await page.reload();
   await expect(page).toHaveURL(/\/en$/, { timeout: 60000 });
   await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 60000 });
+
+  await page.goto('/en/finance');
+  await expect(page.getByRole('heading', { name: 'Finance' })).toBeVisible({ timeout: 60000 });
+  await expect(page.getByRole('heading', { name: 'Billing readiness' })).toBeVisible();
+  await expect(page.getByText('Billing provider', { exact: true })).toBeVisible();
 });
 
 test('admin can open course editor without i18n or lesson-table layout regressions', async ({

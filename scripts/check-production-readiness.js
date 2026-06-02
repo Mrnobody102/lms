@@ -156,6 +156,59 @@ requireIncludes('package.json', [
 requireFile('scripts/stop-project-processes.js');
 requireFile('scripts/check-data-integrity.js');
 
+requireIncludes('apps/api-server/src/course/dto/course-query.dto.ts', [
+  { label: 'course list limit cap', value: '@Max(100)' },
+]);
+
+requireIncludes('apps/api-server/src/practice/dto/practice-query.dto.ts', [
+  { label: 'practice list limit cap', value: '@Max(100)' },
+]);
+
+requireIncludes('apps/api-server/src/practice/dto/practice-attempt-query.dto.ts', [
+  { label: 'practice attempt list limit cap', value: '@Max(20)' },
+]);
+
+requireIncludes('apps/api-server/src/practice/practice.service.ts', [
+  { label: 'practice service-level attempt limit cap', value: 'private getAttemptLimit' },
+  {
+    label: 'practice recommendation limit cap',
+    value: 'Math.min(Math.max(query.limit ?? 12, 1), 24)',
+  },
+]);
+
+requireIncludes('apps/api-server/src/exam/dto/exam-query.dto.ts', [
+  { label: 'exam list limit cap', value: '@Max(100)' },
+]);
+
+requireIncludes('apps/api-server/src/exam/dto/exam-attempt-query.dto.ts', [
+  { label: 'exam attempt list limit cap', value: '@Max(20)' },
+]);
+
+requireIncludes('apps/api-server/src/exam/exam.service.ts', [
+  { label: 'exam list limit cap', value: 'Math.min(Math.max(query.limit ?? 20, 1), 100)' },
+  { label: 'exam service-level attempt limit cap', value: 'private getAttemptLimit' },
+]);
+
+requireIncludes('apps/api-server/src/notification/dto/notification-query.dto.ts', [
+  { label: 'notification list limit cap', value: '@Max(50)' },
+]);
+
+requireIncludes('apps/api-server/src/notification/notification.service.ts', [
+  {
+    label: 'notification service-level take cap',
+    value: 'const boundedTake = Math.min(Math.max(take, 1), 50)',
+  },
+]);
+
+requireIncludes('apps/api-server/src/admin-reports/dto/risk-report-query.dto.ts', [
+  { label: 'risk report limit cap', value: '@Max(100)' },
+]);
+
+requireIncludes('apps/api-server/src/admin/admin-platform.service.ts', [
+  { label: 'platform audit log cap', value: 'take: 100' },
+  { label: 'platform billing global cap', value: 'take: tenantId ? 20 : 100' },
+]);
+
 const tokenStoragePattern =
   /localStorage\.(setItem|getItem)\(\s*['"`](token|access_token|refresh_token)['"`]/;
 for (const file of [...walk(path.join(ROOT, 'apps')), ...walk(path.join(ROOT, 'packages'))]) {

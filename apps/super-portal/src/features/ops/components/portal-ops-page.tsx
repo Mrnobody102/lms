@@ -17,6 +17,11 @@ import {
   ToggleRight,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import {
+  EmptyState as SharedEmptyState,
+  ErrorState as SharedErrorState,
+  LoadingState,
+} from '@repo/ui';
 import { useTranslations } from 'next-intl';
 import toast from 'react-hot-toast';
 import { Footer } from '@/components/layout/footer';
@@ -536,29 +541,20 @@ function DataTable({
 }
 
 function LoadingGrid() {
-  return (
-    <div className="grid gap-4 md:grid-cols-3">
-      {Array.from({ length: 6 }).map((_, index) => (
-        <div key={index} className="h-36 animate-pulse rounded-xl border bg-muted/30" />
-      ))}
-    </div>
-  );
+  const t = useTranslations('SuperPortal.ops');
+  return <LoadingState title={t('loading')} className="rounded-xl border bg-card" />;
 }
 
 function EmptyState() {
   const t = useTranslations('SuperPortal.ops');
   return (
-    <div className="rounded-xl border bg-card p-6 text-sm text-muted-foreground">{t('empty')}</div>
+    <SharedEmptyState icon={ListChecks} title={t('empty')} className="rounded-xl border bg-card" />
   );
 }
 
 function ErrorState() {
   const t = useTranslations('SuperPortal.ops');
-  return (
-    <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-6 text-sm text-destructive">
-      {t('loadError')}
-    </div>
-  );
+  return <SharedErrorState title={t('loadError')} className="rounded-xl" />;
 }
 
 function formatBytes(value: number) {

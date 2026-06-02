@@ -50,12 +50,14 @@ export class NotificationService {
   }
 
   async getUserNotifications(tenantId: string, userId: string, skip = 0, take = 20) {
+    const boundedSkip = Math.max(skip, 0);
+    const boundedTake = Math.min(Math.max(take, 1), 50);
     const [notifications, unreadCount, total] = await Promise.all([
       this.prisma.notification.findMany({
         where: { tenantId, userId },
         orderBy: { createdAt: 'desc' },
-        skip,
-        take,
+        skip: boundedSkip,
+        take: boundedTake,
       }),
       this.prisma.notification.count({
         where: { tenantId, userId, readAt: null },
@@ -69,10 +71,10 @@ export class NotificationService {
       notifications,
       unreadCount,
       meta: {
-        skip,
-        take,
+        skip: boundedSkip,
+        take: boundedTake,
         total,
-        hasMore: skip + notifications.length < total,
+        hasMore: boundedSkip + notifications.length < total,
       },
     };
   }

@@ -320,6 +320,227 @@ const checks = [
     `,
   },
   {
+    name: 'course activities reference same-course units when unit is set',
+    countSql: `
+      SELECT COUNT(*)::int AS count
+      FROM "CourseActivity" activity
+      LEFT JOIN "CourseUnit" unit
+        ON unit.id = activity."unitId"
+       AND unit."tenantId" = activity."tenantId"
+       AND unit."courseId" = activity."courseId"
+       AND unit."deletedAt" IS NULL
+      WHERE activity."deletedAt" IS NULL
+        AND activity."unitId" IS NOT NULL
+        AND unit.id IS NULL
+    `,
+    sampleSql: `
+      SELECT activity.id
+      FROM "CourseActivity" activity
+      LEFT JOIN "CourseUnit" unit
+        ON unit.id = activity."unitId"
+       AND unit."tenantId" = activity."tenantId"
+       AND unit."courseId" = activity."courseId"
+       AND unit."deletedAt" IS NULL
+      WHERE activity."deletedAt" IS NULL
+        AND activity."unitId" IS NOT NULL
+        AND unit.id IS NULL
+      ORDER BY activity.id
+      LIMIT $1
+    `,
+  },
+  {
+    name: 'course activities reference existing same-tenant targets',
+    countSql: `
+      SELECT COUNT(*)::int AS count
+      FROM "CourseActivity" activity
+      LEFT JOIN "Lesson" lesson
+        ON activity.type = 'LESSON'
+       AND lesson.id = activity."targetId"
+       AND lesson."tenantId" = activity."tenantId"
+       AND lesson."courseId" = activity."courseId"
+       AND lesson."deletedAt" IS NULL
+      LEFT JOIN "PracticeExerciseSet" exercise_set
+        ON activity.type = 'PRACTICE'
+       AND exercise_set.id = activity."targetId"
+       AND exercise_set."tenantId" = activity."tenantId"
+       AND exercise_set."courseId" = activity."courseId"
+       AND exercise_set."deletedAt" IS NULL
+      LEFT JOIN "Exam" exam
+        ON activity.type = 'EXAM'
+       AND exam.id = activity."targetId"
+       AND exam."tenantId" = activity."tenantId"
+       AND exam."courseId" = activity."courseId"
+       AND exam."deletedAt" IS NULL
+      WHERE activity."deletedAt" IS NULL
+        AND (
+          (activity.type = 'LESSON' AND lesson.id IS NULL)
+          OR (activity.type = 'PRACTICE' AND exercise_set.id IS NULL)
+          OR (activity.type = 'EXAM' AND exam.id IS NULL)
+        )
+    `,
+    sampleSql: `
+      SELECT activity.id
+      FROM "CourseActivity" activity
+      LEFT JOIN "Lesson" lesson
+        ON activity.type = 'LESSON'
+       AND lesson.id = activity."targetId"
+       AND lesson."tenantId" = activity."tenantId"
+       AND lesson."courseId" = activity."courseId"
+       AND lesson."deletedAt" IS NULL
+      LEFT JOIN "PracticeExerciseSet" exercise_set
+        ON activity.type = 'PRACTICE'
+       AND exercise_set.id = activity."targetId"
+       AND exercise_set."tenantId" = activity."tenantId"
+       AND exercise_set."courseId" = activity."courseId"
+       AND exercise_set."deletedAt" IS NULL
+      LEFT JOIN "Exam" exam
+        ON activity.type = 'EXAM'
+       AND exam.id = activity."targetId"
+       AND exam."tenantId" = activity."tenantId"
+       AND exam."courseId" = activity."courseId"
+       AND exam."deletedAt" IS NULL
+      WHERE activity."deletedAt" IS NULL
+        AND (
+          (activity.type = 'LESSON' AND lesson.id IS NULL)
+          OR (activity.type = 'PRACTICE' AND exercise_set.id IS NULL)
+          OR (activity.type = 'EXAM' AND exam.id IS NULL)
+        )
+      ORDER BY activity.id
+      LIMIT $1
+    `,
+  },
+  {
+    name: 'course activity progress references same-tenant users and activities',
+    countSql: `
+      SELECT COUNT(*)::int AS count
+      FROM "UserCourseActivityProgress" progress
+      LEFT JOIN "User" learner
+        ON learner.id = progress."userId"
+       AND learner."tenantId" = progress."tenantId"
+      LEFT JOIN "CourseActivity" activity
+        ON activity.id = progress."activityId"
+       AND activity."tenantId" = progress."tenantId"
+      WHERE learner.id IS NULL OR activity.id IS NULL
+    `,
+    sampleSql: `
+      SELECT progress.id
+      FROM "UserCourseActivityProgress" progress
+      LEFT JOIN "User" learner
+        ON learner.id = progress."userId"
+       AND learner."tenantId" = progress."tenantId"
+      LEFT JOIN "CourseActivity" activity
+        ON activity.id = progress."activityId"
+       AND activity."tenantId" = progress."tenantId"
+      WHERE learner.id IS NULL OR activity.id IS NULL
+      ORDER BY progress.id
+      LIMIT $1
+    `,
+  },
+  {
+    name: 'notifications reference same-tenant users',
+    countSql: `
+      SELECT COUNT(*)::int AS count
+      FROM "Notification" notification
+      LEFT JOIN "User" recipient
+        ON recipient.id = notification."userId"
+       AND recipient."tenantId" = notification."tenantId"
+      WHERE recipient.id IS NULL
+    `,
+    sampleSql: `
+      SELECT notification.id
+      FROM "Notification" notification
+      LEFT JOIN "User" recipient
+        ON recipient.id = notification."userId"
+       AND recipient."tenantId" = notification."tenantId"
+      WHERE recipient.id IS NULL
+      ORDER BY notification.id
+      LIMIT $1
+    `,
+  },
+  {
+    name: 'practice question audio assets belong to the same tenant',
+    countSql: `
+      SELECT COUNT(*)::int AS count
+      FROM "PracticeQuestion" question
+      LEFT JOIN "MediaAsset" asset
+        ON asset.id = question."audioMediaAssetId"
+       AND asset."tenantId" = question."tenantId"
+      WHERE question."audioMediaAssetId" IS NOT NULL
+        AND asset.id IS NULL
+    `,
+    sampleSql: `
+      SELECT question.id
+      FROM "PracticeQuestion" question
+      LEFT JOIN "MediaAsset" asset
+        ON asset.id = question."audioMediaAssetId"
+       AND asset."tenantId" = question."tenantId"
+      WHERE question."audioMediaAssetId" IS NOT NULL
+        AND asset.id IS NULL
+      ORDER BY question.id
+      LIMIT $1
+    `,
+  },
+  {
+    name: 'exam question audio assets belong to the same tenant',
+    countSql: `
+      SELECT COUNT(*)::int AS count
+      FROM "ExamQuestion" question
+      LEFT JOIN "MediaAsset" asset
+        ON asset.id = question."audioMediaAssetId"
+       AND asset."tenantId" = question."tenantId"
+      WHERE question."audioMediaAssetId" IS NOT NULL
+        AND asset.id IS NULL
+    `,
+    sampleSql: `
+      SELECT question.id
+      FROM "ExamQuestion" question
+      LEFT JOIN "MediaAsset" asset
+        ON asset.id = question."audioMediaAssetId"
+       AND asset."tenantId" = question."tenantId"
+      WHERE question."audioMediaAssetId" IS NOT NULL
+        AND asset.id IS NULL
+      ORDER BY question.id
+      LIMIT $1
+    `,
+  },
+  {
+    name: 'student risk snapshots reference same-tenant users, courses, and cohorts',
+    countSql: `
+      SELECT COUNT(*)::int AS count
+      FROM "StudentRiskSnapshot" snapshot
+      LEFT JOIN "User" learner
+        ON learner.id = snapshot."userId"
+       AND learner."tenantId" = snapshot."tenantId"
+      LEFT JOIN "Course" course
+        ON course.id = snapshot."courseId"
+       AND course."tenantId" = snapshot."tenantId"
+      LEFT JOIN "Cohort" cohort
+        ON cohort.id = snapshot."cohortId"
+       AND cohort."tenantId" = snapshot."tenantId"
+      WHERE learner.id IS NULL
+        OR (snapshot."courseId" IS NOT NULL AND course.id IS NULL)
+        OR (snapshot."cohortId" IS NOT NULL AND cohort.id IS NULL)
+    `,
+    sampleSql: `
+      SELECT snapshot.id
+      FROM "StudentRiskSnapshot" snapshot
+      LEFT JOIN "User" learner
+        ON learner.id = snapshot."userId"
+       AND learner."tenantId" = snapshot."tenantId"
+      LEFT JOIN "Course" course
+        ON course.id = snapshot."courseId"
+       AND course."tenantId" = snapshot."tenantId"
+      LEFT JOIN "Cohort" cohort
+        ON cohort.id = snapshot."cohortId"
+       AND cohort."tenantId" = snapshot."tenantId"
+      WHERE learner.id IS NULL
+        OR (snapshot."courseId" IS NOT NULL AND course.id IS NULL)
+        OR (snapshot."cohortId" IS NOT NULL AND cohort.id IS NULL)
+      ORDER BY snapshot.id
+      LIMIT $1
+    `,
+  },
+  {
     name: 'enrolled courses have at least one non-deleted lesson',
     countSql: `
       SELECT COUNT(*)::int AS count

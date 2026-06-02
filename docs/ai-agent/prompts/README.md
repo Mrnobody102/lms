@@ -4,9 +4,9 @@ Prompt templates chuẩn cho các tác vụ thường gặp với AI coding agen
 
 ## Danh Sách Prompt Templates
 
-| Template       | File                                   | Mô tả                                                                                              |
-| -------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| Codebase Audit | [codebase-audit.md](codebase-audit.md) | Đánh giá toàn diện codebase theo 8 chiều: architecture, security, quality, testing, DX, deployment |
+| Template          | File                                         | Mô tả                                                                       |
+| ----------------- | -------------------------------------------- | --------------------------------------------------------------------------- |
+| Full System Audit | [full-system-audit.md](full-system-audit.md) | Audit + remediation + verification theo phase gate cho toàn bộ LMS Platform |
 
 ## Cách Sử Dụng
 

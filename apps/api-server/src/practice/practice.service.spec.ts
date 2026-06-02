@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { PracticeQuestionType, Role } from '@repo/database';
+import { NotFoundException } from '@nestjs/common';
 import { PracticeService } from './practice.service';
 
 function createSkillMasteryStub() {
@@ -527,6 +528,87 @@ describe('PracticeService', () => {
       }),
     );
     expect(result[0]).not.toHaveProperty('answers');
+  });
+
+  it('should cap practice attempt history even when service callers pass a large limit', async () => {
+    const prisma = {
+      practiceAttempt: {
+        findMany: vi.fn().mockResolvedValue([]),
+      },
+    };
+    const learningAccess = {
+      courseWhere: vi.fn().mockReturnValue({ tenantId: 'tenant-1', userId: 'user-1' }),
+    };
+    const service = new PracticeService(
+      prisma as never,
+      learningAccess as never,
+      createSkillMasteryStub() as never,
+      createSrsStub() as never,
+      createMediaStub() as never,
+      createAiServiceStub() as never,
+    );
+
+    await service.listAttempts('tenant-1', { id: 'user-1', role: Role.STUDENT }, { limit: 10_000 });
+
+    expect(prisma.practiceAttempt.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        take: 20,
+      }),
+    );
+  });
+
+  it('should not create practice attempts when course access is denied', async () => {
+    const prisma = {
+      practiceExerciseSet: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: 'set-1',
+          tenantId: 'tenant-1',
+          courseId: 'course-1',
+          questions: [
+            {
+              question: {
+                id: 'question-1',
+                type: PracticeQuestionType.MULTIPLE_CHOICE,
+                prompt: 'Choose one',
+                options: ['A', 'B'],
+                correctAnswer: 1,
+                explanation: null,
+              },
+            },
+          ],
+        }),
+      },
+      practiceAttempt: {
+        create: vi.fn(),
+      },
+    };
+    const learningAccess = {
+      ensureCourseAccess: vi
+        .fn()
+        .mockRejectedValue(
+          new NotFoundException('Course with ID course-1 not found in this tenant'),
+        ),
+    };
+    const skillMastery = createSkillMasteryStub();
+    const srs = createSrsStub();
+    const service = new PracticeService(
+      prisma as never,
+      learningAccess as never,
+      skillMastery as never,
+      srs as never,
+      createMediaStub() as never,
+      createAiServiceStub() as never,
+    );
+
+    await expect(
+      service.submitAttempt('set-1', 'tenant-1', { id: 'user-1', role: Role.STUDENT }, [
+        { questionId: 'question-1', answer: 1 },
+      ]),
+    ).rejects.toThrow('Course with ID course-1 not found in this tenant');
+
+    expect(prisma.practiceAttempt.create).not.toHaveBeenCalled();
+    expect(skillMastery.applyAnswerEvents).not.toHaveBeenCalled();
+    expect(srs.upsertCardsForAnswers).not.toHaveBeenCalled();
   });
 
   it('should return a practice attempt review with answers and question metadata', async () => {

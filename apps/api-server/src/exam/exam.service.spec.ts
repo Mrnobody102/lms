@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ExamAttemptStatus, ExamQuestionType, Role } from '@repo/database';
+import { NotFoundException } from '@nestjs/common';
 import { ExamService } from './exam.service';
 
 function createSkillMasteryStub() {
@@ -605,6 +606,147 @@ describe('ExamService', () => {
     );
     expect(result[0]).toHaveProperty('deadlineAt');
     expect(result[0].isExpired).toBe(false);
+  });
+
+  it('should cap exam attempt history even when service callers pass a large limit', async () => {
+    const prisma = {
+      examAttempt: {
+        findMany: vi.fn().mockResolvedValue([]),
+      },
+    };
+    const learningAccess = {
+      courseWhere: vi.fn().mockReturnValue({ tenantId: 'tenant-1', userId: 'user-1' }),
+    };
+    const service = new ExamService(
+      prisma as never,
+      learningAccess as never,
+      createSkillMasteryStub() as never,
+      createSrsStub() as never,
+      createMediaStub() as never,
+    );
+
+    await service.listAttempts('tenant-1', { id: 'user-1', role: Role.STUDENT }, { limit: 10_000 });
+
+    expect(prisma.examAttempt.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        take: 20,
+      }),
+    );
+  });
+
+  it('should not start exam attempts when course access is denied', async () => {
+    const exam = {
+      id: 'exam-1',
+      courseId: 'course-1',
+      durationMinutes: 30,
+      sections: [
+        {
+          questions: [
+            {
+              id: 'question-1',
+              type: ExamQuestionType.MULTIPLE_CHOICE,
+              prompt: 'Choose one',
+              points: 1,
+            },
+          ],
+        },
+      ],
+    };
+    const prisma = {
+      exam: {
+        findFirst: vi.fn().mockResolvedValue(exam),
+      },
+      examAttempt: {
+        findFirst: vi.fn(),
+        create: vi.fn(),
+      },
+    };
+    const learningAccess = {
+      ensureCourseAccess: vi
+        .fn()
+        .mockRejectedValue(
+          new NotFoundException('Course with ID course-1 not found in this tenant'),
+        ),
+    };
+    const service = new ExamService(
+      prisma as never,
+      learningAccess as never,
+      createSkillMasteryStub() as never,
+      createSrsStub() as never,
+      createMediaStub() as never,
+    );
+
+    await expect(
+      service.startAttempt('exam-1', 'tenant-1', { id: 'user-1', role: Role.STUDENT }),
+    ).rejects.toThrow('Course with ID course-1 not found in this tenant');
+
+    expect(prisma.examAttempt.findFirst).not.toHaveBeenCalled();
+    expect(prisma.examAttempt.create).not.toHaveBeenCalled();
+  });
+
+  it('should not submit exam attempts when course access is denied', async () => {
+    const startedAt = new Date(Date.now() - 5 * 60_000);
+    const prisma = {
+      examAttempt: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: 'attempt-1',
+          tenantId: 'tenant-1',
+          userId: 'user-1',
+          courseId: 'course-1',
+          status: ExamAttemptStatus.STARTED,
+          startedAt,
+          submittedAt: null,
+          exam: {
+            id: 'exam-1',
+            courseId: 'course-1',
+            durationMinutes: 30,
+            passingScore: 60,
+            sections: [
+              {
+                questions: [
+                  {
+                    id: 'question-1',
+                    type: ExamQuestionType.MULTIPLE_CHOICE,
+                    prompt: 'Choose one',
+                    options: ['A', 'B'],
+                    correctAnswer: 1,
+                    explanation: 'B is correct',
+                    points: 1,
+                  },
+                ],
+              },
+            ],
+          },
+        }),
+        update: vi.fn(),
+      },
+    };
+    const learningAccess = {
+      ensureCourseAccess: vi
+        .fn()
+        .mockRejectedValue(
+          new NotFoundException('Course with ID course-1 not found in this tenant'),
+        ),
+    };
+    const skillMastery = createSkillMasteryStub();
+    const srs = createSrsStub();
+    const service = new ExamService(
+      prisma as never,
+      learningAccess as never,
+      skillMastery as never,
+      srs as never,
+      createMediaStub() as never,
+    );
+
+    await expect(
+      service.submitAttempt('attempt-1', 'tenant-1', { id: 'user-1', role: Role.STUDENT }, [
+        { questionId: 'question-1', answer: 1 },
+      ]),
+    ).rejects.toThrow('Course with ID course-1 not found in this tenant');
+
+    expect(prisma.examAttempt.update).not.toHaveBeenCalled();
+    expect(skillMastery.applyAnswerEvents).not.toHaveBeenCalled();
+    expect(srs.upsertCardsForAnswers).not.toHaveBeenCalled();
   });
 
   it('should return exam attempt review with answer metadata and deadline state', async () => {

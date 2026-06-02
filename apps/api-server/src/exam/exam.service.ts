@@ -361,6 +361,7 @@ export class ExamService {
     user: ExamUser,
     query: { courseId?: string; examId?: string; limit?: number },
   ) {
+    const limit = this.getAttemptLimit(query.limit);
     const where: Prisma.ExamAttemptWhereInput = {
       tenantId,
       courseId: query.courseId,
@@ -394,7 +395,7 @@ export class ExamService {
         },
       },
       orderBy: { startedAt: 'desc' },
-      take: query.limit ?? 10,
+      take: limit,
     });
 
     const visibleAttempts =
@@ -856,6 +857,10 @@ export class ExamService {
 
   private toScorePercent(score: number, totalPoints: number) {
     return totalPoints <= 0 ? 0 : Math.round((score / totalPoints) * 100);
+  }
+
+  private getAttemptLimit(limit?: number) {
+    return Math.min(Math.max(limit ?? 10, 1), 20);
   }
 
   private async upsertActivityProgressForExam(input: {

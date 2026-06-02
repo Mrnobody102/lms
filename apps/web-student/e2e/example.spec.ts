@@ -602,6 +602,8 @@ test('student can login, open a lesson, and mark it completed', async ({ page })
 
   await page.goto('/en/login');
   await waitForHydratedForm(page);
+  await expect(page.getByRole('heading', { name: 'Welcome back!' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Login Now' })).toBeEnabled();
   await page.locator('input[type="email"]').fill('student@example.com');
   await page.locator('input[type="password"]').fill('Student@123');
   await page.getByRole('button', { name: 'Login Now' }).click();

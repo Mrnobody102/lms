@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, Loader2, RefreshCw } from 'lucide-react';
+import { EmptyState, ErrorState, LoadingState } from '@repo/ui';
 import { useTranslations } from 'next-intl';
 import { AdminHeader } from '@/components/layout/admin-header';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
@@ -147,13 +148,23 @@ export default function RiskReportPage() {
 
             <section className="rounded-lg border bg-card">
               {query.isLoading ? (
-                <div className="flex justify-center py-16">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                </div>
+                <LoadingState title={t('loading')} />
+              ) : query.isError ? (
+                <ErrorState
+                  title={t('reports.loadError')}
+                  action={
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => void query.refetch()}
+                    >
+                      {t('retry')}
+                    </Button>
+                  }
+                />
               ) : rows.length === 0 ? (
-                <div className="py-16 text-center text-sm text-muted-foreground">
-                  {t('reports.noRiskFlags')}
-                </div>
+                <EmptyState icon={AlertTriangle} title={t('reports.noRiskFlags')} />
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[700px] text-sm">

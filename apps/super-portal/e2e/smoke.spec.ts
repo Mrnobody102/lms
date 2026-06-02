@@ -346,6 +346,8 @@ test('super admin can review and edit tenant settings', async ({ page }) => {
   await expect(page).toHaveURL(/\/en\/tenants\/tenant-1$/);
   await expect(page.getByRole('button', { name: 'Overview' })).toBeVisible();
   await expect(page.getByText('support@north.example.com')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Operations overview' })).toBeVisible();
+  await expect(page.getByText('Domain ready, Subscription active')).toBeVisible();
   await expect(page.getByText('Portal preview')).toBeVisible();
 
   await page.getByRole('button', { name: 'Branding' }).click();

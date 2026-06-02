@@ -32,7 +32,7 @@ jobs:
       - run: pnpm --filter @repo/database generate
       - run: pnpm run typecheck
       - run: pnpm turbo lint
-      - run: pnpm run check:i18n
+      - run: pnpm run check:contracts
       - run: pnpm run test
 
   build:
@@ -124,6 +124,7 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @repo/database generate
+      - run: pnpm --filter @repo/database build
       - name: Create .env
         run: |
           echo "DATABASE_URL=${DATABASE_URL}" >> .env
@@ -136,4 +137,5 @@ jobs:
           echo "PORT=4000" >> .env
           echo "NODE_ENV=development" >> .env
       - run: pnpm --filter @repo/database db:deploy
+      - run: pnpm run check:data-integrity
       - run: pwsh -File ./scripts/smoke-api.ps1 -SkipContainerCheck

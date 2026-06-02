@@ -1,27 +1,48 @@
 # Kế Hoạch Triển Khai LMS Platform
 
-Cập nhật lần cuối: 2026-06-01 (tối ưu docs dashboard)
+Cập nhật lần cuối: 2026-06-01 (broad mega batch planning)
 
 Tracker ngắn cho task/batch hiện tại: [CURRENT-WORK.md](CURRENT-WORK.md).
 
 ## Tóm Tắt Nhanh
 
-| Mảng                        | Tiến độ            | Trạng thái ngắn                                  |
-| --------------------------- | ------------------ | ------------------------------------------------ |
-| Foundation / CI / release   | `[########--] 80%` | Đã ổn nền tảng, tiếp tục giữ gate xanh           |
-| Tenant isolation / security | `[######----] 60%` | Cần thêm cross-tenant deny tests                 |
-| Student learning core       | `[#######---] 70%` | Dashboard, SRS, practice, exam đã có MVP         |
-| Admin operations            | `[######----] 60%` | Cần polish workflow và shared UI states          |
-| Super Portal operations     | `[#####-----] 50%` | Đã tách overview/tenants, cần real health deeper |
-| AI-native roadmap           | `[####------] 40%` | MVP tutor/roleplay có nền, cần governance/quota  |
+| Mảng                        | Tiến độ            | Trạng thái ngắn                                                   |
+| --------------------------- | ------------------ | ----------------------------------------------------------------- |
+| Foundation / CI / release   | `[#########-] 90%` | CI contract gate, API smoke integrity và portal smoke đã chặt hơn |
+| Tenant isolation / security | `[#######---] 70%` | Đã thêm deny tests; cần mở rộng tiếp theo domain                  |
+| Student learning core       | `[#######---] 70%` | Dashboard, SRS, practice, exam đã có MVP                          |
+| Admin operations            | `[#######---] 65%` | Đã chuẩn hóa một phần shared UI states                            |
+| Super Portal operations     | `[######----] 55%` | Ops pages dùng shared states, cần real health sâu                 |
+| AI-native roadmap           | `[####------] 40%` | MVP tutor/roleplay có nền, cần governance/quota                   |
+| Mobile student app          | `[----------] 0%`  | Đã có plan P11; chưa scaffold `apps/mobile-student`               |
 
-Hiện tại ưu tiên **Batch 16**:
+Hiện tại ưu tiên **Mega Batch 16**:
 
-1. Cross-tenant deny tests cho API rủi ro cao.
-2. Shared loading/empty/error states cho admin practice, exam, reports.
-3. Post-deploy smoke checks cho API readiness và portal login.
-4. Read-only integrity checks cho dữ liệu học tập/tenant.
-5. Pagination hoặc bounded rendering cho list lớn còn lại.
+1. Mở rộng cross-tenant deny tests từ practice/exam sang enrollment/cohort/reporting/SRS/media nếu còn risk.
+2. Tiếp tục shared loading/empty/error states cho admin, student và super portal flows trọng yếu.
+3. Giữ CI contract gate, API readiness smoke, portal smoke và package build dependencies xanh.
+4. Tiếp tục read-only integrity checks cho dữ liệu học tập/tenant, soft-delete consistency và bounded list audit.
+5. Polish admin authoring/reports và student dashboard/practice/exam/review để đủ daily-use.
+
+## Nguyên Tắc Chia Batch
+
+Batch trong roadmap là **mega batch lớn theo outcome**, không phải task nhỏ theo ngày. Mỗi batch phải có:
+
+- Một outcome sản phẩm/kỹ thuật rõ ràng.
+- Phạm vi đủ lớn để gom nhiều nhóm task liên quan thành một lát cắt có ý nghĩa.
+- Validation gate chung: contract checks, focused tests, lint/typecheck, build/smoke khi chạm runtime.
+- Handoff rõ: đã xong gì, còn rủi ro gì, batch kế tiếp nên bắt đầu từ đâu.
+
+Không ghi duration trong plan. Không tạo batch mới chỉ để chứa một fix nhỏ; fix nhỏ đi vào batch đang active hoặc backlog của mega batch kế tiếp.
+
+## Mega Batch Roadmap
+
+| Batch | Theme                                         | Outcome                                                                                                           |
+| ----- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| 16    | Production contracts + workflow readiness     | Tenant/security regressions khó tái xuất hiện; critical admin/student flows bounded, polished và smoke-tested     |
+| 17    | Operations, release + scale readiness         | Super Portal, release flow, observability, data integrity, list scale và reporting volume đủ dùng cho production  |
+| 18    | AI-native governance + adaptive learning      | AI workflows có role policy, quota, audit, prompt/version governance, provider reliability và adaptive sequencing |
+| 19    | Mobile Student App MVP + native learning loop | Scaffold Expo app, mobile auth adapter, dashboard/course/SRS/practice loop và offline-lite foundation             |
 
 ## Định hướng sản phẩm
 
@@ -409,6 +430,8 @@ Phụ thuộc cho: P4/P5 listening question, P8c audio scoring.
 
 ### P11. Mobile Student App
 
+Trạng thái: đã có plan kỹ thuật; chưa scaffold app. `apps/mobile-student` là app dự kiến, chưa tồn tại trong monorepo hiện tại.
+
 Mục tiêu: đưa trải nghiệm học viên lên ứng dụng di động native, ưu tiên retention, microlearning, SRS và audio practice; admin/super portal vẫn dùng web trong MVP.
 
 Hướng kỹ thuật:
@@ -420,13 +443,29 @@ Hướng kỹ thuật:
 - `@repo/api-client` cần mở rộng theo adapter: browser giữ cookie + CSRF hiện tại, mobile dùng base URL rõ ràng, bearer/session token native và tenant resolver native.
 - Tách logic shareable từ `web-student` khi có lợi: API hooks/query keys, parser, DTO/types và learning helpers; UI native viết riêng thay vì copy Tailwind/Radix web.
 
-MVP feature order:
+MVP tracks:
 
-1. M1: tenant selection, login/session restore, home dashboard, continue learning, course detail/activity timeline.
-2. M2: lesson viewer cho text/video/quiz/micro-card, progress completion, SRS review.
-3. M3: practice/exam attempt + review, audio prompt playback.
-4. M4: roleplay text trước; audio/microphone sau khi production pronunciation provider được chọn/cấu hình ổn.
-5. M5: push notifications nhắc học và offline-lite cache cho bài đã mở/SRS due.
+| Track                        | Scope                                                                                   | Acceptance                                                                                              |
+| ---------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| App foundation               | Scaffold Expo app, workspace scripts, env handling, navigation shell, theme tokens      | App builds in CI, runs locally, uses shared TypeScript config and no copied web UI primitives           |
+| Auth + tenant                | Tenant selection by slug/domain/org code, login/session restore, secure storage adapter | No browser cookie assumptions; tenant isolation and logout/session expiry are tested                    |
+| Home learning loop           | Dashboard, continue learning, course list/detail, activity timeline                     | Student can resume an enrolled course and see real progress from API contracts                          |
+| Lesson + SRS                 | Text/video/quiz/micro-card viewer, progress completion, SRS queue/review                | Student can open a lesson, persist progress, and complete a due SRS card                                |
+| Practice/exam                | Attempt, answer states, submit, review, audio prompt playback                           | Answers/explanations stay hidden before submit; enrollment/license gating is enforced                   |
+| Roleplay/media               | Roleplay text MVP, media playback, microphone capability behind provider readiness      | Text roleplay works first; audio path is guarded until production provider is configured                |
+| Offline-lite + notifications | Cache opened lessons/SRS due state, push notification foundation                        | Offline-lite never creates conflicting attempts; notification opt-in and deep link behavior are defined |
+| Mobile release ops           | Mobile smoke, app config, update policy, observability baseline                         | CI can run mobile checks; release notes include store/deep-link/env requirements                        |
+
+MVP user journey:
+
+1. Select tenant.
+2. Login and restore session.
+3. Open dashboard and continue an enrolled course.
+4. Complete a lesson or micro-card action.
+5. Review an SRS card.
+6. Submit a practice or exam attempt without seeing answers early.
+7. Open text roleplay scenario.
+8. Receive a learning reminder notification when enabled.
 
 Test/verification:
 
@@ -436,6 +475,13 @@ Test/verification:
 - Mobile smoke/E2E bằng Expo/Detox hoặc Playwright fallback trong CI: login, mở course được enroll, ghi progress lesson, làm SRS review, submit practice/exam không lộ đáp án trước submit.
 - Regression gate vẫn giữ `pnpm lint`, `pnpm run typecheck`, `pnpm test` và i18n sync.
 
+MVP non-goals:
+
+- Admin/super portal native apps.
+- Full offline attempt sync with conflict resolution.
+- Native audio roleplay scoring before production pronunciation provider is selected.
+- Store launch polish before the learning loop is validated end-to-end.
+
 Ngoài MVP:
 
 - Offline mode đầy đủ có conflict handling cho attempt/progress sync.
@@ -443,23 +489,16 @@ Ngoài MVP:
 - Roleplay audio và pronunciation flow native hoàn chỉnh.
 - Store release pipeline, deep link, app update policy và mobile observability.
 
-## Thứ tự làm tiếp đề xuất
+## Mapping Mega Batch Sang Product Areas
 
-Thứ tự ưu tiên dựa trên giá trị giáo dục, dependencies và hiện trạng:
+| Mega batch | Product areas                  | Ghi chú                                                                                                         |
+| ---------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| 16         | P0/P1/P2/P4/P5/P6/P9           | Contract hardening, tenant denial tests, smoke checks, shared UI states, critical admin/student workflow polish |
+| 17         | P0/P6/P10 + Super Portal       | Vận hành, release, observability, tenant health, real metrics, data integrity, bounded lists, reporting volume  |
+| 18         | P8 + AI-native roadmap         | AI governance, quota, audit, prompt/version tracking, provider reliability, adaptive sequencing                 |
+| 19         | P11 + shared client foundation | Mobile Student App MVP: scaffold, mobile auth adapter, tenant selection, dashboard/course/SRS/practice loop     |
 
-1. **Audit log + bulk feedback hoàn chỉnh** (P1 close-out) ✅ DONE: bulk enroll/unenroll có audit log + skipped/duplicate count surfaced lên admin UI.
-2. **Skill mastery model + skill tags filter** (P9 phần đầu, prerequisite cho mọi adaptive feature) ✅ DONE — Batch P9.1: `Skill`, `SkillMastery`, EWMA hook, admin/student UI, practice filter.
-3. **SRS Review Queue MVP** (P9 phần lõi) ✅ DONE: Thẻ từ practice answer, daily review trên dashboard, session ôn tập, "next best item" recommendation.
-4. **AI In-Context Tutor** (P8a) ✅ DONE: Nhúng "Giải thích vì sao sai" vào practice/exam review, dùng usage quota và Gemini API.
-5. **Media upload pipeline** (P10) ✅ DONE: Hạ tầng lưu trữ S3 Storage client và background job queue (BullMQ + Redis) hoàn thành.
-6. **Listening audio prompt** (P4/P5 close-out) ✅ DONE: Practice/exam questions có audio attachment, admin upload, student player và SRS playback.
-7. **Time-series reporting + cohort drill-down** (P6 close-out) ✅ DONE: cohort filter xuyên rollup/detail/trend/CSV, trend window 7/30/90 ngày.
-8. **Student/Admin report V2 polish** ✅ DONE: risk flags, risk snapshots/rules và cohort comparison UI/API.
-9. **AI-Generated Practice** (P8b) ✅ DONE: job/draft/review workflow và admin review workspace.
-10. **AI Conversation Roleplay** (P8c) ✅ DONE MVP: course scenarios, student scenario flow, audio message endpoint và pronunciation queue/provider abstraction.
-11. **Production pronunciation provider selection/config**: chốt provider thật cho P8c audio scoring trước khi mở roleplay audio sâu hơn.
-12. **Reporting V2 export polish + adaptive sequencing**: export risk/cohort nâng cao nếu product cần, và dùng risk/mastery/SRS signals để đề xuất lộ trình tốt hơn.
-13. **Mobile Student App (P11)**: scaffold Expo native sau P10, ưu tiên student MVP: dashboard, course activity, lesson viewer, SRS, practice/exam, roleplay text, push notification và offline-lite.
+Backlog nhỏ hoặc bugfix lẻ phải đi vào mega batch liên quan, không tạo batch riêng.
 
 ## Definition Of Done Cấp Dự Án
 
