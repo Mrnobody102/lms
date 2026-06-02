@@ -269,6 +269,48 @@ describe('SrsService.getQueue', () => {
 
     expect(queue[0].question).toBeNull();
   });
+
+  it('filters custom review cards by deck and returns card metadata', async () => {
+    const prisma = makePrisma();
+    prisma.reviewCard.findMany.mockResolvedValue([
+      {
+        id: 'card-1',
+        sourceType: ReviewCardSource.CUSTOM,
+        sourceId: 'custom-1',
+        skillCodes: ['hanzi'],
+        dueAt: new Date('2026-05-19T11:00:00.000Z'),
+        reps: 0,
+        lapses: 0,
+        easeFactor: 2.5,
+        customContent: {
+          front: '月',
+          back: 'moon',
+          deck: 'HSK 1 radicals',
+          category: 'vocabulary',
+          tags: ['hanzi'],
+        },
+      },
+    ]);
+    const service = new SrsService(prisma as never);
+
+    const queue = await service.getQueue('tenant-1', 'user-1', { deck: 'HSK 1 radicals' });
+
+    expect(queue[0].question).toEqual(
+      expect.objectContaining({
+        prompt: '月',
+        correctAnswer: 'moon',
+        customContent: expect.objectContaining({ deck: 'HSK 1 radicals' }),
+      }),
+    );
+    expect(prisma.reviewCard.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          sourceType: ReviewCardSource.CUSTOM,
+          customContent: { path: ['deck'], equals: 'HSK 1 radicals' },
+        }),
+      }),
+    );
+  });
 });
 
 describe('SrsService.submitReview', () => {
@@ -350,6 +392,43 @@ describe('SrsService Custom Cards', () => {
         sourceType: ReviewCardSource.CUSTOM,
         skillCodes: ['V'],
         customContent: { front: 'A', back: 'B' },
+      }),
+    });
+  });
+
+  it('stores custom card organization metadata', async () => {
+    const prisma = makePrisma();
+    const service = new SrsService(prisma as never);
+
+    await service.createCustomCard('tenant-1', 'user-1', {
+      customContent: {
+        front: ' 달 ',
+        back: ' Moon ',
+        deck: ' Korean basics ',
+        category: 'vocabulary',
+        courseId: 'course-1',
+        courseTitle: 'Korean A1',
+        unitId: 'unit-1',
+        unitTitle: 'Nouns',
+        tags: [' noun ', 'moon', 'noun'],
+      },
+      skillCodes: ['KR_VOCAB'],
+    });
+
+    expect(prisma.reviewCard.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        skillCodes: ['KR_VOCAB'],
+        customContent: {
+          front: '달',
+          back: 'Moon',
+          deck: 'Korean basics',
+          category: 'vocabulary',
+          courseId: 'course-1',
+          courseTitle: 'Korean A1',
+          unitId: 'unit-1',
+          unitTitle: 'Nouns',
+          tags: ['noun', 'moon'],
+        },
       }),
     });
   });

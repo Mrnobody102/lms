@@ -1,18 +1,24 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { srsApi, type CustomCardPayload, type ReviewCardGrade } from '../lib/srs-api';
+import {
+  srsApi,
+  type CustomCardPayload,
+  type ReviewCardGrade,
+  type ReviewQueueParams,
+} from '../lib/srs-api';
 
 export const srsKeys = {
   all: ['srs'] as const,
-  queue: (skill?: string) => [...srsKeys.all, 'queue', { skill }] as const,
+  queue: (params?: ReviewQueueParams) => [...srsKeys.all, 'queue', params ?? {}] as const,
   summary: () => [...srsKeys.all, 'summary'] as const,
   stats: (days: number) => [...srsKeys.all, 'stats', { days }] as const,
   customCards: () => [...srsKeys.all, 'customCards'] as const,
 };
 
-export function useReviewQueue(skill?: string, enabled = true) {
+export function useReviewQueue(params?: string | ReviewQueueParams, enabled = true) {
+  const queryParams = typeof params === 'string' ? { skill: params || undefined } : params;
   return useQuery({
-    queryKey: srsKeys.queue(skill),
-    queryFn: () => srsApi.getQueue({ skill }),
+    queryKey: srsKeys.queue(queryParams),
+    queryFn: () => srsApi.getQueue(queryParams),
     enabled,
   });
 }

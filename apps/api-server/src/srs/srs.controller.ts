@@ -31,11 +31,17 @@ export class SrsController {
     @Request() req: AuthenticatedRequest,
     @Query('limit') limit?: string,
     @Query('skill') skill?: string,
+    @Query('deck') deck?: string,
+    @Query('category') category?: string,
+    @Query('courseId') courseId?: string,
   ) {
     const parsedLimit = limit ? Number.parseInt(limit, 10) : undefined;
     return this.srs.getQueue(req.user.tenantId, req.user.id, {
       limit: Number.isFinite(parsedLimit) ? parsedLimit : undefined,
       skill: skill?.trim() || undefined,
+      deck: deck?.trim() || undefined,
+      category: category?.trim() || undefined,
+      courseId: courseId?.trim() || undefined,
     });
   }
 

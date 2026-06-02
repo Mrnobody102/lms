@@ -6,6 +6,8 @@ import {
   IsObject,
   IsOptional,
   IsString,
+  IsUUID,
+  MaxLength,
   ValidateNested,
 } from 'class-validator';
 
@@ -29,6 +31,46 @@ export class CustomCardContentDto {
   @IsOptional()
   @IsString()
   example?: string;
+
+  @ApiProperty({ description: 'Learning deck name used to organize custom cards', required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  deck?: string;
+
+  @ApiProperty({ description: 'Card category such as vocabulary or grammar', required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  category?: string;
+
+  @ApiProperty({ description: 'Linked course ID for organization', required: false })
+  @IsOptional()
+  @IsUUID()
+  courseId?: string;
+
+  @ApiProperty({ description: 'Linked course title snapshot for display', required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  courseTitle?: string;
+
+  @ApiProperty({ description: 'Linked course unit ID for organization', required: false })
+  @IsOptional()
+  @IsUUID()
+  unitId?: string;
+
+  @ApiProperty({ description: 'Linked course unit title snapshot for display', required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  unitTitle?: string;
+
+  @ApiProperty({ description: 'Searchable card tags', required: false, type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[];
 }
 
 export class CreateCustomCardDto {

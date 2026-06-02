@@ -12,6 +12,7 @@ export interface QueueQuestionPayload {
   explanation: string | null;
   audioMediaAsset: { id: string; url: string | null } | null;
   audioReplayLimit: number | null;
+  customContent?: CustomCardContent;
 }
 
 export interface ReviewQueueItem {
@@ -36,6 +37,13 @@ export interface CustomCardContent {
   back?: string;
   phonetics?: string;
   example?: string;
+  deck?: string;
+  category?: string;
+  courseId?: string;
+  courseTitle?: string;
+  unitId?: string;
+  unitTitle?: string;
+  tags?: string[];
 }
 
 export interface CustomCardPayload {
@@ -61,8 +69,16 @@ export interface ReviewStat {
   count: number;
 }
 
+export interface ReviewQueueParams {
+  limit?: number;
+  skill?: string;
+  deck?: string;
+  category?: string;
+  courseId?: string;
+}
+
 export const srsApi = {
-  getQueue: async (params?: { limit?: number; skill?: string }) => {
+  getQueue: async (params?: ReviewQueueParams) => {
     const response = await api.get<ReviewQueueItem[]>('/srs/queue', { params });
     return response.data;
   },

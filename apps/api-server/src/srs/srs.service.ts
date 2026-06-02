@@ -30,6 +30,7 @@ export interface QueueQuestionPayload {
   explanation: string | null;
   audioMediaAsset: { id: string; url: string | null } | null;
   audioReplayLimit: number | null;
+  customContent?: CustomCardContent;
 }
 
 export interface QueueItem {
@@ -55,6 +56,13 @@ export interface CustomCardContent {
   phonetics?: string;
   pinyin?: string;
   example?: string;
+  deck?: string;
+  category?: string;
+  courseId?: string;
+  courseTitle?: string;
+  unitId?: string;
+  unitTitle?: string;
+  tags?: string[];
 }
 
 export interface CustomCardInput {
@@ -182,9 +190,16 @@ export class SrsService {
   async getQueue(
     tenantId: string,
     userId: string,
-    options: { limit?: number; skill?: string } = {},
+    options: {
+      limit?: number;
+      skill?: string;
+      deck?: string;
+      category?: string;
+      courseId?: string;
+    } = {},
   ): Promise<QueueItem[]> {
     const limit = Math.min(Math.max(options.limit ?? 20, 1), 100);
+    const customContentFilter = this.buildCustomContentFilter(options);
     const cards = await this.prisma.reviewCard.findMany({
       where: {
         tenantId,
@@ -192,6 +207,7 @@ export class SrsService {
         isSuspended: false,
         dueAt: { lte: new Date() },
         ...(options.skill ? { skillCodes: { has: options.skill } } : {}),
+        ...customContentFilter,
       },
       orderBy: { dueAt: 'asc' },
       take: limit,
@@ -262,16 +278,17 @@ export class SrsService {
       let question: QueueQuestionPayload | null = null;
 
       if (card.sourceType === ReviewCardSource.CUSTOM && card.customContent) {
-        const customContent = card.customContent as Record<string, string>;
+        const customContent = card.customContent as unknown as CustomCardContent;
         question = {
           id: card.sourceId,
           prompt: customContent.front || '',
           type: 'micro_card',
           options: null,
-          correctAnswer: null,
-          explanation: customContent.back || '',
+          correctAnswer: customContent.back || '',
+          explanation: customContent.example || customContent.back || '',
           audioMediaAsset: null,
           audioReplayLimit: null,
+          customContent,
         };
       } else if (source) {
         question = {
@@ -519,14 +536,67 @@ export class SrsService {
 
   private toCustomCardJson(content: CustomCardContent): Prisma.InputJsonObject {
     const json: Record<string, string> = {
-      front: content.front,
+      front: content.front.trim(),
     };
 
-    if (content.back) json.back = content.back;
+    if (content.back?.trim()) json.back = content.back.trim();
     const phonetics = content.phonetics ?? content.pinyin;
-    if (phonetics) json.phonetics = phonetics;
-    if (content.example) json.example = content.example;
+    if (phonetics?.trim()) json.phonetics = phonetics.trim();
+    if (content.example?.trim()) json.example = content.example.trim();
+    if (content.deck?.trim()) json.deck = content.deck.trim();
+    if (content.category?.trim()) json.category = content.category.trim();
+    if (content.courseId?.trim()) json.courseId = content.courseId.trim();
+    if (content.courseTitle?.trim()) json.courseTitle = content.courseTitle.trim();
+    if (content.unitId?.trim()) json.unitId = content.unitId.trim();
+    if (content.unitTitle?.trim()) json.unitTitle = content.unitTitle.trim();
+
+    const tags = normalizeStringList(content.tags);
+    if (tags.length > 0) {
+      return { ...json, tags };
+    }
 
     return json;
   }
+
+  private buildCustomContentFilter(options: {
+    deck?: string;
+    category?: string;
+    courseId?: string;
+  }): Prisma.ReviewCardWhereInput {
+    if (options.deck?.trim()) {
+      return {
+        sourceType: ReviewCardSource.CUSTOM,
+        customContent: { path: ['deck'], equals: options.deck.trim() },
+      };
+    }
+
+    if (options.category?.trim()) {
+      return {
+        sourceType: ReviewCardSource.CUSTOM,
+        customContent: { path: ['category'], equals: options.category.trim() },
+      };
+    }
+
+    if (options.courseId?.trim()) {
+      return {
+        sourceType: ReviewCardSource.CUSTOM,
+        customContent: { path: ['courseId'], equals: options.courseId.trim() },
+      };
+    }
+
+    return {};
+  }
+}
+
+function normalizeStringList(values: string[] | undefined) {
+  if (!values) return [];
+
+  return Array.from(
+    new Set(
+      values
+        .map((value) => value.trim())
+        .filter((value) => value.length > 0)
+        .slice(0, 12),
+    ),
+  );
 }
