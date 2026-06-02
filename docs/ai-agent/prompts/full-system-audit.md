@@ -1,6 +1,3 @@
-# Full System Audit + Remediation - Copy Prompt
-
-````text
 You are performing a disciplined full-system audit, remediation, and verification pass for the LMS Platform codebase.
 
 Your job is not to skim for a few obvious issues. Treat this like a production release readiness audit that must be offline-verifiable from the source tree, tests, scripts, config, and local command output.
@@ -441,5 +438,3 @@ Table columns:
 - Do not change public API contracts or schema destructively without an explicit migration/compatibility plan and human approval.
 - Do not claim live readiness without live evidence.
 - Stop and ask when a fix requires product policy, credential access, real production/staging data, or destructive data actions.
-
-````

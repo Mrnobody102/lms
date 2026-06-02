@@ -208,6 +208,78 @@ describe('createAuthStore', () => {
     expect(localStorage.getItem('user')).toBe(JSON.stringify(authUser));
   });
 
+  it('recovers a completed password login when the login response times out', async () => {
+    const api = createApiMock();
+    vi.mocked(api.post).mockRejectedValue({
+      code: 'ECONNABORTED',
+      message: 'Request timed out. Please try again.',
+    });
+    vi.mocked(api.get).mockResolvedValue({ data: authUser });
+
+    const store = createAuthStore({ api, persistUser: true });
+
+    const result = await store.getState().login('student@example.com', 'password');
+
+    expect(result).toBe(true);
+    expect(api.get).toHaveBeenCalledWith('/users/me', {
+      skipUnauthorizedRedirect: true,
+      timeout: 4000,
+    });
+    expect(store.getState().isAuthenticated).toBe(true);
+    expect(store.getState().error).toBeNull();
+    expect(localStorage.getItem('user')).toBe(JSON.stringify(authUser));
+  });
+
+  it('recovers a completed Google login when the Google login response times out', async () => {
+    const api = createApiMock();
+    vi.mocked(api.post).mockRejectedValue({
+      code: 'ECONNABORTED',
+      message: 'timeout of 60000ms exceeded',
+    });
+    vi.mocked(api.get).mockResolvedValue({ data: authUser });
+
+    const store = createAuthStore({ api, persistUser: true });
+
+    const result = await store.getState().loginWithGoogle('google-credential', 'student');
+
+    expect(result).toBe(true);
+    expect(api.post).toHaveBeenCalledWith(
+      '/auth/google',
+      {
+        credential: 'google-credential',
+        portal: 'student',
+      },
+      {
+        skipUnauthorizedRedirect: true,
+      },
+    );
+    expect(api.get).toHaveBeenCalledWith('/users/me', {
+      skipUnauthorizedRedirect: true,
+      timeout: 4000,
+    });
+    expect(store.getState().isAuthenticated).toBe(true);
+    expect(store.getState().user).toEqual(authUser);
+    expect(store.getState().error).toBeNull();
+  });
+
+  it('keeps the login error when timeout recovery does not find a session', async () => {
+    const api = createApiMock();
+    vi.mocked(api.post).mockRejectedValue({
+      code: 'ECONNABORTED',
+      message: 'Request timed out. Please try again.',
+    });
+    vi.mocked(api.get).mockRejectedValue({ response: { status: 401 } });
+
+    const store = createAuthStore({ api, persistUser: true });
+
+    const result = await store.getState().loginWithGoogle('google-credential', 'student');
+
+    expect(result).toBe(false);
+    expect(store.getState().isAuthenticated).toBe(false);
+    expect(store.getState().user).toBeNull();
+    expect(store.getState().error).toBe('Request timed out. Please try again.');
+  });
+
   it('registers successfully without authenticating the browser session', async () => {
     const api = createApiMock();
     vi.mocked(api.post).mockResolvedValue({

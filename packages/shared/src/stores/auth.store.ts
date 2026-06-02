@@ -60,6 +60,15 @@ function getHttpStatus(err: unknown): number | undefined {
   return axiosErr.response?.status;
 }
 
+function isTimeoutError(err: unknown): boolean {
+  const candidate = err as {
+    code?: string;
+    message?: string;
+  };
+
+  return candidate.code === 'ECONNABORTED' || /timeout|timed out/i.test(candidate.message ?? '');
+}
+
 // Internal error patterns that should NOT be shown verbatim to end users
 const INTERNAL_ERROR_PATTERNS = [
   /tenant context/i,
@@ -137,6 +146,31 @@ export function createAuthStore(options: CreateAuthStoreOptions) {
   };
 
   return create<AuthState>((set) => {
+    const applyAuthenticatedUser = (user: AuthUser) => {
+      persistAuthUser(user);
+      set({
+        user,
+        isAuthenticated: true,
+        isInitialized: true,
+        loading: false,
+        error: null,
+      });
+    };
+
+    const recoverSessionAfterLoginTimeout = async () => {
+      try {
+        const response = await api.get<AuthUser>('/users/me', {
+          skipUnauthorizedRedirect: true,
+          timeout: checkAuthTimeoutMs,
+        });
+
+        applyAuthenticatedUser(response.data);
+        return true;
+      } catch {
+        return false;
+      }
+    };
+
     const resetAuthState = () => {
       clearStoredAuth();
       set({
@@ -235,16 +269,13 @@ export function createAuthStore(options: CreateAuthStoreOptions) {
           );
           const { user } = response.data;
 
-          persistAuthUser(user);
-
-          set({
-            user,
-            isAuthenticated: true,
-            isInitialized: true,
-            loading: false,
-          });
+          applyAuthenticatedUser(user);
           return true;
         } catch (err) {
+          if (isTimeoutError(err) && (await recoverSessionAfterLoginTimeout())) {
+            return true;
+          }
+
           set({ error: extractErrorMsg(err, loginError), loading: false });
           return false;
         }
@@ -265,16 +296,13 @@ export function createAuthStore(options: CreateAuthStoreOptions) {
           );
           const { user } = response.data;
 
-          persistAuthUser(user);
-
-          set({
-            user,
-            isAuthenticated: true,
-            isInitialized: true,
-            loading: false,
-          });
+          applyAuthenticatedUser(user);
           return true;
         } catch (err) {
+          if (isTimeoutError(err) && (await recoverSessionAfterLoginTimeout())) {
+            return true;
+          }
+
           set({ error: extractErrorMsg(err, loginError), loading: false });
           return false;
         }
