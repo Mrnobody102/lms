@@ -50,6 +50,15 @@
       "off": "Tắt",
       "contactSales": "Liên hệ",
       "planTenantCount": "{count} tenant đang dùng",
+      "table": {
+        "search": "Tìm trong bảng...",
+        "rowsPerPage": "Số dòng",
+        "totalRows": "Tổng {count} dòng",
+        "showingRows": "Hiển thị {start}-{end} / {total}",
+        "noResults": "Không có dòng nào khớp tìm kiếm.",
+        "previous": "Trang trước",
+        "next": "Trang sau"
+      },
       "status": {
         "paid": "Đã thanh toán",
         "pending": "Đang chờ",

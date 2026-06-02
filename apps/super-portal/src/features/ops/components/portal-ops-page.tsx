@@ -4,6 +4,8 @@ import {
   Activity,
   AlertTriangle,
   Bot,
+  ChevronLeft,
+  ChevronRight,
   CheckCircle2,
   CreditCard,
   Database,
@@ -12,6 +14,7 @@ import {
   HardDrive,
   ListChecks,
   LockKeyhole,
+  Search,
   ServerCog,
   ToggleLeft,
   ToggleRight,
@@ -23,6 +26,7 @@ import {
   LoadingState,
 } from '@repo/ui';
 import { useTranslations } from 'next-intl';
+import { useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Footer } from '@/components/layout/footer';
 import { Header } from '@/components/layout/header';
@@ -503,38 +507,139 @@ function DataTable({
   rows: string[][];
   title: string;
 }) {
+  const t = useTranslations('SuperPortal.ops');
+  const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredRows = useMemo(() => {
+    if (!normalizedQuery) return rows;
+    return rows.filter((row) => row.some((cell) => cell.toLowerCase().includes(normalizedQuery)));
+  }, [normalizedQuery, rows]);
+  const pageCount = Math.max(1, Math.ceil(filteredRows.length / pageSize));
+  const safePage = Math.min(page, pageCount);
+  const startIndex = (safePage - 1) * pageSize;
+  const visibleRows = filteredRows.slice(startIndex, startIndex + pageSize);
+  const showingStart = filteredRows.length === 0 ? 0 : startIndex + 1;
+  const showingEnd = Math.min(startIndex + pageSize, filteredRows.length);
+  const hasControls = rows.length > 10;
+
+  const updateQuery = (value: string) => {
+    setQuery(value);
+    setPage(1);
+  };
+
+  const updatePageSize = (value: string) => {
+    setPageSize(Number(value));
+    setPage(1);
+  };
+
   return (
     <section className="overflow-hidden rounded-xl border bg-card">
-      <div className="border-b p-4">
-        <h2 className="font-bold">{title}</h2>
+      <div className="flex flex-col gap-3 border-b p-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <h2 className="font-bold">{title}</h2>
+          {rows.length > 0 ? (
+            <p className="mt-1 text-xs text-muted-foreground">
+              {t('table.totalRows', { count: rows.length })}
+            </p>
+          ) : null}
+        </div>
+        {hasControls ? (
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <label className="relative block min-w-0 sm:w-72">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={query}
+                onChange={(event) => updateQuery(event.target.value)}
+                placeholder={t('table.search')}
+                aria-label={t('table.search')}
+                className="h-10 w-full rounded-md border bg-background pl-9 pr-3 text-sm outline-none ring-primary/20 placeholder:text-muted-foreground focus:ring-2"
+              />
+            </label>
+            <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+              {t('table.rowsPerPage')}
+              <select
+                value={pageSize}
+                onChange={(event) => updatePageSize(event.target.value)}
+                aria-label={t('table.rowsPerPage')}
+                className="h-10 rounded-md border bg-background px-2 text-sm text-foreground outline-none ring-primary/20 focus:ring-2"
+              >
+                {[10, 25, 50].map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        ) : null}
       </div>
       {rows.length === 0 ? (
         <div className="p-6 text-sm text-muted-foreground">{empty}</div>
+      ) : filteredRows.length === 0 ? (
+        <div className="p-6 text-sm text-muted-foreground">{t('table.noResults')}</div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
-              <tr>
-                {headers.map((header) => (
-                  <th key={header} className="whitespace-nowrap px-4 py-3 font-semibold">
-                    {header}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {rows.map((row, rowIndex) => (
-                <tr key={`${row[0]}-${rowIndex}`}>
-                  {row.map((cell, cellIndex) => (
-                    <td key={`${cell}-${cellIndex}`} className="whitespace-nowrap px-4 py-3">
-                      {cell}
-                    </td>
+        <>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+                <tr>
+                  {headers.map((header) => (
+                    <th key={header} className="whitespace-nowrap px-4 py-3 font-semibold">
+                      {header}
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y">
+                {visibleRows.map((row, rowIndex) => (
+                  <tr key={`${row[0]}-${startIndex + rowIndex}`}>
+                    {row.map((cell, cellIndex) => (
+                      <td key={`${cell}-${cellIndex}`} className="whitespace-nowrap px-4 py-3">
+                        {cell}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {hasControls ? (
+            <div className="flex flex-col gap-3 border-t px-4 py-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+              <span>
+                {t('table.showingRows', {
+                  start: showingStart,
+                  end: showingEnd,
+                  total: filteredRows.length,
+                })}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={safePage <= 1}
+                  onClick={() => setPage((current) => Math.max(1, current - 1))}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-md border bg-background text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-label={t('table.previous')}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <span className="min-w-16 text-center text-xs font-medium">
+                  {safePage} / {pageCount}
+                </span>
+                <button
+                  type="button"
+                  disabled={safePage >= pageCount}
+                  onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-md border bg-background text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-label={t('table.next')}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          ) : null}
+        </>
       )}
     </section>
   );
