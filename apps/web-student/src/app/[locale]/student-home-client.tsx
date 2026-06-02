@@ -22,7 +22,7 @@ export function StudentHomeClient({
     staleTime: 60 * 1000,
   });
 
-  if (initialData) {
+  if (initialData !== null && (!isInitialized || isAuthenticated)) {
     return <LearningDashboard data={initialData} />;
   }
 

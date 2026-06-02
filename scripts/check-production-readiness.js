@@ -205,8 +205,13 @@ requireIncludes('apps/api-server/src/admin-reports/dto/risk-report-query.dto.ts'
 ]);
 
 requireIncludes('apps/api-server/src/admin/admin-platform.service.ts', [
-  { label: 'platform audit log cap', value: 'take: 100' },
-  { label: 'platform billing global cap', value: 'take: tenantId ? 20 : 100' },
+  { label: 'platform service-level list cap', value: 'const MAX_PLATFORM_LIMIT = 100' },
+  { label: 'platform shared pagination helper', value: 'function getPagination' },
+  { label: 'platform paginated queries use bounded limit', value: 'take: limit' },
+]);
+
+requireIncludes('apps/api-server/src/admin/dto/platform-query.dto.ts', [
+  { label: 'platform list DTO limit cap', value: '@Max(100)' },
 ]);
 
 const tokenStoragePattern =

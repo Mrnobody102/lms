@@ -136,11 +136,15 @@ export function StudentNav({ showLinks = false }: StudentNavProps) {
               <NotificationBell />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <div className="flex items-center cursor-pointer rounded-lg hover:bg-muted p-1">
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                      <UserIcon className="w-4 h-4" />
+                  <button
+                    type="button"
+                    className="flex items-center rounded-lg p-1 transition-colors hover:bg-muted"
+                    aria-label={user?.fullName ?? t('nav.profile')}
+                  >
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <UserIcon className="h-4 w-4" />
                     </div>
-                  </div>
+                  </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-52">
                   {user?.fullName && (

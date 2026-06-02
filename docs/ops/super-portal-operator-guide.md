@@ -17,6 +17,8 @@ Super Portal is the platform operations console for `SUPER_ADMIN` users. It must
 - Audit logs: `GET /api/admin/platform/audit-logs`, backed by `AuditLog`.
 - Incidents: `GET /api/admin/platform/incidents`, derived from real audit failures and request metrics.
 
+Platform list endpoints accept `page`, `limit`, `tenantId`, `search`, and `status` where relevant. Non-billing lists return `{ items, meta }`; billing returns `{ summary, plans, subscriptions, invoices, payments }`, where each billing list is `{ items, meta }`. Backend services cap `limit` at 100 even if callers pass a larger value.
+
 ## Operating Rules
 
 - Use tenant detail before making changes: verify active status, domain, subscription, usage, and recent audit logs.
@@ -24,6 +26,7 @@ Super Portal is the platform operations console for `SUPER_ADMIN` users. It must
 - Subscription quota updates must be treated as production changes and verified in audit logs.
 - Domain status is only `configured` or `missing` until real DNS/SSL verification is implemented.
 - Incident rows are derived signals, not a full incident-management system.
+- Operator tables should use server-backed filters and pagination. Client-side filtering is only acceptable for small static status tables such as AI provider safety details.
 
 ## Release Checks
 

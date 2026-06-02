@@ -247,6 +247,28 @@ Base path: `/api/admin/reports`
 - `PUT /api/admin/tenants/:id` hỗ trợ cập nhật `name`, `slug`, `domain`, `settings`, `isActive`.
 - `DELETE /api/admin/tenants/:id` soft-deactivate tenant; `PATCH /api/admin/tenants/:id/restore` restore.
 
+### 9. Super Portal Platform Operations
+
+Base path: `/api/admin/platform`, yêu cầu role `SUPER_ADMIN`.
+
+- `GET /usage?page=&limit=&tenantId=&search=&status=`
+- `GET /domains?page=&limit=&tenantId=&search=&status=`
+- `GET /feature-flags?page=&limit=&tenantId=&search=&status=`
+- `GET /audit-logs?page=&limit=&tenantId=&search=&status=&action=&from=&to=`
+- `GET /incidents?page=&limit=&tenantId=&search=&status=`
+
+Các route list trên trả `{ items, meta: { page, limit, total, totalPages } }`; service cap `limit` tối đa 100.
+
+- `GET /billing?page=&limit=&tenantId=&search=&status=`
+  - Trả `{ summary, plans, subscriptions, invoices, payments }`.
+  - Mỗi list billing con là `{ items, meta }` để Super Portal không tải unbounded billing rows.
+- `GET /ai-status`
+  - Trạng thái provider AI đọc từ env backend, không trả secret.
+- `PATCH /feature-flags/:tenantId`
+  - Persist vào `tenant.settings.featureFlags` và ghi audit log.
+- `PATCH /subscriptions/:id`
+  - Cập nhật quota/status subscription và ghi audit log.
+
 ## Ghi chú cho Developer & AI Agent
 
 - **Pagination**: Mọi API trả về danh sách nên có object `meta` chứa `total`, `totalPages`.

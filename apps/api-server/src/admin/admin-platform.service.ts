@@ -1,10 +1,16 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma, SubscriptionStatus } from '@repo/database';
+import {
+  BillingPlanStatus,
+  InvoiceStatus,
+  PaymentStatus,
+  Prisma,
+  SubscriptionStatus,
+} from '@repo/database';
 import { MetricsService } from '../common/metrics/metrics.service';
 import { AuthenticatedUser } from '../common/interfaces/authenticated-request.interface';
 import { PrismaService } from '../common/services/prisma.service';
 import { AuditAction, AuditLogService, AuditStatus } from '../common/services/audit-log.service';
-import { PlatformAuditLogQueryDto, PlatformTenantQueryDto } from './dto/platform-query.dto';
+import { PlatformAuditLogQueryDto, PlatformListQueryDto } from './dto/platform-query.dto';
 import { UpdatePlatformFeatureFlagsDto } from './dto/update-platform-feature-flags.dto';
 import { UpdatePlatformSubscriptionDto } from './dto/update-platform-subscription.dto';
 
@@ -19,18 +25,80 @@ const FEATURE_FLAG_KEYS = [
 
 type FeatureFlagKey = (typeof FEATURE_FLAG_KEYS)[number];
 type FeatureFlags = Record<FeatureFlagKey, boolean>;
-type PlatformUsageTenant = { id: string; name: string; slug: string; isActive: boolean };
 type PlatformMediaUsage = {
   tenantId: string;
-  mediaAssets: number;
-  mediaStorageBytes: string;
+  _count: { _all: number };
+  _sum: { sizeBytes: number | null };
 };
 type PlatformLedgerUsage = {
   tenantId: string;
   type: string;
   unit: string;
-  quantity: string;
+  _sum: { quantity: bigint | number | null };
 };
+interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+interface PaginatedResult<T> {
+  items: T[];
+  meta: PaginationMeta;
+}
+
+interface PlatformIncident {
+  id: string;
+  severity: 'low' | 'medium' | 'high' | 'warning' | 'critical';
+  status: string;
+  title: string;
+  detail: string;
+  tenantId?: string | null;
+  createdAt: Date | string;
+}
+
+type PlatformTenantStatusMode = 'active' | 'domain';
+
+const DEFAULT_PLATFORM_PAGE = 1;
+const DEFAULT_PLATFORM_LIMIT = 20;
+const MAX_PLATFORM_LIMIT = 100;
+const INCIDENT_SIGNAL_LIMIT = 100;
+
+const TENANT_SELECT = {
+  id: true,
+  name: true,
+  slug: true,
+  isActive: true,
+} satisfies Prisma.TenantSelect;
+
+const TENANT_WITH_DOMAIN_SELECT = {
+  ...TENANT_SELECT,
+  domain: true,
+  settings: true,
+} satisfies Prisma.TenantSelect;
+
+const TENANT_WITH_SETTINGS_SELECT = {
+  ...TENANT_SELECT,
+  settings: true,
+} satisfies Prisma.TenantSelect;
+
+const BILLING_TENANT_SELECT = { id: true, name: true, slug: true } satisfies Prisma.TenantSelect;
+const BILLING_PLAN_SELECT = { id: true, name: true, code: true } satisfies Prisma.BillingPlanSelect;
+
+type UsageTenantRow = Prisma.TenantGetPayload<{ select: typeof TENANT_SELECT }>;
+type DomainTenantRow = Prisma.TenantGetPayload<{ select: typeof TENANT_WITH_DOMAIN_SELECT }>;
+type FeatureFlagTenantRow = Prisma.TenantGetPayload<{ select: typeof TENANT_WITH_SETTINGS_SELECT }>;
+
+type BillingPlanRow = Prisma.BillingPlanGetPayload<{
+  include: { tenant: { select: typeof BILLING_TENANT_SELECT } };
+}>;
+type BillingSubscriptionRow = Prisma.TenantSubscriptionGetPayload<{
+  include: {
+    tenant: { select: typeof BILLING_TENANT_SELECT };
+    plan: { select: typeof BILLING_PLAN_SELECT };
+  };
+}>;
 
 const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
   aiTutorEnabled: false,
@@ -152,52 +220,54 @@ export class AdminPlatformService {
     };
   }
 
-  async getUsage(query: PlatformTenantQueryDto) {
-    const tenantWhere = this.tenantWhere(query);
-    const tenants: PlatformUsageTenant[] = await this.prisma.tenant.findMany({
-      where: tenantWhere,
-      orderBy: { createdAt: 'desc' },
-      select: { id: true, name: true, slug: true, isActive: true },
-    });
-    const tenantFilterSql = query.tenantId
-      ? Prisma.sql`WHERE "tenantId" = ${query.tenantId}`
-      : Prisma.empty;
-    const mediaUsage = await this.prisma.$queryRaw<PlatformMediaUsage[]>`
-      SELECT
-        "tenantId",
-        count(*)::int AS "mediaAssets",
-        COALESCE(sum("sizeBytes"), 0)::text AS "mediaStorageBytes"
-      FROM "MediaAsset"
-      ${tenantFilterSql}
-      GROUP BY "tenantId"
-    `;
-    const ledgerUsage = await this.prisma.$queryRaw<PlatformLedgerUsage[]>`
-      SELECT
-        "tenantId",
-        "type",
-        "unit",
-        COALESCE(sum("quantity"), 0)::text AS "quantity"
-      FROM "UsageLedger"
-      ${tenantFilterSql}
-      GROUP BY "tenantId", "type", "unit"
-    `;
+  async getUsage(query: PlatformListQueryDto) {
+    const { page, limit, skip } = getPagination(query);
+    const tenantWhere = this.tenantWhere(query, 'active');
+    const [tenants, total] = await Promise.all([
+      this.prisma.tenant.findMany({
+        where: tenantWhere,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+        select: TENANT_SELECT,
+      }),
+      this.prisma.tenant.count({ where: tenantWhere }),
+    ]);
+    const tenantIds = tenants.map((tenant) => tenant.id);
+    const [mediaUsage, ledgerUsage] = await Promise.all([
+      tenantIds.length
+        ? this.prisma.mediaAsset.groupBy({
+            by: ['tenantId'],
+            where: { tenantId: { in: tenantIds } },
+            _count: { _all: true },
+            _sum: { sizeBytes: true },
+          })
+        : Promise.resolve([] as PlatformMediaUsage[]),
+      tenantIds.length
+        ? this.prisma.usageLedger.groupBy({
+            by: ['tenantId', 'type', 'unit'],
+            where: { tenantId: { in: tenantIds } },
+            _sum: { quantity: true },
+          })
+        : Promise.resolve([] as PlatformLedgerUsage[]),
+    ]);
     const requestMetrics = this.metrics.getSnapshot();
 
-    return tenants.map((tenant) => {
+    const items = tenants.map((tenant: UsageTenantRow) => {
       const media = mediaUsage.find((item) => item.tenantId === tenant.id);
       const ledger = ledgerUsage
         .filter((item) => item.tenantId === tenant.id)
         .map((item) => ({
           type: item.type,
           unit: item.unit,
-          quantity: item.quantity,
+          quantity: String(item._sum.quantity ?? 0),
         }));
       const traffic = requestMetrics.tenantTraffic.find((item) => item.tenantId === tenant.id);
 
       return {
         tenant,
-        mediaAssets: media?.mediaAssets ?? 0,
-        mediaStorageBytes: Number(media?.mediaStorageBytes ?? 0),
+        mediaAssets: media?._count._all ?? 0,
+        mediaStorageBytes: media?._sum.sizeBytes ?? 0,
         ledger,
         requestMetrics: traffic
           ? {
@@ -210,51 +280,98 @@ export class AdminPlatformService {
           : null,
       };
     });
+
+    return toPaginatedResult(items, total, page, limit);
   }
 
-  async getBilling(query: PlatformTenantQueryDto) {
+  async getBilling(query: PlatformListQueryDto) {
+    const { page, limit, skip } = getPagination(query);
     const tenantId = query.tenantId;
-    const where = tenantId ? { tenantId } : undefined;
-    const [plans, subscriptions, invoices, payments] = await Promise.all([
+    const normalizedSearch = normalizeOptionalString(query.search);
+    const normalizedStatus = normalizeStatus(query.status);
+    const planWhere = this.billingPlanWhere(tenantId, normalizedSearch, normalizedStatus);
+    const subscriptionWhere = this.billingSubscriptionWhere(
+      tenantId,
+      normalizedSearch,
+      normalizedStatus,
+    );
+    const invoiceWhere = this.billingInvoiceWhere(tenantId, normalizedSearch, normalizedStatus);
+    const paymentWhere = this.billingPaymentWhere(tenantId, normalizedSearch, normalizedStatus);
+
+    const [
+      plans,
+      plansTotal,
+      subscriptions,
+      subscriptionsTotal,
+      invoices,
+      invoicesTotal,
+      payments,
+      paymentsTotal,
+    ] = await Promise.all([
       this.prisma.billingPlan.findMany({
-        where,
+        where: planWhere,
         orderBy: [{ tenantId: 'asc' }, { createdAt: 'desc' }],
-        include: { tenant: { select: { id: true, name: true, slug: true } } },
+        skip,
+        take: limit,
+        include: { tenant: { select: BILLING_TENANT_SELECT } },
       }),
+      this.prisma.billingPlan.count({ where: planWhere }),
       this.prisma.tenantSubscription.findMany({
-        where,
+        where: subscriptionWhere,
         orderBy: { createdAt: 'desc' },
-        take: tenantId ? 20 : 100,
+        skip,
+        take: limit,
         include: {
-          tenant: { select: { id: true, name: true, slug: true } },
-          plan: { select: { id: true, name: true, code: true } },
+          tenant: { select: BILLING_TENANT_SELECT },
+          plan: { select: BILLING_PLAN_SELECT },
         },
       }),
+      this.prisma.tenantSubscription.count({ where: subscriptionWhere }),
       this.prisma.invoice.findMany({
-        where,
+        where: invoiceWhere,
         orderBy: { createdAt: 'desc' },
-        take: tenantId ? 20 : 100,
-        include: { tenant: { select: { id: true, name: true, slug: true } } },
+        skip,
+        take: limit,
+        include: { tenant: { select: BILLING_TENANT_SELECT } },
       }),
+      this.prisma.invoice.count({ where: invoiceWhere }),
       this.prisma.payment.findMany({
-        where,
+        where: paymentWhere,
         orderBy: { createdAt: 'desc' },
-        take: tenantId ? 20 : 100,
-        include: { tenant: { select: { id: true, name: true, slug: true } } },
+        skip,
+        take: limit,
+        include: { tenant: { select: BILLING_TENANT_SELECT } },
       }),
+      this.prisma.payment.count({ where: paymentWhere }),
     ]);
 
     return {
-      plans: plans.map((plan) => ({
-        ...plan,
-        storageQuotaBytes: plan.storageQuotaBytes.toString(),
-      })),
-      subscriptions: subscriptions.map((subscription) => ({
-        ...subscription,
-        storageQuotaBytes: subscription.storageQuotaBytes.toString(),
-      })),
-      invoices,
-      payments,
+      summary: {
+        plans: plansTotal,
+        subscriptions: subscriptionsTotal,
+        invoices: invoicesTotal,
+        payments: paymentsTotal,
+      },
+      plans: toPaginatedResult(
+        plans.map((plan: BillingPlanRow) => ({
+          ...plan,
+          storageQuotaBytes: plan.storageQuotaBytes.toString(),
+        })),
+        plansTotal,
+        page,
+        limit,
+      ),
+      subscriptions: toPaginatedResult(
+        subscriptions.map((subscription: BillingSubscriptionRow) => ({
+          ...subscription,
+          storageQuotaBytes: subscription.storageQuotaBytes.toString(),
+        })),
+        subscriptionsTotal,
+        page,
+        limit,
+      ),
+      invoices: toPaginatedResult(invoices, invoicesTotal, page, limit),
+      payments: toPaginatedResult(payments, paymentsTotal, page, limit),
     };
   }
 
@@ -304,21 +421,21 @@ export class AdminPlatformService {
     };
   }
 
-  async getDomains(query: PlatformTenantQueryDto) {
-    const tenants = await this.prisma.tenant.findMany({
-      where: this.tenantWhere(query),
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        domain: true,
-        settings: true,
-        isActive: true,
-      },
-    });
+  async getDomains(query: PlatformListQueryDto) {
+    const { page, limit, skip } = getPagination(query);
+    const tenantWhere = this.tenantWhere(query, 'domain');
+    const [tenants, total] = await Promise.all([
+      this.prisma.tenant.findMany({
+        where: tenantWhere,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+        select: TENANT_WITH_DOMAIN_SELECT,
+      }),
+      this.prisma.tenant.count({ where: tenantWhere }),
+    ]);
 
-    return tenants.map((tenant) => {
+    const items = tenants.map((tenant: DomainTenantRow) => {
       const settings = toRecord(tenant.settings);
       const domainSettings = toRecord(settings.domain);
       return {
@@ -328,19 +445,30 @@ export class AdminPlatformService {
         metadata: domainSettings,
       };
     });
+
+    return toPaginatedResult(items, total, page, limit);
   }
 
-  async getFeatureFlags(query: PlatformTenantQueryDto) {
-    const tenants = await this.prisma.tenant.findMany({
-      where: this.tenantWhere(query),
-      orderBy: { createdAt: 'desc' },
-      select: { id: true, name: true, slug: true, isActive: true, settings: true },
-    });
+  async getFeatureFlags(query: PlatformListQueryDto) {
+    const { page, limit, skip } = getPagination(query);
+    const tenantWhere = this.tenantWhere(query, 'active');
+    const [tenants, total] = await Promise.all([
+      this.prisma.tenant.findMany({
+        where: tenantWhere,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+        select: TENANT_WITH_SETTINGS_SELECT,
+      }),
+      this.prisma.tenant.count({ where: tenantWhere }),
+    ]);
 
-    return tenants.map((tenant) => ({
+    const items = tenants.map((tenant: FeatureFlagTenantRow) => ({
       tenant: omitSettings(tenant),
       featureFlags: readFeatureFlags(toRecord(tenant.settings)),
     }));
+
+    return toPaginatedResult(items, total, page, limit);
   }
 
   async updateFeatureFlags(
@@ -385,33 +513,38 @@ export class AdminPlatformService {
   }
 
   async getAuditLogs(query: PlatformAuditLogQueryDto) {
+    const { page, limit, skip } = getPagination(query);
     const createdAt: Prisma.DateTimeFilter = {};
     if (query.from) createdAt.gte = new Date(query.from);
     if (query.to) createdAt.lte = new Date(query.to);
+    const where = this.auditLogWhere(query, createdAt);
 
-    return this.prisma.auditLog.findMany({
-      where: {
-        ...(query.tenantId ? { tenantId: query.tenantId } : {}),
-        ...(query.action ? { action: query.action } : {}),
-        ...(query.from || query.to ? { createdAt } : {}),
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 100,
-      include: {
-        user: { select: { id: true, email: true, fullName: true, role: true } },
-      },
-    });
+    const [items, total] = await Promise.all([
+      this.prisma.auditLog.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+        include: {
+          user: { select: { id: true, email: true, fullName: true, role: true } },
+        },
+      }),
+      this.prisma.auditLog.count({ where }),
+    ]);
+
+    return toPaginatedResult(items, total, page, limit);
   }
 
-  async getIncidents() {
+  async getIncidents(query: PlatformListQueryDto = {}) {
+    const { page, limit, skip } = getPagination(query);
     const telemetry = this.metrics.getSnapshot();
     const alerts = await this.getRuntimeAlerts();
     const metricIncidents = telemetry.tenantTraffic
       .filter((item) => item.errorCount > 0)
-      .slice(0, 20)
+      .slice(0, INCIDENT_SIGNAL_LIMIT)
       .map((item) => ({
         id: `tenant-errors-${item.tenantId}`,
-        severity: item.errorCount > 10 ? 'high' : 'medium',
+        severity: item.errorCount > 10 ? ('high' as const) : ('medium' as const),
         status: 'monitoring',
         title: 'Tenant API errors detected',
         detail: `${item.tenantId} has ${item.errorCount} errors in the in-memory metrics window.`,
@@ -419,7 +552,8 @@ export class AdminPlatformService {
         createdAt: item.lastSeenAt ?? telemetry.generatedAt,
       }));
 
-    return [...alerts, ...metricIncidents];
+    const filtered = filterIncidents([...alerts, ...metricIncidents], query);
+    return toPaginatedResult(filtered.slice(skip, skip + limit), filtered.length, page, limit);
   }
 
   getAiStatus() {
@@ -439,7 +573,7 @@ export class AdminPlatformService {
     };
   }
 
-  private async getRuntimeAlerts() {
+  private async getRuntimeAlerts(): Promise<PlatformIncident[]> {
     const recentFailures = await this.prisma.auditLog.findMany({
       where: {
         status: AuditStatus.FAILURE,
@@ -448,7 +582,7 @@ export class AdminPlatformService {
         },
       },
       orderBy: { createdAt: 'desc' },
-      take: 20,
+      take: INCIDENT_SIGNAL_LIMIT,
     });
 
     return recentFailures.map((log) => ({
@@ -462,9 +596,211 @@ export class AdminPlatformService {
     }));
   }
 
-  private tenantWhere(query: PlatformTenantQueryDto): Prisma.TenantWhereInput {
-    return query.tenantId ? { id: query.tenantId } : {};
+  private tenantWhere(
+    query: PlatformListQueryDto,
+    statusMode: PlatformTenantStatusMode,
+  ): Prisma.TenantWhereInput {
+    const and: Prisma.TenantWhereInput[] = [];
+    if (query.tenantId) {
+      and.push({ id: query.tenantId });
+    }
+
+    const search = normalizeOptionalString(query.search);
+    if (search) {
+      and.push({
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { slug: { contains: search, mode: 'insensitive' } },
+          { domain: { contains: search, mode: 'insensitive' } },
+        ],
+      });
+    }
+
+    const status = normalizeStatus(query.status);
+    if (statusMode === 'active') {
+      if (status === 'active') and.push({ isActive: true });
+      if (status === 'inactive') and.push({ isActive: false });
+    }
+    if (statusMode === 'domain') {
+      if (status === 'configured') and.push({ domain: { not: null } });
+      if (status === 'missing') and.push({ domain: null });
+      if (status === 'active') and.push({ isActive: true });
+      if (status === 'inactive') and.push({ isActive: false });
+    }
+
+    return and.length ? { AND: and } : {};
   }
+
+  private billingPlanWhere(
+    tenantId: string | undefined,
+    search: string | undefined,
+    status: string | undefined,
+  ): Prisma.BillingPlanWhereInput {
+    const and: Prisma.BillingPlanWhereInput[] = [];
+    if (tenantId) and.push({ tenantId });
+    if (search) {
+      and.push({
+        OR: [
+          { id: { contains: search, mode: 'insensitive' } },
+          { name: { contains: search, mode: 'insensitive' } },
+          { code: { contains: search, mode: 'insensitive' } },
+        ],
+      });
+    }
+    const enumStatus = toEnumValue(BillingPlanStatus, status);
+    if (enumStatus) and.push({ status: enumStatus });
+    return and.length ? { AND: and } : {};
+  }
+
+  private billingSubscriptionWhere(
+    tenantId: string | undefined,
+    search: string | undefined,
+    status: string | undefined,
+  ): Prisma.TenantSubscriptionWhereInput {
+    const and: Prisma.TenantSubscriptionWhereInput[] = [];
+    if (tenantId) and.push({ tenantId });
+    if (search) {
+      and.push({
+        OR: [
+          { id: { contains: search, mode: 'insensitive' } },
+          { plan: { name: { contains: search, mode: 'insensitive' } } },
+          { plan: { code: { contains: search, mode: 'insensitive' } } },
+        ],
+      });
+    }
+    const enumStatus = toEnumValue(SubscriptionStatus, status);
+    if (enumStatus) and.push({ status: enumStatus });
+    return and.length ? { AND: and } : {};
+  }
+
+  private billingInvoiceWhere(
+    tenantId: string | undefined,
+    search: string | undefined,
+    status: string | undefined,
+  ): Prisma.InvoiceWhereInput {
+    const and: Prisma.InvoiceWhereInput[] = [];
+    if (tenantId) and.push({ tenantId });
+    if (search) {
+      and.push({
+        OR: [
+          { id: { contains: search, mode: 'insensitive' } },
+          { number: { contains: search, mode: 'insensitive' } },
+          { currency: { contains: search, mode: 'insensitive' } },
+        ],
+      });
+    }
+    const enumStatus = toEnumValue(InvoiceStatus, status);
+    if (enumStatus) and.push({ status: enumStatus });
+    return and.length ? { AND: and } : {};
+  }
+
+  private billingPaymentWhere(
+    tenantId: string | undefined,
+    search: string | undefined,
+    status: string | undefined,
+  ): Prisma.PaymentWhereInput {
+    const and: Prisma.PaymentWhereInput[] = [];
+    if (tenantId) and.push({ tenantId });
+    if (search) {
+      and.push({
+        OR: [
+          { id: { contains: search, mode: 'insensitive' } },
+          { provider: { contains: search, mode: 'insensitive' } },
+          { currency: { contains: search, mode: 'insensitive' } },
+        ],
+      });
+    }
+    const enumStatus = toEnumValue(PaymentStatus, status);
+    if (enumStatus) and.push({ status: enumStatus });
+    return and.length ? { AND: and } : {};
+  }
+
+  private auditLogWhere(
+    query: PlatformAuditLogQueryDto,
+    createdAt: Prisma.DateTimeFilter,
+  ): Prisma.AuditLogWhereInput {
+    const and: Prisma.AuditLogWhereInput[] = [];
+    if (query.tenantId) and.push({ tenantId: query.tenantId });
+    if (query.action) and.push({ action: query.action });
+    if (query.from || query.to) and.push({ createdAt });
+    const status = normalizeStatus(query.status);
+    if (status) and.push({ status: status.toUpperCase() });
+    const search = normalizeOptionalString(query.search);
+    if (search) {
+      and.push({
+        OR: [
+          { tenantId: { contains: search, mode: 'insensitive' } },
+          { action: { contains: search, mode: 'insensitive' } },
+          { status: { contains: search, mode: 'insensitive' } },
+          { userId: { contains: search, mode: 'insensitive' } },
+          { user: { email: { contains: search, mode: 'insensitive' } } },
+          { user: { fullName: { contains: search, mode: 'insensitive' } } },
+        ],
+      });
+    }
+    return and.length ? { AND: and } : {};
+  }
+}
+
+function getPagination(query: Pick<PlatformListQueryDto, 'page' | 'limit'>) {
+  const page = Math.max(query.page ?? DEFAULT_PLATFORM_PAGE, 1);
+  const limit = Math.min(Math.max(query.limit ?? DEFAULT_PLATFORM_LIMIT, 1), MAX_PLATFORM_LIMIT);
+  return {
+    page,
+    limit,
+    skip: (page - 1) * limit,
+  };
+}
+
+function toPaginatedResult<T>(
+  items: T[],
+  total: number,
+  page: number,
+  limit: number,
+): PaginatedResult<T> {
+  return {
+    items,
+    meta: {
+      page,
+      limit,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
+    },
+  };
+}
+
+function normalizeStatus(value: string | undefined) {
+  const normalized = normalizeOptionalString(value)?.toLowerCase();
+  return normalized && normalized !== 'all' ? normalized : undefined;
+}
+
+function toEnumValue<T extends Record<string, string>>(
+  enumValues: T,
+  value: string | undefined,
+): T[keyof T] | undefined {
+  const normalized = value?.toUpperCase();
+  return (Object.values(enumValues) as Array<T[keyof T]>).find((item) => item === normalized);
+}
+
+function filterIncidents(incidents: PlatformIncident[], query: PlatformListQueryDto) {
+  const tenantId = normalizeOptionalString(query.tenantId);
+  const status = normalizeStatus(query.status);
+  const search = normalizeOptionalString(query.search)?.toLowerCase();
+
+  return incidents.filter((incident) => {
+    if (tenantId && incident.tenantId !== tenantId) return false;
+    if (status && incident.status.toLowerCase() !== status) return false;
+    if (!search) return true;
+    return [
+      incident.id,
+      incident.severity,
+      incident.status,
+      incident.title,
+      incident.detail,
+      incident.tenantId ?? '',
+      String(incident.createdAt),
+    ].some((value) => value.toLowerCase().includes(search));
+  });
 }
 
 function compactFeatureFlagUpdate(dto: UpdatePlatformFeatureFlagsDto): Partial<FeatureFlags> {

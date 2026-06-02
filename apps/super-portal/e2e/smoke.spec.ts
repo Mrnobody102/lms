@@ -53,6 +53,18 @@ const tenantRecords = [
   },
 ];
 
+function paginated<T>(items: T[], limit = 10) {
+  return {
+    items,
+    meta: {
+      page: 1,
+      limit,
+      total: items.length,
+      totalPages: 1,
+    },
+  };
+}
+
 async function installSuperPortalApiMocks(page: Page) {
   let currentUser: typeof superAdminUser | null = null;
   let featureFlags = {
@@ -156,27 +168,36 @@ async function installSuperPortalApiMocks(page: Page) {
     }
 
     if (path.endsWith('/api/admin/platform/usage') && method === 'GET') {
-      return json(200, [
-        {
-          tenant: { id: 'tenant-1', name: 'North Campus', slug: 'north-campus', isActive: true },
-          mediaAssets: 3,
-          mediaStorageBytes: 1048576,
-          ledger: [{ type: 'MEDIA_UPLOAD', unit: 'bytes', quantity: '1048576' }],
-          requestMetrics: {
-            count: 240,
-            errorCount: 1,
-            averageDurationMs: 40,
-            maxDurationMs: 120,
-            lastSeenAt: '2026-05-31T00:00:00.000Z',
+      return json(
+        200,
+        paginated([
+          {
+            tenant: {
+              id: 'tenant-1',
+              name: 'North Campus',
+              slug: 'north-campus',
+              isActive: true,
+            },
+            mediaAssets: 3,
+            mediaStorageBytes: 1048576,
+            ledger: [{ type: 'MEDIA_UPLOAD', unit: 'bytes', quantity: '1048576' }],
+            requestMetrics: {
+              count: 240,
+              errorCount: 1,
+              averageDurationMs: 40,
+              maxDurationMs: 120,
+              lastSeenAt: '2026-05-31T00:00:00.000Z',
+            },
           },
-        },
-      ]);
+        ]),
+      );
     }
 
     if (path.endsWith('/api/admin/platform/billing') && method === 'GET') {
       return json(200, {
-        plans: [],
-        subscriptions: [
+        summary: { plans: 0, subscriptions: 1, invoices: 0, payments: 0 },
+        plans: paginated([]),
+        subscriptions: paginated([
           {
             id: 'sub-1',
             tenantId: 'tenant-1',
@@ -186,30 +207,36 @@ async function installSuperPortalApiMocks(page: Page) {
             storageQuotaBytes: '1073741824',
             aiRequestQuota: 1000,
           },
-        ],
-        invoices: [],
-        payments: [],
+        ]),
+        invoices: paginated([]),
+        payments: paginated([]),
       });
     }
 
     if (path.endsWith('/api/admin/platform/domains') && method === 'GET') {
-      return json(200, [
-        {
-          tenant: { id: 'tenant-1', name: 'North Campus', slug: 'north-campus', isActive: true },
-          domain: 'north.example.com',
-          status: 'configured',
-          metadata: {},
-        },
-      ]);
+      return json(
+        200,
+        paginated([
+          {
+            tenant: { id: 'tenant-1', name: 'North Campus', slug: 'north-campus', isActive: true },
+            domain: 'north.example.com',
+            status: 'configured',
+            metadata: {},
+          },
+        ]),
+      );
     }
 
     if (path.endsWith('/api/admin/platform/feature-flags') && method === 'GET') {
-      return json(200, [
-        {
-          tenant: { id: 'tenant-1', name: 'North Campus', slug: 'north-campus', isActive: true },
-          featureFlags,
-        },
-      ]);
+      return json(
+        200,
+        paginated([
+          {
+            tenant: { id: 'tenant-1', name: 'North Campus', slug: 'north-campus', isActive: true },
+            featureFlags,
+          },
+        ]),
+      );
     }
 
     if (path.endsWith('/api/admin/platform/feature-flags/tenant-1') && method === 'PATCH') {
@@ -224,21 +251,24 @@ async function installSuperPortalApiMocks(page: Page) {
     }
 
     if (path.endsWith('/api/admin/platform/audit-logs') && method === 'GET') {
-      return json(200, [
-        {
-          id: 'audit-1',
-          tenantId: 'tenant-1',
-          action: 'PLATFORM_FEATURE_FLAGS_UPDATE',
-          status: 'SUCCESS',
-          userId: 'super-admin-1',
-          createdAt: '2026-05-31T00:00:00.000Z',
-          user: superAdminUser,
-        },
-      ]);
+      return json(
+        200,
+        paginated([
+          {
+            id: 'audit-1',
+            tenantId: 'tenant-1',
+            action: 'PLATFORM_FEATURE_FLAGS_UPDATE',
+            status: 'SUCCESS',
+            userId: 'super-admin-1',
+            createdAt: '2026-05-31T00:00:00.000Z',
+            user: superAdminUser,
+          },
+        ]),
+      );
     }
 
     if (path.endsWith('/api/admin/platform/incidents') && method === 'GET') {
-      return json(200, []);
+      return json(200, paginated([]));
     }
 
     if (path.endsWith('/api/admin/platform/ai-status') && method === 'GET') {
@@ -377,10 +407,10 @@ test('super admin can inspect real operations pages and toggle a feature flag', 
 
   await page.goto('/en/usage-storage');
   await expect(page.getByText('Usage by tenant')).toBeVisible();
-  await expect(page.getByText('North Campus')).toBeVisible();
+  await expect(page.getByRole('cell', { name: 'North Campus' })).toBeVisible();
 
   await page.goto('/en/feature-flags');
-  await expect(page.getByText('North Campus')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'North Campus' })).toBeVisible();
   await page.getByRole('button', { name: 'Roleplay' }).click();
   await expect(page.getByText('Feature flags updated.')).toBeVisible();
 

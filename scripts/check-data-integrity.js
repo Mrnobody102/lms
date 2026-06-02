@@ -504,6 +504,157 @@ const checks = [
     `,
   },
   {
+    name: 'media assets reference same-tenant owners',
+    countSql: `
+      SELECT COUNT(*)::int AS count
+      FROM "MediaAsset" asset
+      LEFT JOIN "User" owner
+        ON owner.id = asset."userId"
+       AND owner."tenantId" = asset."tenantId"
+      WHERE owner.id IS NULL
+    `,
+    sampleSql: `
+      SELECT asset.id
+      FROM "MediaAsset" asset
+      LEFT JOIN "User" owner
+        ON owner.id = asset."userId"
+       AND owner."tenantId" = asset."tenantId"
+      WHERE owner.id IS NULL
+      ORDER BY asset.id
+      LIMIT $1
+    `,
+  },
+  {
+    name: 'platform billing plans reference existing tenants',
+    countSql: `
+      SELECT COUNT(*)::int AS count
+      FROM "BillingPlan" plan
+      LEFT JOIN "Tenant" tenant
+        ON tenant.id = plan."tenantId"
+      WHERE tenant.id IS NULL
+    `,
+    sampleSql: `
+      SELECT plan.id
+      FROM "BillingPlan" plan
+      LEFT JOIN "Tenant" tenant
+        ON tenant.id = plan."tenantId"
+      WHERE tenant.id IS NULL
+      ORDER BY plan.id
+      LIMIT $1
+    `,
+  },
+  {
+    name: 'platform subscriptions reference same-tenant plans',
+    countSql: `
+      SELECT COUNT(*)::int AS count
+      FROM "TenantSubscription" subscription
+      LEFT JOIN "BillingPlan" plan
+        ON plan.id = subscription."planId"
+       AND plan."tenantId" = subscription."tenantId"
+      WHERE plan.id IS NULL
+    `,
+    sampleSql: `
+      SELECT subscription.id
+      FROM "TenantSubscription" subscription
+      LEFT JOIN "BillingPlan" plan
+        ON plan.id = subscription."planId"
+       AND plan."tenantId" = subscription."tenantId"
+      WHERE plan.id IS NULL
+      ORDER BY subscription.id
+      LIMIT $1
+    `,
+  },
+  {
+    name: 'platform invoices reference same-tenant subscriptions when set',
+    countSql: `
+      SELECT COUNT(*)::int AS count
+      FROM "Invoice" invoice
+      LEFT JOIN "TenantSubscription" subscription
+        ON subscription.id = invoice."subscriptionId"
+       AND subscription."tenantId" = invoice."tenantId"
+      WHERE invoice."subscriptionId" IS NOT NULL
+        AND subscription.id IS NULL
+    `,
+    sampleSql: `
+      SELECT invoice.id
+      FROM "Invoice" invoice
+      LEFT JOIN "TenantSubscription" subscription
+        ON subscription.id = invoice."subscriptionId"
+       AND subscription."tenantId" = invoice."tenantId"
+      WHERE invoice."subscriptionId" IS NOT NULL
+        AND subscription.id IS NULL
+      ORDER BY invoice.id
+      LIMIT $1
+    `,
+  },
+  {
+    name: 'platform payments reference same-tenant invoices when set',
+    countSql: `
+      SELECT COUNT(*)::int AS count
+      FROM "Payment" payment
+      LEFT JOIN "Invoice" invoice
+        ON invoice.id = payment."invoiceId"
+       AND invoice."tenantId" = payment."tenantId"
+      WHERE payment."invoiceId" IS NOT NULL
+        AND invoice.id IS NULL
+    `,
+    sampleSql: `
+      SELECT payment.id
+      FROM "Payment" payment
+      LEFT JOIN "Invoice" invoice
+        ON invoice.id = payment."invoiceId"
+       AND invoice."tenantId" = payment."tenantId"
+      WHERE payment."invoiceId" IS NOT NULL
+        AND invoice.id IS NULL
+      ORDER BY payment.id
+      LIMIT $1
+    `,
+  },
+  {
+    name: 'usage ledger rows reference existing tenants',
+    countSql: `
+      SELECT COUNT(*)::int AS count
+      FROM "UsageLedger" ledger
+      LEFT JOIN "Tenant" tenant
+        ON tenant.id = ledger."tenantId"
+      WHERE tenant.id IS NULL
+    `,
+    sampleSql: `
+      SELECT ledger.id
+      FROM "UsageLedger" ledger
+      LEFT JOIN "Tenant" tenant
+        ON tenant.id = ledger."tenantId"
+      WHERE tenant.id IS NULL
+      ORDER BY ledger.id
+      LIMIT $1
+    `,
+  },
+  {
+    name: 'audit logs reference existing tenants and actors',
+    countSql: `
+      SELECT COUNT(*)::int AS count
+      FROM "AuditLog" log
+      LEFT JOIN "Tenant" tenant
+        ON tenant.id = log."tenantId"
+      LEFT JOIN "User" actor
+        ON actor.id = log."userId"
+      WHERE tenant.id IS NULL
+        OR (log."userId" IS NOT NULL AND actor.id IS NULL)
+    `,
+    sampleSql: `
+      SELECT log.id
+      FROM "AuditLog" log
+      LEFT JOIN "Tenant" tenant
+        ON tenant.id = log."tenantId"
+      LEFT JOIN "User" actor
+        ON actor.id = log."userId"
+      WHERE tenant.id IS NULL
+        OR (log."userId" IS NOT NULL AND actor.id IS NULL)
+      ORDER BY log.id
+      LIMIT $1
+    `,
+  },
+  {
     name: 'student risk snapshots reference same-tenant users, courses, and cohorts',
     countSql: `
       SELECT COUNT(*)::int AS count

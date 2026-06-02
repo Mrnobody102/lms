@@ -9,6 +9,26 @@ export interface TenantRef {
   isActive?: boolean;
 }
 
+export interface PlatformPaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface PlatformPaginated<T> {
+  items: T[];
+  meta: PlatformPaginationMeta;
+}
+
+export interface PlatformListParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  tenantId?: string;
+  status?: string;
+}
+
 export interface PlatformUsageRow {
   tenant: TenantRef;
   mediaAssets: number;
@@ -24,7 +44,13 @@ export interface PlatformUsageRow {
 }
 
 export interface PlatformBillingData {
-  plans: Array<{
+  summary: {
+    plans: number;
+    subscriptions: number;
+    invoices: number;
+    payments: number;
+  };
+  plans: PlatformPaginated<{
     id: string;
     tenantId: string;
     tenant: TenantRef;
@@ -34,7 +60,7 @@ export interface PlatformBillingData {
     storageQuotaBytes: string;
     aiRequestQuota: number;
   }>;
-  subscriptions: Array<{
+  subscriptions: PlatformPaginated<{
     id: string;
     tenantId: string;
     tenant: TenantRef;
@@ -45,7 +71,7 @@ export interface PlatformBillingData {
     currentPeriodStart?: string | null;
     currentPeriodEnd?: string | null;
   }>;
-  invoices: Array<{
+  invoices: PlatformPaginated<{
     id: string;
     tenantId: string;
     tenant: TenantRef;
@@ -56,7 +82,7 @@ export interface PlatformBillingData {
     dueAt?: string | null;
     paidAt?: string | null;
   }>;
-  payments: Array<{
+  payments: PlatformPaginated<{
     id: string;
     tenantId: string;
     tenant: TenantRef;
@@ -151,11 +177,13 @@ export interface TenantOverview {
   recentAuditLogs: PlatformAuditLog[];
 }
 
-export function usePlatformUsage(enabled = true) {
+export function usePlatformUsage(params: PlatformListParams = {}, enabled = true) {
   return useQuery({
-    queryKey: ['platform', 'usage'],
+    queryKey: ['platform', 'usage', params],
     queryFn: async () => {
-      const response = await api.get<PlatformUsageRow[]>('/admin/platform/usage');
+      const response = await api.get<PlatformPaginated<PlatformUsageRow>>('/admin/platform/usage', {
+        params: cleanListParams(params),
+      });
       return response.data;
     },
     enabled,
@@ -163,11 +191,13 @@ export function usePlatformUsage(enabled = true) {
   });
 }
 
-export function usePlatformBilling(enabled = true) {
+export function usePlatformBilling(params: PlatformListParams = {}, enabled = true) {
   return useQuery({
-    queryKey: ['platform', 'billing'],
+    queryKey: ['platform', 'billing', params],
     queryFn: async () => {
-      const response = await api.get<PlatformBillingData>('/admin/platform/billing');
+      const response = await api.get<PlatformBillingData>('/admin/platform/billing', {
+        params: cleanListParams(params),
+      });
       return response.data;
     },
     enabled,
@@ -175,11 +205,14 @@ export function usePlatformBilling(enabled = true) {
   });
 }
 
-export function usePlatformDomains(enabled = true) {
+export function usePlatformDomains(params: PlatformListParams = {}, enabled = true) {
   return useQuery({
-    queryKey: ['platform', 'domains'],
+    queryKey: ['platform', 'domains', params],
     queryFn: async () => {
-      const response = await api.get<PlatformDomainRow[]>('/admin/platform/domains');
+      const response = await api.get<PlatformPaginated<PlatformDomainRow>>(
+        '/admin/platform/domains',
+        { params: cleanListParams(params) },
+      );
       return response.data;
     },
     enabled,
@@ -187,11 +220,14 @@ export function usePlatformDomains(enabled = true) {
   });
 }
 
-export function usePlatformFeatureFlags(enabled = true) {
+export function usePlatformFeatureFlags(params: PlatformListParams = {}, enabled = true) {
   return useQuery({
-    queryKey: ['platform', 'feature-flags'],
+    queryKey: ['platform', 'feature-flags', params],
     queryFn: async () => {
-      const response = await api.get<PlatformFeatureFlagRow[]>('/admin/platform/feature-flags');
+      const response = await api.get<PlatformPaginated<PlatformFeatureFlagRow>>(
+        '/admin/platform/feature-flags',
+        { params: cleanListParams(params) },
+      );
       return response.data;
     },
     enabled,
@@ -222,11 +258,14 @@ export function useUpdatePlatformFeatureFlags() {
   });
 }
 
-export function usePlatformAuditLogs(enabled = true) {
+export function usePlatformAuditLogs(params: PlatformListParams = {}, enabled = true) {
   return useQuery({
-    queryKey: ['platform', 'audit-logs'],
+    queryKey: ['platform', 'audit-logs', params],
     queryFn: async () => {
-      const response = await api.get<PlatformAuditLog[]>('/admin/platform/audit-logs');
+      const response = await api.get<PlatformPaginated<PlatformAuditLog>>(
+        '/admin/platform/audit-logs',
+        { params: cleanListParams(params) },
+      );
       return response.data;
     },
     enabled,
@@ -234,11 +273,14 @@ export function usePlatformAuditLogs(enabled = true) {
   });
 }
 
-export function usePlatformIncidents(enabled = true) {
+export function usePlatformIncidents(params: PlatformListParams = {}, enabled = true) {
   return useQuery({
-    queryKey: ['platform', 'incidents'],
+    queryKey: ['platform', 'incidents', params],
     queryFn: async () => {
-      const response = await api.get<PlatformIncident[]>('/admin/platform/incidents');
+      const response = await api.get<PlatformPaginated<PlatformIncident>>(
+        '/admin/platform/incidents',
+        { params: cleanListParams(params) },
+      );
       return response.data;
     },
     enabled,
@@ -256,6 +298,16 @@ export function usePlatformAiStatus(enabled = true) {
     enabled,
     staleTime: 60 * 1000,
   });
+}
+
+function cleanListParams(params: PlatformListParams) {
+  const cleaned: Record<string, string | number> = {};
+  if (params.page) cleaned.page = params.page;
+  if (params.limit) cleaned.limit = params.limit;
+  if (params.search?.trim()) cleaned.search = params.search.trim();
+  if (params.tenantId?.trim() && params.tenantId !== 'all') cleaned.tenantId = params.tenantId;
+  if (params.status?.trim() && params.status !== 'all') cleaned.status = params.status;
+  return cleaned;
 }
 
 export function useTenantOverview(id: string, enabled = true) {

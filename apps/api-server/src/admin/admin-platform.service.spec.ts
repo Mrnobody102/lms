@@ -1,11 +1,17 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { SubscriptionStatus } from '@repo/database';
+import {
+  BillingPlanStatus,
+  InvoiceStatus,
+  PaymentStatus,
+  SubscriptionStatus,
+} from '@repo/database';
 import { AuditAction, AuditStatus } from '../common/services/audit-log.service';
 import { AdminPlatformService } from './admin-platform.service';
 
 function createService(prismaOverrides: Record<string, unknown> = {}) {
   const prisma = {
     tenant: {
+      count: vi.fn(),
       findUnique: vi.fn(),
       findMany: vi.fn(),
       update: vi.fn(),
@@ -16,16 +22,17 @@ function createService(prismaOverrides: Record<string, unknown> = {}) {
     lesson: { count: vi.fn() },
     mediaAsset: { aggregate: vi.fn(), groupBy: vi.fn() },
     tenantSubscription: {
+      count: vi.fn(),
       findFirst: vi.fn(),
       findMany: vi.fn(),
       findUnique: vi.fn(),
       update: vi.fn(),
     },
-    billingPlan: { findMany: vi.fn() },
-    invoice: { findMany: vi.fn() },
-    payment: { findMany: vi.fn() },
+    billingPlan: { count: vi.fn(), findMany: vi.fn() },
+    invoice: { count: vi.fn(), findMany: vi.fn() },
+    payment: { count: vi.fn(), findMany: vi.fn() },
     usageLedger: { groupBy: vi.fn() },
-    auditLog: { findMany: vi.fn() },
+    auditLog: { count: vi.fn(), findMany: vi.fn() },
     ...prismaOverrides,
   };
   const metrics = {
@@ -189,6 +196,234 @@ describe('AdminPlatformService', () => {
         status: AuditStatus.SUCCESS,
       }),
     );
+  });
+
+  it('paginates usage rows, caps large limits, and filters tenant status/search', async () => {
+    const { metrics, prisma, service } = createService();
+    prisma.tenant.findMany.mockResolvedValue([
+      { id: 'tenant-1', name: 'North Campus', slug: 'north-campus', isActive: true },
+    ]);
+    prisma.tenant.count.mockResolvedValue(150);
+    prisma.mediaAsset.groupBy.mockResolvedValue([
+      { tenantId: 'tenant-1', _count: { _all: 2 }, _sum: { sizeBytes: 4096 } },
+    ]);
+    prisma.usageLedger.groupBy.mockResolvedValue([
+      {
+        tenantId: 'tenant-1',
+        type: 'MEDIA_UPLOAD',
+        unit: 'bytes',
+        _sum: { quantity: BigInt(4096) },
+      },
+    ]);
+    metrics.getSnapshot.mockReturnValue({
+      generatedAt: '2026-05-31T00:00:00.000Z',
+      tenantTraffic: [
+        {
+          tenantId: 'tenant-1',
+          count: 42,
+          errorCount: 1,
+          averageDurationMs: 35,
+          maxDurationMs: 120,
+          lastSeenAt: '2026-05-31T00:00:00.000Z',
+        },
+      ],
+      groups: {},
+      totalRequests: 42,
+      totalErrors: 1,
+      uptimeSeconds: 1,
+    });
+
+    const result = await service.getUsage({
+      limit: 10_000,
+      search: 'North',
+      status: 'active',
+    });
+
+    expect(result.meta).toEqual({ page: 1, limit: 100, total: 150, totalPages: 2 });
+    expect(result.items[0]).toEqual(
+      expect.objectContaining({
+        mediaAssets: 2,
+        mediaStorageBytes: 4096,
+        ledger: [{ type: 'MEDIA_UPLOAD', unit: 'bytes', quantity: '4096' }],
+      }),
+    );
+    expect(prisma.tenant.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        skip: 0,
+        take: 100,
+        where: expect.objectContaining({
+          AND: expect.arrayContaining([
+            { isActive: true },
+            expect.objectContaining({ OR: expect.any(Array) }),
+          ]),
+        }),
+      }),
+    );
+    expect(prisma.mediaAsset.groupBy).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { tenantId: { in: ['tenant-1'] } } }),
+    );
+  });
+
+  it('paginates billing lists and applies tenant, search, and status filters', async () => {
+    const { prisma, service } = createService();
+    prisma.billingPlan.findMany.mockResolvedValue([
+      {
+        id: 'plan-1',
+        tenantId: 'tenant-1',
+        tenant: { id: 'tenant-1', name: 'North Campus', slug: 'north-campus' },
+        name: 'Pro',
+        code: 'pro',
+        status: BillingPlanStatus.ACTIVE,
+        storageQuotaBytes: BigInt(2048),
+        aiRequestQuota: 1000,
+      },
+    ]);
+    prisma.billingPlan.count.mockResolvedValue(1);
+    prisma.tenantSubscription.findMany.mockResolvedValue([
+      {
+        id: 'sub-1',
+        tenantId: 'tenant-1',
+        tenant: { id: 'tenant-1', name: 'North Campus', slug: 'north-campus' },
+        plan: { id: 'plan-1', name: 'Pro', code: 'pro' },
+        status: SubscriptionStatus.ACTIVE,
+        storageQuotaBytes: BigInt(2048),
+        aiRequestQuota: 1000,
+      },
+    ]);
+    prisma.tenantSubscription.count.mockResolvedValue(1);
+    prisma.invoice.findMany.mockResolvedValue([
+      {
+        id: 'invoice-1',
+        tenantId: 'tenant-1',
+        tenant: { id: 'tenant-1', name: 'North Campus', slug: 'north-campus' },
+        number: 'INV-1',
+        status: InvoiceStatus.PAID,
+        currency: 'USD',
+        totalMinor: 1000,
+      },
+    ]);
+    prisma.invoice.count.mockResolvedValue(1);
+    prisma.payment.findMany.mockResolvedValue([
+      {
+        id: 'payment-1',
+        tenantId: 'tenant-1',
+        tenant: { id: 'tenant-1', name: 'North Campus', slug: 'north-campus' },
+        status: PaymentStatus.SUCCEEDED,
+        provider: 'manual',
+        currency: 'USD',
+        amountMinor: 1000,
+      },
+    ]);
+    prisma.payment.count.mockResolvedValue(1);
+
+    const result = await service.getBilling({
+      tenantId: 'tenant-1',
+      search: 'pro',
+      status: 'active',
+      limit: 10_000,
+    });
+
+    expect(result.summary).toEqual({ plans: 1, subscriptions: 1, invoices: 1, payments: 1 });
+    expect(result.plans.meta.limit).toBe(100);
+    expect(result.plans.items[0].storageQuotaBytes).toBe('2048');
+    expect(result.subscriptions.items[0].storageQuotaBytes).toBe('2048');
+    expect(prisma.tenantSubscription.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        skip: 0,
+        take: 100,
+        where: expect.objectContaining({
+          AND: expect.arrayContaining([
+            { tenantId: 'tenant-1' },
+            { status: SubscriptionStatus.ACTIVE },
+          ]),
+        }),
+      }),
+    );
+  });
+
+  it('paginates audit logs and applies action, status, date, and search filters', async () => {
+    const { prisma, service } = createService();
+    prisma.auditLog.findMany.mockResolvedValue([
+      {
+        id: 'audit-1',
+        tenantId: 'tenant-1',
+        action: AuditAction.PLATFORM_FEATURE_FLAGS_UPDATE,
+        status: AuditStatus.FAILURE,
+        userId: 'super-1',
+        createdAt: new Date('2026-06-01T00:00:00.000Z'),
+      },
+    ]);
+    prisma.auditLog.count.mockResolvedValue(201);
+
+    const result = await service.getAuditLogs({
+      action: AuditAction.PLATFORM_FEATURE_FLAGS_UPDATE,
+      from: '2026-06-01T00:00:00.000Z',
+      limit: 10_000,
+      page: 2,
+      search: 'super',
+      status: 'failure',
+    });
+
+    expect(result.meta).toEqual({ page: 2, limit: 100, total: 201, totalPages: 3 });
+    expect(prisma.auditLog.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        skip: 100,
+        take: 100,
+        where: expect.objectContaining({
+          AND: expect.arrayContaining([
+            { action: AuditAction.PLATFORM_FEATURE_FLAGS_UPDATE },
+            { status: AuditStatus.FAILURE },
+            expect.objectContaining({ createdAt: expect.any(Object) }),
+            expect.objectContaining({ OR: expect.any(Array) }),
+          ]),
+        }),
+      }),
+    );
+  });
+
+  it('paginates incidents from bounded real alert signals', async () => {
+    const { metrics, prisma, service } = createService();
+    prisma.auditLog.findMany.mockResolvedValue([
+      {
+        id: 'audit-1',
+        tenantId: 'tenant-2',
+        action: AuditAction.PLATFORM_SUBSCRIPTION_UPDATE,
+        createdAt: new Date('2026-06-01T00:00:00.000Z'),
+      },
+    ]);
+    metrics.getSnapshot.mockReturnValue({
+      generatedAt: '2026-06-01T00:00:00.000Z',
+      tenantTraffic: [
+        {
+          tenantId: 'tenant-1',
+          count: 50,
+          errorCount: 3,
+          averageDurationMs: 40,
+          maxDurationMs: 200,
+          lastSeenAt: '2026-06-01T00:00:00.000Z',
+        },
+      ],
+      groups: {},
+      totalRequests: 50,
+      totalErrors: 3,
+      uptimeSeconds: 1,
+    });
+
+    const result = await service.getIncidents({
+      limit: 1,
+      search: 'tenant-1',
+      status: 'monitoring',
+    });
+
+    expect(result.meta).toEqual({ page: 1, limit: 1, total: 1, totalPages: 1 });
+    expect(result.items[0]).toEqual(
+      expect.objectContaining({
+        id: 'tenant-errors-tenant-1',
+        tenantId: 'tenant-1',
+        status: 'monitoring',
+      }),
+    );
+    expect(prisma.auditLog.findMany).toHaveBeenCalledWith(expect.objectContaining({ take: 100 }));
   });
 
   it('reports env-managed Groq AI status without exposing the API key', () => {

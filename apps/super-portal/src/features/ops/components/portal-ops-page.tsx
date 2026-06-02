@@ -35,6 +35,8 @@ import { LoginModal } from '@/features/auth/components/login-modal';
 import { useAuthStore } from '@/features/auth/auth.store';
 import {
   PlatformFeatureFlagRow,
+  PlatformListParams,
+  PlatformPaginationMeta,
   PlatformUsageRow,
   usePlatformAuditLogs,
   usePlatformAiStatus,
@@ -46,6 +48,7 @@ import {
   useUpdatePlatformFeatureFlags,
 } from '@/hooks/use-platform';
 import { useSystemTelemetry } from '@/hooks/use-system-telemetry';
+import { useTenants } from '@/hooks/use-tenants';
 
 export type OpsPageKind =
   | 'plansBilling'
@@ -67,6 +70,27 @@ const PAGE_CONFIG: Record<OpsPageKind, { icon: LucideIcon; tone: string }> = {
   aiSettings: { icon: Bot, tone: 'bg-fuchsia-500/10 text-fuchsia-600' },
   infrastructure: { icon: ServerCog, tone: 'bg-indigo-500/10 text-indigo-600' },
 };
+
+const DEFAULT_OPS_PAGE_SIZE = 10;
+
+interface StatusOption {
+  value: string;
+  label: string;
+}
+
+interface OpsTableState {
+  limit: number;
+  page: number;
+  params: PlatformListParams;
+  search: string;
+  status: string;
+  tenantId: string;
+  setLimit: (value: number) => void;
+  setPage: (value: number) => void;
+  setSearch: (value: string) => void;
+  setStatus: (value: string) => void;
+  setTenantId: (value: string) => void;
+}
 
 export function PortalOpsPage({ kind }: { kind: OpsPageKind }) {
   const t = useTranslations('SuperPortal.ops');
@@ -141,54 +165,60 @@ function OpsContent({ kind }: { kind: OpsPageKind }) {
 
 function PlansBilling() {
   const t = useTranslations('SuperPortal.ops');
-  const { data, isLoading, isError } = usePlatformBilling();
+  const table = useOpsTableState();
+  const { data, isFetching, isLoading, isError } = usePlatformBilling(table.params);
 
   if (isLoading) return <LoadingGrid />;
   if (isError || !data) return <ErrorState />;
 
   return (
     <div className="space-y-6">
+      <OpsFilterBar state={table} statusOptions={billingStatusOptions(t)} isFetching={isFetching} />
       <div className="grid gap-4 md:grid-cols-3">
         <SummaryCard
           icon={CreditCard}
           label={t('plansBilling.plans')}
-          value={data.plans.length.toLocaleString()}
+          value={data.summary.plans.toLocaleString()}
           helper={t('plansBilling.realData')}
         />
         <SummaryCard
           icon={CheckCircle2}
           label={t('plansBilling.subscriptions')}
-          value={data.subscriptions.length.toLocaleString()}
+          value={data.summary.subscriptions.toLocaleString()}
           helper={t('plansBilling.realData')}
         />
         <SummaryCard
           icon={Database}
           label={t('plansBilling.invoices')}
-          value={data.invoices.length.toLocaleString()}
+          value={data.summary.invoices.toLocaleString()}
           helper={t('plansBilling.realData')}
         />
       </div>
-      <DataTable
+      <PaginatedDataTable
         title={t('plansBilling.subscriptionTitle')}
         empty={t('empty')}
         headers={[t('tenant'), t('plan'), t('statusLabel'), t('quota')]}
-        rows={data.subscriptions.map((subscription) => [
+        rows={data.subscriptions.items.map((subscription) => [
           subscription.tenant.name,
           subscription.plan.name,
           subscription.status,
           formatBytesString(subscription.storageQuotaBytes),
         ])}
+        meta={data.subscriptions.meta}
+        onPageChange={table.setPage}
       />
-      <DataTable
+      <PaginatedDataTable
         title={t('plansBilling.invoiceTitle')}
         empty={t('empty')}
         headers={[t('tenant'), t('invoice'), t('amount'), t('statusLabel')]}
-        rows={data.invoices.map((invoice) => [
+        rows={data.invoices.items.map((invoice) => [
           invoice.tenant.name,
           invoice.number,
           formatMoney(invoice.totalMinor, invoice.currency),
           invoice.status,
         ])}
+        meta={data.invoices.meta}
+        onPageChange={table.setPage}
       />
     </div>
   );
@@ -196,15 +226,18 @@ function PlansBilling() {
 
 function UsageStorage() {
   const t = useTranslations('SuperPortal.ops');
-  const { data = [], isLoading, isError } = usePlatformUsage();
-  const totalStorage = data.reduce((sum, row) => sum + row.mediaStorageBytes, 0);
-  const totalRequests = data.reduce((sum, row) => sum + (row.requestMetrics?.count ?? 0), 0);
+  const table = useOpsTableState();
+  const { data, isFetching, isLoading, isError } = usePlatformUsage(table.params);
+  const rows = data?.items ?? [];
+  const totalStorage = rows.reduce((sum, row) => sum + row.mediaStorageBytes, 0);
+  const totalRequests = rows.reduce((sum, row) => sum + (row.requestMetrics?.count ?? 0), 0);
 
   if (isLoading) return <LoadingGrid />;
-  if (isError) return <ErrorState />;
+  if (isError || !data) return <ErrorState />;
 
   return (
     <div className="space-y-6">
+      <OpsFilterBar state={table} statusOptions={tenantStatusOptions(t)} isFetching={isFetching} />
       <div className="grid gap-4 md:grid-cols-3">
         <SummaryCard
           icon={HardDrive}
@@ -221,49 +254,61 @@ function UsageStorage() {
         <SummaryCard
           icon={Database}
           label={t('usageStorage.tenants')}
-          value={data.length.toLocaleString()}
+          value={data.meta.total.toLocaleString()}
           helper={t('usageStorage.realData')}
         />
       </div>
-      <UsageRows rows={data} />
+      <UsageRows rows={rows} meta={data.meta} onPageChange={table.setPage} />
     </div>
   );
 }
 
 function Domains() {
   const t = useTranslations('SuperPortal.ops');
-  const { data = [], isLoading, isError } = usePlatformDomains();
+  const table = useOpsTableState();
+  const { data, isFetching, isLoading, isError } = usePlatformDomains(table.params);
 
   if (isLoading) return <LoadingGrid />;
-  if (isError) return <ErrorState />;
+  if (isError || !data) return <ErrorState />;
 
   return (
-    <DataTable
-      title={t('domains.tableTitle')}
-      empty={t('empty')}
-      headers={[t('tenant'), t('domain'), t('statusLabel')]}
-      rows={data.map((row) => [
-        row.tenant.name,
-        row.domain ?? t('notConfigured'),
-        row.status === 'configured' ? t('status.configured') : t('status.missing'),
-      ])}
-    />
+    <div className="space-y-6">
+      <OpsFilterBar state={table} statusOptions={domainStatusOptions(t)} isFetching={isFetching} />
+      <PaginatedDataTable
+        title={t('domains.tableTitle')}
+        empty={t('empty')}
+        headers={[t('tenant'), t('domain'), t('statusLabel')]}
+        rows={data.items.map((row) => [
+          row.tenant.name,
+          row.domain ?? t('notConfigured'),
+          row.status === 'configured' ? t('status.configured') : t('status.missing'),
+        ])}
+        meta={data.meta}
+        onPageChange={table.setPage}
+      />
+    </div>
   );
 }
 
 function FeatureFlags() {
-  const { data = [], isLoading, isError } = usePlatformFeatureFlags();
+  const t = useTranslations('SuperPortal.ops');
+  const table = useOpsTableState();
+  const { data, isFetching, isLoading, isError } = usePlatformFeatureFlags(table.params);
 
   if (isLoading) return <LoadingGrid />;
-  if (isError) return <ErrorState />;
+  if (isError || !data) return <ErrorState />;
 
   return (
-    <div className="grid gap-4">
-      {data.length === 0 ? (
-        <EmptyState />
-      ) : (
-        data.map((row) => <FeatureFlagCard key={row.tenant.id} row={row} />)
-      )}
+    <div className="space-y-6">
+      <OpsFilterBar state={table} statusOptions={tenantStatusOptions(t)} isFetching={isFetching} />
+      <div className="grid gap-4">
+        {data.items.length === 0 ? (
+          <EmptyState />
+        ) : (
+          data.items.map((row) => <FeatureFlagCard key={row.tenant.id} row={row} />)
+        )}
+      </div>
+      <PaginationFooter meta={data.meta} onPageChange={table.setPage} />
     </div>
   );
 }
@@ -313,47 +358,63 @@ function FeatureFlagCard({ row }: { row: PlatformFeatureFlagRow }) {
 
 function Incidents() {
   const t = useTranslations('SuperPortal.ops');
-  const { data = [], isLoading, isError } = usePlatformIncidents();
+  const table = useOpsTableState();
+  const { data, isFetching, isLoading, isError } = usePlatformIncidents(table.params);
 
   if (isLoading) return <LoadingGrid />;
-  if (isError) return <ErrorState />;
+  if (isError || !data) return <ErrorState />;
 
   return (
-    <DataTable
-      title={t('incidents.tableTitle')}
-      empty={t('incidents.empty')}
-      headers={[t('incident'), t('severityLabel'), t('statusLabel'), t('tenant'), t('time')]}
-      rows={data.map((incident) => [
-        incident.title,
-        incident.severity,
-        incident.status,
-        incident.tenantId ?? t('notConfigured'),
-        formatDate(incident.createdAt),
-      ])}
-    />
+    <div className="space-y-6">
+      <OpsFilterBar
+        state={table}
+        statusOptions={incidentStatusOptions(t)}
+        isFetching={isFetching}
+      />
+      <PaginatedDataTable
+        title={t('incidents.tableTitle')}
+        empty={t('incidents.empty')}
+        headers={[t('incident'), t('severityLabel'), t('statusLabel'), t('tenant'), t('time')]}
+        rows={data.items.map((incident) => [
+          incident.title,
+          incident.severity,
+          incident.status,
+          incident.tenantId ?? t('notConfigured'),
+          formatDate(incident.createdAt),
+        ])}
+        meta={data.meta}
+        onPageChange={table.setPage}
+      />
+    </div>
   );
 }
 
 function AuditLogs() {
   const t = useTranslations('SuperPortal.ops');
-  const { data = [], isLoading, isError } = usePlatformAuditLogs();
+  const table = useOpsTableState();
+  const { data, isFetching, isLoading, isError } = usePlatformAuditLogs(table.params);
 
   if (isLoading) return <LoadingGrid />;
-  if (isError) return <ErrorState />;
+  if (isError || !data) return <ErrorState />;
 
   return (
-    <DataTable
-      title={t('audit.tableTitle')}
-      empty={t('empty')}
-      headers={[t('tenant'), t('actor'), t('action'), t('statusLabel'), t('time')]}
-      rows={data.map((log) => [
-        log.tenantId,
-        log.user?.email ?? log.userId ?? t('systemActor'),
-        log.action,
-        log.status,
-        formatDate(log.createdAt),
-      ])}
-    />
+    <div className="space-y-6">
+      <OpsFilterBar state={table} statusOptions={auditStatusOptions(t)} isFetching={isFetching} />
+      <PaginatedDataTable
+        title={t('audit.tableTitle')}
+        empty={t('empty')}
+        headers={[t('tenant'), t('actor'), t('action'), t('statusLabel'), t('time')]}
+        rows={data.items.map((log) => [
+          log.tenantId,
+          log.user?.email ?? log.userId ?? t('systemActor'),
+          log.action,
+          log.status,
+          formatDate(log.createdAt),
+        ])}
+        meta={data.meta}
+        onPageChange={table.setPage}
+      />
+    </div>
   );
 }
 
@@ -455,11 +516,306 @@ function Infrastructure() {
   );
 }
 
-function UsageRows({ rows }: { rows: PlatformUsageRow[] }) {
+function useOpsTableState(): OpsTableState {
+  const [page, setPageState] = useState(1);
+  const [limit, setLimitState] = useState(DEFAULT_OPS_PAGE_SIZE);
+  const [search, setSearchState] = useState('');
+  const [tenantId, setTenantIdState] = useState('all');
+  const [status, setStatusState] = useState('all');
+  const params = useMemo<PlatformListParams>(
+    () => ({
+      page,
+      limit,
+      search: search.trim() || undefined,
+      tenantId: tenantId === 'all' ? undefined : tenantId,
+      status: status === 'all' ? undefined : status,
+    }),
+    [limit, page, search, status, tenantId],
+  );
+
+  return {
+    limit,
+    page,
+    params,
+    search,
+    status,
+    tenantId,
+    setLimit: (value) => {
+      setLimitState(value);
+      setPageState(1);
+    },
+    setPage: setPageState,
+    setSearch: (value) => {
+      setSearchState(value);
+      setPageState(1);
+    },
+    setStatus: (value) => {
+      setStatusState(value);
+      setPageState(1);
+    },
+    setTenantId: (value) => {
+      setTenantIdState(value);
+      setPageState(1);
+    },
+  };
+}
+
+function OpsFilterBar({
+  isFetching,
+  state,
+  statusOptions,
+}: {
+  isFetching: boolean;
+  state: OpsTableState;
+  statusOptions: StatusOption[];
+}) {
+  const t = useTranslations('SuperPortal.ops');
+  const tenantsQuery = useTenants({ includeInactive: true });
+
+  return (
+    <section className="rounded-xl border bg-card p-4">
+      <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_220px_180px_120px_auto] lg:items-end">
+        <label className="block min-w-0">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {t('table.searchLabel')}
+          </span>
+          <span className="relative block">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={state.search}
+              onChange={(event) => state.setSearch(event.target.value)}
+              placeholder={t('table.search')}
+              className="h-10 w-full rounded-md border bg-background pl-9 pr-3 text-sm outline-none ring-primary/20 placeholder:text-muted-foreground focus:ring-2"
+            />
+          </span>
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {t('table.tenantFilter')}
+          </span>
+          <select
+            value={state.tenantId}
+            onChange={(event) => state.setTenantId(event.target.value)}
+            className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none ring-primary/20 focus:ring-2"
+          >
+            <option value="all">{t('table.allTenants')}</option>
+            {(tenantsQuery.data ?? []).map((tenant) => (
+              <option key={tenant.id} value={tenant.id}>
+                {tenant.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {t('table.statusFilter')}
+          </span>
+          <select
+            value={state.status}
+            onChange={(event) => state.setStatus(event.target.value)}
+            className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none ring-primary/20 focus:ring-2"
+          >
+            {statusOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {t('table.rowsPerPage')}
+          </span>
+          <select
+            value={state.limit}
+            onChange={(event) => state.setLimit(Number(event.target.value))}
+            className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none ring-primary/20 focus:ring-2"
+          >
+            {[10, 25, 50, 100].map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="text-xs font-medium text-muted-foreground">
+          {isFetching ? t('table.refreshing') : t('table.serverBacked')}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PaginatedDataTable({
+  empty,
+  headers,
+  meta,
+  onPageChange,
+  rows,
+  title,
+}: {
+  empty: string;
+  headers: string[];
+  meta: PlatformPaginationMeta;
+  onPageChange: (page: number) => void;
+  rows: string[][];
+  title: string;
+}) {
   const t = useTranslations('SuperPortal.ops');
 
   return (
-    <DataTable
+    <section className="overflow-hidden rounded-xl border bg-card">
+      <div className="border-b p-4">
+        <h2 className="font-bold">{title}</h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {t('table.totalRows', { count: meta.total })}
+        </p>
+      </div>
+      {rows.length === 0 ? (
+        <div className="p-6 text-sm text-muted-foreground">{empty}</div>
+      ) : (
+        <>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+                <tr>
+                  {headers.map((header) => (
+                    <th key={header} className="whitespace-nowrap px-4 py-3 font-semibold">
+                      {header}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {rows.map((row, rowIndex) => (
+                  <tr key={`${row[0]}-${meta.page}-${rowIndex}`}>
+                    {row.map((cell, cellIndex) => (
+                      <td key={`${cell}-${cellIndex}`} className="whitespace-nowrap px-4 py-3">
+                        {cell}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <PaginationFooter meta={meta} onPageChange={onPageChange} embedded />
+        </>
+      )}
+    </section>
+  );
+}
+
+function PaginationFooter({
+  embedded = false,
+  meta,
+  onPageChange,
+}: {
+  embedded?: boolean;
+  meta: PlatformPaginationMeta;
+  onPageChange: (page: number) => void;
+}) {
+  const t = useTranslations('SuperPortal.ops');
+  const showingStart = meta.total === 0 ? 0 : (meta.page - 1) * meta.limit + 1;
+  const showingEnd = Math.min(meta.page * meta.limit, meta.total);
+
+  return (
+    <div
+      className={`flex flex-col gap-3 px-4 py-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between ${
+        embedded ? 'border-t' : 'rounded-xl border bg-card'
+      }`}
+    >
+      <span>
+        {t('table.showingRows', {
+          start: showingStart,
+          end: showingEnd,
+          total: meta.total,
+        })}
+      </span>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          disabled={meta.page <= 1}
+          onClick={() => onPageChange(Math.max(1, meta.page - 1))}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-md border bg-background text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label={t('table.previous')}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        <span className="min-w-16 text-center text-xs font-medium">
+          {t('table.pageValue', { page: meta.page, total: meta.totalPages })}
+        </span>
+        <button
+          type="button"
+          disabled={meta.page >= meta.totalPages}
+          onClick={() => onPageChange(Math.min(meta.totalPages, meta.page + 1))}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-md border bg-background text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label={t('table.next')}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function tenantStatusOptions(t: ReturnType<typeof useTranslations>): StatusOption[] {
+  return [
+    { value: 'all', label: t('table.allStatuses') },
+    { value: 'active', label: t('status.active') },
+    { value: 'inactive', label: t('status.inactive') },
+  ];
+}
+
+function domainStatusOptions(t: ReturnType<typeof useTranslations>): StatusOption[] {
+  return [
+    { value: 'all', label: t('table.allStatuses') },
+    { value: 'configured', label: t('status.configured') },
+    { value: 'missing', label: t('status.missing') },
+  ];
+}
+
+function auditStatusOptions(t: ReturnType<typeof useTranslations>): StatusOption[] {
+  return [
+    { value: 'all', label: t('table.allStatuses') },
+    { value: 'success', label: t('status.success') },
+    { value: 'failure', label: t('status.failure') },
+  ];
+}
+
+function incidentStatusOptions(t: ReturnType<typeof useTranslations>): StatusOption[] {
+  return [
+    { value: 'all', label: t('table.allStatuses') },
+    { value: 'open', label: t('status.open') },
+    { value: 'monitoring', label: t('status.monitoring') },
+    { value: 'resolved', label: t('status.resolved') },
+  ];
+}
+
+function billingStatusOptions(t: ReturnType<typeof useTranslations>): StatusOption[] {
+  return [
+    { value: 'all', label: t('table.allStatuses') },
+    { value: 'active', label: t('status.active') },
+    { value: 'paid', label: t('status.paid') },
+    { value: 'pending', label: t('status.pending') },
+    { value: 'past_due', label: t('status.pastDue') },
+    { value: 'canceled', label: t('status.canceled') },
+  ];
+}
+
+function UsageRows({
+  meta,
+  onPageChange,
+  rows,
+}: {
+  meta: PlatformPaginationMeta;
+  onPageChange: (page: number) => void;
+  rows: PlatformUsageRow[];
+}) {
+  const t = useTranslations('SuperPortal.ops');
+
+  return (
+    <PaginatedDataTable
       title={t('usageStorage.tableTitle')}
       empty={t('empty')}
       headers={[t('tenant'), t('usageStorage.storage'), t('usageStorage.requests'), t('errors')]}
@@ -469,6 +825,8 @@ function UsageRows({ rows }: { rows: PlatformUsageRow[] }) {
         (row.requestMetrics?.count ?? 0).toLocaleString(),
         (row.requestMetrics?.errorCount ?? 0).toLocaleString(),
       ])}
+      meta={meta}
+      onPageChange={onPageChange}
     />
   );
 }

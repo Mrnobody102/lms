@@ -16,7 +16,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { AuthenticatedUser } from '../common/interfaces/authenticated-request.interface';
 import { AdminPlatformService } from './admin-platform.service';
-import { PlatformAuditLogQueryDto, PlatformTenantQueryDto } from './dto/platform-query.dto';
+import { PlatformAuditLogQueryDto, PlatformListQueryDto } from './dto/platform-query.dto';
 import { UpdatePlatformFeatureFlagsDto } from './dto/update-platform-feature-flags.dto';
 import { UpdatePlatformSubscriptionDto } from './dto/update-platform-subscription.dto';
 
@@ -31,14 +31,14 @@ export class AdminPlatformController {
   @Get('usage')
   @ApiOperation({ summary: 'Get platform usage by tenant' })
   @ApiResponse({ status: 200, description: 'Platform usage retrieved successfully' })
-  getUsage(@Query() query: PlatformTenantQueryDto) {
+  getUsage(@Query() query: PlatformListQueryDto) {
     return this.adminPlatformService.getUsage(query);
   }
 
   @Get('billing')
   @ApiOperation({ summary: 'Get platform billing data' })
   @ApiResponse({ status: 200, description: 'Platform billing data retrieved successfully' })
-  getBilling(@Query() query: PlatformTenantQueryDto) {
+  getBilling(@Query() query: PlatformListQueryDto) {
     return this.adminPlatformService.getBilling(query);
   }
 
@@ -56,14 +56,14 @@ export class AdminPlatformController {
   @Get('domains')
   @ApiOperation({ summary: 'Get platform tenant domain states' })
   @ApiResponse({ status: 200, description: 'Domain states retrieved successfully' })
-  getDomains(@Query() query: PlatformTenantQueryDto) {
+  getDomains(@Query() query: PlatformListQueryDto) {
     return this.adminPlatformService.getDomains(query);
   }
 
   @Get('feature-flags')
   @ApiOperation({ summary: 'Get platform feature flags by tenant' })
   @ApiResponse({ status: 200, description: 'Feature flags retrieved successfully' })
-  getFeatureFlags(@Query() query: PlatformTenantQueryDto) {
+  getFeatureFlags(@Query() query: PlatformListQueryDto) {
     return this.adminPlatformService.getFeatureFlags(query);
   }
 
@@ -88,8 +88,8 @@ export class AdminPlatformController {
   @Get('incidents')
   @ApiOperation({ summary: 'Get platform incidents from real alerts and audit failures' })
   @ApiResponse({ status: 200, description: 'Platform incidents retrieved successfully' })
-  getIncidents() {
-    return this.adminPlatformService.getIncidents();
+  getIncidents(@Query() query: PlatformListQueryDto) {
+    return this.adminPlatformService.getIncidents(query);
   }
 
   @Get('ai-status')

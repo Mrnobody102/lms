@@ -642,6 +642,26 @@ test('student can view the learning dashboard summary', async ({ page }) => {
   });
 });
 
+test('student logout switches the dashboard home back to the guest entry', async ({ page }) => {
+  await installStudentApiMocks(page);
+
+  await page.goto('/en/login');
+  await waitForHydratedForm(page);
+  await page.locator('input[type="email"]').fill('student@example.com');
+  await page.locator('input[type="password"]').fill('Student@123');
+  await page.getByRole('button', { name: 'Login Now' }).click();
+
+  await expect(page).toHaveURL(/\/en\/courses$/, { timeout: navigationTimeout });
+  await page.goto('/en');
+  await expect(page.getByRole('heading', { name: 'What to do next' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Student User' }).click();
+  await page.getByRole('menuitem', { name: 'Logout' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Sign in to continue learning' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'What to do next' })).toHaveCount(0);
+});
+
 test('student can submit AI practice and review AI feedback', async ({ page }) => {
   await installStudentApiMocks(page);
 
