@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Prisma, ProgressStatus, Role } from '@repo/database';
+import { defaultLocale } from '@repo/shared';
 import { randomBytes } from 'crypto';
 import { LearningAccessService } from '../common/services/learning-access.service';
 import { PrismaService } from '../common/services/prisma.service';
@@ -203,16 +204,16 @@ export class CertificateService {
   }
 
   private toCertificateView(certificate: CertificateRecord): CertificateView {
-    const verifyPath = `/api/certificates/verify/${certificate.certificateCode}`;
-    const imagePath = `${verifyPath}/image`;
+    const verifyPath = `/certificates/${certificate.certificateCode}`;
+    const imagePath = `/api/certificates/verify/${certificate.certificateCode}/image`;
 
     return {
       id: certificate.id,
       certificateCode: certificate.certificateCode,
       issuedAt: certificate.issuedAt,
       revokedAt: certificate.revokedAt,
-      verifyUrl: this.toPublicUrl(verifyPath),
-      imageUrl: this.toPublicUrl(imagePath),
+      verifyUrl: this.toStudentPublicUrl(verifyPath),
+      imageUrl: this.toApiPublicUrl(imagePath),
       user: {
         fullName: certificate.user.fullName,
       },
@@ -226,9 +227,17 @@ export class CertificateService {
     };
   }
 
-  private toPublicUrl(path: string) {
+  private toApiPublicUrl(path: string) {
     const publicUrl = this.configService.get<string>('APP_PUBLIC_URL')?.replace(/\/+$/, '');
     return publicUrl ? `${publicUrl}${path}` : path;
+  }
+
+  private toStudentPublicUrl(path: string) {
+    const studentUrl = this.configService
+      .get<string>('NEXT_PUBLIC_WEB_STUDENT_URL')
+      ?.replace(/\/+$/, '');
+    const localizedPath = `/${defaultLocale}${path.startsWith('/') ? path : `/${path}`}`;
+    return studentUrl ? `${studentUrl}${localizedPath}` : localizedPath;
   }
 }
 
@@ -273,22 +282,25 @@ function renderCertificateSvg(input: {
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-label="Course certificate">
+  <style>
+    .cert-text { font-family: "Inter", "Noto Sans", "Noto Sans Vietnamese", "Segoe UI", Arial, sans-serif; }
+  </style>
   <rect width="1600" height="1000" fill="#f8fafc"/>
   <rect x="72" y="72" width="1456" height="856" rx="28" fill="#ffffff" stroke="#0f766e" stroke-width="10"/>
   <rect x="110" y="110" width="1380" height="780" rx="18" fill="none" stroke="#94a3b8" stroke-width="2"/>
-  <text x="800" y="220" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="48" font-weight="800" fill="#0f172a">Certificate of Completion</text>
-  <text x="800" y="292" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="600" fill="#0f766e">${escapeXml(input.tenantName)}</text>
-  <text x="800" y="400" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="32" fill="#475569">This certifies that</text>
-  <text x="800" y="500" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="68" font-weight="900" fill="#111827">${escapeXml(input.learnerName)}</text>
-  <text x="800" y="585" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="30" fill="#475569">completed</text>
-  <text x="800" y="660" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="42" font-weight="800" fill="#0f172a">${escapeXml(input.courseTitle)}</text>
-  <text x="320" y="795" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="22" fill="#64748b">Issued</text>
-  <text x="320" y="834" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700" fill="#0f172a">${issuedDate}</text>
-  <text x="800" y="795" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="22" fill="#64748b">Verify Code</text>
-  <text x="800" y="834" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="800" fill="#0f766e">${escapeXml(input.code)}</text>
-  <text x="1280" y="795" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="22" fill="#64748b">Status</text>
-  <text x="1280" y="834" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="800" fill="${input.isValid ? '#15803d' : '#b91c1c'}">${status}</text>
-  <text x="800" y="900" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="18" fill="#64748b">${escapeXml(input.verifyUrl)}</text>
+  <text class="cert-text" x="800" y="220" text-anchor="middle" font-size="48" font-weight="800" fill="#0f172a">Certificate of Completion</text>
+  <text class="cert-text" x="800" y="292" text-anchor="middle" font-size="24" font-weight="600" fill="#0f766e">${escapeXml(input.tenantName)}</text>
+  <text class="cert-text" x="800" y="400" text-anchor="middle" font-size="32" fill="#475569">This certifies that</text>
+  <text class="cert-text" x="800" y="500" text-anchor="middle" font-size="68" font-weight="900" fill="#111827">${escapeXml(input.learnerName)}</text>
+  <text class="cert-text" x="800" y="585" text-anchor="middle" font-size="30" fill="#475569">completed</text>
+  <text class="cert-text" x="800" y="660" text-anchor="middle" font-size="42" font-weight="800" fill="#0f172a">${escapeXml(input.courseTitle)}</text>
+  <text class="cert-text" x="320" y="795" text-anchor="middle" font-size="22" fill="#64748b">Issued</text>
+  <text class="cert-text" x="320" y="834" text-anchor="middle" font-size="28" font-weight="700" fill="#0f172a">${issuedDate}</text>
+  <text class="cert-text" x="800" y="795" text-anchor="middle" font-size="22" fill="#64748b">Verify Code</text>
+  <text class="cert-text" x="800" y="834" text-anchor="middle" font-size="28" font-weight="800" fill="#0f766e">${escapeXml(input.code)}</text>
+  <text class="cert-text" x="1280" y="795" text-anchor="middle" font-size="22" fill="#64748b">Status</text>
+  <text class="cert-text" x="1280" y="834" text-anchor="middle" font-size="28" font-weight="800" fill="${input.isValid ? '#15803d' : '#b91c1c'}">${status}</text>
+  <text class="cert-text" x="800" y="882" text-anchor="middle" font-size="16" font-weight="600" fill="#64748b">Verify online: ${escapeXml(input.verifyUrl)}</text>
 </svg>`;
 }
 

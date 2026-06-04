@@ -10,7 +10,7 @@ Tracker ngắn cho task/batch hiện tại: [CURRENT-WORK.md](CURRENT-WORK.md).
 | --------------------------- | ------------------ | ----------------------------------------------------------------- |
 | Foundation / CI / release   | `[#########-] 90%` | CI contract gate, API smoke integrity và portal smoke đã chặt hơn |
 | Tenant isolation / security | `[#######---] 70%` | Đã thêm deny tests; cần mở rộng tiếp theo domain                  |
-| Student learning core       | `[#######---] 70%` | Dashboard, SRS, practice, exam đã có MVP                          |
+| Student learning core       | `[#######---] 70%` | Dashboard, SRS, practice, exam đã có MVP; cần controlled progression và mock exam mode |
 | Admin operations            | `[#######---] 65%` | Đã chuẩn hóa một phần shared UI states                            |
 | Super Portal operations     | `[######----] 55%` | Ops pages dùng shared states, cần real health sâu                 |
 | AI-native roadmap           | `[####------] 40%` | MVP tutor/roleplay có nền, cần governance/quota                   |
@@ -55,12 +55,13 @@ Trục sản phẩm:
 - Học bài theo program/level/course/unit/lesson, hỗ trợ microlearning.
 - Tiếp tục học từ bài gần nhất, đề xuất "next best item" theo skill mastery + SRS due.
 - Luyện tập theo kỹ năng, instant feedback ngay sau mỗi câu trả lời.
-- Kiểm tra/thi thử có chấm điểm, timer và review.
+- Kiểm tra/thi thử có chấm điểm, timer và review; tách rõ "luyện tập ngân hàng câu hỏi" khỏi "mô phỏng thi thật".
 - Spaced repetition cho vocabulary/grammar/concept cards.
 - Theo dõi tiến độ, streak, skill mastery, báo cáo học tập theo time-series.
 - Admin quản lý course, lesson, học viên, enrollment, cohort và reporting drill-down.
 - AI tầng trên: in-context tutor (giải thích lỗi practice/exam), conversation roleplay, AI-generated practice — theo thứ tự giá trị giáo dục giảm dần.
 - Danh sách dài: dùng server-side pagination cho list quản trị, cursor pagination cho log/time-series lớn, và virtualization khi render nhiều dòng.
+- Controlled progression cho khóa/certification cần kiểm soát chặt: đủ thời gian học, đủ tỷ lệ xem/hoàn thành, đạt bài kiểm tra bắt buộc mới mở activity tiếp theo.
 
 Nguyên tắc learning-science:
 
@@ -69,6 +70,7 @@ Nguyên tắc learning-science:
 - **Instant feedback** thay vì batch grading sau khi nộp.
 - **Microlearning**: nội dung 1–3 phút, tương tác ngay sau khi xem.
 - **Adaptive sequencing**: hệ thống chọn item kế tiếp dựa trên dữ liệu, không phải thứ tự cứng.
+- **Controlled mode theo ngữ cảnh**: chỉ bật kiểm soát kiểu compliance/certification cho course cần chứng nhận; course học linh hoạt vẫn ưu tiên mastery/adaptive để tránh UX bị nặng.
 
 ## Hiện trạng
 
@@ -284,6 +286,31 @@ Trạng thái: backend MVP, admin template UI và student exam UI đã có.
 Còn cần:
 
 - Không còn blocker listening MVP; listening passage 1 audio/nhiều câu hỏi vẫn để sau MVP.
+- Mock exam mode đúng nghĩa thi thật: một câu/current section chính, top timer cố định, question navigator, trạng thái đã trả lời/chưa trả lời/ghim, nút nộp rõ ràng, ít distraction hơn trang LMS thường.
+- Exam blueprint/randomization: đề thi thử sinh từ bank nhiều câu theo cấu trúc, số câu, skill/topic và độ khó; không đặt tên "Thi thử 600 câu" nếu thực tế là luyện ngân hàng câu hỏi.
+- Autosave answer/progress cho attempt để refresh/mất mạng không mất bài, nhưng vẫn giữ server-side timer và không lộ đáp án trước submit.
+
+### P5.1. Controlled Progression Và Learning Gate
+
+Mục tiêu: học HueLMS ở phần kiểm soát tiến trình nhưng áp dụng theo mode, không siết toàn bộ LMS như hệ thi lái xe.
+
+Trạng thái: đã có nền dữ liệu (`CourseActivity`, `UserCourseActivityProgress`, `unlockPolicy`, `completionPolicy`, `LearningActivity`, `VideoEngagementEvent`) nhưng chưa có policy engine/enforcement đầy đủ.
+
+Phạm vi:
+
+- Course mode: `standard`, `controlled`, `certification`; admin chọn mode theo khóa hoặc activity.
+- Completion rules theo activity: `minWatchPercent`, `minActiveSeconds`, `requiredPracticeScore`, `requiredExamScore`, `requiredActivityIds`, due/available window.
+- Server-side eligibility: backend chặn mở lesson/activity/start exam khi chưa đủ điều kiện, không chỉ disable nút Next ở UI.
+- Video completion dựa trên watched segments/active seconds từ `VideoEngagementEvent`, chống tua tới cuối để hoàn thành.
+- Reporting cho learner/admin: progress %, số phút/giờ hợp lệ, activity đã đạt/chưa đạt, lý do chưa mở khóa.
+- Optional integrity cho certification: session heartbeat, cảnh báo học nhiều thiết bị, attempt limit, audit log các unlock/completion event.
+
+Acceptance:
+
+- Standard course vẫn học linh hoạt.
+- Controlled/certification course chỉ mở activity tiếp theo khi policy pass trên server.
+- Student thấy lý do cụ thể khi bị khóa: thiếu thời gian, thiếu tỷ lệ xem, chưa đạt bài kiểm tra, hoặc chưa đến thời gian mở.
+- Admin report hiển thị tiến trình theo cả completion và tracked time, tránh chỉ dựa vào boolean completed.
 
 ### P6. Reporting
 
