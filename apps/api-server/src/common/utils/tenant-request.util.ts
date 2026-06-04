@@ -21,10 +21,12 @@ export function extractTenantHints(req: Request, options: TenantHintOptions = {}
 
   const headerValue = req.headers['x-tenant-id'];
   const isProduction = (options.nodeEnv ?? process.env.NODE_ENV) === 'production';
+  const isTrustedProductionOrigin =
+    !isProduction || isRequestOriginTrusted(req.headers.origin, options.allowedOrigins);
   if (
     typeof headerValue === 'string' &&
     headerValue.trim() &&
-    (!isProduction || options.allowTenantHeaderInProduction)
+    (!isProduction || (options.allowTenantHeaderInProduction && isTrustedProductionOrigin))
   ) {
     return [headerValue.trim()];
   }
@@ -60,6 +62,26 @@ export function getScopedTenantId(request: {
   }
 
   return request.user.tenantId;
+}
+
+function isRequestOriginTrusted(
+  originValue: string | string[] | undefined,
+  allowedOrigins: string[] | undefined,
+): boolean {
+  if (Array.isArray(originValue)) {
+    return false;
+  }
+
+  if (typeof originValue !== 'string' || !originValue.trim()) {
+    return true;
+  }
+
+  try {
+    const origin = new URL(originValue.trim()).origin;
+    return !allowedOrigins || allowedOrigins.length === 0 || allowedOrigins.includes(origin);
+  } catch {
+    return false;
+  }
 }
 
 function extractTenantHintsFromHost(req: Request): string[] {

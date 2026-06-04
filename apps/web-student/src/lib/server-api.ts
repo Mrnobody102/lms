@@ -2,12 +2,22 @@ import { cookies } from 'next/headers';
 import { DEFAULT_DEMO_TENANT_ID, type AuthUser } from '@repo/shared';
 import type { StudentTodayResponse } from './student-api';
 
+const LOCAL_API_BASE_URL = 'http://127.0.0.1:4000/api';
+
 function getBaseUrl() {
   if (process.env.NEXT_PUBLIC_API_URL) {
-    return `${process.env.NEXT_PUBLIC_API_URL.replace(/\/+$/, '')}/api`;
+    return buildApiBaseUrl(process.env.NEXT_PUBLIC_API_URL);
   }
   // Default development fallback
-  return 'http://127.0.0.1:4000/api';
+  return LOCAL_API_BASE_URL;
+}
+
+function buildApiBaseUrl(baseUrl: string) {
+  const normalized = baseUrl
+    .trim()
+    .replace(/\/+$/, '')
+    .replace(/\/api$/i, '');
+  return `${normalized}/api`;
 }
 
 /**
@@ -19,7 +29,9 @@ async function serverFetch<T>(endpoint: string, init?: RequestInit): Promise<T> 
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.toString();
 
-  const tenantId = process.env.NEXT_PUBLIC_TENANT_ID || DEFAULT_DEMO_TENANT_ID;
+  const tenantId =
+    process.env.NEXT_PUBLIC_TENANT_ID ||
+    (process.env.NODE_ENV === 'production' ? undefined : DEFAULT_DEMO_TENANT_ID);
 
   const url = `${getBaseUrl()}${endpoint}`;
 
@@ -30,8 +42,9 @@ async function serverFetch<T>(endpoint: string, init?: RequestInit): Promise<T> 
     headers.set('Cookie', cookieHeader);
   }
 
-  // Attach tenant context
-  headers.set('x-tenant-id', tenantId);
+  if (tenantId) {
+    headers.set('x-tenant-id', tenantId);
+  }
 
   if (!headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');

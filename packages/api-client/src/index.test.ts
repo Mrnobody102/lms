@@ -74,6 +74,24 @@ describe('createApiClient', () => {
     expect(api.defaults.baseURL).toBe('/api');
   });
 
+  it('normalizes server-side NEXT_PUBLIC_API_URL without duplicating /api', () => {
+    vi.unstubAllGlobals();
+    const originalApiUrl = process.env.NEXT_PUBLIC_API_URL;
+    process.env.NEXT_PUBLIC_API_URL = 'https://api.example.com/api/';
+
+    try {
+      const api = createApiClient();
+
+      expect(api.defaults.baseURL).toBe('https://api.example.com/api');
+    } finally {
+      if (originalApiUrl === undefined) {
+        delete process.env.NEXT_PUBLIC_API_URL;
+      } else {
+        process.env.NEXT_PUBLIC_API_URL = originalApiUrl;
+      }
+    }
+  });
+
   it('refreshes and retries a 401 request even when redirect is skipped', async () => {
     const api = createApiClient({ baseURL: '/api' });
     const calls: string[] = [];

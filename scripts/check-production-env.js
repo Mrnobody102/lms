@@ -148,6 +148,15 @@ function assertOptionalUrl(env, key, errors) {
   }
 }
 
+function assertOptionalNumber(env, key, min, max, errors) {
+  if (!isPresent(env, key)) return;
+
+  const value = Number(env[key]);
+  if (!Number.isFinite(value) || value < min || value > max) {
+    errors.push(`${key} must be a number between ${min} and ${max}`);
+  }
+}
+
 function assertHost(env, key, errors) {
   assertRequired(env, key, errors);
   if (!isPresent(env, key)) return;
@@ -233,9 +242,12 @@ assertRequired(env, 'REDIS_URL', errors);
 assertSecret(env, 'JWT_SECRET', errors);
 assertSecret(env, 'JWT_RESET_SECRET', errors);
 assertOrigins(env, errors);
+assertRequired(env, 'NEXT_PUBLIC_API_URL', errors);
 assertOptionalOrigin(env, 'NEXT_PUBLIC_API_URL', errors);
 assertOptionalOrigin(env, 'APP_PUBLIC_URL', errors);
+assertRequired(env, 'NEXT_PUBLIC_WEB_STUDENT_URL', errors);
 assertOptionalOrigin(env, 'NEXT_PUBLIC_WEB_STUDENT_URL', errors);
+assertRequired(env, 'NEXT_PUBLIC_WEB_SALES_URL', errors);
 assertOptionalOrigin(env, 'NEXT_PUBLIC_WEB_SALES_URL', errors);
 assertHost(env, 'API_HOST', errors);
 assertHost(env, 'STUDENT_HOST', errors);
@@ -246,6 +258,7 @@ assertEmail(env, 'CADDY_ACME_EMAIL', errors);
 assertRequired(env, 'ALERTMANAGER_WEBHOOK_URL', errors);
 assertOptionalUrl(env, 'ALERTMANAGER_WEBHOOK_URL', errors);
 assertGooglePair(env, errors);
+assertOptionalNumber(env, 'GOOGLE_VERIFY_TIMEOUT_MS', 1000, 30000, errors);
 assertNoFrontendSecrets(env, errors);
 assertAiProvider(env, errors);
 

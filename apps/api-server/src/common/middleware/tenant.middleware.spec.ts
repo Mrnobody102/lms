@@ -74,4 +74,36 @@ describe('TenantMiddleware', () => {
     expect(request.requestedTenantHint).toBeUndefined();
     expect(next).toHaveBeenCalledTimes(1);
   });
+
+  it('should accept production tenant headers only from allowed origins when explicitly enabled', async () => {
+    configService.get.mockImplementation((key: string) => {
+      if (key === 'NODE_ENV') return 'production';
+      if (key === 'CORS_ORIGINS') return 'https://student.vercel.app';
+      if (key === 'ALLOW_TENANT_HEADER_IN_PRODUCTION') return true;
+      return undefined;
+    });
+    prisma.tenant.findFirst.mockResolvedValueOnce({ id: 'tenant-1' });
+
+    const request = {
+      method: 'POST',
+      headers: {
+        'x-tenant-id': 'trung-tam-demo',
+        origin: 'https://student.vercel.app',
+        host: 'api.onrender.com',
+      },
+    } as unknown as TenantAwareRequest;
+
+    await middleware.use(request, response, next);
+
+    expect(prisma.tenant.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          OR: [{ slug: 'trung-tam-demo' }, { domain: 'trung-tam-demo' }],
+        }),
+      }),
+    );
+    expect(request.tenantId).toBe('tenant-1');
+    expect(request.requestedTenantHint).toBe('trung-tam-demo');
+    expect(next).toHaveBeenCalledTimes(1);
+  });
 });

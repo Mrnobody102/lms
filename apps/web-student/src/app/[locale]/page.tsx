@@ -6,6 +6,8 @@ import { Link } from '../../navigation';
 import { serverApi } from '../../lib/server-api';
 import { StudentHomeClient } from './student-home-client';
 
+const LOCAL_WEB_SALES_URL = 'http://localhost:3103';
+
 export default async function Home() {
   const cookieStore = await cookies();
   const hasSession = Boolean(cookieStore.get('access_token')?.value);
@@ -18,10 +20,7 @@ export default async function Home() {
 function GuestStudentHome() {
   const t = useTranslations('Student.guestHome');
   const locale = useLocale();
-  const salesBaseUrl = (process.env.NEXT_PUBLIC_WEB_SALES_URL ?? 'http://localhost:3103').replace(
-    /\/+$/,
-    '',
-  );
+  const salesBaseUrl = getSalesBaseUrl();
 
   return (
     <main className="min-h-screen bg-background font-sans relative">
@@ -83,6 +82,19 @@ function GuestStudentHome() {
       </section>
     </main>
   );
+}
+
+function getSalesBaseUrl() {
+  const configured = process.env.NEXT_PUBLIC_WEB_SALES_URL?.trim();
+  if (configured) {
+    return configured.replace(/\/+$/, '');
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('NEXT_PUBLIC_WEB_SALES_URL is required in production');
+  }
+
+  return LOCAL_WEB_SALES_URL;
 }
 
 function StudentBenefit({ title, text }: { title: string; text: string }) {

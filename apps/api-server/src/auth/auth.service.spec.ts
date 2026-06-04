@@ -91,6 +91,16 @@ describe('AuthService', () => {
     );
   });
 
+  it('should configure Google ID token verification with a bounded request timeout', () => {
+    const googleClient = (
+      service as unknown as {
+        googleClient: { transporter: { defaults: { timeout?: number } } };
+      }
+    ).googleClient;
+
+    expect(googleClient.transporter.defaults.timeout).toBe(10000);
+  });
+
   describe('register', () => {
     it('should reject registration without tenant context', async () => {
       await expect(

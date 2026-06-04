@@ -16,6 +16,7 @@ export default function proxy(request: NextRequest) {
     'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
     'X-Frame-Options': 'SAMEORIGIN',
     'X-Content-Type-Options': 'nosniff',
+    'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
     'Content-Security-Policy': buildContentSecurityPolicy([process.env.NEXT_PUBLIC_API_URL], {

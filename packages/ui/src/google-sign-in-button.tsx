@@ -62,6 +62,7 @@ export function GoogleSignInButton({
   locale,
   label,
   loadingLabel,
+  disabledLabel,
   disabled = false,
   onCredential,
   onError,
@@ -70,6 +71,9 @@ export function GoogleSignInButton({
   const containerRef = useRef<HTMLDivElement>(null);
   const onCredentialRef = useRef(onCredential);
   const onErrorRef = useRef(onError);
+  const initializedClientIdRef = useRef<string | null>(null);
+  const renderedButtonKeyRef = useRef<string | null>(null);
+  const renderedButtonElementRef = useRef<HTMLElement | null>(null);
   const [scriptReady, setScriptReady] = useState(false);
   const [loading, setLoading] = useState(false);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -123,12 +127,10 @@ export function GoogleSignInButton({
   }, []);
 
   useEffect(() => {
-    if (!clientId || !scriptReady || !containerRef.current || disabled) {
+    if (!clientId || !scriptReady || initializedClientIdRef.current === clientId) {
       return;
     }
 
-    const container = containerRef.current;
-    container.innerHTML = '';
     window.google?.accounts?.id.initialize({
       client_id: clientId,
       callback: (response) => {
@@ -145,10 +147,28 @@ export function GoogleSignInButton({
       auto_select: false,
       cancel_on_tap_outside: true,
     });
+    initializedClientIdRef.current = clientId;
+  }, [clientId, scriptReady]);
+
+  useEffect(() => {
+    if (!clientId || !scriptReady || !containerRef.current || disabled) {
+      return;
+    }
+
+    const container = containerRef.current;
     // GIS renderButton only accepts a pixel width (max 400, no percentages),
     // so we mirror the actual container width and clamp it to stay responsive
     // on narrow viewports.
     const width = containerWidth > 0 ? Math.min(Math.round(containerWidth), 400) : undefined;
+    const buttonKey = `${clientId}:${locale ?? ''}:${width ?? 'auto'}`;
+    if (
+      renderedButtonKeyRef.current === buttonKey &&
+      renderedButtonElementRef.current === container
+    ) {
+      return;
+    }
+
+    container.innerHTML = '';
     window.google?.accounts?.id.renderButton(container, {
       type: 'standard',
       theme: 'outline',
@@ -158,6 +178,8 @@ export function GoogleSignInButton({
       width,
       locale,
     });
+    renderedButtonKeyRef.current = buttonKey;
+    renderedButtonElementRef.current = container;
   }, [clientId, disabled, locale, scriptReady, containerWidth]);
 
   if (!clientId) {
@@ -174,7 +196,7 @@ export function GoogleSignInButton({
           className,
         )}
       >
-        {loading ? loadingLabel : label}
+        {loading ? loadingLabel : disabledLabel}
       </button>
     );
   }

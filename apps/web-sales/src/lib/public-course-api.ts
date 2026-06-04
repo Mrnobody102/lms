@@ -1,5 +1,7 @@
 import { DEFAULT_DEMO_TENANT_ID } from '@repo/shared';
 
+const LOCAL_STUDENT_PORTAL_URL = 'http://localhost:3100';
+
 export interface PublicLessonPreview {
   id: string;
   title: string;
@@ -70,12 +72,22 @@ export async function getPublicCourse(courseId: string) {
 }
 
 export function getStudentPortalUrl(path: string, locale: string) {
-  const baseUrl = (process.env.NEXT_PUBLIC_WEB_STUDENT_URL || 'http://localhost:3100').replace(
-    /\/+$/,
-    '',
-  );
+  const baseUrl = getStudentPortalBaseUrl();
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   return `${baseUrl}/${locale}${normalizedPath}`;
+}
+
+function getStudentPortalBaseUrl() {
+  const configured = process.env.NEXT_PUBLIC_WEB_STUDENT_URL?.trim();
+  if (configured) {
+    return configured.replace(/\/+$/, '');
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('NEXT_PUBLIC_WEB_STUDENT_URL is required in production');
+  }
+
+  return LOCAL_STUDENT_PORTAL_URL;
 }
 
 export function getCourseLevelLabel(course: PublicCourseSummary) {
@@ -121,12 +133,9 @@ function buildPublicHeaders(): HeadersInit {
   const headers: Record<string, string> = {
     Accept: 'application/json',
   };
-  // In production the API resolves the tenant from the request origin/domain,
-  // so the client-supplied header is ignored there. For local/dev (and any
-  // single-tenant deployment that sets the env var) we forward the configured
-  // tenant hint, falling back to the demo tenant so the catalog still loads
-  // when NEXT_PUBLIC_TENANT_ID has not been provided.
-  const tenantId = process.env.NEXT_PUBLIC_TENANT_ID?.trim() || DEFAULT_DEMO_TENANT_ID;
+  const tenantId =
+    process.env.NEXT_PUBLIC_TENANT_ID?.trim() ||
+    (process.env.NODE_ENV === 'production' ? undefined : DEFAULT_DEMO_TENANT_ID);
 
   if (tenantId) {
     headers['x-tenant-id'] = tenantId;
@@ -136,8 +145,16 @@ function buildPublicHeaders(): HeadersInit {
 }
 
 function getPublicApiBaseUrl() {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, '');
-  return apiUrl ? `${apiUrl}/api` : '/api';
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  return apiUrl ? buildApiBaseUrl(apiUrl) : '/api';
+}
+
+function buildApiBaseUrl(baseUrl: string) {
+  const normalized = baseUrl
+    .trim()
+    .replace(/\/+$/, '')
+    .replace(/\/api$/i, '');
+  return `${normalized}/api`;
 }
 
 function isSuccessEnvelope<T>(value: unknown): value is { success: true; data: T } {

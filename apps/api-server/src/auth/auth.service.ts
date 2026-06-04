@@ -50,10 +50,15 @@ interface LoginUserRecord {
   updatedAt: Date;
 }
 
+const DEFAULT_GOOGLE_VERIFY_TIMEOUT_MS = 10000;
+const MIN_GOOGLE_VERIFY_TIMEOUT_MS = 1000;
+const MAX_GOOGLE_VERIFY_TIMEOUT_MS = 30000;
+const LOCAL_STUDENT_PORTAL_URL = 'http://localhost:3100';
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
-  private readonly googleClient = new OAuth2Client();
+  private readonly googleClient: OAuth2Client;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -61,7 +66,13 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly mailService: MailService,
     private readonly auditLog: AuditLogService,
-  ) {}
+  ) {
+    this.googleClient = new OAuth2Client({
+      transporterOptions: {
+        timeout: this.getGoogleVerifyTimeoutMs(),
+      },
+    });
+  }
 
   async register(registerDto: RegisterDto, tenantId: string | undefined) {
     if (!tenantId) {
@@ -698,8 +709,7 @@ export class AuthService {
       },
     });
 
-    const appUrl =
-      this.configService.get<string>('NEXT_PUBLIC_WEB_STUDENT_URL') || 'http://localhost:3100';
+    const appUrl = this.getStudentPortalBaseUrl();
     const locale = forgotPasswordDto.locale || 'vi';
     const resetUrl = `${appUrl}/${locale}/reset-password?token=${encodeURIComponent(resetTokenStr)}`;
 
@@ -855,6 +865,30 @@ export class AuthService {
             .filter(Boolean)
         : []),
     ];
+  }
+
+  private getGoogleVerifyTimeoutMs(): number {
+    const configured = this.configService.get<string | number>('GOOGLE_VERIFY_TIMEOUT_MS');
+    const parsed = typeof configured === 'number' ? configured : Number(configured);
+
+    if (!Number.isFinite(parsed)) {
+      return DEFAULT_GOOGLE_VERIFY_TIMEOUT_MS;
+    }
+
+    return Math.min(Math.max(parsed, MIN_GOOGLE_VERIFY_TIMEOUT_MS), MAX_GOOGLE_VERIFY_TIMEOUT_MS);
+  }
+
+  private getStudentPortalBaseUrl(): string {
+    const configured = this.configService.get<string>('NEXT_PUBLIC_WEB_STUDENT_URL')?.trim();
+    if (configured) {
+      return configured.replace(/\/+$/, '');
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new BadRequestException('Student portal URL is not configured');
+    }
+
+    return LOCAL_STUDENT_PORTAL_URL;
   }
 
   private userWithAuthFieldsSelect() {

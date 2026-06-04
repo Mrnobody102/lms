@@ -61,11 +61,57 @@ describe('extractTenantHint', () => {
     expect(
       extractTenantHint(
         mockRequest({
-          headers: { 'x-tenant-id': 'tenant-1', host: 'school.example.com' },
+          headers: {
+            'x-tenant-id': 'tenant-1',
+            origin: 'https://school.example.com',
+            host: 'api.example.com',
+          },
         }),
-        { nodeEnv: 'production', allowTenantHeaderInProduction: true },
+        {
+          nodeEnv: 'production',
+          allowTenantHeaderInProduction: true,
+          allowedOrigins: ['https://school.example.com'],
+        },
       ),
     ).toBe('tenant-1');
+  });
+
+  it('should reject production x-tenant-id from untrusted browser origins', () => {
+    expect(
+      extractTenantHint(
+        mockRequest({
+          headers: {
+            'x-tenant-id': 'tenant-1',
+            origin: 'https://attacker.example.com',
+            host: 'api.example.com',
+          },
+        }),
+        {
+          nodeEnv: 'production',
+          allowTenantHeaderInProduction: true,
+          allowedOrigins: ['https://school.example.com'],
+        },
+      ),
+    ).toBeUndefined();
+  });
+
+  it('should reject production x-tenant-id when origin is malformed', () => {
+    expect(
+      extractTenantHint(
+        mockRequest({
+          headers: {
+            'x-tenant-id': 'tenant-1',
+            origin: ['https://school.example.com'],
+            host: 'api.example.com',
+          },
+        } as unknown as Partial<Request>),
+        {
+          nodeEnv: 'production',
+          allowTenantHeaderInProduction: true,
+          allowedOrigins: ['https://school.example.com'],
+        },
+      ),
+    ).toBeUndefined();
   });
 
   it('should use Express hostname as a local fallback when no trusted origin is available', () => {

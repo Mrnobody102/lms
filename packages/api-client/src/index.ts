@@ -8,6 +8,7 @@ import {
 } from '@repo/shared';
 
 const TIMEOUT_MS = 60000;
+const LOCAL_API_BASE_URL = 'http://127.0.0.1:4000/api';
 
 declare module 'axios' {
   interface AxiosRequestConfig {
@@ -39,24 +40,28 @@ function detectLocale(
   return supportedLocales.includes(locale) ? locale : defaultLocale;
 }
 
-function appendApiPath(baseUrl: string): string {
-  return `${baseUrl.replace(/\/+$/, '')}/api`;
-}
-
 function getDefaultBaseUrl(): string {
   if (typeof window !== 'undefined') {
     return '/api';
   }
 
   if (process.env.NEXT_PUBLIC_API_URL) {
-    return appendApiPath(process.env.NEXT_PUBLIC_API_URL);
+    return buildApiBaseUrl(process.env.NEXT_PUBLIC_API_URL);
   }
 
   if (process.env.NODE_ENV === 'production') {
     throw new Error('NEXT_PUBLIC_API_URL is required in production');
   }
 
-  return 'http://127.0.0.1:4000/api';
+  return LOCAL_API_BASE_URL;
+}
+
+function buildApiBaseUrl(baseUrl: string): string {
+  const normalized = baseUrl
+    .trim()
+    .replace(/\/+$/, '')
+    .replace(/\/api$/i, '');
+  return `${normalized}/api`;
 }
 
 function readCookie(name: string): string | undefined {

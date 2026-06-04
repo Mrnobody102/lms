@@ -87,6 +87,7 @@ export const envSchema = z
     AUTH_COOKIE_DOMAIN: z.string().optional(),
     GOOGLE_CLIENT_ID: z.string().optional(),
     GOOGLE_CLIENT_IDS: z.string().optional(),
+    GOOGLE_VERIFY_TIMEOUT_MS: z.coerce.number().min(1000).max(30000).default(10000),
 
     // Redis
     REDIS_URL: redisUrlSchema.optional(),
@@ -152,6 +153,14 @@ export const envSchema = z
         code: z.ZodIssueCode.custom,
         path: ['CORS_ORIGINS'],
         message: 'CORS_ORIGINS is required in production',
+      });
+    }
+
+    if (env.NODE_ENV === 'production' && !env.NEXT_PUBLIC_WEB_STUDENT_URL) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['NEXT_PUBLIC_WEB_STUDENT_URL'],
+        message: 'NEXT_PUBLIC_WEB_STUDENT_URL is required in production',
       });
     }
 
