@@ -1,10 +1,9 @@
 'use client';
 
-import Image from 'next/image';
 import { ArrowRight, BookOpen, Clock3, Layers3 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/navigation';
-import { getSafeCourseCoverUrl } from '@/lib/course-images';
+import { CourseCoverImage } from '@/components/course-cover-image';
 import { getCourseLevelLabel, PublicCourseSummary } from '@/lib/public-course-api';
 
 export function PublicCourseCard({ course }: { course: PublicCourseSummary }) {
@@ -14,8 +13,8 @@ export function PublicCourseCard({ course }: { course: PublicCourseSummary }) {
   return (
     <article className="group flex min-h-[390px] flex-col overflow-hidden rounded-md border bg-card shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md">
       <div className="relative aspect-[16/9] overflow-hidden bg-muted">
-        <Image
-          src={getSafeCourseCoverUrl(course.coverImageUrl)}
+        <CourseCoverImage
+          coverUrl={course.coverImageUrl}
           alt={course.title}
           fill
           sizes="(min-width: 1280px) 30vw, (min-width: 768px) 45vw, 100vw"

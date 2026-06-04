@@ -1,17 +1,17 @@
 # Current Work
 
-Last updated: 2026-06-02
+Last updated: 2026-06-04
 
 ## At A Glance
 
-| Item                                 | Status  | Progress            | Notes                                                                  |
-| ------------------------------------ | ------- | ------------------- | ---------------------------------------------------------------------- |
-| Batch 15: production readiness       | Done    | `[##########] 100%` | Merged and pushed                                                      |
-| Docs cleanup                         | Done    | `[##########] 100%` | Active product docs reduced to 3 files                                 |
-| Mega Batch 16: production hardening  | Done    | `[##########] 100%` | Closed with SRS/custom-card polish and Super Portal ops list hardening |
-| Mega Batch 17: ops + scale readiness | Active  | `[##--------] 20%`  | Platform ops APIs now moving to server pagination/filtering            |
-| Product readiness                    | Active  | `[########--] 75%`  | Keep improving isolation, CI, metrics, bounded lists                   |
-| Mobile Student App                   | Planned | `[----------] 0%`   | P11 planned; `apps/mobile-student` not scaffolded yet                  |
+| Item                                 | Status  | Progress            | Notes                                                                             |
+| ------------------------------------ | ------- | ------------------- | --------------------------------------------------------------------------------- |
+| Batch 15: production readiness       | Done    | `[##########] 100%` | Merged and pushed                                                                 |
+| Docs cleanup                         | Done    | `[##########] 100%` | Active product docs reduced to 3 files                                            |
+| Mega Batch 16: production hardening  | Done    | `[##########] 100%` | Closed with SRS/custom-card polish and Super Portal ops list hardening            |
+| Mega Batch 17: ops + scale readiness | Active  | `[###-------] 25%`  | Expanded to production edge/proxy, env, observability, backup, and load readiness |
+| Product readiness                    | Active  | `[#######---] 70%`  | App contracts are strong; production ops artifacts still need evidence            |
+| Mobile Student App                   | Planned | `[----------] 0%`   | P11 planned; `apps/mobile-student` not scaffolded yet                             |
 
 ## What Just Shipped
 
@@ -39,13 +39,19 @@ pnpm --filter super-portal exec playwright test e2e/smoke.spec.ts --project=chro
 
 Mega Batch 17 theme: operations, release, and scale readiness.
 
-| Status | Work                           | Output                                                                                        |
-| ------ | ------------------------------ | --------------------------------------------------------------------------------------------- |
-| Done   | MB16 closeout                  | Current SRS/custom-card and Super Portal ops-list changes reviewed, committed, and pushed     |
-| Active | Platform list contracts        | Super Portal platform endpoints use server pagination/filtering with `items` + `meta`         |
-| Active | Platform data integrity checks | Read-only integrity checks extended for platform media, billing, usage ledger, and audit logs |
-| Next   | Reporting volume and drilldown | Admin report large-list paths and Super Portal tenant detail volume should be audited next    |
-| Next   | Release/observability polish   | Runtime readiness and request metrics need clearer operator surfacing and release docs        |
+The 2026-06-04 production-scale review found that the app architecture and stack are sound for staging/early production, but the deploy/operations layer is incomplete. Batch 17 now explicitly includes the edge, secrets, observability, backup/restore, deploy pipeline, and load-test work needed before serving real production traffic at scale.
+
+| Status | Work                              | Output                                                                                                    |
+| ------ | --------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Done   | MB16 closeout                     | Current SRS/custom-card and Super Portal ops-list changes reviewed, committed, and pushed                 |
+| Done   | Production-scale plan refresh     | Batch 17 split into edge, env/secrets, CI/CD, observability, backup/restore, integrity, load tracks       |
+| Active | Platform list contracts           | Super Portal platform endpoints use server pagination/filtering with `items` + `meta`                     |
+| Active | Platform data integrity checks    | Read-only integrity checks extended for platform media, billing, usage ledger, and audit logs             |
+| Next   | Edge/reverse proxy artifact       | Add Nginx/Caddy/Traefik or cloud-edge reference config; strip public `x-tenant-id`; set TLS/proxy headers |
+| Next   | Production env and secret parity  | Provision real `JWT_RESET_SECRET` and validate `.env.production` in staging                               |
+| Next   | Observability and alert receivers | Wire Prometheus/managed metrics and non-empty Alertmanager/notification receiver                          |
+| Next   | Backup/restore and rollback       | Add DB/object-storage backup policy and run a restore drill before production                             |
+| Next   | Load and reporting volume         | Add baseline load test and review report/list query plans for 10k-100k user targets                       |
 
 Done means:
 
@@ -71,24 +77,38 @@ pnpm run build
 
 ## Mega Batch Queue
 
-| Batch | Theme                                         | Outcome                                                                                                        |
-| ----- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| 16    | Production contracts + workflow readiness     | Tenant/security regressions are hard to reintroduce; critical admin/student flows are bounded and smoke-tested |
-| 17    | Operations, release + scale readiness         | Operators can diagnose issues; release gates, data integrity, list scale, and reporting volume are controlled  |
-| 18    | AI-native governance + adaptive learning      | Role-aware AI has quota, audit, prompt/version governance, provider reliability, and adaptive learning signals |
-| 19    | Mobile Student App MVP + native learning loop | Expo app scaffold, mobile auth adapter, dashboard/course/SRS/practice loop, offline-lite foundation            |
+| Batch | Theme                                         | Outcome                                                                                                          |
+| ----- | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| 16    | Production contracts + workflow readiness     | Tenant/security regressions are hard to reintroduce; critical admin/student flows are bounded and smoke-tested   |
+| 17    | Operations, release + scale readiness         | Operators can diagnose issues; release gates, data integrity, list scale, and reporting volume are controlled    |
+| 18    | AI-native governance + adaptive learning      | Role-aware AI has quota, audit, prompt/version governance, provider reliability, and adaptive learning signals   |
+| 19    | Mobile Student App MVP + native learning loop | Expo app scaffold, mobile auth adapter, dashboard/course/SRS/practice loop, offline-lite foundation              |
+| 20    | High-scale platform architecture              | HA DB/cache/storage, queue partitioning, CDN/media delivery, and canary/load evidence for 100k+ to million users |
+
+## Batch 17 Production Checklist
+
+| Track                    | Status | Required output                                                                                                                       |
+| ------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Edge/reverse proxy       | Next   | Production topology with TLS, host routing, `X-Forwarded-*`, upload limits, rate-limit/WAF stance, and public `x-tenant-id` stripping |
+| Env/secrets              | Next   | `.env.production.example`, secret manager guidance, `JWT_RESET_SECRET` parity, no frontend-exposed secrets                            |
+| CI/CD/staging            | Next   | Deploy pipeline for API and all portals, migration step, post-deploy smoke against staging                                            |
+| Observability            | Next   | Metrics scrape or managed equivalent, non-empty alert receiver, structured logs and request-id correlation                            |
+| Backup/restore           | Next   | Postgres backup/restore runbook, object storage policy, restore drill evidence, rollback decision tree                                |
+| Data integrity/retention | Active | Read-only checks in release gate, privacy/retention policy for student data and audit logs                                            |
+| Performance/load         | Next   | Baseline load test, p95/p99 targets, index/query review for reporting and large admin lists                                           |
+| Security/compliance      | Active | CORS/CSRF/CSP/tenant-header checks, audit log coverage for sensitive mutations, dependency/secret scanning                            |
 
 ## Roadmap Dashboard
 
-| Priority | Focus                    | Progress           | Next output                                              |
-| -------- | ------------------------ | ------------------ | -------------------------------------------------------- |
-| P0       | Foundation hardening     | `[########--] 80%` | Production env, release, CI gates stay green             |
-| P1       | Tenant/security boundary | `[#######---] 70%` | More cross-tenant deny tests and audit coverage          |
-| P2       | Admin/student workflows  | `[########--] 80%` | More workflow polish and negative cases                  |
-| P3       | Operations visibility    | `[#####-----] 50%` | Tenant health, real usage, alerts, request correlation   |
-| P4       | Scale/data integrity     | `[#####-----] 50%` | Bounded lists, integrity checks, index review            |
-| P5       | Shared maintainability   | `[#####-----] 50%` | Shared primitives after duplication is proven            |
-| P6       | Mobile student app       | `[----------] 0%`  | Scaffold native app after API/client foundation is ready |
+| Priority | Focus                    | Progress           | Next output                                                      |
+| -------- | ------------------------ | ------------------ | ---------------------------------------------------------------- |
+| P0       | Foundation hardening     | `[#######---] 70%` | Add edge/proxy, production env parity, release pipeline evidence |
+| P1       | Tenant/security boundary | `[#######---] 70%` | More cross-tenant deny tests and audit coverage                  |
+| P2       | Admin/student workflows  | `[########--] 80%` | More workflow polish and negative cases                          |
+| P3       | Operations visibility    | `[####------] 40%` | Tenant health, real usage, alerts, request correlation           |
+| P4       | Scale/data integrity     | `[####------] 40%` | Bounded lists, integrity checks, index review, load baseline     |
+| P5       | Shared maintainability   | `[#####-----] 50%` | Shared primitives after duplication is proven                    |
+| P6       | Mobile student app       | `[----------] 0%`  | Scaffold native app after API/client foundation is ready         |
 
 ## Quality Rules
 

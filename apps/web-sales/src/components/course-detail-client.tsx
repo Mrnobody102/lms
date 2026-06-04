@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Image from 'next/image';
 import {
   ArrowLeft,
   BookOpen,
@@ -12,7 +11,7 @@ import {
   PlayCircle,
 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { getSafeCourseCoverUrl } from '@/lib/course-images';
+import { CourseCoverImage } from '@/components/course-cover-image';
 import {
   getCourseLevelLabel,
   getPublicCourse,
@@ -100,8 +99,8 @@ export function CourseDetailClient({ courseId }: { courseId: string }) {
   return (
     <main className="min-h-screen bg-background">
       <section className="relative min-h-[460px] overflow-hidden">
-        <Image
-          src={getSafeCourseCoverUrl(course.coverImageUrl)}
+        <CourseCoverImage
+          coverUrl={course.coverImageUrl}
           alt={course.title}
           fill
           priority

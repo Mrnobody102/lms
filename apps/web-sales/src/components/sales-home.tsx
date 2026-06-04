@@ -1,10 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
 import { ArrowRight, BookOpenCheck, GraduationCap, ShieldCheck, Sparkles } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { getSafeCourseCoverUrl } from '@/lib/course-images';
+import { CourseCoverImage } from '@/components/course-cover-image';
 import {
   getPublicCourses,
   getStudentPortalUrl,
@@ -46,13 +45,13 @@ export function SalesHome() {
     };
   }, []);
 
-  const heroImage = getSafeCourseCoverUrl(courses[0]?.coverImageUrl);
+  const heroCoverUrl = courses[0]?.coverImageUrl;
 
   return (
     <main className="min-h-screen bg-background text-foreground">
       <section className="relative flex min-h-[72vh] items-end overflow-hidden">
-        <Image
-          src={heroImage}
+        <CourseCoverImage
+          coverUrl={heroCoverUrl}
           alt={t('home.heroImageAlt')}
           fill
           priority

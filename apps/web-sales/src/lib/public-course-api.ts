@@ -1,3 +1,5 @@
+import { DEFAULT_DEMO_TENANT_ID } from '@repo/shared';
+
 export interface PublicLessonPreview {
   id: string;
   title: string;
@@ -119,7 +121,12 @@ function buildPublicHeaders(): HeadersInit {
   const headers: Record<string, string> = {
     Accept: 'application/json',
   };
-  const tenantId = process.env.NEXT_PUBLIC_TENANT_ID?.trim();
+  // In production the API resolves the tenant from the request origin/domain,
+  // so the client-supplied header is ignored there. For local/dev (and any
+  // single-tenant deployment that sets the env var) we forward the configured
+  // tenant hint, falling back to the demo tenant so the catalog still loads
+  // when NEXT_PUBLIC_TENANT_ID has not been provided.
+  const tenantId = process.env.NEXT_PUBLIC_TENANT_ID?.trim() || DEFAULT_DEMO_TENANT_ID;
 
   if (tenantId) {
     headers['x-tenant-id'] = tenantId;

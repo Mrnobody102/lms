@@ -324,22 +324,24 @@ export class SrsService {
     grade: ReviewCardGrade,
     durationMs?: number,
   ): Promise<ReviewCard> {
-    const card = await this.prisma.reviewCard.findUnique({
-      where: { id: cardId, tenantId, userId },
-    });
-    if (!card) throw new NotFoundException('Review card not found');
-
-    const next = this.scheduleNext(
-      {
-        reps: card.reps,
-        lapses: card.lapses,
-        easeFactor: card.easeFactor,
-        interval: card.interval,
-      },
-      grade,
-    );
-
     return this.prisma.$transaction(async (tx) => {
+      // Read inside the transaction so the schedule computation and the
+      // subsequent update/log operate on the same card snapshot.
+      const card = await tx.reviewCard.findUnique({
+        where: { id: cardId, tenantId, userId },
+      });
+      if (!card) throw new NotFoundException('Review card not found');
+
+      const next = this.scheduleNext(
+        {
+          reps: card.reps,
+          lapses: card.lapses,
+          easeFactor: card.easeFactor,
+          interval: card.interval,
+        },
+        grade,
+      );
+
       const updatedCard = await tx.reviewCard.update({
         where: { id: card.id, tenantId, userId },
         data: {

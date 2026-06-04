@@ -42,6 +42,18 @@ Phù hợp khi muốn tự host toàn bộ stack bằng một `docker-compose`:
 
 File chính: [`deployment/production/docker-compose.prod.yml`](../../deployment/production/docker-compose.prod.yml)
 
+Lưu ý hiện trạng: compose production hiện tại chạy các service ứng dụng và dependency nội bộ, nhưng **chưa đóng gói reverse proxy/edge layer**. Trước khi mở traffic internet thật, phải đặt stack sau Nginx, Caddy, Traefik, AWS ALB, Cloudflare Tunnel/Load Balancer hoặc edge tương đương.
+
+Edge/reverse proxy bắt buộc chịu trách nhiệm:
+
+- TLS/HTTPS và redirect HTTP -> HTTPS.
+- Route host/domain tới đúng service: API, student, admin, sales, super portal.
+- Set `X-Forwarded-Proto`, `X-Forwarded-Host`, `X-Forwarded-For` chính xác và chỉ bật `TRUST_PROXY=true` khi proxy đáng tin cậy.
+- Strip `x-tenant-id` từ request public internet; chỉ edge/service nội bộ được inject header tenant nếu deployment chủ động tin cậy.
+- Cấu hình upload body size, read/write timeout cho video/audio/PDF.
+- Rate limit/WAF ở edge cho auth, upload, AI/provider-backed endpoints và public catalog.
+- Không expose trực tiếp app/container ports ra internet ngoại trừ qua edge đã bảo vệ.
+
 ### Topology B. Frontend host riêng, API host riêng
 
 Phù hợp khi:
@@ -91,6 +103,7 @@ API server:
 - `DATABASE_URL`
 - `REDIS_URL`
 - `JWT_SECRET`
+- `JWT_RESET_SECRET`
 - `JWT_EXPIRES_IN`
 - `CORS_ORIGINS`
 - `APP_PUBLIC_URL`
@@ -114,6 +127,36 @@ pnpm --filter @repo/database db:deploy
 ```
 
 Không dùng `db:push` trên production.
+
+### Production scale checklist
+
+Trước launch production:
+
+- `pnpm run check:production-env -- --file .env.production` pass với secret thật trong secret manager/platform env.
+- `docker compose -f deployment/production/docker-compose.prod.yml config --quiet` pass.
+- Staging deploy chạy migration bằng `db:deploy`, không dùng `db:push`.
+- Smoke API và portal login/routes chạy trên URL staging/public thật.
+- PostgreSQL có backup tự động, retention, và restore drill đã thử.
+- Object storage/media có backup hoặc durability policy rõ ràng.
+- Redis/queue recovery stance rõ: dữ liệu nào được phép mất, dữ liệu nào cần replay/idempotency.
+- Metrics/alerts có receiver thật, không để Alertmanager receiver rỗng.
+- Log shipping hoặc platform logs có request-id correlation.
+
+Trước khi nhắm 10k-100k users:
+
+- Có baseline load test cho auth, course list/detail, lesson/progress, practice/exam submit, reporting và public catalog.
+- API scale ngang sau proxy/load balancer; database connection pool không bão hòa.
+- Các list/report lớn có pagination/cursor/bounds và query plan/index review.
+- Worker queue có backlog alerts và có thể scale process/container.
+- Media/video/audio đi qua object storage/CDN thay vì API process làm bottleneck.
+
+Trước khi nhắm 100k-1M+ users:
+
+- Dùng managed HA PostgreSQL/Redis hoặc kiến trúc HA tương đương.
+- Tách analytics/reporting read model hoặc read replicas cho query nặng.
+- Có canary/blue-green deploy và rollback evidence.
+- Có SLO/error budget, incident process, on-call/alert escalation.
+- Có DR plan với RPO/RTO rõ ràng và restore drill định kỳ.
 
 ## 3. CI/CD
 

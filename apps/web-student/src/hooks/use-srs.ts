@@ -44,9 +44,16 @@ export function useSubmitReview() {
       durationMs?: number;
     }) => srsApi.submitReview(cardId, grade, durationMs),
     onSuccess: () => {
-      // Invalidate both SRS queries and progress summary (since it contains srsDue)
-      queryClient.invalidateQueries({ queryKey: srsKeys.all });
+      // Refresh the due/summary counters and stats so dashboards reflect the
+      // graded card immediately. Prefix keys cover every params variant.
+      queryClient.invalidateQueries({ queryKey: [...srsKeys.all, 'summary'] });
+      queryClient.invalidateQueries({ queryKey: [...srsKeys.all, 'stats'] });
       queryClient.invalidateQueries({ queryKey: ['progress-summary'] });
+      // Mark the review queue stale WITHOUT refetching the active session.
+      // The review page advances its local session queue itself; refetching
+      // here would overwrite that local state mid-session and cause the card
+      // list to flicker/reset. The queue refetches cleanly on next mount.
+      queryClient.invalidateQueries({ queryKey: [...srsKeys.all, 'queue'], refetchType: 'none' });
     },
   });
 }

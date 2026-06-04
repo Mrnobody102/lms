@@ -46,6 +46,7 @@ export default function ReviewPage() {
   const [dragX, setDragX] = useState(0);
   const startTimeRef = useRef(0);
   const pointerStartXRef = useRef<number | null>(null);
+  const submittingRef = useRef(false);
   const { mutate: submitReview, isPending } = useSubmitReview();
   const currentCard = sessionQueue[0];
   const question = currentCard?.question;
@@ -87,19 +88,27 @@ export default function ReviewPage() {
 
   const handleGrade = useCallback(
     (grade: ReviewCardGrade) => {
-      if (!currentCard || isPending) return;
+      // Guard against double-submit: React Query's isPending may not have
+      // flipped yet between two rapid key/pointer events, so we also hold a
+      // synchronous ref lock that is released only when the request settles.
+      if (!currentCard || isPending || submittingRef.current) return;
 
+      submittingRef.current = true;
       const durationMs = Date.now() - startTimeRef.current;
+      const gradedCardId = currentCard.cardId;
       setMessage(null);
       submitReview(
-        { cardId: currentCard.cardId, grade, durationMs },
+        { cardId: gradedCardId, grade, durationMs },
         {
           onSuccess: () => {
-            setSessionQueue((items) => items.filter((item) => item.cardId !== currentCard.cardId));
+            setSessionQueue((items) => items.filter((item) => item.cardId !== gradedCardId));
             setShowAnswer(false);
             setDragX(0);
           },
           onError: () => setMessage(t('reviewSubmitError')),
+          onSettled: () => {
+            submittingRef.current = false;
+          },
         },
       );
     },

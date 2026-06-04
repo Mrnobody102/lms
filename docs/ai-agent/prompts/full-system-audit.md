@@ -237,6 +237,11 @@ Trace these end to end where implemented:
 - Expensive synchronous request paths.
 - Frontend bundle/render hotspots.
 - Caching strategy and invalidation correctness.
+- Load-test readiness for launch, 10k-100k users, and 100k+ users: p95/p99 targets, throughput assumptions, bottleneck evidence, and commands/scripts that can reproduce the baseline.
+- Database connection strategy under horizontal API scale, including pool limits, Prisma connection behavior, PgBouncer/managed pooler needs, and query-plan evidence for high-volume endpoints.
+- Queue/worker throughput for BullMQ jobs, retry/idempotency behavior under duplicate delivery, backlog alerts, and worker autoscaling assumptions.
+- Media delivery scale: object storage, signed URL use, CDN plan, upload/download limits, and avoiding large binary traffic through the API process unless explicitly intended.
+- Noisy-neighbor risks across tenants: per-tenant rate limits, quotas, reporting scans, AI/provider spend, and background job fairness.
 
 ### 10. Observability, Support Diagnosis, Operations
 
@@ -256,6 +261,13 @@ Trace these end to end where implemented:
 - Env validation and secret checks.
 - Release check and staging smoke.
 - Backup/restore and migration safety evidence.
+- Edge/reverse proxy readiness: Nginx/Caddy/Traefik/cloud edge/ALB/Cloudflare config, TLS, HTTP-to-HTTPS redirect, `X-Forwarded-*`, trusted proxy settings, upload/timeouts, compression, static/CDN strategy, and public stripping of spoofable headers such as `x-tenant-id`.
+- Production env parity: Docker compose, platform secrets, env validation, `.env.production.example`, and required variables such as auth/reset secrets, CORS origins, Redis, cookie domain, provider keys, storage, mail, AI, and monitoring endpoints.
+- Deployment topology: whether services are directly exposed, behind a trusted edge, on Vercel/container host, or mixed; document risks and verify app ports are not public unless intentionally protected.
+- CI/CD deploy flow for every app, not only build flow: API, migrations, web-student, web-admin, web-sales, super-portal, smoke after deploy, rollback, and canary/blue-green evidence if claimed.
+- Backup and disaster recovery: PostgreSQL snapshots/dumps, restore drill, object storage retention, Redis/queue recovery stance, RPO/RTO assumptions, and runbooks.
+- Observability deployment: Prometheus/managed metrics actually running, Alertmanager or notification receivers non-empty, structured log shipping, request-id correlation, dashboards, and alert routing.
+- Security operations: dependency/secret scanning in CI, WAF/rate-limit stance, admin audit logs, incident workflow, data retention/deletion, privacy of student/minor data, and export controls.
 
 ### 12. Testing Quality
 
@@ -264,6 +276,38 @@ Trace these end to end where implemented:
 - Deterministic setup/teardown.
 - Test assertions that prove behavior instead of implementation details.
 - Missing tests for critical LMS flows.
+
+### 13. Production Scale Readiness For 100k+ Users
+
+Use this section to prevent app-level readiness from being mistaken for production operations readiness.
+
+- Classify the current evidence by horizon:
+  - Launch / early production.
+  - 10k-100k users.
+  - 100k-1M users.
+  - 1M+ users.
+- For each horizon, separate:
+  - Proven by source/tests/scripts.
+  - Proven by staging/live evidence.
+  - Missing evidence.
+  - Product/ops decision required.
+- Audit immediate production blockers:
+  - Missing reverse proxy/edge artifact.
+  - Missing required production env variables in compose/platform config.
+  - Direct public exposure of app containers.
+  - Missing TLS/cookie/proxy configuration evidence.
+  - Missing backup/restore drill.
+  - Missing alert receiver or log aggregation.
+  - Missing deploy pipeline for any app.
+  - Missing load baseline for core APIs and reporting.
+- Audit million-scale prerequisites as future architecture work, not launch blockers unless the user explicitly requires immediate million-user readiness:
+  - HA Postgres/Redis and connection pooling.
+  - Read replicas or analytics/read model separation.
+  - Queue partitioning and worker autoscaling.
+  - CDN/object-storage media delivery.
+  - Per-tenant quotas/noisy-neighbor isolation.
+  - Canary/blue-green deployment and SLO/error budget.
+  - Disaster recovery region and RPO/RTO.
 
 ## Phase 3 - Self-Challenge Gate
 
@@ -358,10 +402,18 @@ pnpm --filter web-admin test:e2e
 pnpm --filter super-portal test:e2e
 pnpm test:e2e
 pnpm run check:data-integrity
-pnpm run check:production-env
+pnpm run check:production-env -- --file .env.production
 ```
 
-Do not claim live production readiness unless live/staging checks were actually run and evidence is included.
+Add deployment/ops validation when the audit touches production readiness:
+
+```bash
+docker compose -f deployment/production/docker-compose.prod.yml config --quiet
+pnpm run check:secrets
+pnpm run smoke:deploy -- -ApiUrl <staging-api-url> -WebStudentUrl <staging-student-url> -WebAdminUrl <staging-admin-url> -SuperPortalUrl <staging-portal-url>
+```
+
+Do not claim live production readiness unless live/staging checks were actually run and evidence is included. Do not claim 100k+ or million-user readiness without load-test, HA, backup/restore, deploy, and observability evidence for that horizon.
 
 ## Phase 7 - Final Report Gate
 
@@ -429,6 +481,7 @@ Table columns:
   - Batch 17: operations, release, scale readiness.
   - Batch 18: AI-native governance and adaptive learning.
   - Batch 19: mobile student app MVP.
+  - Batch 20: high-scale platform architecture for 100k+ to million-user readiness.
 
 ## Safety Rules
 

@@ -1,28 +1,29 @@
 # Kế Hoạch Triển Khai LMS Platform
 
-Cập nhật lần cuối: 2026-06-01 (broad mega batch planning)
+Cập nhật lần cuối: 2026-06-04 (production-scale batch planning)
 
 Tracker ngắn cho task/batch hiện tại: [CURRENT-WORK.md](CURRENT-WORK.md).
 
 ## Tóm Tắt Nhanh
 
-| Mảng                        | Tiến độ            | Trạng thái ngắn                                                   |
-| --------------------------- | ------------------ | ----------------------------------------------------------------- |
-| Foundation / CI / release   | `[#########-] 90%` | CI contract gate, API smoke integrity và portal smoke đã chặt hơn |
-| Tenant isolation / security | `[#######---] 70%` | Đã thêm deny tests; cần mở rộng tiếp theo domain                  |
+| Mảng                        | Tiến độ            | Trạng thái ngắn                                                                        |
+| --------------------------- | ------------------ | -------------------------------------------------------------------------------------- |
+| Foundation / CI / release   | `[########--] 80%` | App-level gates tốt; còn thiếu edge/proxy, secrets, backup, deploy pipeline đầy đủ     |
+| Tenant isolation / security | `[#######---] 70%` | Đã thêm deny tests; cần mở rộng tiếp theo domain                                       |
 | Student learning core       | `[#######---] 70%` | Dashboard, SRS, practice, exam đã có MVP; cần controlled progression và mock exam mode |
-| Admin operations            | `[#######---] 65%` | Đã chuẩn hóa một phần shared UI states                            |
-| Super Portal operations     | `[######----] 55%` | Ops pages dùng shared states, cần real health sâu                 |
-| AI-native roadmap           | `[####------] 40%` | MVP tutor/roleplay có nền, cần governance/quota                   |
-| Mobile student app          | `[----------] 0%`  | Đã có plan P11; chưa scaffold `apps/mobile-student`               |
+| Admin operations            | `[#######---] 65%` | Đã chuẩn hóa một phần shared UI states                                                 |
+| Super Portal operations     | `[######----] 55%` | Ops pages dùng shared states; cần real health, alerts, deploy evidence                 |
+| Production operations       | `[####------] 40%` | Docker/health/metrics có nền; thiếu reverse proxy, backup/restore, HA/load evidence    |
+| AI-native roadmap           | `[####------] 40%` | MVP tutor/roleplay có nền, cần governance/quota                                        |
+| Mobile student app          | `[----------] 0%`  | Đã có plan P11; chưa scaffold `apps/mobile-student`                                    |
 
-Hiện tại ưu tiên **Mega Batch 16**:
+Hiện tại ưu tiên **Mega Batch 17**:
 
-1. Mở rộng cross-tenant deny tests từ practice/exam sang enrollment/cohort/reporting/SRS/media nếu còn risk.
-2. Tiếp tục shared loading/empty/error states cho admin, student và super portal flows trọng yếu.
-3. Giữ CI contract gate, API readiness smoke, portal smoke và package build dependencies xanh.
-4. Tiếp tục read-only integrity checks cho dữ liệu học tập/tenant, soft-delete consistency và bounded list audit.
-5. Polish admin authoring/reports và student dashboard/practice/exam/review để đủ daily-use.
+1. Đóng các production deploy gaps: reverse proxy/edge, production env contract, secrets, `JWT_RESET_SECRET` thật, staging smoke thật.
+2. Hoàn thiện observability vận hành: Prometheus/Alertmanager service hoặc managed equivalent, alert receivers, request-id/log correlation, operator runbooks.
+3. Thiết kế backup/restore/rollback cho PostgreSQL, object storage và Redis/queue state; có restore drill trước production.
+4. Kiểm tra scale paths: load test API, bounded/cursor lists, reporting query volume, index review, background job throughput.
+5. Giữ CI contract gate, API readiness smoke, portal smoke và package build dependencies xanh.
 
 ## Nguyên Tắc Chia Batch
 
@@ -37,12 +38,61 @@ Không ghi duration trong plan. Không tạo batch mới chỉ để chứa mộ
 
 ## Mega Batch Roadmap
 
-| Batch | Theme                                         | Outcome                                                                                                           |
-| ----- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| 16    | Production contracts + workflow readiness     | Tenant/security regressions khó tái xuất hiện; critical admin/student flows bounded, polished và smoke-tested     |
-| 17    | Operations, release + scale readiness         | Super Portal, release flow, observability, data integrity, list scale và reporting volume đủ dùng cho production  |
-| 18    | AI-native governance + adaptive learning      | AI workflows có role policy, quota, audit, prompt/version governance, provider reliability và adaptive sequencing |
-| 19    | Mobile Student App MVP + native learning loop | Scaffold Expo app, mobile auth adapter, dashboard/course/SRS/practice loop và offline-lite foundation             |
+| Batch | Theme                                         | Outcome                                                                                                              |
+| ----- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| 16    | Production contracts + workflow readiness     | Tenant/security regressions khó tái xuất hiện; critical admin/student flows bounded, polished và smoke-tested        |
+| 17    | Operations, release + scale readiness         | Super Portal, release flow, observability, data integrity, list scale và reporting volume đủ dùng cho production     |
+| 18    | AI-native governance + adaptive learning      | AI workflows có role policy, quota, audit, prompt/version governance, provider reliability và adaptive sequencing    |
+| 19    | Mobile Student App MVP + native learning loop | Scaffold Expo app, mobile auth adapter, dashboard/course/SRS/practice loop và offline-lite foundation                |
+| 20    | High-scale platform architecture              | HA database/cache/storage, queue partitioning, CDN/object delivery, load/canary evidence cho 100k+ đến million users |
+
+## Production Scale Horizons
+
+Không claim production-ready nếu chỉ có source-code checks. Production readiness cần bằng chứng từ staging/live infrastructure, load test, backup restore, provider credentials và deploy pipeline thật.
+
+| Horizon                   | Mục tiêu thực tế                                         | Điều kiện tối thiểu trước khi claim                                                                                         |
+| ------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Launch / early production | Một số tenant thật, traffic vừa phải                     | Edge TLS/proxy, env/secrets production, managed DB/Redis hoặc backup rõ, smoke staging, monitoring alerts, rollback runbook |
+| 10k-100k users            | Nhiều trung tâm/lớp dùng hằng ngày                       | Horizontal API scale, DB pool strategy, reporting pagination/index review, queue worker scale, load test p95/p99, CDN/media |
+| 100k-1M users             | Traffic theo mùa thi/campaign, nhiều tenant lớn          | HA Postgres/Redis, read replicas hoặc analytics store, job partitioning, autoscaling, canary deploy, SLO/error budget       |
+| 1M+ users                 | Multi-region hoặc traffic rất lớn, yêu cầu vận hành 24/7 | DR region plan, multi-region CDN/edge, data residency policy, event/analytics pipeline riêng, incident process và on-call   |
+
+## Mega Batch 17 - Production Operations And Scale Readiness
+
+Mega Batch 17 là batch active để biến hệ thống từ "app-level production hardened" thành "deployable production system". Batch này không yêu cầu giải quyết million-scale ngay, nhưng phải tạo nền đúng để không phải thay kiến trúc lớn quá sớm.
+
+| Track                             | Scope                                                                                                                                    | Acceptance                                                                                                                            |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| 17A. Edge/reverse proxy           | Nginx/Caddy/Traefik hoặc cloud edge config; TLS, HTTP->HTTPS, host routing, `X-Forwarded-*`, strip `x-tenant-id`, upload limits/timeouts | Production topology không expose app ports public; `TRUST_PROXY=true` có documented trusted proxy; tenant spoofing qua header bị chặn |
+| 17B. Production env/secrets       | `.env.production.example`, secret manager guidance, compose/API env parity, `JWT_RESET_SECRET`, provider keys, no frontend secrets       | `pnpm run check:production-env -- --file .env.production` pass trong staging; Docker compose/API bootstrap không thiếu required env   |
+| 17C. CI/CD and staging            | Deploy pipeline cho API, web-student, web-admin, web-sales, super-portal; migration step; post-deploy smoke                              | Một release candidate deploy được lên staging bằng pipeline, chạy smoke API/login/critical portal routes thật                         |
+| 17D. Observability                | Prometheus/managed metrics, Alertmanager receiver, structured logs, request-id propagation, operator docs                                | Readiness/5xx/latency/dependency alerts gửi tới kênh thật; log có request id để truy vết incident                                     |
+| 17E. Backup, restore, rollback    | Postgres snapshots/dumps, object storage backup policy, migration rollback decision tree, restore drill                                  | Có runbook và bằng chứng restore staging; release rollback gồm code image + DB state strategy                                         |
+| 17F. Data integrity and retention | Read-only integrity checks, soft-delete/PII retention policy, audit log coverage for sensitive ops                                       | Integrity checks chạy trong release gate; policy retention/export/deletion được ghi rõ cho dữ liệu học viên                           |
+| 17G. Performance/load             | API load test scripts, DB index review, list/report query bounds, worker throughput, frontend bundle hotspots                            | Có baseline p95/p99 staging; endpoints lớn có pagination/cursor/bounds; queue workers scale được theo process/container               |
+| 17H. Security/compliance          | Edge WAF/rate-limit, dependency scanning, CSRF/CORS/CSP verification, admin auditability, privacy review                                 | Không có public secrets, CORS exact origin, tenant production không dựa vào frontend hint, mutation nhạy cảm có audit log             |
+
+Immediate production gaps từ rà soát 2026-06-04:
+
+- `deployment/production/docker-compose.prod.yml` đã được bổ sung `JWT_RESET_SECRET`; vẫn cần secret thật trong staging/production để `check:production-env` pass.
+- Repo chưa có reverse proxy service/config; tài liệu đã cảnh báo cần strip `x-tenant-id` nhưng chưa có artifact deploy kiểm chứng.
+- Monitoring config mới là starter; Alertmanager receiver rỗng và compose chưa chạy Prometheus/Alertmanager.
+- Chưa có backup/restore drill hoặc runbook object storage/Redis queue rõ ràng.
+- Deploy workflow thật mới thấy rõ cho `web-sales`; cần pipeline cho API, student, admin và super portal.
+- `.env` hiện tại là local; chưa có `.env.production` thật để pass production env preflight.
+
+## Mega Batch 20 - High-Scale Platform Architecture
+
+Batch 20 chỉ bắt đầu sau khi Mega Batch 17 có staging/live evidence. Đây là batch chuẩn bị cho 100k+ đến million users, không phải blocker cho launch nhỏ.
+
+| Track                      | Scope                                                                                                                     | Acceptance                                                                                                     |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| 20A. Database scale        | PgBouncer/connection pooling, query plan review, read replicas cho reporting, partition/archival strategy cho logs/events | Load test chứng minh connection không bão hòa; reporting heavy reads không làm chậm transactional API          |
+| 20B. Cache and queue scale | Redis HA, queue worker autoscale, per-tenant/job priority, idempotency keys cho async jobs                                | Worker retry không tạo duplicate side effects; queue backlog có alerts và drain runbook                        |
+| 20C. Media delivery        | S3-compatible production storage, CDN, signed URL policy, upload scanning/transcoding path                                | Video/audio tải qua CDN/object storage; API không stream file lớn qua process chính trừ trường hợp có chủ đích |
+| 20D. Analytics separation  | Event pipeline hoặc analytics/read model cho reporting/time-series lớn                                                    | Dashboard/reporting không truy vấn OLTP theo kiểu scan lớn trong giờ cao điểm                                  |
+| 20E. Multi-tenant fairness | Per-tenant quotas/rate limits, noisy-neighbor isolation, tenant usage ledger and billing enforcement                      | Một tenant traffic lớn không làm sập tenant khác; Super Portal thấy usage/quota theo tenant                    |
+| 20F. Resilience and DR     | Multi-AZ managed DB/Redis, disaster recovery objective, canary/blue-green deployment                                      | Có RPO/RTO được chọn rõ và drill định kỳ; deploy có rollback/canary evidence                                   |
 
 ## Định hướng sản phẩm
 
@@ -123,7 +173,7 @@ Chưa có hoặc mới ở mức sơ khai:
 
 ### P0. Foundation Hardening
 
-Trạng thái: phần lớn đã hoàn thành.
+Trạng thái: app-level foundation phần lớn đã hoàn thành; production-ops foundation đang tiếp tục trong Mega Batch 17.
 
 Đã làm:
 
@@ -141,6 +191,10 @@ Trạng thái: phần lớn đã hoàn thành.
 
 Còn cần theo dõi:
 
+- Edge/reverse proxy artifact, TLS/proxy headers và public `x-tenant-id` stripping.
+- Production env/secret parity, gồm `JWT_RESET_SECRET` thật trong staging/production.
+- Backup/restore drill, alert receiver thật và staging smoke sau deploy.
+- Load baseline cho các API/reporting paths chính trước khi nhắm 10k-100k users.
 - Build trace của Next standalone có thể chậm, cần theo dõi trong CI.
 
 ### P1. Course Builder Và Enrollment
@@ -518,12 +572,13 @@ Ngoài MVP:
 
 ## Mapping Mega Batch Sang Product Areas
 
-| Mega batch | Product areas                  | Ghi chú                                                                                                         |
-| ---------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------- |
-| 16         | P0/P1/P2/P4/P5/P6/P9           | Contract hardening, tenant denial tests, smoke checks, shared UI states, critical admin/student workflow polish |
-| 17         | P0/P6/P10 + Super Portal       | Vận hành, release, observability, tenant health, real metrics, data integrity, bounded lists, reporting volume  |
-| 18         | P8 + AI-native roadmap         | AI governance, quota, audit, prompt/version tracking, provider reliability, adaptive sequencing                 |
-| 19         | P11 + shared client foundation | Mobile Student App MVP: scaffold, mobile auth adapter, tenant selection, dashboard/course/SRS/practice loop     |
+| Mega batch | Product areas                  | Ghi chú                                                                                                          |
+| ---------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| 16         | P0/P1/P2/P4/P5/P6/P9           | Contract hardening, tenant denial tests, smoke checks, shared UI states, critical admin/student workflow polish  |
+| 17         | P0/P6/P10 + Super Portal/Ops   | Edge/proxy, env/secrets, CI/CD, observability, backup/restore, data integrity, bounded lists, reporting volume   |
+| 18         | P8 + AI-native roadmap         | AI governance, quota, audit, prompt/version tracking, provider reliability, adaptive sequencing                  |
+| 19         | P11 + shared client foundation | Mobile Student App MVP: scaffold, mobile auth adapter, tenant selection, dashboard/course/SRS/practice loop      |
+| 20         | Platform infrastructure scale  | HA DB/cache/storage, connection pooling, CDN/media, queue partitioning, analytics separation, canary/DR evidence |
 
 Backlog nhỏ hoặc bugfix lẻ phải đi vào mega batch liên quan, không tạo batch riêng.
 
@@ -537,3 +592,4 @@ Một phase chỉ được xem là xong khi:
 - Có test phù hợp với rủi ro của feature.
 - `pnpm --filter api-server test`, build app liên quan và lint pass.
 - Docs product/API/backlog được cập nhật cùng thay đổi code.
+- Production-facing work có staging/deploy evidence tương ứng: env preflight, edge/proxy config, smoke, alert/backup/load evidence khi liên quan.
