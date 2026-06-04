@@ -30,7 +30,30 @@ Starter config files are available in `deployment/production/monitoring/`:
 
 - `prometheus.yml` scrapes `/api/health/metrics/prometheus` from the API service.
 - `alert-rules.yml` contains readiness, dependency, server error rate, and readiness latency alerts.
-- `alertmanager.yml` is intentionally minimal; add Slack, email, PagerDuty, or webhook receivers before production use.
+- `alertmanager.yml` sends to `ALERTMANAGER_WEBHOOK_URL`; this env must point to a real incident/chatops webhook before production use.
+
+The production compose stack runs Prometheus and Alertmanager on the internal Docker network. Do not expose `9090` or `9093` directly to the public internet. Use an SSH tunnel, private VPN, or a managed metrics service for operator access.
+
+Validate the monitoring config before deployment:
+
+```bash
+docker compose -f deployment/production/docker-compose.prod.yml config --quiet
+```
+
+Send a test alert after staging deploy:
+
+```bash
+curl -XPOST https://<alertmanager-private-host>/api/v2/alerts \
+  -H 'Content-Type: application/json' \
+  -d '[{"labels":{"alertname":"LmsTestAlert","service":"api-server","severity":"info"},"annotations":{"summary":"LMS test alert"}}]'
+```
+
+Incident trace workflow:
+
+1. Copy the `x-request-id` from the failing API response or frontend error report.
+2. Search API logs for the same request id.
+3. Check `/api/health/ready` and Prometheus alerts for dependency/readiness failures in the same time window.
+4. Use the tenant id from logs only for internal debugging; never ask users to provide or trust `x-tenant-id` from public requests.
 
 ```yaml
 groups:

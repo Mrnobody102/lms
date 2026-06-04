@@ -150,11 +150,64 @@ requireIncludes('package.json', [
   { label: 'tenant scope audit script', value: '"check:tenant-scope"' },
   { label: 'production env preflight script', value: '"check:production-env"' },
   { label: 'read-only data integrity script', value: '"check:data-integrity"' },
+  { label: 'load baseline script', value: '"load:baseline"' },
+  { label: 'production release gate script', value: '"release:production-check"' },
   { label: 'cross-platform port cleanup script', value: 'node scripts/stop-project-processes.js' },
 ]);
 
 requireFile('scripts/stop-project-processes.js');
 requireFile('scripts/check-data-integrity.js');
+requireFile('scripts/load-baseline.js');
+
+requireIncludes('deployment/production/Caddyfile', [
+  { label: 'API host route', value: '{$API_HOST}' },
+  { label: 'student host route', value: '{$STUDENT_HOST}' },
+  { label: 'admin host route', value: '{$ADMIN_HOST}' },
+  { label: 'portal host route', value: '{$PORTAL_HOST}' },
+  { label: 'courses host route', value: '{$COURSES_HOST}' },
+  { label: 'tenant header stripping', value: 'header_up -x-tenant-id' },
+  { label: 'upload body limit', value: 'request_body' },
+]);
+
+requireIncludes('deployment/production/docker-compose.prod.yml', [
+  { label: 'Caddy edge service', value: 'caddy:' },
+  { label: 'Caddy public HTTP port', value: "'80:80'" },
+  { label: 'Caddy public HTTPS port', value: "'443:443'" },
+  { label: 'API internal expose', value: "      - '4000'" },
+  { label: 'default trusted proxy through edge', value: 'TRUST_PROXY: ${TRUST_PROXY:-true}' },
+  { label: 'Prometheus service', value: 'prometheus:' },
+  { label: 'Alertmanager service', value: 'alertmanager:' },
+  { label: 'Alertmanager webhook env', value: 'ALERTMANAGER_WEBHOOK_URL' },
+]);
+
+requireIncludes('deployment/production/monitoring/alertmanager.yml', [
+  { label: 'generic webhook receiver URL file', value: 'url_file: /tmp/alertmanager-webhook-url' },
+  { label: 'resolved alert forwarding', value: 'send_resolved: true' },
+]);
+
+requireIncludes('.github/workflows/docker-build.yml', [
+  {
+    label: 'production env preflight in docker workflow',
+    value: 'node scripts/check-production-env.js',
+  },
+  { label: 'JWT reset secret parity', value: 'JWT_RESET_SECRET' },
+  { label: 'web sales URL parity', value: 'NEXT_PUBLIC_WEB_SALES_URL' },
+  { label: 'web-sales image build', value: 'build web-sales' },
+]);
+
+requireIncludes('.env.production.example', [
+  { label: 'API host env', value: 'API_HOST=' },
+  { label: 'student host env', value: 'STUDENT_HOST=' },
+  { label: 'admin host env', value: 'ADMIN_HOST=' },
+  { label: 'portal host env', value: 'PORTAL_HOST=' },
+  { label: 'courses host env', value: 'COURSES_HOST=' },
+  { label: 'Caddy ACME email env', value: 'CADDY_ACME_EMAIL=' },
+  { label: 'Alertmanager webhook env', value: 'ALERTMANAGER_WEBHOOK_URL=' },
+]);
+requireFile('docs/runbooks/backup-restore-runbook.md');
+requireFile('docs/ops/data-retention.md');
+requireFile('docs/ops/performance-load.md');
+requireFile('docs/ops/security-compliance.md');
 
 requireIncludes('apps/api-server/src/course/dto/course-query.dto.ts', [
   { label: 'course list limit cap', value: '@Max(100)' },

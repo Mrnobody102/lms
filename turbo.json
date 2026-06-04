@@ -40,6 +40,9 @@
     "STAGING_STUDENT_PASSWORD",
     "STAGING_SUPER_EMAIL",
     "STAGING_SUPER_PASSWORD",
+    "LMS_LOAD_API_URL",
+    "LMS_LOAD_ORIGIN",
+    "LMS_LOAD_AUTH_COOKIE",
     "npm_package_version"
   ],
   "tasks": {

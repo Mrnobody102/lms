@@ -12,4 +12,6 @@ route:
 
 receivers:
   - name: default
-    webhook_configs: []
+    webhook_configs:
+      - url_file: /tmp/alertmanager-webhook-url
+        send_resolved: true

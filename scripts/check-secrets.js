@@ -22,7 +22,7 @@ const tokenPatterns = [
 ];
 
 const sensitiveAssignments =
-  /\b(?:DATABASE_URL|REDIS_URL|JWT_SECRET|JWT_RESET_SECRET|OPENAI_API_KEY|GEMINI_API_KEY|GROQ_API_KEY|AI_API_KEY|SUPABASE_SERVICE_ROLE_KEY|STRIPE_SECRET_KEY|STRIPE_WEBHOOK_SECRET)\s*[:=]\s*["']?([^"'\s]+)/g;
+  /\b(?:DATABASE_URL|REDIS_URL|JWT_SECRET|JWT_RESET_SECRET|OPENAI_API_KEY|GEMINI_API_KEY|GROQ_API_KEY|AI_API_KEY|SUPABASE_SERVICE_ROLE_KEY|STRIPE_SECRET_KEY|STRIPE_WEBHOOK_SECRET|ALERTMANAGER_WEBHOOK_URL)\s*[:=]\s*["']?([^"'\s]+)/g;
 
 const forbiddenPublicSecretAssignments =
   /\b(?:NEXT_PUBLIC_GROQ_[A-Z0-9_]*|NEXT_PUBLIC_OPENAI_[A-Z0-9_]*|NEXT_PUBLIC_AI_API_KEY)\s*[:=]\s*["']?([^"'\s]+)/g;
@@ -42,6 +42,7 @@ const placeholderValues = [
   'schema',
   'localhost',
   '127.0.0.1',
+  'redis://redis',
   'secret-key',
   'groq-secret',
   'z.',

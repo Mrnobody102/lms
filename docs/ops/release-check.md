@@ -18,45 +18,57 @@ pnpm test
 pnpm run check:contracts
 ```
 
-3. Kiểm tra production env thật trước deploy. Lệnh này chỉ in tên biến lỗi,
+3. Chạy data integrity gate read-only:
+
+```bash
+pnpm run check:data-integrity
+```
+
+4. Kiểm tra production env thật trước deploy. Lệnh này chỉ in tên biến lỗi,
    không in giá trị secret:
 
 ```bash
 pnpm run check:production-env -- --file .env.production
 ```
 
-4. Chạy lint:
+5. Chạy lint:
 
 ```bash
 pnpm lint
 ```
 
-5. Build ổn định:
+6. Build ổn định:
 
 ```bash
 pnpm run build:stable
 ```
 
-6. Smoke backend với Postgres và Redis:
+7. Smoke backend với Postgres và Redis:
 
 ```bash
 pnpm run smoke:api
 ```
 
-7. Kiểm tra trạng thái migration nếu đang chuẩn bị deploy shared/staging/production:
+8. Kiểm tra trạng thái migration nếu đang chuẩn bị deploy shared/staging/production:
 
 ```bash
 pnpm db:status
 ```
 
-8. Smoke E2E UI:
+9. Smoke E2E UI:
 
 ```bash
 pnpm test:e2e
 ```
 
-9. Smoke staging thật trên Vercel/Render/Supabase khi chuẩn bị release production.
-   Các lệnh này không mock API và yêu cầu tài khoản test thật:
+10. Smoke staging thật trên Caddy/Compose hoặc platform tương đương khi chuẩn bị release production:
+
+```bash
+pnpm smoke:deploy -- -ApiUrl https://api.example.com -WebStudentUrl https://student.example.com -WebAdminUrl https://admin.example.com -SuperPortalUrl https://portal.example.com
+```
+
+11. Smoke staging thật trên browser E2E khi có tài khoản test.
+    Các lệnh này không mock API và yêu cầu tài khoản test thật:
 
 ```bash
 WEB_STUDENT_BASE_URL=https://<student-app> \
@@ -68,7 +80,22 @@ STAGING_SUPER_PASSWORD=<super-admin-password> \
 pnpm run test:e2e:staging
 ```
 
-10. Nếu cần chạy một lệnh duy nhất:
+12. Chạy load baseline staging và lưu JSON vào release evidence:
+
+```bash
+LMS_LOAD_API_URL=https://api.example.com \
+LMS_LOAD_ORIGIN=https://courses.example.com \
+LMS_LOAD_AUTH_COOKIE='<staging-cookie>' \
+pnpm run load:baseline -- --duration-seconds 60 --concurrency 8
+```
+
+13. Nếu cần chạy một lệnh production gate đầy đủ:
+
+```bash
+pnpm run release:production-check
+```
+
+Nếu chỉ cần local release gate không yêu cầu `.env.production`:
 
 ```bash
 pnpm run release:check
@@ -82,3 +109,5 @@ pnpm run release:check
 - `ports:free` chỉ dừng process thuộc repo này, không kill bừa tiến trình ngoài workspace.
 - Groq key chỉ đặt ở Render `api-server` (`GROQ_API_KEY` hoặc `AI_API_KEY`). Không tạo
   biến `NEXT_PUBLIC_GROQ_*` trên Vercel.
+- Production compose đã có Caddy; chỉ Caddy được expose public `80/443`.
+- Alertmanager phải có `ALERTMANAGER_WEBHOOK_URL` thật trước khi nhận traffic production.

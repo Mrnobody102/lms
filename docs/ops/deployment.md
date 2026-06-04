@@ -42,7 +42,13 @@ Phù hợp khi muốn tự host toàn bộ stack bằng một `docker-compose`:
 
 File chính: [`deployment/production/docker-compose.prod.yml`](../../deployment/production/docker-compose.prod.yml)
 
-Lưu ý hiện trạng: compose production hiện tại chạy các service ứng dụng và dependency nội bộ, nhưng **chưa đóng gói reverse proxy/edge layer**. Trước khi mở traffic internet thật, phải đặt stack sau Nginx, Caddy, Traefik, AWS ALB, Cloudflare Tunnel/Load Balancer hoặc edge tương đương.
+Compose production hiện có Caddy edge layer:
+
+- Caddy là service duy nhất expose public port `80/443`.
+- API và các Next.js app chỉ dùng `expose` trong Docker network nội bộ.
+- Caddy route theo host tới `api`, `web-student`, `web-admin`, `web-sales`, và `super-portal`.
+- Caddy strip `x-tenant-id` trước khi proxy vào API để chống tenant spoofing từ internet.
+- `TRUST_PROXY=true` là default production khi chạy qua Caddy.
 
 Edge/reverse proxy bắt buộc chịu trách nhiệm:
 
@@ -53,6 +59,18 @@ Edge/reverse proxy bắt buộc chịu trách nhiệm:
 - Cấu hình upload body size, read/write timeout cho video/audio/PDF.
 - Rate limit/WAF ở edge cho auth, upload, AI/provider-backed endpoints và public catalog.
 - Không expose trực tiếp app/container ports ra internet ngoại trừ qua edge đã bảo vệ.
+
+Production host env tối thiểu:
+
+```bash
+API_HOST=api.example.com
+STUDENT_HOST=student.example.com
+ADMIN_HOST=admin.example.com
+PORTAL_HOST=portal.example.com
+COURSES_HOST=courses.example.com
+CADDY_ACME_EMAIL=ops@example.com
+CADDY_MAX_BODY_SIZE=500MB
+```
 
 ### Topology B. Frontend host riêng, API host riêng
 
@@ -98,6 +116,8 @@ NEXT_PUBLIC_TENANT_ID=
 
 ### Env bắt buộc trong production
 
+Template chuẩn: [`.env.production.example`](../../.env.production.example)
+
 API server:
 
 - `DATABASE_URL`
@@ -116,7 +136,18 @@ Frontend apps:
 
 - `NEXT_PUBLIC_API_URL`
 - `NEXT_PUBLIC_WEB_STUDENT_URL` cho `web-admin`
+- `NEXT_PUBLIC_WEB_SALES_URL` cho `web-student`
 - `NEXT_PUBLIC_TENANT_ID` chỉ dùng local/dev
+
+Edge/monitoring:
+
+- `API_HOST`
+- `STUDENT_HOST`
+- `ADMIN_HOST`
+- `PORTAL_HOST`
+- `COURSES_HOST`
+- `CADDY_ACME_EMAIL`
+- `ALERTMANAGER_WEBHOOK_URL`
 
 ### Database
 
@@ -141,6 +172,8 @@ Trước launch production:
 - Redis/queue recovery stance rõ: dữ liệu nào được phép mất, dữ liệu nào cần replay/idempotency.
 - Metrics/alerts có receiver thật, không để Alertmanager receiver rỗng.
 - Log shipping hoặc platform logs có request-id correlation.
+- Public internet chỉ thấy Caddy `80/443`; app ports không mở trực tiếp.
+- Spoof request có `x-tenant-id` từ internet không thay đổi tenant context.
 
 Trước khi nhắm 10k-100k users:
 
@@ -171,11 +204,18 @@ Docker image validation:
 
 - Workflow riêng: [`.github/workflows/docker-build.yml`](../../.github/workflows/docker-build.yml)
 - Dùng cho release candidate hoặc khi sửa Dockerfile / compose production
+- Workflow này validate production env preflight, compose config, và build image cho `api`, `migrate`, `web-student`, `web-admin`, `web-sales`, `super-portal`.
 
 Smoke sau deploy:
 
 ```bash
 pnpm smoke:deploy -- -ApiUrl https://api.example.com -WebStudentUrl https://student.example.com -WebAdminUrl https://admin.example.com -SuperPortalUrl https://portal.example.com
+```
+
+Production gate đầy đủ trước release candidate:
+
+```bash
+pnpm run release:production-check
 ```
 
 ## 4. Monitoring
@@ -189,6 +229,13 @@ pnpm smoke:deploy -- -ApiUrl https://api.example.com -WebStudentUrl https://stud
 | `GET /api/health/docs`               | Tài liệu human-readable cho health/monitoring |
 
 Xem thêm [monitoring.md](monitoring.md).
+
+Ops references:
+
+- [data-retention.md](data-retention.md)
+- [performance-load.md](performance-load.md)
+- [security-compliance.md](security-compliance.md)
+- [backup-restore-runbook.md](../runbooks/backup-restore-runbook.md)
 
 ## 5. Troubleshooting
 

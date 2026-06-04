@@ -148,6 +148,31 @@ function assertOptionalUrl(env, key, errors) {
   }
 }
 
+function assertHost(env, key, errors) {
+  assertRequired(env, key, errors);
+  if (!isPresent(env, key)) return;
+
+  const value = env[key].trim();
+  try {
+    const parsed = new URL(`https://${value}`);
+    if (parsed.hostname !== value || parsed.pathname !== '/' || parsed.search || parsed.hash) {
+      throw new Error('invalid host');
+    }
+  } catch {
+    errors.push(`${key} must be a bare hostname without protocol, path, query, or hash`);
+  }
+}
+
+function assertEmail(env, key, errors) {
+  assertRequired(env, key, errors);
+  if (!isPresent(env, key)) return;
+
+  const value = env[key].trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+    errors.push(`${key} must be a valid email address`);
+  }
+}
+
 function assertGooglePair(env, errors) {
   const hasApiGoogle = isPresent(env, 'GOOGLE_CLIENT_ID') || isPresent(env, 'GOOGLE_CLIENT_IDS');
   const hasBrowserGoogle = isPresent(env, 'NEXT_PUBLIC_GOOGLE_CLIENT_ID');
@@ -212,6 +237,14 @@ assertOptionalOrigin(env, 'NEXT_PUBLIC_API_URL', errors);
 assertOptionalOrigin(env, 'APP_PUBLIC_URL', errors);
 assertOptionalOrigin(env, 'NEXT_PUBLIC_WEB_STUDENT_URL', errors);
 assertOptionalOrigin(env, 'NEXT_PUBLIC_WEB_SALES_URL', errors);
+assertHost(env, 'API_HOST', errors);
+assertHost(env, 'STUDENT_HOST', errors);
+assertHost(env, 'ADMIN_HOST', errors);
+assertHost(env, 'PORTAL_HOST', errors);
+assertHost(env, 'COURSES_HOST', errors);
+assertEmail(env, 'CADDY_ACME_EMAIL', errors);
+assertRequired(env, 'ALERTMANAGER_WEBHOOK_URL', errors);
+assertOptionalUrl(env, 'ALERTMANAGER_WEBHOOK_URL', errors);
 assertGooglePair(env, errors);
 assertNoFrontendSecrets(env, errors);
 assertAiProvider(env, errors);

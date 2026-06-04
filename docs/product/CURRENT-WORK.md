@@ -4,14 +4,14 @@ Last updated: 2026-06-04
 
 ## At A Glance
 
-| Item                                 | Status  | Progress            | Notes                                                                             |
-| ------------------------------------ | ------- | ------------------- | --------------------------------------------------------------------------------- |
-| Batch 15: production readiness       | Done    | `[##########] 100%` | Merged and pushed                                                                 |
-| Docs cleanup                         | Done    | `[##########] 100%` | Active product docs reduced to 3 files                                            |
-| Mega Batch 16: production hardening  | Done    | `[##########] 100%` | Closed with SRS/custom-card polish and Super Portal ops list hardening            |
-| Mega Batch 17: ops + scale readiness | Active  | `[###-------] 25%`  | Expanded to production edge/proxy, env, observability, backup, and load readiness |
-| Product readiness                    | Active  | `[#######---] 70%`  | App contracts are strong; production ops artifacts still need evidence            |
-| Mobile Student App                   | Planned | `[----------] 0%`   | P11 planned; `apps/mobile-student` not scaffolded yet                             |
+| Item                                 | Status  | Progress            | Notes                                                                                                   |
+| ------------------------------------ | ------- | ------------------- | ------------------------------------------------------------------------------------------------------- |
+| Batch 15: production readiness       | Done    | `[##########] 100%` | Merged and pushed                                                                                       |
+| Docs cleanup                         | Done    | `[##########] 100%` | Active product docs reduced to 3 files                                                                  |
+| Mega Batch 16: production hardening  | Done    | `[##########] 100%` | Closed with SRS/custom-card polish and Super Portal ops list hardening                                  |
+| Mega Batch 17: ops + scale readiness | Active  | `[######----] 55%`  | Repo artifacts added for edge/proxy, env, observability, backup, retention, security, and load baseline |
+| Product readiness                    | Active  | `[#######---] 70%`  | App contracts are strong; production ops artifacts still need evidence                                  |
+| Mobile Student App                   | Planned | `[----------] 0%`   | P11 planned; `apps/mobile-student` not scaffolded yet                                                   |
 
 ## What Just Shipped
 
@@ -41,17 +41,17 @@ Mega Batch 17 theme: operations, release, and scale readiness.
 
 The 2026-06-04 production-scale review found that the app architecture and stack are sound for staging/early production, but the deploy/operations layer is incomplete. Batch 17 now explicitly includes the edge, secrets, observability, backup/restore, deploy pipeline, and load-test work needed before serving real production traffic at scale.
 
-| Status | Work                              | Output                                                                                                    |
-| ------ | --------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| Done   | MB16 closeout                     | Current SRS/custom-card and Super Portal ops-list changes reviewed, committed, and pushed                 |
-| Done   | Production-scale plan refresh     | Batch 17 split into edge, env/secrets, CI/CD, observability, backup/restore, integrity, load tracks       |
-| Active | Platform list contracts           | Super Portal platform endpoints use server pagination/filtering with `items` + `meta`                     |
-| Active | Platform data integrity checks    | Read-only integrity checks extended for platform media, billing, usage ledger, and audit logs             |
-| Next   | Edge/reverse proxy artifact       | Add Nginx/Caddy/Traefik or cloud-edge reference config; strip public `x-tenant-id`; set TLS/proxy headers |
-| Next   | Production env and secret parity  | Provision real `JWT_RESET_SECRET` and validate `.env.production` in staging                               |
-| Next   | Observability and alert receivers | Wire Prometheus/managed metrics and non-empty Alertmanager/notification receiver                          |
-| Next   | Backup/restore and rollback       | Add DB/object-storage backup policy and run a restore drill before production                             |
-| Next   | Load and reporting volume         | Add baseline load test and review report/list query plans for 10k-100k user targets                       |
+| Status | Work                             | Output                                                                                                       |
+| ------ | -------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Done   | MB16 closeout                    | Current SRS/custom-card and Super Portal ops-list changes reviewed, committed, and pushed                    |
+| Done   | Production-scale plan refresh    | Batch 17 split into edge, env/secrets, CI/CD, observability, backup/restore, integrity, load tracks          |
+| Active | Platform list contracts          | Super Portal platform endpoints use server pagination/filtering with `items` + `meta`                        |
+| Active | Platform data integrity checks   | Read-only integrity checks extended for platform media, billing, usage ledger, and audit logs                |
+| Done   | Edge/reverse proxy artifact      | Caddy compose service and Caddyfile route API/student/admin/sales/super portal, strip public `x-tenant-id`   |
+| Done   | Production env contract          | `.env.production.example` plus production env preflight coverage for Caddy hosts, webhook, and reset secret  |
+| Done   | Observability starter            | Prometheus and Alertmanager compose services use a non-empty generic webhook receiver contract               |
+| Done   | Backup/restore/runbook artifacts | Backup, restore, rollback, retention, security, and load baseline docs/scripts added                         |
+| Next   | Staging evidence                 | Provision real secrets/domains, run Caddy stack, alert webhook test, restore drill, smoke, and load baseline |
 
 Done means:
 
@@ -87,16 +87,16 @@ pnpm run build
 
 ## Batch 17 Production Checklist
 
-| Track                    | Status | Required output                                                                                                                       |
-| ------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Edge/reverse proxy       | Next   | Production topology with TLS, host routing, `X-Forwarded-*`, upload limits, rate-limit/WAF stance, and public `x-tenant-id` stripping |
-| Env/secrets              | Next   | `.env.production.example`, secret manager guidance, `JWT_RESET_SECRET` parity, no frontend-exposed secrets                            |
-| CI/CD/staging            | Next   | Deploy pipeline for API and all portals, migration step, post-deploy smoke against staging                                            |
-| Observability            | Next   | Metrics scrape or managed equivalent, non-empty alert receiver, structured logs and request-id correlation                            |
-| Backup/restore           | Next   | Postgres backup/restore runbook, object storage policy, restore drill evidence, rollback decision tree                                |
-| Data integrity/retention | Active | Read-only checks in release gate, privacy/retention policy for student data and audit logs                                            |
-| Performance/load         | Next   | Baseline load test, p95/p99 targets, index/query review for reporting and large admin lists                                           |
-| Security/compliance      | Active | CORS/CSRF/CSP/tenant-header checks, audit log coverage for sensitive mutations, dependency/secret scanning                            |
+| Track                    | Status | Required output                                                                                                  |
+| ------------------------ | ------ | ---------------------------------------------------------------------------------------------------------------- |
+| Edge/reverse proxy       | Done   | Caddy topology artifact with TLS host routing, `X-Forwarded-*`, upload limit, and public `x-tenant-id` stripping |
+| Env/secrets              | Done   | `.env.production.example`, preflight checks, `JWT_RESET_SECRET` parity, and no frontend-exposed secret rule      |
+| CI/CD/staging            | Active | Docker build workflow validates env/compose and all app images; staging deploy evidence still needed             |
+| Observability            | Done   | Prometheus/Alertmanager compose config and generic webhook receiver contract                                     |
+| Backup/restore           | Active | Runbook exists; staging restore drill evidence still needed                                                      |
+| Data integrity/retention | Done   | Read-only checks in release gate and baseline privacy/retention policy                                           |
+| Performance/load         | Active | Baseline script/docs exist; staging p95/p99 and query review evidence still needed                               |
+| Security/compliance      | Done   | CORS/CSRF/CSP/tenant-header/WAF stance documented and guarded by production readiness checks                     |
 
 ## Roadmap Dashboard
 

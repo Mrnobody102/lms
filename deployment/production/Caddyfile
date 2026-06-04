@@ -1,0 +1,74 @@
+{
+	email {$CADDY_ACME_EMAIL}
+}
+
+(lms_proxy_headers) {
+	header_up Host {host}
+	header_up X-Request-Id {http.request.header.X-Request-Id}
+	header_up -x-tenant-id
+}
+
+(lms_security_headers) {
+	request_body {
+		max_size {$CADDY_MAX_BODY_SIZE}
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+}
+
+(lms_transport) {
+	transport http {
+		dial_timeout 10s
+		response_header_timeout 120s
+	}
+}
+
+{$API_HOST} {
+	import lms_security_headers
+
+	reverse_proxy api:4000 {
+		import lms_proxy_headers
+		import lms_transport
+	}
+}
+
+{$STUDENT_HOST} {
+	import lms_security_headers
+
+	reverse_proxy web-student:3000 {
+		import lms_proxy_headers
+		import lms_transport
+	}
+}
+
+{$ADMIN_HOST} {
+	import lms_security_headers
+
+	reverse_proxy web-admin:3000 {
+		import lms_proxy_headers
+		import lms_transport
+	}
+}
+
+{$PORTAL_HOST} {
+	import lms_security_headers
+
+	reverse_proxy super-portal:3000 {
+		import lms_proxy_headers
+		import lms_transport
+	}
+}
+
+{$COURSES_HOST} {
+	import lms_security_headers
+
+	reverse_proxy web-sales:3000 {
+		import lms_proxy_headers
+		import lms_transport
+	}
+}

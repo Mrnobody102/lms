@@ -2,6 +2,8 @@
 
 This runbook defines the production-safe Prisma migration workflow for the LMS Platform.
 
+For full environment rollback, database restore drills, media storage, and Redis stance, use [backup-restore-runbook.md](backup-restore-runbook.md).
+
 ## Rules
 
 - Production uses `pnpm db:deploy` only.

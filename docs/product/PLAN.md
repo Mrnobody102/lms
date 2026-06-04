@@ -8,21 +8,21 @@ Tracker ngắn cho task/batch hiện tại: [CURRENT-WORK.md](CURRENT-WORK.md).
 
 | Mảng                        | Tiến độ            | Trạng thái ngắn                                                                        |
 | --------------------------- | ------------------ | -------------------------------------------------------------------------------------- |
-| Foundation / CI / release   | `[########--] 80%` | App-level gates tốt; còn thiếu edge/proxy, secrets, backup, deploy pipeline đầy đủ     |
+| Foundation / CI / release   | `[########--] 85%` | App-level gates tốt; đã có edge/env artifacts, còn thiếu staging deploy evidence       |
 | Tenant isolation / security | `[#######---] 70%` | Đã thêm deny tests; cần mở rộng tiếp theo domain                                       |
 | Student learning core       | `[#######---] 70%` | Dashboard, SRS, practice, exam đã có MVP; cần controlled progression và mock exam mode |
 | Admin operations            | `[#######---] 65%` | Đã chuẩn hóa một phần shared UI states                                                 |
 | Super Portal operations     | `[######----] 55%` | Ops pages dùng shared states; cần real health, alerts, deploy evidence                 |
-| Production operations       | `[####------] 40%` | Docker/health/metrics có nền; thiếu reverse proxy, backup/restore, HA/load evidence    |
+| Production operations       | `[######----] 55%` | Docker/Caddy/monitoring/runbooks có nền; còn thiếu staging/live restore/load evidence  |
 | AI-native roadmap           | `[####------] 40%` | MVP tutor/roleplay có nền, cần governance/quota                                        |
 | Mobile student app          | `[----------] 0%`  | Đã có plan P11; chưa scaffold `apps/mobile-student`                                    |
 
 Hiện tại ưu tiên **Mega Batch 17**:
 
-1. Đóng các production deploy gaps: reverse proxy/edge, production env contract, secrets, `JWT_RESET_SECRET` thật, staging smoke thật.
-2. Hoàn thiện observability vận hành: Prometheus/Alertmanager service hoặc managed equivalent, alert receivers, request-id/log correlation, operator runbooks.
-3. Thiết kế backup/restore/rollback cho PostgreSQL, object storage và Redis/queue state; có restore drill trước production.
-4. Kiểm tra scale paths: load test API, bounded/cursor lists, reporting query volume, index review, background job throughput.
+1. Chạy staging evidence cho production artifacts: Caddy domains/TLS, real `.env.production`, `JWT_RESET_SECRET` thật, staging smoke thật.
+2. Hoàn thiện observability vận hành: generic alert webhook thật, request-id/log correlation, operator runbooks.
+3. Thực hiện backup/restore/rollback drill cho PostgreSQL, object storage và Redis/queue stance trước production.
+4. Kiểm tra scale paths bằng load baseline, bounded/cursor lists, reporting query volume, index review, background job throughput.
 5. Giữ CI contract gate, API readiness smoke, portal smoke và package build dependencies xanh.
 
 ## Nguyên Tắc Chia Batch
@@ -72,14 +72,14 @@ Mega Batch 17 là batch active để biến hệ thống từ "app-level product
 | 17G. Performance/load             | API load test scripts, DB index review, list/report query bounds, worker throughput, frontend bundle hotspots                            | Có baseline p95/p99 staging; endpoints lớn có pagination/cursor/bounds; queue workers scale được theo process/container               |
 | 17H. Security/compliance          | Edge WAF/rate-limit, dependency scanning, CSRF/CORS/CSP verification, admin auditability, privacy review                                 | Không có public secrets, CORS exact origin, tenant production không dựa vào frontend hint, mutation nhạy cảm có audit log             |
 
-Immediate production gaps từ rà soát 2026-06-04:
+Immediate production gaps từ rà soát/cập nhật 2026-06-04:
 
-- `deployment/production/docker-compose.prod.yml` đã được bổ sung `JWT_RESET_SECRET`; vẫn cần secret thật trong staging/production để `check:production-env` pass.
-- Repo chưa có reverse proxy service/config; tài liệu đã cảnh báo cần strip `x-tenant-id` nhưng chưa có artifact deploy kiểm chứng.
-- Monitoring config mới là starter; Alertmanager receiver rỗng và compose chưa chạy Prometheus/Alertmanager.
-- Chưa có backup/restore drill hoặc runbook object storage/Redis queue rõ ràng.
-- Deploy workflow thật mới thấy rõ cho `web-sales`; cần pipeline cho API, student, admin và super portal.
-- `.env` hiện tại là local; chưa có `.env.production` thật để pass production env preflight.
+- Repo đã có Caddy edge artifact, `.env.production.example`, Prometheus/Alertmanager compose, backup/restore/retention/security/load docs và baseline script.
+- Vẫn cần secret thật trong staging/production để `check:production-env -- --file .env.production` pass, gồm `JWT_RESET_SECRET`, Caddy host env và `ALERTMANAGER_WEBHOOK_URL`.
+- Caddy/TLS/host routing và public `x-tenant-id` stripping cần được kiểm chứng bằng staging domains thật.
+- Alert webhook cần nhận test alert thật; monitoring vẫn chưa có dashboard/log shipping evidence.
+- Backup/restore runbook đã có; vẫn cần restore drill staging và release note evidence.
+- Load baseline script đã có; vẫn cần p95/p99 staging và query/index review cho reporting/list lớn.
 
 ## Mega Batch 20 - High-Scale Platform Architecture
 

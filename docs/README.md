@@ -7,15 +7,17 @@ adding new planning files unless they become a durable source of truth.
 
 Start with the dashboard, then jump only to the reference you need.
 
-| Need                               | Read                                                                 |
-| ---------------------------------- | -------------------------------------------------------------------- |
-| What is being worked on now        | [product/CURRENT-WORK.md](product/CURRENT-WORK.md)                   |
-| Product roadmap and current phase  | [product/PLAN.md](product/PLAN.md)                                   |
-| Long-term AI strategy              | [product/AI-NATIVE-LMS-ROADMAP.md](product/AI-NATIVE-LMS-ROADMAP.md) |
-| System boundaries and tenant model | [ARCHITECTURE.md](ARCHITECTURE.md)                                   |
-| API contracts                      | [api-documentation.md](api-documentation.md)                         |
-| Agent workflow                     | [ai-agent/SOP.md](ai-agent/SOP.md)                                   |
-| Release validation                 | [ops/release-check.md](ops/release-check.md)                         |
+| Need                               | Read                                                                     |
+| ---------------------------------- | ------------------------------------------------------------------------ |
+| What is being worked on now        | [product/CURRENT-WORK.md](product/CURRENT-WORK.md)                       |
+| Product roadmap and current phase  | [product/PLAN.md](product/PLAN.md)                                       |
+| Long-term AI strategy              | [product/AI-NATIVE-LMS-ROADMAP.md](product/AI-NATIVE-LMS-ROADMAP.md)     |
+| System boundaries and tenant model | [ARCHITECTURE.md](ARCHITECTURE.md)                                       |
+| API contracts                      | [api-documentation.md](api-documentation.md)                             |
+| Agent workflow                     | [ai-agent/SOP.md](ai-agent/SOP.md)                                       |
+| Release validation                 | [ops/release-check.md](ops/release-check.md)                             |
+| Production deploy and ops          | [ops/deployment.md](ops/deployment.md)                                   |
+| Backup/restore/rollback            | [runbooks/backup-restore-runbook.md](runbooks/backup-restore-runbook.md) |
 
 ## Docs Map
 
@@ -38,11 +40,15 @@ docs/
 │   ├── database-guide.md
 │   └── testing.md
 ├── ops/
+│   ├── data-retention.md
 │   ├── deployment.md
 │   ├── monitoring.md
+│   ├── performance-load.md
 │   ├── release-check.md
+│   ├── security-compliance.md
 │   └── super-portal-operator-guide.md
 └── runbooks/
+    ├── backup-restore-runbook.md
     └── database-migration-runbook.md
 ```
 
