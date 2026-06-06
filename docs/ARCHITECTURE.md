@@ -166,13 +166,13 @@ Kiến trúc hệ thống được thiết kế để kết hợp hài hòa gi�
 
 ## Tenant Và Runtime Policy
 
-- `NEXT_PUBLIC_TENANT_ID` là tenant hint local/dev, không phải cơ chế production.
-- Production browser traffic nên resolve tenant từ host/subdomain.
+- `NEXT_PUBLIC_TENANT_ID` là tenant hint local/dev theo mặc định.
+- Production browser traffic nên resolve tenant từ host/subdomain. Với managed frontend/API hosting chưa có tenant domain, có thể dùng tenant hint production chỉ khi API bật `ALLOW_TENANT_HEADER_IN_PRODUCTION=true` và request origin nằm trong exact `CORS_ORIGINS`.
 - Production mobile traffic phải resolve tenant bằng tenant slug/domain/org code hoặc activation/license flow; không dùng hardcoded frontend tenant hint làm authority.
 - Browser session dùng cookie + CSRF; mobile session không có `document.cookie`, nên phải dùng secure storage native và gửi credential qua mobile API client adapter.
 - `CORS_ORIGINS` phải là exact origin list.
 - `TRUST_PROXY` chỉ bật khi đứng sau reverse proxy đáng tin cậy.
-- `ALLOW_TENANT_HEADER_IN_PRODUCTION` nên để `false` trừ khi edge chủ động inject header.
+- `ALLOW_TENANT_HEADER_IN_PRODUCTION` nên để `false` trừ khi edge chủ động inject header hoặc managed frontend origin được allowlist chính xác.
 - `APP_PUBLIC_URL` nên trỏ tới URL API public để log/runbook/smoke không bị mơ hồ.
 
 ## Quy Tắc Khi Mở Rộng

@@ -79,7 +79,7 @@ for (const app of WEB_APPS) {
   requireIncludes(`${appRoot}/next.config.js`, [
     { label: 'Next standalone output', value: "output: 'standalone'" },
     { label: 'same-origin API rewrite source', value: "source: '/api/:path*'" },
-    { label: 'NEXT_PUBLIC_API_URL rewrite destination', value: 'NEXT_PUBLIC_API_URL' },
+    { label: 'shared API rewrite destination helper', value: 'getApiRewriteDestination' },
   ]);
 
   requireIncludes(`${appRoot}/package.json`, [
@@ -151,6 +151,9 @@ requireIncludes('package.json', [
   { label: 'production env preflight script', value: '"check:production-env"' },
   { label: 'read-only data integrity script', value: '"check:data-integrity"' },
   { label: 'load baseline script', value: '"load:baseline"' },
+  { label: 'production auth smoke script', value: '"smoke:auth-production"' },
+  { label: 'scripts lint gate', value: '"lint:scripts"' },
+  { label: 'scripts test gate', value: '"test:scripts"' },
   { label: 'production release gate script', value: '"release:production-check"' },
   { label: 'cross-platform port cleanup script', value: 'node scripts/stop-project-processes.js' },
 ]);
@@ -158,6 +161,11 @@ requireIncludes('package.json', [
 requireFile('scripts/stop-project-processes.js');
 requireFile('scripts/check-data-integrity.js');
 requireFile('scripts/load-baseline.js');
+requireIncludes('scripts/next-api-rewrite.js', [
+  { label: 'production API URL rewrite requirement', value: 'NEXT_PUBLIC_API_URL' },
+  { label: 'accidental /api suffix normalization', value: "replace(/\\/api$/i, '')" },
+]);
+requireFile('scripts/smoke-auth-production.js');
 
 requireIncludes('deployment/production/Caddyfile', [
   { label: 'API host route', value: '{$API_HOST}' },
@@ -196,6 +204,7 @@ requireIncludes('.github/workflows/docker-build.yml', [
 ]);
 
 requireIncludes('.env.production.example', [
+  { label: 'deployment topology env', value: 'DEPLOYMENT_TOPOLOGY=' },
   { label: 'API host env', value: 'API_HOST=' },
   { label: 'student host env', value: 'STUDENT_HOST=' },
   { label: 'admin host env', value: 'ADMIN_HOST=' },

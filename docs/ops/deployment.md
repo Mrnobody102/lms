@@ -82,12 +82,13 @@ Phù hợp khi:
 
 Nguyên tắc:
 
-- `NEXT_PUBLIC_API_URL` phải là URL browser-reachable
+- `NEXT_PUBLIC_API_URL` phải là API origin browser-reachable, ví dụ `https://api.example.com`; nếu lỡ cấu hình kèm `/api` thì build sẽ normalize về origin.
 - `CORS_ORIGINS` phải là danh sách origin chính xác, không có path/query
-- Tenant production phải resolve từ host/domain, không dựa vào `NEXT_PUBLIC_TENANT_ID`
+- Tenant production mặc định phải resolve từ host/domain, không dựa vào tenant hint từ frontend.
+- Với mô hình frontend managed hosting như Vercel và API riêng như Render, nếu chưa có tenant custom domain, có thể bật tenant hint production có kiểm soát: frontend set `NEXT_PUBLIC_TENANT_ID`, API set `ALLOW_TENANT_HEADER_IN_PRODUCTION=true`, và `CORS_ORIGINS` chỉ chứa exact frontend origins được tin cậy.
 
 > [!WARNING]
-> **Bảo mật Tenant Isolation**: Khi deploy qua Reverse Proxy (Nginx, AWS ALB, Cloudflare), bắt buộc phải cấu hình xóa bỏ (strip) header `x-tenant-id` từ các request bên ngoài internet gửi vào. Điều này để chống giả mạo tenant. Chỉ cho phép các microservices nội bộ được dùng header này.
+> **Bảo mật Tenant Isolation**: Khi deploy qua Reverse Proxy (Nginx, AWS ALB, Cloudflare), bắt buộc phải cấu hình xóa bỏ (strip) header `x-tenant-id` từ các request bên ngoài internet gửi vào. Nếu chủ động dùng tenant hint production cho Vercel/Render, chỉ bật với `ALLOW_TENANT_HEADER_IN_PRODUCTION=true` khi `CORS_ORIGINS` là exact allowlist và không dùng wildcard.
 
 ### Mẫu domain production
 
@@ -102,6 +103,7 @@ Ví dụ:
 Env tương ứng:
 
 ```bash
+DEPLOYMENT_TOPOLOGY=docker
 APP_PUBLIC_URL=https://api.example.com
 NEXT_PUBLIC_API_URL=https://api.example.com
 NEXT_PUBLIC_WEB_STUDENT_URL=https://student.example.com
@@ -112,6 +114,48 @@ AUTH_COOKIE_SAME_SITE=lax
 TRUST_PROXY=true
 ALLOW_TENANT_HEADER_IN_PRODUCTION=false
 NEXT_PUBLIC_TENANT_ID=
+```
+
+### Mẫu Vercel + Render + Supabase
+
+Phù hợp khi dùng Vercel cho `web-student`/`web-admin`, Render cho `api-server`, và Supabase PostgreSQL.
+
+Vercel frontend env:
+
+```bash
+DEPLOYMENT_TOPOLOGY=vercel-render
+NEXT_PUBLIC_API_URL=https://lms-api.onrender.com
+NEXT_PUBLIC_TENANT_ID=<tenant-id-or-slug>
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=<google-web-client-id>
+```
+
+Render API env:
+
+```bash
+DEPLOYMENT_TOPOLOGY=vercel-render
+APP_PUBLIC_URL=https://lms-api.onrender.com
+NEXT_PUBLIC_API_URL=https://lms-api.onrender.com
+NEXT_PUBLIC_WEB_STUDENT_URL=https://lms-student.vercel.app
+NEXT_PUBLIC_WEB_SALES_URL=https://lms-courses.vercel.app
+CORS_ORIGINS=https://lms-student.vercel.app,https://lms-admin.vercel.app,https://lms-courses.vercel.app
+AUTH_COOKIE_DOMAIN=
+AUTH_COOKIE_SAME_SITE=lax
+TRUST_PROXY=true
+ALLOW_TENANT_HEADER_IN_PRODUCTION=true
+GOOGLE_CLIENT_ID=<google-web-client-id>
+GOOGLE_VERIFY_TIMEOUT_MS=10000
+```
+
+Lưu ý:
+
+- Để `AUTH_COOKIE_DOMAIN` rỗng khi browser gọi cùng origin qua Next `/api` proxy trên Vercel. Không set cookie domain thành Render domain hoặc `.vercel.app`.
+- Google OAuth Console phải có exact JavaScript origins của Vercel, ví dụ `https://lms-student.vercel.app`; không thêm path `/api` hay `/login`.
+- `CORS_ORIGINS` trên Render phải khớp exact origin Vercel. Không dùng `*` khi auth dùng cookie.
+- Nếu đã có custom tenant domains, ưu tiên resolve tenant từ domain và đặt `ALLOW_TENANT_HEADER_IN_PRODUCTION=false`.
+- Chạy preflight bằng env production thật trước khi deploy/redeploy:
+
+```bash
+pnpm run check:production-env -- --file .env.production
 ```
 
 ### Env bắt buộc trong production
@@ -212,6 +256,25 @@ Smoke sau deploy:
 pnpm smoke:deploy -- -ApiUrl https://api.example.com -WebStudentUrl https://student.example.com -WebAdminUrl https://admin.example.com -SuperPortalUrl https://portal.example.com
 ```
 
+Smoke auth production thật:
+
+```bash
+AUTH_SMOKE_WEB_URL=https://student.example.com \
+AUTH_SMOKE_API_URL=https://api.example.com \
+AUTH_SMOKE_TENANT_ID=<tenant-id-or-slug> \
+AUTH_SMOKE_EMAIL=<student-test-email> \
+AUTH_SMOKE_PASSWORD='<student-test-password>' \
+pnpm run smoke:auth-production
+```
+
+Script này kiểm:
+
+- frontend login page public
+- Vercel/Next `/api` proxy login -> cookie -> `/users/me`
+- Render API direct CORS preflight từ frontend origin
+- `Set-Cookie` có `access_token`, `refresh_token`, `csrf_token`, `HttpOnly`, `SameSite`, và `Secure` khi chạy HTTPS
+- response wrapper `{ success, data, timestamp }`
+
 Production gate đầy đủ trước release candidate:
 
 ```bash
@@ -241,6 +304,6 @@ Ops references:
 
 - CORS lỗi: kiểm tra `CORS_ORIGINS` có đúng origin không.
 - Cookie auth giữa subdomain: kiểm tra `AUTH_COOKIE_DOMAIN`, `AUTH_COOKIE_SAME_SITE`, HTTPS và reverse proxy.
-- Tenant mismatch: kiểm tra host/domain thật của tenant và `TRUST_PROXY`.
+- Tenant mismatch: kiểm tra host/domain thật của tenant, `TRUST_PROXY`, `NEXT_PUBLIC_TENANT_ID`, `ALLOW_TENANT_HEADER_IN_PRODUCTION`, và `CORS_ORIGINS`.
 - API không ready: kiểm tra `DATABASE_URL`, `REDIS_URL`, migration state.
 - Build lỗi: chạy `pnpm install --frozen-lockfile`, `pnpm --filter @repo/database generate`, rồi build lại.

@@ -7,8 +7,8 @@ This checklist is the Batch 17 launch baseline.
 - Only Caddy exposes public `80/443`.
 - App ports are internal Docker `expose` entries, not public `ports`.
 - Caddy strips `x-tenant-id` from public requests.
-- `ALLOW_TENANT_HEADER_IN_PRODUCTION=false` unless a trusted internal edge intentionally injects tenant context.
-- Production tenant resolution must come from domain/origin, not a frontend-only tenant hint.
+- `ALLOW_TENANT_HEADER_IN_PRODUCTION=false` unless a trusted internal edge injects tenant context or a managed frontend origin is explicitly allowlisted.
+- Production tenant resolution should come from domain/origin. Frontend tenant hints are allowed only for trusted managed-hosting origins with exact `CORS_ORIGINS`, never with wildcard CORS.
 
 ## Browser Security
 

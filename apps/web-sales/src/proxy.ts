@@ -8,8 +8,42 @@ const i18nProxy = createMiddleware({
   localePrefix: 'always',
 });
 
+const supportedLocales = locales as readonly string[];
+
+function isSupportedLocale(value: string): boolean {
+  return supportedLocales.includes(value);
+}
+
+function getLocaleFromPathname(pathname: string): string {
+  const segment = pathname.split('/')[1] ?? '';
+  return isSupportedLocale(segment) ? segment : defaultLocale;
+}
+
+function isMaintenancePath(pathname: string): boolean {
+  const segments = pathname.split('/');
+  const firstSegment = segments[1] ?? '';
+  const secondSegment = segments[2] ?? '';
+
+  return (
+    firstSegment === 'maintenance' ||
+    (isSupportedLocale(firstSegment) && secondSegment === 'maintenance')
+  );
+}
+
 export default function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+
+  if (
+    process.env.MAINTENANCE_MODE === 'true' &&
+    !isMaintenancePath(pathname) &&
+    !pathname.startsWith('/api') &&
+    !pathname.startsWith('/_next')
+  ) {
+    request.nextUrl.pathname = `/${getLocaleFromPathname(pathname)}/maintenance`;
+  }
+
   const i18nResponse = i18nProxy(request);
+
   const securityHeaders = {
     'X-DNS-Prefetch-Control': 'on',
     'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',

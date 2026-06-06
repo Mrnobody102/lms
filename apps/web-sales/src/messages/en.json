@@ -81,5 +81,10 @@
       "benefitPractice": "Continue practice, review, exams, and roleplay.",
       "benefitProgress": "Track completion and next recommended work."
     }
+  },
+  "Maintenance": {
+    "title": "System Under Maintenance",
+    "description": "We are currently performing scheduled maintenance to improve our services. Please check back later.",
+    "backToHome": "Try Again Later"
   }
 }

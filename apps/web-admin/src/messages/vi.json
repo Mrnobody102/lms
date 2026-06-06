@@ -1230,5 +1230,10 @@
     "profile": "Hồ sơ",
     "minutesAgo": "phút trước",
     "copyright": "© 2026 LMS Platform"
+  },
+  "Maintenance": {
+    "title": "Hệ thống đang bảo trì",
+    "description": "Chúng tôi đang tiến hành nâng cấp và bảo trì hệ thống để mang lại trải nghiệm tốt hơn. Vui lòng quay lại sau.",
+    "backToHome": "Thử lại sau"
   }
 }

@@ -278,10 +278,10 @@ pnpm run test
 - **Secrets** are loaded from environment variables only — no hardcoded credentials in source code
 - **`.env` is gitignored** — only `.env.example` (with placeholder values) is committed
 - **Browser auth** uses `HttpOnly` cookies with CSRF protection — tokens are never in `localStorage`
-- **Tenant headers** (`x-tenant-id`) are treated as dev hints only; production resolves tenant from verified domain/origin
+- **Tenant headers** (`x-tenant-id`) are disabled in production by default; only enable them for trusted managed-hosting origins with exact `CORS_ORIGINS`
 - **Rate limiting** is enabled via Redis throttler — configure `THROTTLER_TTL` and `THROTTLER_LIMIT`
 - **MCP server** is disabled by default (`MCP_ENABLED=false`) and requires a 32+ char API key when enabled
-- **`ALLOW_TENANT_HEADER_IN_PRODUCTION`** must remain `false` in production deployments
+- **`ALLOW_TENANT_HEADER_IN_PRODUCTION`** should remain `false` unless the deployment intentionally trusts exact frontend origins such as Vercel apps listed in `CORS_ORIGINS`
 
 ---
 

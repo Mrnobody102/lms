@@ -25,7 +25,8 @@ pnpm run check:data-integrity
 ```
 
 4. Kiểm tra production env thật trước deploy. Lệnh này chỉ in tên biến lỗi,
-   không in giá trị secret:
+   không in giá trị secret. Với Vercel/Render, đặt `DEPLOYMENT_TOPOLOGY=vercel-render`
+   trong env file trước khi chạy:
 
 ```bash
 pnpm run check:production-env -- --file .env.production
@@ -80,7 +81,18 @@ STAGING_SUPER_PASSWORD=<super-admin-password> \
 pnpm run test:e2e:staging
 ```
 
-12. Chạy load baseline staging và lưu JSON vào release evidence:
+12. Smoke auth production/staging qua frontend proxy và API direct:
+
+```bash
+AUTH_SMOKE_WEB_URL=https://<student-app> \
+AUTH_SMOKE_API_URL=https://<api-app> \
+AUTH_SMOKE_TENANT_ID=<tenant-id-or-slug> \
+AUTH_SMOKE_EMAIL=<student-email> \
+AUTH_SMOKE_PASSWORD='<student-password>' \
+pnpm run smoke:auth-production
+```
+
+13. Chạy load baseline staging và lưu JSON vào release evidence:
 
 ```bash
 LMS_LOAD_API_URL=https://api.example.com \
@@ -89,7 +101,7 @@ LMS_LOAD_AUTH_COOKIE='<staging-cookie>' \
 pnpm run load:baseline -- --duration-seconds 60 --concurrency 8
 ```
 
-13. Nếu cần chạy một lệnh production gate đầy đủ:
+14. Nếu cần chạy một lệnh production gate đầy đủ:
 
 ```bash
 pnpm run release:production-check
