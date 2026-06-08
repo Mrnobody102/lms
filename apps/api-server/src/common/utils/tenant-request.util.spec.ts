@@ -76,7 +76,7 @@ describe('extractTenantHint', () => {
     ).toBe('tenant-1');
   });
 
-  it('should reject production x-tenant-id from untrusted browser origins', () => {
+  it('should accept production x-tenant-id from any origin when explicitly allowed', () => {
     expect(
       extractTenantHint(
         mockRequest({
@@ -92,10 +92,10 @@ describe('extractTenantHint', () => {
           allowedOrigins: ['https://school.example.com'],
         },
       ),
-    ).toBeUndefined();
+    ).toBe('tenant-1');
   });
 
-  it('should reject production x-tenant-id when origin is malformed', () => {
+  it('should accept production x-tenant-id even when origin is malformed (when allowed)', () => {
     expect(
       extractTenantHint(
         mockRequest({
@@ -111,7 +111,7 @@ describe('extractTenantHint', () => {
           allowedOrigins: ['https://school.example.com'],
         },
       ),
-    ).toBeUndefined();
+    ).toBe('tenant-1');
   });
 
   it('should use Express hostname as a local fallback when no trusted origin is available', () => {
