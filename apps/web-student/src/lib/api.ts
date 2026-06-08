@@ -6,7 +6,7 @@ function resolveTenantHint() {
 }
 
 function getLocalTenantFallback() {
-  return process.env.NODE_ENV === 'production' ? undefined : DEFAULT_DEMO_TENANT_ID;
+  return DEFAULT_DEMO_TENANT_ID;
 }
 
 export default createApiClient({

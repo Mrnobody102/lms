@@ -118,6 +118,8 @@ function buildTenantHintCandidates(host: string): string[] {
   const parts = host.split('.');
   if (parts.length > 2) {
     hints.push(parts[0]);
+    // Fallback to the root domain (e.g. 'admin.studywithsudo.com' -> 'studywithsudo.com')
+    hints.push(parts.slice(-2).join('.'));
   }
 
   return [...new Set(hints)];

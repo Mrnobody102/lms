@@ -135,9 +135,7 @@ function buildPublicHeaders(): HeadersInit {
   const headers: Record<string, string> = {
     Accept: 'application/json',
   };
-  const tenantId =
-    process.env.NEXT_PUBLIC_TENANT_ID?.trim() ||
-    (process.env.NODE_ENV === 'production' ? undefined : DEFAULT_DEMO_TENANT_ID);
+  const tenantId = process.env.NEXT_PUBLIC_TENANT_ID?.trim() || DEFAULT_DEMO_TENANT_ID;
 
   if (tenantId) {
     headers['x-tenant-id'] = tenantId;
