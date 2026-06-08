@@ -28,7 +28,7 @@ export function StudentHomeClient({
 
   if (isInitialized && isAuthenticated) {
     if (isLoading) {
-      return <StudentHomeLoading />;
+      return <StudentDashboardSkeleton />;
     }
 
     return <LearningDashboard data={isError ? null : (data ?? null)} />;
@@ -37,7 +37,7 @@ export function StudentHomeClient({
   return <>{guest}</>;
 }
 
-function StudentHomeLoading() {
+export function StudentDashboardSkeleton() {
   return (
     <div className="min-h-screen bg-background font-sans">
       <StudentNav showLinks />
