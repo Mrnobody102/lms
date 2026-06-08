@@ -125,4 +125,32 @@ describe('extractTenantHint', () => {
       ),
     ).toEqual(['tenant.example.com', 'tenant']);
   });
+
+  it('should fall back to Referer header in production when Origin is absent', () => {
+    expect(
+      extractTenantHints(
+        mockRequest({
+          headers: {
+            referer: 'https://admin.school.example.com/vi/login',
+            host: 'api.example.com',
+          },
+        }),
+        { nodeEnv: 'production', allowedOrigins: ['https://admin.school.example.com'] },
+      ),
+    ).toEqual(['admin.school.example.com', 'admin']);
+  });
+
+  it('should ignore untrusted Referer header in production', () => {
+    expect(
+      extractTenantHints(
+        mockRequest({
+          headers: {
+            referer: 'https://attacker.example.com/api/auth/login',
+            host: 'api.example.com',
+          },
+        }),
+        { nodeEnv: 'production', allowedOrigins: ['https://school.example.com'] },
+      ),
+    ).toEqual([]);
+  });
 });

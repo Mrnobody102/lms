@@ -37,6 +37,14 @@ export function extractTenantHints(req: Request, options: TenantHintOptions = {}
       return originHints;
     }
 
+    // Vercel/Next.js rewrites may not forward the browser Origin header but
+    // typically preserve the Referer.  Fall back to it so tenant resolution
+    // succeeds in Vercel-frontend + Render-API deployments.
+    const refererHints = extractTenantHintsFromUrl(req.headers.referer, options.allowedOrigins);
+    if (refererHints.length > 0) {
+      return refererHints;
+    }
+
     return [];
   }
 
