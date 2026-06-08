@@ -84,7 +84,9 @@ function getStudentPortalBaseUrl() {
   }
 
   if (process.env.NODE_ENV === 'production') {
-    throw new Error('NEXT_PUBLIC_WEB_STUDENT_URL is required in production');
+    console.error(
+      'Missing NEXT_PUBLIC_WEB_STUDENT_URL environment variable. Cross-portal links will be broken.',
+    );
   }
 
   return LOCAL_STUDENT_PORTAL_URL;

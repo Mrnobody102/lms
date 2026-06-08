@@ -1,10 +1,11 @@
+import { Suspense } from 'react';
 import { ArrowRight, BookOpenCheck, KeyRound, LogIn, ShieldCheck } from 'lucide-react';
 import { cookies } from 'next/headers';
 import { useLocale, useTranslations } from 'next-intl';
 import { ThemeToggle, LanguageToggle } from '@repo/ui';
 import { Link } from '../../navigation';
 import { serverApi } from '../../lib/server-api';
-import { StudentHomeClient } from './student-home-client';
+import { StudentHomeClient, StudentDashboardSkeleton } from './student-home-client';
 
 const LOCAL_WEB_SALES_URL = 'http://localhost:3103';
 
@@ -12,8 +13,22 @@ export default async function Home() {
   const cookieStore = await cookies();
   const hasSession = Boolean(cookieStore.get('access_token')?.value);
 
-  const data = hasSession ? await serverApi.getStudentToday() : null;
+  if (!hasSession) {
+    return <StudentHomeClient guest={<GuestStudentHome />} initialData={null} />;
+  }
 
+  // Stream the dashboard: the skeleton shell paints immediately while the
+  // (potentially slow) today aggregation resolves, instead of blocking the
+  // whole route on the fetch and showing a bare full-page spinner.
+  return (
+    <Suspense fallback={<StudentDashboardSkeleton />}>
+      <AuthenticatedHome />
+    </Suspense>
+  );
+}
+
+async function AuthenticatedHome() {
+  const data = await serverApi.getStudentToday();
   return <StudentHomeClient guest={<GuestStudentHome />} initialData={data} />;
 }
 
@@ -91,7 +106,9 @@ function getSalesBaseUrl() {
   }
 
   if (process.env.NODE_ENV === 'production') {
-    throw new Error('NEXT_PUBLIC_WEB_SALES_URL is required in production');
+    console.error(
+      'Missing NEXT_PUBLIC_WEB_SALES_URL environment variable. Cross-portal links will be broken.',
+    );
   }
 
   return LOCAL_WEB_SALES_URL;
