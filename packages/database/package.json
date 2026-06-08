@@ -17,7 +17,7 @@
     "db:resolve": "dotenv -e ../../.env -- prisma migrate resolve",
     "db:reset": "dotenv -e ../../.env -- prisma migrate reset",
     "seed": "dotenv -e ../../.env -- prisma db seed",
-    "lint": "eslint \"src/**/*.ts\" \"prisma/*.ts\""
+    "lint": "eslint \"src/**/*.ts\" \"prisma/**/*.ts\""
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
