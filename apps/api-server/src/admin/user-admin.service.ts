@@ -7,6 +7,7 @@ import {
 import { Prisma, Role } from '@repo/database';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../common/services/prisma.service';
+import { invalidateAuthUser } from '../common/cache/auth-user-cache';
 import { AdminUserQueryDto } from './dto/admin-user-query.dto';
 import { CreateInstructorDto } from './dto/create-instructor.dto';
 import { UpdateAdminUserDto } from './dto/update-admin-user.dto';
@@ -307,6 +308,10 @@ export class UserAdminService {
       });
     }
 
+    // The admin may have changed cached auth fields (active status, profile).
+    // Drop the cached auth record so the next request re-validates from the DB.
+    invalidateAuthUser(userId);
+
     return updatedUser;
   }
 
@@ -347,6 +352,9 @@ export class UserAdminService {
         updatedAt: true,
       },
     });
+
+    // A deactivated user must lose access immediately, not after the cache TTL.
+    invalidateAuthUser(userId);
 
     return updatedUser;
   }

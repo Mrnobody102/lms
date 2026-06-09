@@ -1,6 +1,12 @@
+import { BadRequestException } from '@nestjs/common';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { NextFunction, Response } from 'express';
-import { TenantMiddleware } from './tenant.middleware';
+
+import {
+  TenantMiddleware,
+  clearTenantResolutionCacheForTests,
+  invalidateTenantResolutionCacheForTenant,
+} from './tenant.middleware';
 import type { TenantAwareRequest } from '../utils/tenant-request.util';
 
 describe('TenantMiddleware', () => {
@@ -17,6 +23,7 @@ describe('TenantMiddleware', () => {
   let response: Response;
 
   beforeEach(() => {
+    clearTenantResolutionCacheForTests();
     prisma = {
       tenant: {
         findFirst: vi.fn(),
@@ -104,6 +111,118 @@ describe('TenantMiddleware', () => {
     );
     expect(request.tenantId).toBe('tenant-1');
     expect(request.requestedTenantHint).toBe('trung-tam-demo');
+    expect(next).toHaveBeenCalledTimes(1);
+  });
+
+  it('should reuse the cached tenant id on repeat requests without hitting the database again', async () => {
+    prisma.tenant.findFirst.mockResolvedValue({ id: 'tenant-school' });
+
+    const buildRequest = () =>
+      ({
+        method: 'POST',
+        headers: {
+          origin: 'https://school.example.com',
+          host: 'api.example.com',
+        },
+      }) as TenantAwareRequest;
+
+    const first = buildRequest();
+    await middleware.use(first, response, next);
+
+    const second = buildRequest();
+    await middleware.use(second, response, next);
+
+    expect(first.tenantId).toBe('tenant-school');
+    expect(second.tenantId).toBe('tenant-school');
+    // Only the first request reaches the database; the second is served from
+    // the in-process cache.
+    expect(prisma.tenant.findFirst).toHaveBeenCalledTimes(1);
+    expect(next).toHaveBeenCalledTimes(2);
+  });
+
+  it('should keep checking later hints after a cached negative lookup', async () => {
+    prisma.tenant.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id: 'tenant-school' });
+
+    const buildRequest = () =>
+      ({
+        method: 'POST',
+        headers: {
+          origin: 'https://school.example.com',
+          host: 'api.example.com',
+        },
+      }) as TenantAwareRequest;
+
+    const first = buildRequest();
+    await middleware.use(first, response, next);
+
+    const second = buildRequest();
+    await middleware.use(second, response, next);
+
+    expect(first.tenantId).toBe('tenant-school');
+    expect(second.tenantId).toBe('tenant-school');
+    // First request caches the full domain as null and the slug as a hit; the
+    // second request must skip the cached null and still use the cached slug.
+    expect(prisma.tenant.findFirst).toHaveBeenCalledTimes(2);
+    expect(next).toHaveBeenCalledTimes(2);
+  });
+
+  it('should cache invalid hints without allowing the request through', async () => {
+    prisma.tenant.findFirst.mockResolvedValue(null);
+
+    const buildRequest = () =>
+      ({
+        method: 'POST',
+        headers: {
+          origin: 'https://school.example.com',
+          host: 'api.example.com',
+        },
+      }) as TenantAwareRequest;
+
+    await expect(middleware.use(buildRequest(), response, next)).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+    await expect(middleware.use(buildRequest(), response, next)).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+
+    // The first request queries every hint candidate (full host, subdomain
+    // label, and root domain) and caches each as null. The repeated invalid
+    // request is rejected entirely from the cached null values without any
+    // further database calls.
+    expect(prisma.tenant.findFirst).toHaveBeenCalledTimes(3);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('should re-check the database after a cached tenant is invalidated', async () => {
+    prisma.tenant.findFirst.mockResolvedValueOnce({ id: 'tenant-school' });
+
+    const buildRequest = () =>
+      ({
+        method: 'POST',
+        headers: {
+          origin: 'https://school.example.com',
+          host: 'api.example.com',
+        },
+      }) as TenantAwareRequest;
+
+    const first = buildRequest();
+    await middleware.use(first, response, next);
+    expect(first.tenantId).toBe('tenant-school');
+
+    invalidateTenantResolutionCacheForTenant({
+      id: 'tenant-school',
+      slug: 'school',
+      domain: 'school.example.com',
+    });
+    prisma.tenant.findFirst.mockResolvedValue(null);
+
+    await expect(middleware.use(buildRequest(), response, next)).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+
+    expect(prisma.tenant.findFirst).toHaveBeenCalledTimes(4);
     expect(next).toHaveBeenCalledTimes(1);
   });
 });

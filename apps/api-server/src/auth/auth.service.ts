@@ -12,9 +12,10 @@ import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 import type { CookieOptions, Response } from 'express';
 import { OAuth2Client, type TokenPayload } from 'google-auth-library';
-import { PrismaService } from '../common/services/prisma.service';
-import { AuditLogService, AuditAction, AuditStatus } from '../common/services/audit-log.service';
+import { invalidateAuthUser } from '../common/cache/auth-user-cache';
 import { CSRF_COOKIE_NAME } from '../common/middleware/csrf.middleware';
+import { AuditLogService, AuditAction, AuditStatus } from '../common/services/audit-log.service';
+import { PrismaService } from '../common/services/prisma.service';
 import { parseDurationToMs } from '../config/duration';
 import { LoginDto } from './dto/login.dto';
 import { GoogleLoginDto, type GoogleLoginPortal } from './dto/google-login.dto';
@@ -803,6 +804,7 @@ export class AuthService {
         tokenVersion: { increment: 1 },
       },
     });
+    invalidateAuthUser(userId);
 
     // Revoke all refresh tokens to force re-login on all devices
     await this.prisma.refreshToken.deleteMany({

@@ -40,7 +40,7 @@ describe('extractTenantHint', () => {
         }),
         { nodeEnv: 'production', allowedOrigins: ['https://school.example.com'] },
       ),
-    ).toEqual(['school.example.com', 'school']);
+    ).toEqual(['school.example.com', 'school', 'example.com']);
   });
 
   it('should ignore production origins that are not in the trusted allowlist', () => {
@@ -123,7 +123,7 @@ describe('extractTenantHint', () => {
         }),
         { nodeEnv: 'development' },
       ),
-    ).toEqual(['tenant.example.com', 'tenant']);
+    ).toEqual(['tenant.example.com', 'tenant', 'example.com']);
   });
 
   it('should fall back to Referer header in production when Origin is absent', () => {
@@ -137,7 +137,7 @@ describe('extractTenantHint', () => {
         }),
         { nodeEnv: 'production', allowedOrigins: ['https://admin.school.example.com'] },
       ),
-    ).toEqual(['admin.school.example.com', 'admin']);
+    ).toEqual(['admin.school.example.com', 'admin', 'example.com']);
   });
 
   it('should ignore untrusted Referer header in production', () => {

@@ -227,29 +227,31 @@ export class StudentTodayService {
   }
 
   private async getCourseContinuations(tenantId: string, user: StudentTodayUser) {
-    const courses = await this.prisma.course.findMany({
-      where: this.learningAccess.courseWhere(tenantId, user),
-      select: {
-        id: true,
-        title: true,
-        totalDuration: true,
-        createdAt: true,
-        _count: {
-          select: {
-            lessons: { where: { deletedAt: null } },
+    // Scope lessons/activities by the same course access filter rather than by
+    // a list of ids. This lets all four queries run in one parallel batch
+    // instead of waiting for the courses query to return ids first, removing a
+    // sequential database round-trip from the dashboard hot path.
+    const accessibleCourse = this.learningAccess.courseWhere(tenantId, user);
+
+    const [courses, completedLessonsData, continueLessonsData, lastActivities] = await Promise.all([
+      this.prisma.course.findMany({
+        where: accessibleCourse,
+        select: {
+          id: true,
+          title: true,
+          totalDuration: true,
+          createdAt: true,
+          _count: {
+            select: {
+              lessons: { where: { deletedAt: null } },
+            },
           },
         },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    const courseIds = courses.map((course) => course.id);
-    if (courseIds.length === 0) return [];
-
-    const [completedLessonsData, continueLessonsData, lastActivities] = await Promise.all([
+        orderBy: { createdAt: 'desc' },
+      }),
       this.prisma.lesson.findMany({
         where: {
-          courseId: { in: courseIds },
+          course: { is: accessibleCourse },
           deletedAt: null,
           progress: {
             some: {
@@ -263,7 +265,7 @@ export class StudentTodayService {
       }),
       this.prisma.lesson.findMany({
         where: {
-          courseId: { in: courseIds },
+          course: { is: accessibleCourse },
           deletedAt: null,
           progress: {
             none: {
@@ -286,12 +288,14 @@ export class StudentTodayService {
         where: {
           tenantId,
           userId: user.id,
-          courseId: { in: courseIds },
+          course: { is: accessibleCourse },
           type: LearningActivityType.LESSON_OPENED,
         },
         _max: { occurredAt: true },
       }),
     ]);
+
+    if (courses.length === 0) return [];
 
     const completedCountByCourse = completedLessonsData.reduce(
       (acc, curr) => {

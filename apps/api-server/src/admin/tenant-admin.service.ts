@@ -1,9 +1,12 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+
+import { invalidateAuthUsersForTenant } from '../common/cache/auth-user-cache';
+import { invalidateTenantResolutionCacheForTenant } from '../common/middleware/tenant.middleware';
+import { AuthenticatedUser } from '../common/interfaces/authenticated-request.interface';
+import { AuditAction, AuditLogService, AuditStatus } from '../common/services/audit-log.service';
 import { PrismaService } from '../common/services/prisma.service';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
-import { AuthenticatedUser } from '../common/interfaces/authenticated-request.interface';
-import { AuditAction, AuditLogService, AuditStatus } from '../common/services/audit-log.service';
 
 @Injectable()
 export class TenantAdminService {
@@ -139,6 +142,9 @@ export class TenantAdminService {
         });
       }
 
+      this.invalidateTenantHotPathCaches(tenant);
+      this.invalidateTenantHotPathCaches(updatedTenant);
+
       return updatedTenant;
     });
   }
@@ -165,6 +171,7 @@ export class TenantAdminService {
         metadata: { name: tenant.name, slug: tenant.slug },
       });
     }
+    this.invalidateTenantHotPathCaches(tenant);
     return tenant;
   }
 
@@ -190,6 +197,16 @@ export class TenantAdminService {
         metadata: { name: tenant.name, slug: tenant.slug },
       });
     }
+    this.invalidateTenantHotPathCaches(tenant);
     return tenant;
+  }
+
+  private invalidateTenantHotPathCaches(tenant: {
+    id: string;
+    slug: string;
+    domain: string | null;
+  }): void {
+    invalidateTenantResolutionCacheForTenant(tenant);
+    invalidateAuthUsersForTenant(tenant.id);
   }
 }

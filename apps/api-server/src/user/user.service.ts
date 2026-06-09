@@ -1,5 +1,7 @@
 import { Injectable, UnauthorizedException, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+
+import { invalidateAuthUser } from '../common/cache/auth-user-cache';
 import { PrismaService } from '../common/services/prisma.service';
 import { AuditLogService, AuditAction, AuditStatus } from '../common/services/audit-log.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -127,6 +129,10 @@ export class UserService {
       status: AuditStatus.SUCCESS,
     });
 
+    // Profile fields (name, phone, avatar) are cached on the auth hot path;
+    // drop the cached record so the next request reflects the update.
+    invalidateAuthUser(userId);
+
     return user;
   }
 
@@ -161,6 +167,7 @@ export class UserService {
         tokenVersion: { increment: 1 },
       },
     });
+    invalidateAuthUser(userId);
 
     // Revoke all refresh tokens to force re-login on all devices
     await this.prisma.refreshToken.deleteMany({
