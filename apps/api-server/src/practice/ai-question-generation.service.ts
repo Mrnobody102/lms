@@ -6,7 +6,9 @@ import {
   QuestionReviewStatus,
   Role,
 } from '@repo/database';
+import { AI_PROMPT_VERSIONS } from '../ai/ai-governance.constants';
 import { AiService } from '../ai/ai.service';
+import { AuditAction, AuditLogService, AuditStatus } from '../common/services/audit-log.service';
 import { GeneratedPracticeQuestion } from '../ai/interfaces/ai-provider.interface';
 import { LearningAccessService } from '../common/services/learning-access.service';
 import { PrismaService } from '../common/services/prisma.service';
@@ -15,7 +17,7 @@ import { AiGenerationJobQueryDto } from './dto/ai-generation-job-query.dto';
 import { CreateAiQuestionGenerationJobDto } from './dto/create-ai-question-generation-job.dto';
 import { UpdateAiQuestionDraftDto } from './dto/update-ai-question-draft.dto';
 
-const PRACTICE_AI_PROMPT_VERSION = 'practice-ai-v1';
+const PRACTICE_AI_PROMPT_VERSION = AI_PROMPT_VERSIONS.practiceGenerate;
 
 interface PracticeAiActor {
   id: string;
@@ -28,6 +30,7 @@ export class AiQuestionGenerationService {
     private readonly prisma: PrismaService,
     private readonly aiService: AiService,
     private readonly learningAccess: LearningAccessService,
+    private readonly auditLog: AuditLogService,
   ) {}
 
   async createJobAndGenerate(
@@ -57,14 +60,35 @@ export class AiQuestionGenerationService {
       },
     });
 
-    try {
-      const generated = await this.aiService.generatePracticeQuestions(tenantId, user.id, {
-        topic: dto.topic,
-        context: dto.context,
-        count: dto.count,
+    await this.auditLog.log({
+      tenantId,
+      userId: user.id,
+      action: AuditAction.AI_GENERATION_JOB_CREATE,
+      status: AuditStatus.SUCCESS,
+      metadata: {
+        jobId: job.id,
+        courseId: dto.courseId,
+        unitId: dto.unitId,
         questionType: dto.questionType,
-        skillTags: dto.skillTags,
-      });
+        requestedCount: dto.count,
+        promptVersion: PRACTICE_AI_PROMPT_VERSION,
+      },
+    });
+
+    try {
+      const generated = await this.aiService.generatePracticeQuestions(
+        tenantId,
+        user.id,
+        user.role,
+        {
+          topic: dto.topic,
+          context: dto.context,
+          count: dto.count,
+          questionType: dto.questionType,
+          skillTags: dto.skillTags,
+        },
+        job.id,
+      );
 
       if (generated.length === 0) {
         throw new BadRequestException('AI provider returned no practice questions');
@@ -206,7 +230,7 @@ export class AiQuestionGenerationService {
       correctAnswer: draft.correctAnswer,
     });
 
-    return this.prisma.$transaction(async (tx) => {
+    const approved = await this.prisma.$transaction(async (tx) => {
       const question = await tx.practiceQuestion.create({
         data: {
           tenantId,
@@ -236,13 +260,26 @@ export class AiQuestionGenerationService {
         },
       });
     });
+
+    await this.auditLog.log({
+      tenantId,
+      userId: user.id,
+      action: AuditAction.AI_DRAFT_APPROVE,
+      status: AuditStatus.SUCCESS,
+      metadata: {
+        draftId: id,
+        approvedQuestionId: approved.approvedQuestionId,
+      },
+    });
+
+    return approved;
   }
 
   async rejectDraft(tenantId: string, id: string, user: PracticeAiActor, rejectionReason: string) {
     const draft = await this.getDraft(tenantId, id, user);
     this.ensurePendingDraft(draft.reviewStatus);
 
-    return this.prisma.aiGeneratedQuestionDraft.update({
+    const rejected = await this.prisma.aiGeneratedQuestionDraft.update({
       where: { id_tenantId: { id, tenantId } },
       data: {
         reviewStatus: AiDraftReviewStatus.REJECTED,
@@ -251,6 +288,19 @@ export class AiQuestionGenerationService {
         rejectionReason,
       },
     });
+
+    await this.auditLog.log({
+      tenantId,
+      userId: user.id,
+      action: AuditAction.AI_DRAFT_REJECT,
+      status: AuditStatus.SUCCESS,
+      metadata: {
+        draftId: id,
+        rejectionReason,
+      },
+    });
+
+    return rejected;
   }
 
   async bulkApproveDrafts(tenantId: string, ids: string[], user: PracticeAiActor) {

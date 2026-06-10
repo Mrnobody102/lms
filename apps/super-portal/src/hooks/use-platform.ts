@@ -147,6 +147,18 @@ export interface PlatformAiStatus {
   frontendExposureAllowed: boolean;
 }
 
+export interface PlatformAiUsageRow {
+  tenant: TenantRef;
+  provider: 'off' | 'gateway' | 'groq';
+  configured: boolean;
+  model: string | null;
+  quotaConfigured: boolean;
+  subscriptionQuota: number | null;
+  periodUsed: number;
+  periodRemaining: number | null;
+  latestRequestAt: string | null;
+}
+
 export interface TenantOverview {
   tenant: Tenant;
   counts: {
@@ -297,6 +309,21 @@ export function usePlatformAiStatus(enabled = true) {
     },
     enabled,
     staleTime: 60 * 1000,
+  });
+}
+
+export function usePlatformAiUsage(params: PlatformListParams = {}, enabled = true) {
+  return useQuery({
+    queryKey: ['platform', 'ai-usage', params],
+    queryFn: async () => {
+      const response = await api.get<PlatformPaginated<PlatformAiUsageRow>>(
+        '/admin/platform/ai-usage',
+        { params: cleanListParams(params) },
+      );
+      return response.data;
+    },
+    enabled,
+    staleTime: 30 * 1000,
   });
 }
 

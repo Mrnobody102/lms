@@ -67,8 +67,12 @@ export class RoleplayService {
     const aiReply = await this.aiService.chatRoleplay(
       tenantId,
       user.id,
+      user.role,
       this.toModelMessages(session.messages),
       config.systemPrompt,
+      undefined,
+      undefined,
+      session.id,
     );
 
     await this.prisma.roleplayMessage.create({
@@ -124,7 +128,13 @@ export class RoleplayService {
     return session;
   }
 
-  async sendMessage(tenantId: string, userId: string, sessionId: string, content: string) {
+  async sendMessage(
+    tenantId: string,
+    userId: string,
+    userRole: Role,
+    sessionId: string,
+    content: string,
+  ) {
     const session = await this.getSession(tenantId, userId, sessionId);
     this.ensureSessionInProgress(session.status);
 
@@ -141,6 +151,7 @@ export class RoleplayService {
     const aiMessage = await this.createAiReply(
       tenantId,
       userId,
+      userRole,
       sessionId,
       coreMessages,
       session.scenarioRef?.systemPrompt ?? `You are in a roleplay. Scenario: ${session.scenario}`,
@@ -155,6 +166,7 @@ export class RoleplayService {
   async sendAudioMessage(
     tenantId: string,
     userId: string,
+    userRole: Role,
     sessionId: string,
     dto: CreateRoleplayAudioMessageDto,
   ) {
@@ -192,6 +204,7 @@ export class RoleplayService {
     await this.createAiReply(
       tenantId,
       userId,
+      userRole,
       sessionId,
       coreMessages,
       session.scenarioRef?.systemPrompt ?? `You are in a roleplay. Scenario: ${session.scenario}`,
@@ -205,7 +218,7 @@ export class RoleplayService {
     return this.pronunciation.listForSession(tenantId, sessionId);
   }
 
-  async completeSession(tenantId: string, userId: string, sessionId: string) {
+  async completeSession(tenantId: string, userId: string, userRole: Role, sessionId: string) {
     const session = await this.getSession(tenantId, userId, sessionId);
 
     if (session.status === RoleplaySessionStatus.COMPLETED) {
@@ -215,8 +228,10 @@ export class RoleplayService {
     const evaluation = await this.aiService.evaluateRoleplaySession(
       tenantId,
       userId,
+      userRole,
       this.toModelMessages(session.messages),
       session.scenario,
+      sessionId,
     );
     const pronunciationScore = this.averagePronunciationScore(session.pronunciationAssessments);
 
@@ -237,11 +252,21 @@ export class RoleplayService {
   private async createAiReply(
     tenantId: string,
     userId: string,
+    userRole: Role,
     sessionId: string,
     messages: ModelMessage[],
     systemPrompt: string,
   ) {
-    const aiReply = await this.aiService.chatRoleplay(tenantId, userId, messages, systemPrompt);
+    const aiReply = await this.aiService.chatRoleplay(
+      tenantId,
+      userId,
+      userRole,
+      messages,
+      systemPrompt,
+      undefined,
+      undefined,
+      sessionId,
+    );
 
     return this.prisma.roleplayMessage.create({
       data: {

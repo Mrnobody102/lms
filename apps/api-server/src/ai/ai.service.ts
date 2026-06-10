@@ -1,13 +1,16 @@
 import {
   BadGatewayException,
   BadRequestException,
+  Inject,
   Injectable,
   Logger,
-  Inject,
 } from '@nestjs/common';
+import { PracticeQuestionType } from '@repo/database';
 import type { ModelMessage } from 'ai';
-import { PrismaService } from '../common/services/prisma.service';
 import { SkillMasteryService } from '../skill/skill-mastery.service';
+import { AI_FEATURE_KEYS, AI_PROMPT_VERSIONS } from './ai-governance.constants';
+import type { AiFeatureKey } from './ai-governance.constants';
+import { AiGovernanceService } from './ai-governance.service';
 import {
   AI_PROVIDER_TOKEN,
   MAX_BULK_FLASHCARD_COUNT,
@@ -20,124 +23,127 @@ export class AiService {
   private readonly logger = new Logger(AiService.name);
 
   constructor(
-    private prisma: PrismaService,
     private skillMasteryService: SkillMasteryService,
+    private aiGovernance: AiGovernanceService,
     @Inject(AI_PROVIDER_TOKEN) private aiProvider: IAiProvider,
   ) {}
-
-  private async consumeQuota(tenantId: string, userId: string): Promise<void> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    let quota = await this.prisma.aiUsageQuota.findUnique({
-      where: {
-        tenantId_userId: {
-          tenantId,
-          userId,
-        },
-      },
-    });
-
-    if (!quota) {
-      quota = await this.prisma.aiUsageQuota.create({
-        data: {
-          tenantId,
-          userId,
-          resetAt: new Date(today.getTime() + 24 * 60 * 60 * 1000), // Reset tomorrow
-          requestLimit: 50, // Default limit per user per day
-        },
-      });
-    }
-
-    // Reset logic
-    if (quota.resetAt <= new Date()) {
-      quota = await this.prisma.aiUsageQuota.update({
-        where: { tenantId_userId: { tenantId, userId } },
-        data: {
-          requestsUsed: 0,
-          resetAt: new Date(today.getTime() + 24 * 60 * 60 * 1000),
-        },
-      });
-    }
-
-    if (quota.requestsUsed >= quota.requestLimit) {
-      throw new BadRequestException(
-        'Bạn đã hết lượt sử dụng Gia sư AI hôm nay. Vui lòng quay lại vào ngày mai.',
-      );
-    }
-
-    await this.prisma.aiUsageQuota.update({
-      where: { tenantId_userId: { tenantId, userId } },
-      data: { requestsUsed: { increment: 1 } },
-    });
-  }
 
   async explainAnswer(
     tenantId: string,
     userId: string,
+    role: string,
     questionPrompt: string,
     correctAnswer: unknown,
     userAnswer: unknown,
     skillTags?: string[],
     context?: string,
   ): Promise<string> {
-    await this.consumeQuota(tenantId, userId);
-    return this.aiProvider.generateExplanation({
-      questionPrompt,
-      correctAnswer,
-      userAnswer,
-      skillTags,
-      context,
-    });
+    return this.aiGovernance.withGovernance(
+      {
+        tenantId,
+        userId,
+        role,
+        feature: AI_FEATURE_KEYS.tutorExplain,
+        promptVersion: AI_PROMPT_VERSIONS.tutorExplain,
+      },
+      () =>
+        this.aiProvider.generateExplanation({
+          questionPrompt,
+          correctAnswer,
+          userAnswer,
+          skillTags,
+          context,
+        }),
+    );
   }
 
   async generatePracticeQuestions(
     tenantId: string,
     userId: string,
+    role: string,
     options: import('./interfaces/ai-provider.interface').GeneratePracticeOptions,
+    sourceId?: string,
   ): Promise<import('./interfaces/ai-provider.interface').GeneratedPracticeQuestion[]> {
-    await this.consumeQuota(tenantId, userId);
-    return this.aiProvider.generatePracticeQuestions(options);
+    return this.aiGovernance.withGovernance(
+      {
+        tenantId,
+        userId,
+        role,
+        feature: AI_FEATURE_KEYS.practiceGenerate,
+        promptVersion: AI_PROMPT_VERSIONS.practiceGenerate,
+        sourceId,
+        metadata: {
+          questionType: options.questionType,
+          requestedCount: options.count,
+          skillTags: options.skillTags ?? [],
+        },
+      },
+      () => this.aiProvider.generatePracticeQuestions(options),
+    );
   }
 
   async generateFlashcard(
     tenantId: string,
     userId: string,
+    role: string,
     front: string,
     context?: string,
   ): Promise<{ back: string; phonetics: string; example: string }> {
-    await this.consumeQuota(tenantId, userId);
-    return this.aiProvider.generateFlashcard({ front, context });
+    return this.aiGovernance.withGovernance(
+      {
+        tenantId,
+        userId,
+        role,
+        feature: AI_FEATURE_KEYS.flashcardGenerate,
+        promptVersion: AI_PROMPT_VERSIONS.flashcardGenerate,
+      },
+      () => this.aiProvider.generateFlashcard({ front, context }),
+    );
   }
 
   async generateFlashcardsBulk(
     tenantId: string,
     userId: string,
+    role: string,
     topic: string,
     count: number,
     context?: string,
   ) {
     const safeCount = normalizeFlashcardCount(count);
-    await this.consumeQuota(tenantId, userId);
 
-    try {
-      return await this.aiProvider.generateFlashcardsBulk({ topic, count: safeCount, context });
-    } catch (error) {
-      this.logger.warn(
-        `Bulk flashcard generation failed for tenant=${tenantId} user=${userId}: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      );
-      throw new BadGatewayException('Không thể sinh thẻ bằng AI lúc này. Hãy thử lại sau.');
-    }
+    return this.aiGovernance.withGovernance(
+      {
+        tenantId,
+        userId,
+        role,
+        feature: AI_FEATURE_KEYS.flashcardBulk,
+        promptVersion: AI_PROMPT_VERSIONS.flashcardBulk,
+        metadata: { requestedCount: safeCount },
+      },
+      async () => {
+        try {
+          return await this.aiProvider.generateFlashcardsBulk({
+            topic,
+            count: safeCount,
+            context,
+          });
+        } catch (error) {
+          this.logger.warn(
+            `Bulk flashcard generation failed for tenant=${tenantId} user=${userId}: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          );
+          throw new BadGatewayException('Không thể sinh thẻ bằng AI lúc này. Hãy thử lại sau.');
+        }
+      },
+    );
   }
 
   async generateDailyQuest(
     tenantId: string,
     userId: string,
+    role: string,
   ): Promise<import('./interfaces/ai-provider.interface').GeneratedPracticeQuestion[]> {
-    await this.consumeQuota(tenantId, userId);
-
     // 1. Get weakest skills (limit to 1 or 2 to keep the quest focused)
     const weakestSkills = await this.skillMasteryService.getWeakestSkills(tenantId, userId, 2);
 
@@ -153,32 +159,67 @@ export class AiService {
     }
 
     // 3. Generate 3-5 questions via AI
-    return this.aiProvider.generatePracticeQuestions({
-      topic: `Bài tập rèn luyện kỹ năng: ${skillNames}`,
-      count: 3, // We keep it bite-sized (3 questions)
-      questionType: 'MULTIPLE_CHOICE', // For simplicity in MVP, we can randomly choose or stick to MC
-      skillTags: skillCodes,
-    });
+    return this.aiGovernance.withGovernance(
+      {
+        tenantId,
+        userId,
+        role,
+        feature: AI_FEATURE_KEYS.dailyQuest,
+        promptVersion: AI_PROMPT_VERSIONS.dailyQuest,
+        metadata: { skillTags: skillCodes },
+      },
+      () =>
+        this.aiProvider.generatePracticeQuestions({
+          topic: `Bài tập rèn luyện kỹ năng: ${skillNames}`,
+          count: 3, // We keep it bite-sized (3 questions)
+          questionType: PracticeQuestionType.MULTIPLE_CHOICE,
+          skillTags: skillCodes,
+        }),
+    );
   }
 
   async chatRoleplay(
     tenantId: string,
     userId: string,
+    role: string,
     messages: ModelMessage[],
     systemPrompt: string,
+    feature: AiFeatureKey = AI_FEATURE_KEYS.roleplayChat,
+    promptVersion: string = AI_PROMPT_VERSIONS.roleplayChat,
+    sourceId?: string,
   ): Promise<string> {
-    await this.consumeQuota(tenantId, userId);
-    return this.aiProvider.chatRoleplay(messages, systemPrompt);
+    return this.aiGovernance.withGovernance(
+      {
+        tenantId,
+        userId,
+        role,
+        feature,
+        promptVersion,
+        sourceId,
+      },
+      () => this.aiProvider.chatRoleplay(messages, systemPrompt),
+    );
   }
 
   async evaluateRoleplaySession(
     tenantId: string,
     userId: string,
+    role: string,
     messages: ModelMessage[],
     scenario: string,
+    sourceId?: string,
   ): Promise<{ score: number; feedback: unknown }> {
-    await this.consumeQuota(tenantId, userId);
-    return this.aiProvider.evaluateRoleplaySession(messages, scenario);
+    return this.aiGovernance.withGovernance(
+      {
+        tenantId,
+        userId,
+        role,
+        feature: AI_FEATURE_KEYS.roleplayEvaluate,
+        promptVersion: AI_PROMPT_VERSIONS.roleplayEvaluate,
+        sourceId,
+      },
+      () => this.aiProvider.evaluateRoleplaySession(messages, scenario),
+    );
   }
 }
 

@@ -5,6 +5,9 @@ import {
   type AiPracticeEvaluationRequest,
   type AiPracticeEvaluationResponse,
 } from '../ai/ai-gateway.service';
+import { AI_FEATURE_KEYS, AI_PROMPT_VERSIONS } from '../ai/ai-governance.constants';
+import { AiGovernanceService } from '../ai/ai-governance.service';
+import { AuditStatus } from '../common/services/audit-log.service';
 
 export interface PracticeAiEvaluationInput {
   type: PracticeQuestionType;
@@ -14,6 +17,10 @@ export interface PracticeAiEvaluationInput {
   skillTags?: string[];
   courseTitle?: string;
   courseAiSettings?: unknown;
+  questionId?: string;
+  role?: string;
+  tenantId?: string;
+  userId?: string;
 }
 
 export interface PracticeAiFeedback {
@@ -29,11 +36,14 @@ export interface PracticeAiFeedback {
 
 @Injectable()
 export class AiEvaluationService {
-  constructor(private readonly aiGateway: AiGatewayService = new AiGatewayService()) {}
+  constructor(
+    private readonly aiGateway: AiGatewayService = new AiGatewayService(),
+    private readonly aiGovernance?: AiGovernanceService,
+  ) {}
 
   async evaluatePracticeAnswer(input: PracticeAiEvaluationInput): Promise<PracticeAiFeedback> {
     const fallback = this.buildFallbackFeedback(input);
-    const gatewayFeedback = await this.requestGatewayFeedback(input);
+    const gatewayFeedback = await this.requestGovernedGatewayFeedback(input);
 
     if (!gatewayFeedback) {
       return fallback;
@@ -84,6 +94,50 @@ export class AiEvaluationService {
         courseAiSettings: input.courseAiSettings,
       } satisfies AiPracticeEvaluationRequest);
     } catch {
+      return null;
+    }
+  }
+
+  private async requestGovernedGatewayFeedback(
+    input: PracticeAiEvaluationInput,
+  ): Promise<AiPracticeEvaluationResponse | null> {
+    const runtimeConfig = this.aiGateway.getRuntimeConfig();
+    if (!runtimeConfig.enabled) {
+      return null;
+    }
+
+    if (!this.aiGovernance || !input.tenantId || !input.userId || !input.role) {
+      return this.requestGatewayFeedback(input);
+    }
+
+    const reservation = await this.aiGovernance
+      .reserve({
+        tenantId: input.tenantId,
+        userId: input.userId,
+        role: input.role,
+        feature: AI_FEATURE_KEYS.practiceEvaluate,
+        promptVersion: AI_PROMPT_VERSIONS.practiceEvaluate,
+        sourceId: input.questionId,
+        metadata: {
+          questionType: input.type,
+          skillTags: input.skillTags ?? [],
+        },
+      })
+      .catch(() => null);
+
+    if (!reservation) {
+      return null;
+    }
+
+    try {
+      const feedback = await this.requestGatewayFeedback(input);
+      await this.aiGovernance.recordResult(
+        reservation,
+        feedback ? AuditStatus.SUCCESS : AuditStatus.FAILURE,
+      );
+      return feedback;
+    } catch (error) {
+      await this.aiGovernance.recordResult(reservation, AuditStatus.FAILURE, error);
       return null;
     }
   }

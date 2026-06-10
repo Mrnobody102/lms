@@ -8,6 +8,7 @@ import {
 } from '@repo/database';
 import { describe, expect, it, vi } from 'vitest';
 import { AiQuestionGenerationService } from './ai-question-generation.service';
+import { AuditAction, AuditStatus } from '../common/services/audit-log.service';
 
 function createAiServiceStub() {
   return {
@@ -24,9 +25,14 @@ function createAiServiceStub() {
   };
 }
 
+function createAuditLogStub() {
+  return { log: vi.fn().mockResolvedValue(undefined) };
+}
+
 describe('AiQuestionGenerationService', () => {
   it('should create a completed generation job and pending drafts', async () => {
     const aiService = createAiServiceStub();
+    const auditLog = createAuditLogStub();
     const tx = {
       aiGeneratedQuestionDraft: {
         createMany: vi.fn().mockResolvedValue({ count: 1 }),
@@ -57,6 +63,7 @@ describe('AiQuestionGenerationService', () => {
       prisma as never,
       aiService as never,
       learningAccess as never,
+      auditLog as never,
     );
 
     const result = await service.createJobAndGenerate(
@@ -103,6 +110,14 @@ describe('AiQuestionGenerationService', () => {
       }),
     );
     expect(result).toEqual(expect.objectContaining({ id: 'job-1' }));
+    expect(auditLog.log).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: AuditAction.AI_GENERATION_JOB_CREATE,
+        status: AuditStatus.SUCCESS,
+        tenantId: 'tenant-1',
+        userId: 'admin-1',
+      }),
+    );
   });
 
   it('should mark the job failed when provider output is malformed', async () => {
@@ -135,6 +150,7 @@ describe('AiQuestionGenerationService', () => {
       prisma as never,
       aiService as never,
       learningAccess as never,
+      createAuditLogStub() as never,
     );
 
     await expect(
@@ -160,6 +176,7 @@ describe('AiQuestionGenerationService', () => {
   });
 
   it('should approve a pending draft into an approved practice question', async () => {
+    const auditLog = createAuditLogStub();
     const tx = {
       practiceQuestion: {
         create: vi.fn().mockResolvedValue({ id: 'question-1' }),
@@ -191,6 +208,7 @@ describe('AiQuestionGenerationService', () => {
       prisma as never,
       createAiServiceStub() as never,
       learningAccess as never,
+      auditLog as never,
     );
 
     await service.approveDraft('tenant-1', 'draft-1', { id: 'admin-1', role: Role.ADMIN });
@@ -216,6 +234,12 @@ describe('AiQuestionGenerationService', () => {
         }),
       }),
     );
+    expect(auditLog.log).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: AuditAction.AI_DRAFT_APPROVE,
+        status: AuditStatus.SUCCESS,
+      }),
+    );
   });
 
   it('should reject cross-tenant draft access', async () => {
@@ -229,6 +253,7 @@ describe('AiQuestionGenerationService', () => {
       prisma as never,
       createAiServiceStub() as never,
       learningAccess as never,
+      createAuditLogStub() as never,
     );
 
     await expect(

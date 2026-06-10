@@ -141,13 +141,18 @@ export class PracticeService {
     });
   }
 
-  async generateAiQuestions(tenantId: string, userId: string, dto: GeneratePracticeDto) {
+  async generateAiQuestions(
+    tenantId: string,
+    userId: string,
+    role: Role,
+    dto: GeneratePracticeDto,
+  ) {
     await this.ensureCourse(tenantId, dto.courseId);
     if (dto.unitId) {
       await this.ensureUnit(tenantId, dto.courseId, dto.unitId);
     }
 
-    const generated = await this.aiService.generatePracticeQuestions(tenantId, userId, {
+    const generated = await this.aiService.generatePracticeQuestions(tenantId, userId, role, {
       topic: dto.topic,
       context: dto.context,
       count: dto.count,
@@ -952,6 +957,9 @@ export class PracticeService {
           answer,
           courseTitle: exerciseSet.course?.title,
           courseAiSettings: exerciseSet.course?.aiSettings,
+          role: user.role,
+          tenantId,
+          userId: user.id,
         });
 
         return {
@@ -1311,11 +1319,15 @@ export class PracticeService {
       type: PracticeQuestionType;
       prompt: string;
       correctAnswer: unknown;
+      id?: string;
       skillTags?: string[];
     };
     answer: unknown;
     courseTitle?: string;
     courseAiSettings?: unknown;
+    role: Role;
+    tenantId: string;
+    userId: string;
   }): Promise<PracticeAiFeedback | undefined> {
     const { question, answer } = input;
 
@@ -1332,9 +1344,13 @@ export class PracticeService {
       answer,
       correctAnswer: question.correctAnswer,
       questionPrompt: question.prompt,
+      questionId: question.id,
+      role: input.role,
       skillTags: question.skillTags,
       courseTitle: input.courseTitle,
       courseAiSettings: input.courseAiSettings,
+      tenantId: input.tenantId,
+      userId: input.userId,
     });
   }
 
