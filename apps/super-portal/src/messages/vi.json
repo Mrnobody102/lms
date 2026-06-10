@@ -166,10 +166,20 @@
         "keyMissing": "Thiếu provider key",
         "noUiKeyStorage": "Không lưu API key trong giao diện Super Portal",
         "tableTitle": "Trạng thái an toàn AI provider",
+        "usageTableTitle": "Mức dùng AI theo tenant",
         "mode": "Chế độ",
         "dynamicConfig": "Cấu hình động bằng UI",
         "keyStorage": "Nơi lưu key",
-        "frontendExposure": "Lộ key ra frontend"
+        "frontendExposure": "Lộ key ra frontend",
+        "quota": "Quota",
+        "used": "Đã dùng",
+        "remaining": "Còn lại",
+        "quotaFallback": "Fallback",
+        "quotaConfigured": "Đã cấu hình quota",
+        "quotaConfiguredHelper": "Tenant có AI quota từ subscription active",
+        "usedHelper": "AI request đã nhận trong danh sách hiện tại",
+        "latestRequest": "Request gần nhất",
+        "latestRequestHelper": "AI ledger event mới nhất trong danh sách này"
       },
       "infrastructure": {
         "title": "Hạ tầng",

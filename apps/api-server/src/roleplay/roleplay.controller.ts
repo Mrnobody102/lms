@@ -147,6 +147,7 @@ export class RoleplayController {
     return this.roleplayService.sendMessage(
       getScopedTenantId(req),
       req.user.id,
+      req.user.role,
       sessionId,
       dto.content,
     );
@@ -162,6 +163,7 @@ export class RoleplayController {
     return this.roleplayService.sendAudioMessage(
       getScopedTenantId(req),
       req.user.id,
+      req.user.role,
       sessionId,
       dto,
     );
@@ -173,7 +175,12 @@ export class RoleplayController {
     @Request() req: AuthenticatedRequest,
     @Param('id', ParseUUIDPipe) sessionId: string,
   ) {
-    return this.roleplayService.completeSession(getScopedTenantId(req), req.user.id, sessionId);
+    return this.roleplayService.completeSession(
+      getScopedTenantId(req),
+      req.user.id,
+      req.user.role,
+      sessionId,
+    );
   }
 
   @Get('sessions/:id/pronunciation')

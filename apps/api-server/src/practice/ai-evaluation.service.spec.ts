@@ -47,6 +47,7 @@ describe('AiEvaluationService', () => {
         provider: 'gateway',
         model: 'test-model',
       }),
+      getRuntimeConfig: vi.fn().mockReturnValue({ enabled: true }),
     };
     const service = new AiEvaluationService(aiGateway as never);
 
@@ -67,5 +68,36 @@ describe('AiEvaluationService', () => {
       provider: 'gateway',
       model: 'test-model',
     });
+  });
+
+  it('should not consume AI quota when provider evaluation is disabled', async () => {
+    const aiGateway = {
+      evaluatePracticeAnswer: vi.fn(),
+      getRuntimeConfig: vi.fn().mockReturnValue({ enabled: false }),
+    };
+    const aiGovernance = {
+      reserve: vi.fn(),
+      recordResult: vi.fn(),
+    };
+    const service = new AiEvaluationService(aiGateway as never, aiGovernance as never);
+
+    await expect(
+      service.evaluatePracticeAnswer({
+        type: PracticeQuestionType.AI_EVALUATED_TEXT,
+        answer: 'Hello',
+        correctAnswer: 'Hello',
+        role: 'STUDENT',
+        tenantId: 'tenant-1',
+        userId: 'user-1',
+      }),
+    ).resolves.toEqual({
+      status: 'AUTO_REVIEWED',
+      mode: PracticeQuestionType.AI_EVALUATED_TEXT,
+      matched: true,
+      transcript: 'Hello',
+    });
+
+    expect(aiGovernance.reserve).not.toHaveBeenCalled();
+    expect(aiGateway.evaluatePracticeAnswer).not.toHaveBeenCalled();
   });
 });

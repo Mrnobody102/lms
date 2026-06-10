@@ -13,6 +13,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
 import { getScopedTenantId } from '../common/utils/tenant-request.util';
 import { PrismaService } from '../common/services/prisma.service';
+import { AI_FEATURE_KEYS, AI_PROMPT_VERSIONS } from './ai-governance.constants';
 import { SocraticChatDto } from './dto/socratic-chat.dto';
 import { GenerateDailyQuestDto } from './dto/generate-daily-quest.dto';
 import { GenerateFlashcardDto, GenerateFlashcardsBulkDto } from './dto/generate-flashcard.dto';
@@ -75,6 +76,7 @@ export class AiController {
     const explanation = await this.aiService.explainAnswer(
       tenantId,
       userId,
+      req.user.role,
       questionPrompt,
       correctAnswer,
       userAnswer,
@@ -136,6 +138,7 @@ export class AiController {
     const explanation = await this.aiService.explainAnswer(
       tenantId,
       userId,
+      req.user.role,
       questionPrompt,
       correctAnswer,
       userAnswer,
@@ -164,7 +167,15 @@ ${dto.studentAnswer ? `Student's Answer: ${JSON.stringify(dto.studentAnswer)}` :
 Your task is to guide the user to the correct answer without ever revealing it directly.
 Ask one guiding question at a time. Be concise, friendly, and encouraging.`;
 
-    const aiReply = await this.aiService.chatRoleplay(tenantId, userId, dto.messages, systemPrompt);
+    const aiReply = await this.aiService.chatRoleplay(
+      tenantId,
+      userId,
+      req.user.role,
+      dto.messages,
+      systemPrompt,
+      AI_FEATURE_KEYS.tutorChat,
+      AI_PROMPT_VERSIONS.tutorChat,
+    );
 
     return { role: 'assistant', content: aiReply };
   }
@@ -174,7 +185,7 @@ Ask one guiding question at a time. Be concise, friendly, and encouraging.`;
     const tenantId = getScopedTenantId(req);
     const userId = req.user.id;
 
-    const questions = await this.aiService.generateDailyQuest(tenantId, userId);
+    const questions = await this.aiService.generateDailyQuest(tenantId, userId, req.user.role);
     return { questions };
   }
 
@@ -183,7 +194,13 @@ Ask one guiding question at a time. Be concise, friendly, and encouraging.`;
     const tenantId = getScopedTenantId(req);
     const userId = req.user.id;
 
-    const result = await this.aiService.generateFlashcard(tenantId, userId, dto.front, dto.context);
+    const result = await this.aiService.generateFlashcard(
+      tenantId,
+      userId,
+      req.user.role,
+      dto.front,
+      dto.context,
+    );
     return result;
   }
 
@@ -198,6 +215,7 @@ Ask one guiding question at a time. Be concise, friendly, and encouraging.`;
     const result = await this.aiService.generateFlashcardsBulk(
       tenantId,
       userId,
+      req.user.role,
       dto.topic,
       dto.count,
       dto.context,

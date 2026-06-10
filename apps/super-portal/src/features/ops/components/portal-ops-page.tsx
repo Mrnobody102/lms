@@ -35,11 +35,13 @@ import { LoginModal } from '@/features/auth/components/login-modal';
 import { useAuthStore } from '@/features/auth/auth.store';
 import {
   PlatformFeatureFlagRow,
+  PlatformAiUsageRow,
   PlatformListParams,
   PlatformPaginationMeta,
   PlatformUsageRow,
   usePlatformAuditLogs,
   usePlatformAiStatus,
+  usePlatformAiUsage,
   usePlatformBilling,
   usePlatformDomains,
   usePlatformFeatureFlags,
@@ -420,13 +422,21 @@ function AuditLogs() {
 
 function AiSettings() {
   const t = useTranslations('SuperPortal.ops');
+  const table = useOpsTableState();
   const { data, isLoading, isError } = usePlatformAiStatus();
+  const {
+    data: usageData,
+    isFetching,
+    isLoading: isUsageLoading,
+    isError: isUsageError,
+  } = usePlatformAiUsage(table.params);
 
-  if (isLoading) return <LoadingGrid />;
-  if (isError || !data) return <ErrorState />;
+  if (isLoading || isUsageLoading) return <LoadingGrid />;
+  if (isError || isUsageError || !data || !usageData) return <ErrorState />;
 
   return (
     <div className="space-y-6">
+      <OpsFilterBar state={table} statusOptions={tenantStatusOptions(t)} isFetching={isFetching} />
       <div className="grid gap-4 md:grid-cols-3">
         <SummaryCard
           icon={Bot}
@@ -451,6 +461,31 @@ function AiSettings() {
           helper={t('aiSettings.noUiKeyStorage')}
         />
       </div>
+      <AiUsageCards rows={usageData.items} />
+      <PaginatedDataTable
+        title={t('aiSettings.usageTableTitle')}
+        empty={t('empty')}
+        headers={[
+          t('tenant'),
+          t('aiSettings.provider'),
+          t('aiSettings.quota'),
+          t('aiSettings.used'),
+          t('aiSettings.remaining'),
+          t('time'),
+        ]}
+        rows={usageData.items.map((row) => [
+          row.tenant.name,
+          row.configured ? row.provider : t('status.missing'),
+          row.quotaConfigured
+            ? (row.subscriptionQuota ?? 0).toLocaleString()
+            : t('aiSettings.quotaFallback'),
+          row.periodUsed.toLocaleString(),
+          row.periodRemaining === null ? t('notConfigured') : row.periodRemaining.toLocaleString(),
+          row.latestRequestAt ? formatDate(row.latestRequestAt) : t('notConfigured'),
+        ])}
+        meta={usageData.meta}
+        onPageChange={table.setPage}
+      />
       <DataTable
         title={t('aiSettings.tableTitle')}
         empty={t('empty')}
@@ -461,6 +496,40 @@ function AiSettings() {
           [t('aiSettings.keyStorage'), data.keyStorage],
           [t('aiSettings.frontendExposure'), data.frontendExposureAllowed ? t('on') : t('off')],
         ]}
+      />
+    </div>
+  );
+}
+
+function AiUsageCards({ rows }: { rows: PlatformAiUsageRow[] }) {
+  const t = useTranslations('SuperPortal.ops');
+  const configuredTenants = rows.filter((row) => row.quotaConfigured).length;
+  const usedRequests = rows.reduce((sum, row) => sum + row.periodUsed, 0);
+  const latest = rows
+    .map((row) => row.latestRequestAt)
+    .filter((value): value is string => Boolean(value))
+    .sort()
+    .at(-1);
+
+  return (
+    <div className="grid gap-4 md:grid-cols-3">
+      <SummaryCard
+        icon={CheckCircle2}
+        label={t('aiSettings.quotaConfigured')}
+        value={`${configuredTenants}/${rows.length}`}
+        helper={t('aiSettings.quotaConfiguredHelper')}
+      />
+      <SummaryCard
+        icon={Activity}
+        label={t('aiSettings.used')}
+        value={usedRequests.toLocaleString()}
+        helper={t('aiSettings.usedHelper')}
+      />
+      <SummaryCard
+        icon={Database}
+        label={t('aiSettings.latestRequest')}
+        value={latest ? formatDate(latest) : t('notConfigured')}
+        helper={t('aiSettings.latestRequestHelper')}
       />
     </div>
   );

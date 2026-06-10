@@ -92,6 +92,13 @@ export class AdminPlatformController {
     return this.adminPlatformService.getIncidents(query);
   }
 
+  @Get('ai-usage')
+  @ApiOperation({ summary: 'Get platform AI usage and quota status' })
+  @ApiResponse({ status: 200, description: 'Platform AI usage retrieved successfully' })
+  getAiUsage(@Query() query: PlatformListQueryDto) {
+    return this.adminPlatformService.getAiUsage(query);
+  }
+
   @Get('ai-status')
   @ApiOperation({ summary: 'Get platform AI provider status from environment-managed config' })
   @ApiResponse({ status: 200, description: 'AI provider status retrieved successfully' })

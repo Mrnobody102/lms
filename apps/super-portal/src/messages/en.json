@@ -166,10 +166,20 @@
         "keyMissing": "Provider key is missing",
         "noUiKeyStorage": "No API key is stored in Super Portal UI",
         "tableTitle": "AI provider safety status",
+        "usageTableTitle": "Tenant AI usage",
         "mode": "Mode",
         "dynamicConfig": "Dynamic UI config",
         "keyStorage": "Key storage",
-        "frontendExposure": "Frontend key exposure"
+        "frontendExposure": "Frontend key exposure",
+        "quota": "Quota",
+        "used": "Used",
+        "remaining": "Remaining",
+        "quotaFallback": "Fallback",
+        "quotaConfigured": "Quota configured",
+        "quotaConfiguredHelper": "Tenants with active AI subscription quota",
+        "usedHelper": "Accepted AI requests in the current view",
+        "latestRequest": "Latest request",
+        "latestRequestHelper": "Most recent AI ledger event in this view"
       },
       "infrastructure": {
         "title": "Infrastructure",

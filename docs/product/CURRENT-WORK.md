@@ -10,7 +10,7 @@ Last updated: 2026-06-09
 | Docs cleanup                         | Done    | `[##########] 100%` | Active product docs reduced to 3 files                                                                 |
 | Mega Batch 16: production hardening  | Done    | `[##########] 100%` | Closed with SRS/custom-card polish and Super Portal ops list hardening                                 |
 | Mega Batch 17: ops + scale readiness | Done    | `[##########] 100%` | Code tracks closed with ops artifacts, hot-path API resilience, and validation evidence                |
-| Mega Batch 18: AI-native governance  | Active  | `[----------] 0%`   | Next focus: AI quota, audit, provider reliability, prompt governance, and adaptive learning signals    |
+| Mega Batch 18: AI-native governance  | Active  | `[###-------] 30%`  | Batch 18A foundation implemented: tenant/user AI quota, ledger, audit, and Super Portal usage view     |
 | Product readiness                    | Active  | `[########--] 80%`  | App contracts and repo-side ops gates are strong; staging evidence remains an external deployment task |
 | Mobile Student App                   | Planned | `[----------] 0%`   | P11 planned; `apps/mobile-student` not scaffolded yet                                                  |
 
@@ -76,12 +76,13 @@ Mega Batch 18 theme: AI-native governance and adaptive learning.
 
 Batch 18 should make AI behavior operationally safe and product-useful before expanding more AI-native learning features. The batch should prioritize quota enforcement, auditability, provider fallback/retry behavior, prompt/version governance, and adaptive learning signals that can be explained to admins and learners.
 
-| Status | Work                        | Output                                                                                  |
-| ------ | --------------------------- | --------------------------------------------------------------------------------------- |
-| Next   | AI quota and usage controls | Tenant/user limits, usage ledger enforcement, and admin-visible quota state             |
-| Next   | AI audit and prompt lineage | Prompt/version metadata, request traces, and reviewable AI action history               |
-| Next   | Provider reliability        | Retry/fallback policy, timeout budgets, health signals, and deterministic failure modes |
-| Next   | Adaptive learning signals   | Explainable mastery inputs and recommendations grounded in learner activity             |
+| Status | Work                         | Output                                                                                  |
+| ------ | ---------------------------- | --------------------------------------------------------------------------------------- |
+| Done   | AI governance foundation     | Tenant feature flag, provider readiness, user daily quota, subscription quota, ledger   |
+| Done   | AI audit and prompt lineage  | Prompt/version metadata, generation draft audit actions, quota/provider failure audit   |
+| Done   | Platform AI usage visibility | Super Portal API and AI settings usage table with quota/configuration state             |
+| Next   | Provider reliability         | Retry/fallback policy, timeout budgets, health signals, and deterministic failure modes |
+| Next   | Adaptive learning signals    | Explainable mastery inputs and recommendations grounded in learner activity             |
 
 Done means:
 
@@ -90,6 +91,18 @@ Done means:
 - User-facing AI output has deterministic fallback states.
 - Admin and learner UI text is synced in `vi.json` and `en.json`.
 - `pnpm lint`, `pnpm run typecheck`, focused tests, and relevant builds pass.
+
+Batch 18A validation:
+
+```bash
+pnpm --filter api-server exec tsc --noEmit
+pnpm --filter api-server test -- src/ai/ai-governance.service.spec.ts src/practice/ai-evaluation.service.spec.ts src/practice/ai-question-generation.service.spec.ts src/admin/admin-platform.service.spec.ts
+pnpm --filter super-portal typecheck
+NEXT_PUBLIC_API_URL=http://127.0.0.1:4000 pnpm --filter super-portal build
+pnpm lint
+pnpm run typecheck
+pnpm run test
+```
 
 ## Closed Mega Batch 17
 

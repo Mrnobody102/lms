@@ -5,6 +5,7 @@ import {
   PaymentStatus,
   Prisma,
   SubscriptionStatus,
+  UsageLedgerType,
 } from '@repo/database';
 import { MetricsService } from '../common/metrics/metrics.service';
 import { AuthenticatedUser } from '../common/interfaces/authenticated-request.interface';
@@ -34,6 +35,11 @@ type PlatformLedgerUsage = {
   tenantId: string;
   type: string;
   unit: string;
+  _sum: { quantity: bigint | number | null };
+};
+type PlatformAiLedgerUsage = {
+  tenantId: string;
+  _max: { occurredAt: Date | null };
   _sum: { quantity: bigint | number | null };
 };
 interface PaginationMeta {
@@ -97,6 +103,19 @@ type BillingSubscriptionRow = Prisma.TenantSubscriptionGetPayload<{
   include: {
     tenant: { select: typeof BILLING_TENANT_SELECT };
     plan: { select: typeof BILLING_PLAN_SELECT };
+  };
+}>;
+type AiUsageSubscriptionRow = Prisma.TenantSubscriptionGetPayload<{
+  select: {
+    id: true;
+    tenantId: true;
+    status: true;
+    aiRequestQuota: true;
+    startsAt: true;
+    endsAt: true;
+    currentPeriodStart: true;
+    currentPeriodEnd: true;
+    createdAt: true;
   };
 }>;
 
@@ -571,6 +590,112 @@ export class AdminPlatformService {
       keyMasked: configured ? 'configured' : 'missing',
       frontendExposureAllowed: false,
     };
+  }
+
+  async getAiUsage(query: PlatformListQueryDto) {
+    const { page, limit, skip } = getPagination(query);
+    const tenantWhere = this.tenantWhere(query, 'active');
+    const [tenants, total] = await Promise.all([
+      this.prisma.tenant.findMany({
+        where: tenantWhere,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+        select: TENANT_SELECT,
+      }),
+      this.prisma.tenant.count({ where: tenantWhere }),
+    ]);
+    const tenantIds = tenants.map((tenant) => tenant.id);
+    const provider = normalizeAiProvider(process.env.AI_PROVIDER);
+    const configured = isAiConfigured(provider, process.env);
+    const model = readAiModel(provider, process.env);
+
+    const [subscriptions, aiLedgerUsage] = await Promise.all([
+      tenantIds.length
+        ? this.prisma.tenantSubscription.findMany({
+            where: {
+              tenantId: { in: tenantIds },
+              status: { in: [SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING] },
+            },
+            orderBy: { createdAt: 'desc' },
+            select: {
+              id: true,
+              tenantId: true,
+              status: true,
+              aiRequestQuota: true,
+              startsAt: true,
+              endsAt: true,
+              currentPeriodStart: true,
+              currentPeriodEnd: true,
+              createdAt: true,
+            },
+          })
+        : Promise.resolve([] as AiUsageSubscriptionRow[]),
+      tenantIds.length
+        ? this.prisma.usageLedger.groupBy({
+            by: ['tenantId'],
+            where: {
+              tenantId: { in: tenantIds },
+              type: UsageLedgerType.AI_REQUEST,
+            },
+            _max: { occurredAt: true },
+            _sum: { quantity: true },
+          })
+        : Promise.resolve([] as PlatformAiLedgerUsage[]),
+    ]);
+
+    const subscriptionByTenant = new Map<string, AiUsageSubscriptionRow>();
+    for (const subscription of subscriptions) {
+      if (!subscriptionByTenant.has(subscription.tenantId)) {
+        subscriptionByTenant.set(subscription.tenantId, subscription);
+      }
+    }
+
+    const periodUsageByTenant = new Map(
+      await Promise.all(
+        Array.from(subscriptionByTenant.values()).map(async (subscription) => {
+          const periodStart =
+            subscription.currentPeriodStart ?? subscription.startsAt ?? subscription.createdAt;
+          const periodEnd = subscription.currentPeriodEnd ?? subscription.endsAt ?? undefined;
+          const aggregate = await this.prisma.usageLedger.aggregate({
+            where: {
+              tenantId: subscription.tenantId,
+              type: UsageLedgerType.AI_REQUEST,
+              occurredAt: {
+                gte: periodStart,
+                ...(periodEnd ? { lt: periodEnd } : {}),
+              },
+            },
+            _sum: { quantity: true },
+          });
+          return [subscription.tenantId, Number(aggregate._sum.quantity ?? 0)] as const;
+        }),
+      ),
+    );
+    const ledgerByTenant = new Map(aiLedgerUsage.map((item) => [item.tenantId, item]));
+
+    const items = tenants.map((tenant: UsageTenantRow) => {
+      const subscription = subscriptionByTenant.get(tenant.id);
+      const ledger = ledgerByTenant.get(tenant.id);
+      const totalUsed = Number(ledger?._sum.quantity ?? 0);
+      const periodUsed = subscription ? (periodUsageByTenant.get(tenant.id) ?? 0) : totalUsed;
+      const subscriptionQuota = subscription?.aiRequestQuota ?? null;
+
+      return {
+        tenant,
+        provider,
+        configured,
+        model,
+        quotaConfigured: Boolean(subscription),
+        subscriptionQuota,
+        periodUsed,
+        periodRemaining:
+          subscriptionQuota === null ? null : Math.max(subscriptionQuota - periodUsed, 0),
+        latestRequestAt: ledger?._max.occurredAt ?? null,
+      };
+    });
+
+    return toPaginatedResult(items, total, page, limit);
   }
 
   private async getRuntimeAlerts(): Promise<PlatformIncident[]> {

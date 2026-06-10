@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { SkillModule } from '../skill/skill.module';
 import { AiGatewayService } from './ai-gateway.service';
+import { AiGovernanceService } from './ai-governance.service';
 import { AiController } from './ai.controller';
 import { AiService } from './ai.service';
 import { AI_PROVIDER_TOKEN } from './interfaces/ai-provider.interface';
@@ -12,12 +13,13 @@ import { GroqProvider } from './providers/groq.provider';
   controllers: [AiController],
   providers: [
     AiGatewayService,
+    AiGovernanceService,
     AiService,
     {
       provide: AI_PROVIDER_TOKEN,
       useClass: process.env.AI_PROVIDER === 'groq' ? GroqProvider : GeminiProvider,
     },
   ],
-  exports: [AiGatewayService, AiService],
+  exports: [AiGatewayService, AiGovernanceService, AiService],
 })
 export class AiModule {}

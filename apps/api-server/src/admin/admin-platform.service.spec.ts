@@ -31,7 +31,7 @@ function createService(prismaOverrides: Record<string, unknown> = {}) {
     billingPlan: { count: vi.fn(), findMany: vi.fn() },
     invoice: { count: vi.fn(), findMany: vi.fn() },
     payment: { count: vi.fn(), findMany: vi.fn() },
-    usageLedger: { groupBy: vi.fn() },
+    usageLedger: { aggregate: vi.fn(), groupBy: vi.fn() },
     auditLog: { count: vi.fn(), findMany: vi.fn() },
     ...prismaOverrides,
   };
@@ -262,6 +262,57 @@ describe('AdminPlatformService', () => {
     expect(prisma.mediaAsset.groupBy).toHaveBeenCalledWith(
       expect.objectContaining({ where: { tenantId: { in: ['tenant-1'] } } }),
     );
+  });
+
+  it('returns paginated AI usage without exposing provider keys', async () => {
+    vi.stubEnv('AI_PROVIDER', 'groq');
+    vi.stubEnv('GROQ_API_KEY', 'secret-key');
+    vi.stubEnv('GROQ_MODEL', 'llama-test');
+    const { prisma, service } = createService();
+    prisma.tenant.findMany.mockResolvedValue([
+      { id: 'tenant-1', name: 'North Campus', slug: 'north-campus', isActive: true },
+    ]);
+    prisma.tenant.count.mockResolvedValue(1);
+    prisma.tenantSubscription.findMany.mockResolvedValue([
+      {
+        id: 'sub-1',
+        tenantId: 'tenant-1',
+        status: SubscriptionStatus.ACTIVE,
+        aiRequestQuota: 100,
+        startsAt: new Date('2026-06-01T00:00:00.000Z'),
+        endsAt: null,
+        currentPeriodStart: new Date('2026-06-01T00:00:00.000Z'),
+        currentPeriodEnd: new Date('2026-07-01T00:00:00.000Z'),
+        createdAt: new Date('2026-06-01T00:00:00.000Z'),
+      },
+    ]);
+    prisma.usageLedger.groupBy.mockResolvedValue([
+      {
+        tenantId: 'tenant-1',
+        _max: { occurredAt: new Date('2026-06-09T00:00:00.000Z') },
+        _sum: { quantity: BigInt(4) },
+      },
+    ]);
+    prisma.usageLedger.aggregate.mockResolvedValue({ _sum: { quantity: BigInt(4) } });
+
+    const result = await service.getAiUsage({ page: 1, limit: 10 });
+
+    expect(result).toEqual({
+      items: [
+        expect.objectContaining({
+          configured: true,
+          model: 'llama-test',
+          periodRemaining: 96,
+          periodUsed: 4,
+          provider: 'groq',
+          quotaConfigured: true,
+          subscriptionQuota: 100,
+          tenant: expect.objectContaining({ id: 'tenant-1' }),
+        }),
+      ],
+      meta: { page: 1, limit: 10, total: 1, totalPages: 1 },
+    });
+    expect(JSON.stringify(result)).not.toContain('secret-key');
   });
 
   it('paginates billing lists and applies tenant, search, and status filters', async () => {
