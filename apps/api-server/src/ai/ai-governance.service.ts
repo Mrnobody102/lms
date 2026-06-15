@@ -10,6 +10,7 @@ import { Prisma, SubscriptionStatus, UsageLedgerType } from '@repo/database';
 import { AuditAction, AuditLogService, AuditStatus } from '../common/services/audit-log.service';
 import { PrismaService } from '../common/services/prisma.service';
 import { AiGatewayService } from './ai-gateway.service';
+import { classifyAiProviderError } from './ai-provider-reliability';
 import type { AiFeatureKey } from './ai-governance.constants';
 
 const DEFAULT_USER_DAILY_LIMIT = 50;
@@ -232,7 +233,13 @@ export class AiGovernanceService {
     metadata.durationMs = Date.now() - reservation.startedAt.getTime();
 
     if (error !== undefined) {
-      metadata.error = error instanceof Error ? error.message : String(error);
+      const failure = classifyAiProviderError(error);
+      metadata.error = failure.message;
+      metadata.failureCategory = failure.category;
+      metadata.retryable = failure.retryable;
+      if (failure.statusCode !== undefined) {
+        metadata.statusCode = failure.statusCode;
+      }
     }
 
     await this.prisma.usageLedger.create({
@@ -272,18 +279,26 @@ export class AiGovernanceService {
     reservation: AiGovernanceReservation,
     error: unknown,
   ): Promise<void> {
+    const failure = classifyAiProviderError(error);
+    const metadata: Record<string, unknown> = {
+      feature: reservation.feature,
+      promptVersion: reservation.promptVersion,
+      provider: reservation.provider,
+      model: reservation.model,
+      error: failure.message,
+      failureCategory: failure.category,
+      retryable: failure.retryable,
+    };
+    if (failure.statusCode !== undefined) {
+      metadata.statusCode = failure.statusCode;
+    }
+
     await this.auditLog.log({
       tenantId: reservation.tenantId,
       userId: reservation.userId,
       action: AuditAction.AI_PROVIDER_FAILURE,
       status: AuditStatus.FAILURE,
-      metadata: {
-        feature: reservation.feature,
-        promptVersion: reservation.promptVersion,
-        provider: reservation.provider,
-        model: reservation.model,
-        error: error instanceof Error ? error.message : String(error),
-      },
+      metadata,
     });
   }
 }

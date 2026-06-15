@@ -63,6 +63,12 @@ describe('AdaptiveLearningService', () => {
             sourceSkillCode: 'PAST_TENSE',
             questionIds: ['q2', 'q1'],
             status: AdaptiveLearningPathItemStatus.PENDING,
+            priority: 22,
+            reason: {
+              source: 'practice-attempt',
+              attempted: 3,
+              incorrect: 2,
+            },
           },
         ]),
       },
@@ -79,5 +85,128 @@ describe('AdaptiveLearningService', () => {
 
     expect(result[0].questions.map((question) => question.id)).toEqual(['q2', 'q1']);
     expect(result[0].questions[0]).not.toHaveProperty('correctAnswer');
+    expect(result[0].recommendation).toEqual({
+      reasonCode: 'weak_skill_practice_misses',
+      source: 'practice-attempt',
+      summary: 'Learner missed 2 of 3 recent items for PAST_TENSE',
+      nextAction: 'practice_similar_questions',
+      signals: {
+        attempted: 3,
+        incorrect: 2,
+        priority: 22,
+        questionCount: 2,
+        sourceSkillCode: 'PAST_TENSE',
+      },
+    });
+    expect(prisma.practiceQuestion.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          reviewStatus: QuestionReviewStatus.APPROVED,
+        }),
+      }),
+    );
+  });
+
+  it('limits instructor adaptive path lookups to assigned courses even without a course filter', async () => {
+    const prisma = {
+      adaptiveLearningPathItem: {
+        findMany: vi.fn().mockResolvedValue([]),
+      },
+      practiceQuestion: {
+        findMany: vi.fn().mockResolvedValue([]),
+      },
+    };
+    const learningAccess = {
+      courseWhere: vi.fn().mockReturnValue({
+        tenantId: 'tenant-1',
+        deletedAt: null,
+        isActive: true,
+        instructorAssignments: {
+          some: {
+            instructorId: 'instructor-1',
+            tenantId: 'tenant-1',
+          },
+        },
+      }),
+    };
+    const service = new AdaptiveLearningService(prisma as never, learningAccess as never);
+
+    await service.listPath(
+      'tenant-1',
+      { id: 'instructor-1', role: Role.INSTRUCTOR },
+      { userId: 'student-1' },
+    );
+
+    expect(learningAccess.courseWhere).toHaveBeenCalledWith(
+      'tenant-1',
+      { id: 'instructor-1', role: Role.INSTRUCTOR },
+      undefined,
+    );
+    expect(prisma.adaptiveLearningPathItem.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          tenantId: 'tenant-1',
+          userId: 'student-1',
+          course: expect.objectContaining({
+            instructorAssignments: {
+              some: {
+                instructorId: 'instructor-1',
+                tenantId: 'tenant-1',
+              },
+            },
+          }),
+        }),
+      }),
+    );
+  });
+
+  it('prevents instructors from updating adaptive path items outside assigned courses', async () => {
+    const prisma = {
+      adaptiveLearningPathItem: {
+        findFirst: vi.fn().mockResolvedValue(null),
+        update: vi.fn(),
+      },
+    };
+    const learningAccess = {
+      courseWhere: vi.fn().mockReturnValue({
+        tenantId: 'tenant-1',
+        deletedAt: null,
+        isActive: true,
+        instructorAssignments: {
+          some: {
+            instructorId: 'instructor-1',
+            tenantId: 'tenant-1',
+          },
+        },
+      }),
+    };
+    const service = new AdaptiveLearningService(prisma as never, learningAccess as never);
+
+    await expect(
+      service.updateStatus(
+        'tenant-1',
+        { id: 'instructor-1', role: Role.INSTRUCTOR },
+        'path-1',
+        AdaptiveLearningPathItemStatus.COMPLETED,
+      ),
+    ).rejects.toThrow('Adaptive learning path item not found');
+
+    expect(prisma.adaptiveLearningPathItem.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          id: 'path-1',
+          tenantId: 'tenant-1',
+          course: expect.objectContaining({
+            instructorAssignments: {
+              some: {
+                instructorId: 'instructor-1',
+                tenantId: 'tenant-1',
+              },
+            },
+          }),
+        }),
+      }),
+    );
+    expect(prisma.adaptiveLearningPathItem.update).not.toHaveBeenCalled();
   });
 });

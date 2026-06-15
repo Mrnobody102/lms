@@ -7,17 +7,18 @@ adding new planning files unless they become a durable source of truth.
 
 Start with the dashboard, then jump only to the reference you need.
 
-| Need                               | Read                                                                     |
-| ---------------------------------- | ------------------------------------------------------------------------ |
-| What is being worked on now        | [product/CURRENT-WORK.md](product/CURRENT-WORK.md)                       |
-| Product roadmap and current phase  | [product/PLAN.md](product/PLAN.md)                                       |
-| Long-term AI strategy              | [product/AI-NATIVE-LMS-ROADMAP.md](product/AI-NATIVE-LMS-ROADMAP.md)     |
-| System boundaries and tenant model | [ARCHITECTURE.md](ARCHITECTURE.md)                                       |
-| API contracts                      | [api-documentation.md](api-documentation.md)                             |
-| Agent workflow                     | [ai-agent/SOP.md](ai-agent/SOP.md)                                       |
-| Release validation                 | [ops/release-check.md](ops/release-check.md)                             |
-| Production deploy and ops          | [ops/deployment.md](ops/deployment.md)                                   |
-| Backup/restore/rollback            | [runbooks/backup-restore-runbook.md](runbooks/backup-restore-runbook.md) |
+| Need                               | Read                                                                           |
+| ---------------------------------- | ------------------------------------------------------------------------------ |
+| What is being worked on now        | [product/CURRENT-WORK.md](product/CURRENT-WORK.md)                             |
+| Product roadmap and current phase  | [product/PLAN.md](product/PLAN.md)                                             |
+| Long-term AI strategy              | [product/AI-NATIVE-LMS-ROADMAP.md](product/AI-NATIVE-LMS-ROADMAP.md)           |
+| System boundaries and tenant model | [ARCHITECTURE.md](ARCHITECTURE.md)                                             |
+| API contracts                      | [api-documentation.md](api-documentation.md)                                   |
+| Agent workflow                     | [ai-agent/SOP.md](ai-agent/SOP.md)                                             |
+| Release validation                 | [ops/release-check.md](ops/release-check.md)                                   |
+| Production deploy and ops          | [ops/deployment.md](ops/deployment.md)                                         |
+| IBM x3650 M3 self-host production  | [ops/ibm-x3650-m3-production-deploy.md](ops/ibm-x3650-m3-production-deploy.md) |
+| Backup/restore/rollback            | [runbooks/backup-restore-runbook.md](runbooks/backup-restore-runbook.md)       |
 
 ## Docs Map
 
@@ -42,6 +43,7 @@ docs/
 ├── ops/
 │   ├── data-retention.md
 │   ├── deployment.md
+│   ├── ibm-x3650-m3-production-deploy.md
 │   ├── monitoring.md
 │   ├── performance-load.md
 │   ├── release-check.md

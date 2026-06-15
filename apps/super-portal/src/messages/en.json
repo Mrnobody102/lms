@@ -167,7 +167,15 @@
         "noUiKeyStorage": "No API key is stored in Super Portal UI",
         "tableTitle": "AI provider safety status",
         "usageTableTitle": "Tenant AI usage",
+        "health": "Health",
+        "healthStatus": {
+          "configured": "Configured",
+          "disabled": "Disabled",
+          "missing_config": "Missing config"
+        },
         "mode": "Mode",
+        "timeout": "Timeout",
+        "maxRetries": "Max retries",
         "dynamicConfig": "Dynamic UI config",
         "keyStorage": "Key storage",
         "frontendExposure": "Frontend key exposure",

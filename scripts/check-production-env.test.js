@@ -8,8 +8,8 @@ const { join } = require('node:path');
 const BASE_ENV = {
   CORS_ORIGINS: 'https://student.example.com,https://courses.example.com',
   DATABASE_URL: 'postgresql://user:password@db.example.com:5432/lms',
-  JWT_RESET_SECRET: 'prod-reset-secret-12345678901234567890',
-  JWT_SECRET: 'prod-jwt-secret-123456789012345678901234',
+  JWT_RESET_SECRET: 'ci-reset-secret-12345678901234567890',
+  JWT_SECRET: 'ci-jwt-secret-123456789012345678901234',
   NEXT_PUBLIC_API_URL: 'https://api.example.com',
   NEXT_PUBLIC_WEB_SALES_URL: 'https://courses.example.com',
   NEXT_PUBLIC_WEB_STUDENT_URL: 'https://student.example.com',
@@ -134,5 +134,22 @@ describe('check-production-env', () => {
     });
 
     expect(output).toContain('MAINTENANCE_MODE must be true or false');
+  });
+
+  it('fails when AI_MAX_RETRIES is fractional', () => {
+    const output = expectPreflightFailure({
+      ...BASE_ENV,
+      ADMIN_HOST: 'admin.example.com',
+      AI_MAX_RETRIES: '1.5',
+      ALERTMANAGER_WEBHOOK_URL: 'https://alerts.example.com/lms-platform',
+      API_HOST: 'api.example.com',
+      CADDY_ACME_EMAIL: 'ops@example.com',
+      COURSES_HOST: 'courses.example.com',
+      PORTAL_HOST: 'portal.example.com',
+      STUDENT_HOST: 'student.example.com',
+      TRUST_PROXY: 'true',
+    });
+
+    expect(output).toContain('AI_MAX_RETRIES must be an integer between 0 and 3');
   });
 });

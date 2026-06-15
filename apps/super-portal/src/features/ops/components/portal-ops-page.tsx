@@ -491,7 +491,10 @@ function AiSettings() {
         empty={t('empty')}
         headers={[t('statusLabel'), t('value')]}
         rows={[
+          [t('aiSettings.health'), t(`aiSettings.healthStatus.${data.health}`)],
           [t('aiSettings.mode'), data.mode],
+          [t('aiSettings.timeout'), `${data.timeoutMs.toLocaleString()} ms`],
+          [t('aiSettings.maxRetries'), data.maxRetries.toLocaleString()],
           [t('aiSettings.dynamicConfig'), data.dynamicConfigEnabled ? t('on') : t('off')],
           [t('aiSettings.keyStorage'), data.keyStorage],
           [t('aiSettings.frontendExposure'), data.frontendExposureAllowed ? t('on') : t('off')],

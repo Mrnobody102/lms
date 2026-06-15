@@ -1,6 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import type { ModelMessage } from 'ai';
 import {
+  AiProviderError,
+  classifyAiProviderError,
+  createAiProviderHttpError,
+  normalizeAiMaxRetries,
+  normalizeAiTimeoutMs,
+  waitForAiRetry,
+} from '../ai-provider-reliability';
+import {
   GenerateExplanationOptions,
   GenerateFlashcardOptions,
   GenerateFlashcardsBulkOptions,
@@ -14,6 +22,7 @@ interface GroqConfig {
   baseUrl: string;
   model: string;
   timeoutMs: number;
+  maxRetries: number;
   maxOutputTokens: number;
   temperature: number;
 }
@@ -272,24 +281,31 @@ Return valid JSON only, with no Markdown fences or prose.`,
     try {
       const content = await this.postChatCompletion(messages, false, temperature);
       if (!content.trim()) {
-        throw new Error('Groq returned an empty response');
+        throw new AiProviderError('invalid_response', 'Groq returned an empty response', {
+          retryable: false,
+        });
       }
       return content;
     } catch (error) {
       this.logger.error('Error generating text from Groq', error);
-      const message = error instanceof Error ? error.message : String(error);
-      throw new Error(`Failed to generate text from Groq: ${message}`);
+      throw toProviderError(error, 'Failed to generate text from Groq');
     }
   }
 
   private async chatJson(messages: GroqChatMessage[], temperature = 0.2): Promise<unknown> {
     try {
       const content = await this.postChatCompletion(messages, true, temperature);
-      return parseJsonContent(content);
+      try {
+        return parseJsonContent(content);
+      } catch (error) {
+        throw new AiProviderError('invalid_response', 'Groq returned invalid JSON', {
+          cause: error,
+          retryable: false,
+        });
+      }
     } catch (error) {
       this.logger.error('Error generating JSON from Groq', error);
-      const message = error instanceof Error ? error.message : String(error);
-      throw new Error(`Failed to generate JSON from Groq: ${message}`);
+      throw toProviderError(error, 'Failed to generate JSON from Groq');
     }
   }
 
@@ -299,6 +315,30 @@ Return valid JSON only, with no Markdown fences or prose.`,
     temperature?: number,
   ): Promise<string> {
     const config = readGroqConfig();
+    const attempts = config.maxRetries + 1;
+
+    for (let attempt = 1; attempt <= attempts; attempt += 1) {
+      try {
+        return await this.postChatCompletionOnce(config, messages, jsonMode, temperature);
+      } catch (error) {
+        const failure = classifyAiProviderError(error);
+        if (!failure.retryable || attempt >= attempts) {
+          throw error;
+        }
+
+        await waitForAiRetry(attempt);
+      }
+    }
+
+    throw new AiProviderError('unknown', 'Groq request failed without a classified error');
+  }
+
+  private async postChatCompletionOnce(
+    config: GroqConfig,
+    messages: GroqChatMessage[],
+    jsonMode: boolean,
+    temperature?: number,
+  ): Promise<string> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), config.timeoutMs);
 
@@ -322,12 +362,18 @@ Return valid JSON only, with no Markdown fences or prose.`,
       const payload = (await response.json().catch(() => null)) as unknown;
       if (!response.ok) {
         const providerMessage = readGroqErrorMessage(payload);
-        throw new Error(providerMessage || `Groq request failed with status ${response.status}`);
+        throw createAiProviderHttpError(response.status, providerMessage);
       }
 
       const content = readGroqContent(payload);
       if (!content) {
-        throw new Error('Groq response did not include message content');
+        throw new AiProviderError(
+          'invalid_response',
+          'Groq response did not include message content',
+          {
+            retryable: false,
+          },
+        );
       }
 
       return content;
@@ -340,7 +386,9 @@ Return valid JSON only, with no Markdown fences or prose.`,
 function readGroqConfig(): GroqConfig {
   const apiKey = normalizeOptionalString(process.env.GROQ_API_KEY || process.env.AI_API_KEY);
   if (!apiKey || process.env.AI_PROVIDER === 'off') {
-    throw new Error('Groq provider is not configured');
+    throw new AiProviderError('configuration', 'Groq provider is not configured', {
+      retryable: false,
+    });
   }
 
   return {
@@ -348,7 +396,8 @@ function readGroqConfig(): GroqConfig {
     baseUrl: normalizeBaseUrl(process.env.GROQ_BASE_URL || DEFAULT_GROQ_BASE_URL),
     model:
       normalizeOptionalString(process.env.GROQ_MODEL || process.env.AI_MODEL) || DEFAULT_GROQ_MODEL,
-    timeoutMs: normalizeNumber(process.env.AI_TIMEOUT_MS, 15000),
+    timeoutMs: normalizeAiTimeoutMs(process.env.AI_TIMEOUT_MS, 15000),
+    maxRetries: normalizeAiMaxRetries(process.env.AI_MAX_RETRIES, 1),
     maxOutputTokens: normalizeNumber(process.env.AI_MAX_OUTPUT_TOKENS, 1024),
     temperature: normalizeTemperature(process.env.AI_TEMPERATURE, 0.2),
   };
@@ -363,14 +412,27 @@ function normalizeBaseUrl(value: string) {
   return value.trim().replace(/\/+$/, '');
 }
 
+function normalizeTemperature(value: string | undefined, fallback: number) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 && parsed <= 2 ? parsed : fallback;
+}
+
 function normalizeNumber(value: string | undefined, fallback: number) {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
-function normalizeTemperature(value: string | undefined, fallback: number) {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) && parsed >= 0 && parsed <= 2 ? parsed : fallback;
+function toProviderError(error: unknown, fallbackMessage: string): AiProviderError {
+  if (error instanceof AiProviderError) {
+    return error;
+  }
+
+  const failure = classifyAiProviderError(error);
+  return new AiProviderError(failure.category, `${fallbackMessage}: ${failure.message}`, {
+    cause: error,
+    retryable: failure.retryable,
+    statusCode: failure.statusCode,
+  });
 }
 
 function toGroqMessage(message: ModelMessage): GroqChatMessage | null {

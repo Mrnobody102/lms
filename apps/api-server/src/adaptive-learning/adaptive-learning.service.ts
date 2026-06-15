@@ -116,13 +116,19 @@ export class AdaptiveLearningService {
       await this.learningAccess.ensureCourseAccess(query.courseId, tenantId, user);
     }
 
+    const where: Prisma.AdaptiveLearningPathItemWhereInput = {
+      tenantId,
+      userId: targetUserId,
+      courseId: query.courseId,
+      status: query.status,
+    };
+
+    if (user.role === Role.INSTRUCTOR) {
+      where.course = this.learningAccess.courseWhere(tenantId, user, query.courseId);
+    }
+
     const items = await this.prisma.adaptiveLearningPathItem.findMany({
-      where: {
-        tenantId,
-        userId: targetUserId,
-        courseId: query.courseId,
-        status: query.status,
-      },
+      where,
       orderBy: [{ status: 'asc' }, { priority: 'desc' }, { createdAt: 'desc' }],
     });
 
@@ -131,6 +137,7 @@ export class AdaptiveLearningService {
       where: {
         tenantId,
         id: { in: questionIds },
+        reviewStatus: QuestionReviewStatus.APPROVED,
         deletedAt: null,
       },
       select: {
@@ -148,6 +155,7 @@ export class AdaptiveLearningService {
 
     return items.map((item) => ({
       ...item,
+      recommendation: buildRecommendationSummary(item),
       questions: item.questionIds
         .map((questionId) => questionById.get(questionId))
         .filter((question): question is (typeof questions)[number] => Boolean(question)),
@@ -169,8 +177,13 @@ export class AdaptiveLearningService {
     itemId: string,
     status: AdaptiveLearningPathItemStatus,
   ) {
+    const where: Prisma.AdaptiveLearningPathItemWhereInput = { id: itemId, tenantId };
+    if (user.role === Role.INSTRUCTOR) {
+      where.course = this.learningAccess.courseWhere(tenantId, user);
+    }
+
     const item = await this.prisma.adaptiveLearningPathItem.findFirst({
-      where: { id: itemId, tenantId },
+      where,
       select: { id: true, userId: true },
     });
 
@@ -207,4 +220,49 @@ export class AdaptiveLearningService {
       .map(([code, stats]) => ({ code, ...stats }))
       .sort((left, right) => right.incorrect - left.incorrect || right.attempted - left.attempted);
   }
+}
+
+interface AdaptivePathSummaryInput {
+  priority: number;
+  questionIds: string[];
+  reason: Prisma.JsonValue;
+  sourceSkillCode: string;
+}
+
+function buildRecommendationSummary(item: AdaptivePathSummaryInput) {
+  const reason = toRecord(item.reason);
+  const attempted = readNumber(reason.attempted);
+  const incorrect = readNumber(reason.incorrect);
+  const reasonSource = readString(reason.source) ?? 'adaptive-signal';
+
+  return {
+    reasonCode: 'weak_skill_practice_misses',
+    source: reasonSource,
+    summary:
+      attempted !== null && incorrect !== null
+        ? `Learner missed ${incorrect} of ${attempted} recent items for ${item.sourceSkillCode}`
+        : `Learner needs more practice for ${item.sourceSkillCode}`,
+    nextAction: 'practice_similar_questions',
+    signals: {
+      attempted,
+      incorrect,
+      priority: item.priority,
+      questionCount: item.questionIds.length,
+      sourceSkillCode: item.sourceSkillCode,
+    },
+  };
+}
+
+function readNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function readString(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() ? value : null;
+}
+
+function toRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
 }

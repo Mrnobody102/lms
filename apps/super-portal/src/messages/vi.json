@@ -167,7 +167,15 @@
         "noUiKeyStorage": "Không lưu API key trong giao diện Super Portal",
         "tableTitle": "Trạng thái an toàn AI provider",
         "usageTableTitle": "Mức dùng AI theo tenant",
+        "health": "Sức khỏe",
+        "healthStatus": {
+          "configured": "Đã cấu hình",
+          "disabled": "Đang tắt",
+          "missing_config": "Thiếu cấu hình"
+        },
         "mode": "Chế độ",
+        "timeout": "Timeout",
+        "maxRetries": "Số lần thử lại tối đa",
         "dynamicConfig": "Cấu hình động bằng UI",
         "keyStorage": "Nơi lưu key",
         "frontendExposure": "Lộ key ra frontend",

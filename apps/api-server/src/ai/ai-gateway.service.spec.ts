@@ -17,9 +17,11 @@ describe('AiGatewayService', () => {
       apiKey: undefined,
       model: undefined,
       timeoutMs: 15000,
+      maxRetries: 1,
       maxOutputTokens: 512,
       temperature: 0.2,
       enabled: false,
+      health: 'disabled',
     });
   });
 
@@ -33,6 +35,7 @@ describe('AiGatewayService', () => {
         AI_API_KEY: 'secret-key',
         AI_MODEL: 'gpt-test',
         AI_TIMEOUT_MS: '3000',
+        AI_MAX_RETRIES: '2',
         AI_MAX_OUTPUT_TOKENS: '256',
         AI_TEMPERATURE: '0.7',
       } as NodeJS.ProcessEnv),
@@ -42,9 +45,11 @@ describe('AiGatewayService', () => {
       apiKey: 'secret-key',
       model: 'gpt-test',
       timeoutMs: 3000,
+      maxRetries: 2,
       maxOutputTokens: 256,
       temperature: 0.7,
       enabled: true,
+      health: 'configured',
     });
   });
 
@@ -64,9 +69,11 @@ describe('AiGatewayService', () => {
       apiKey: 'groq-secret-key',
       model: 'llama-3.3-70b-versatile',
       timeoutMs: 15000,
+      maxRetries: 1,
       maxOutputTokens: 512,
       temperature: 0.2,
       enabled: true,
+      health: 'configured',
     });
   });
 
@@ -142,6 +149,86 @@ describe('AiGatewayService', () => {
         correctAnswer: 'Hello',
       }),
     ).resolves.toBeNull();
+  });
+
+  it('should retry retryable gateway failures before falling back', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+        json: async () => ({ error: { message: 'temporarily unavailable' } }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          matched: true,
+          transcript: 'Retried transcript',
+          summary: 'Retried summary',
+          confidence: 0.7,
+        }),
+      });
+
+    vi.stubGlobal('fetch', fetchMock);
+    vi.stubEnv('AI_PROVIDER', 'gateway');
+    vi.stubEnv('AI_ENDPOINT_URL', 'https://ai.example.com/evaluate');
+    vi.stubEnv('AI_MAX_RETRIES', '1');
+
+    const service = new AiGatewayService();
+
+    await expect(
+      service.evaluatePracticeAnswer({
+        type: PracticeQuestionType.AI_EVALUATED_TEXT,
+        answer: 'Hello',
+        correctAnswer: 'Hello',
+      }),
+    ).resolves.toEqual({
+      matched: true,
+      transcript: 'Retried transcript',
+      summary: 'Retried summary',
+      confidence: 0.7,
+      provider: 'gateway',
+      model: undefined,
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('should retry transient fetch failures before falling back', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new TypeError('fetch failed'))
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          matched: true,
+          transcript: 'Recovered transcript',
+          summary: 'Recovered summary',
+          confidence: 0.8,
+        }),
+      });
+
+    vi.stubGlobal('fetch', fetchMock);
+    vi.stubEnv('AI_PROVIDER', 'gateway');
+    vi.stubEnv('AI_ENDPOINT_URL', 'https://ai.example.com/evaluate');
+    vi.stubEnv('AI_MAX_RETRIES', '1');
+
+    const service = new AiGatewayService();
+
+    await expect(
+      service.evaluatePracticeAnswer({
+        type: PracticeQuestionType.AI_EVALUATED_TEXT,
+        answer: 'Hello',
+        correctAnswer: 'Hello',
+      }),
+    ).resolves.toEqual({
+      matched: true,
+      transcript: 'Recovered transcript',
+      summary: 'Recovered summary',
+      confidence: 0.8,
+      provider: 'gateway',
+      model: undefined,
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('should send OpenAI-compatible practice evaluation requests to Groq', async () => {

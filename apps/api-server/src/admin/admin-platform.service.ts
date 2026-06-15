@@ -11,6 +11,7 @@ import { MetricsService } from '../common/metrics/metrics.service';
 import { AuthenticatedUser } from '../common/interfaces/authenticated-request.interface';
 import { PrismaService } from '../common/services/prisma.service';
 import { AuditAction, AuditLogService, AuditStatus } from '../common/services/audit-log.service';
+import { normalizeAiMaxRetries, normalizeAiTimeoutMs } from '../ai/ai-provider-reliability';
 import { PlatformAuditLogQueryDto, PlatformListQueryDto } from './dto/platform-query.dto';
 import { UpdatePlatformFeatureFlagsDto } from './dto/update-platform-feature-flags.dto';
 import { UpdatePlatformSubscriptionDto } from './dto/update-platform-subscription.dto';
@@ -579,12 +580,16 @@ export class AdminPlatformService {
     const provider = normalizeAiProvider(process.env.AI_PROVIDER);
     const model = readAiModel(provider, process.env);
     const configured = isAiConfigured(provider, process.env);
+    const health = readAiHealth(provider, configured);
 
     return {
       mode: 'env-managed',
       provider,
       configured,
+      health,
       model,
+      timeoutMs: normalizeAiTimeoutMs(process.env.AI_TIMEOUT_MS, 15000),
+      maxRetries: normalizeAiMaxRetries(process.env.AI_MAX_RETRIES, 1),
       dynamicConfigEnabled: false,
       keyStorage: 'render-env',
       keyMasked: configured ? 'configured' : 'missing',
@@ -991,6 +996,13 @@ function isAiConfigured(provider: string, env: NodeJS.ProcessEnv) {
     return Boolean(normalizeOptionalString(env.AI_ENDPOINT_URL));
   }
   return false;
+}
+
+function readAiHealth(provider: string, configured: boolean) {
+  if (provider === 'off') {
+    return 'disabled';
+  }
+  return configured ? 'configured' : 'missing_config';
 }
 
 function normalizeOptionalString(value: string | undefined) {

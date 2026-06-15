@@ -215,6 +215,15 @@ function assertOptionalNumber(env, key, min, max, errors) {
   }
 }
 
+function assertOptionalInteger(env, key, min, max, errors) {
+  if (!isPresent(env, key)) return;
+
+  const value = Number(env[key]);
+  if (!Number.isInteger(value) || value < min || value > max) {
+    errors.push(`${key} must be an integer between ${min} and ${max}`);
+  }
+}
+
 function assertHost(env, key, errors) {
   assertRequired(env, key, errors);
   if (!isPresent(env, key)) return;
@@ -403,6 +412,7 @@ assertRequired(env, 'NEXT_PUBLIC_WEB_SALES_URL', errors);
 assertOptionalOrigin(env, 'NEXT_PUBLIC_WEB_SALES_URL', errors);
 assertGooglePair(env, errors);
 assertOptionalNumber(env, 'GOOGLE_VERIFY_TIMEOUT_MS', 1000, 30000, errors);
+assertOptionalInteger(env, 'AI_MAX_RETRIES', 0, 3, errors);
 assertOptionalBoolean(env, 'ALLOW_TENANT_HEADER_IN_PRODUCTION', errors);
 assertOptionalBoolean(env, 'MAINTENANCE_MODE', errors);
 assertOptionalBoolean(env, 'TRUST_PROXY', errors);

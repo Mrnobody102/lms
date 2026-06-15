@@ -175,6 +175,8 @@ describe('AiGovernanceService', () => {
         data: expect.objectContaining({
           metadata: expect.objectContaining({
             error: 'provider down',
+            failureCategory: 'unknown',
+            retryable: false,
             status: AuditStatus.FAILURE,
           }),
         }),
@@ -184,6 +186,10 @@ describe('AiGovernanceService', () => {
       expect.objectContaining({
         action: AuditAction.AI_PROVIDER_FAILURE,
         status: AuditStatus.FAILURE,
+        metadata: expect.objectContaining({
+          failureCategory: 'unknown',
+          retryable: false,
+        }),
       }),
     );
   });

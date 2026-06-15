@@ -98,6 +98,7 @@ export const envSchema = z
     AI_API_KEY: z.string().optional(),
     AI_MODEL: z.string().optional(),
     AI_TIMEOUT_MS: z.coerce.number().min(1000).max(120000).default(15000),
+    AI_MAX_RETRIES: z.coerce.number().int().min(0).max(3).default(1),
     AI_MAX_OUTPUT_TOKENS: z.coerce.number().min(1).max(8192).default(512),
     AI_TEMPERATURE: z.coerce.number().min(0).max(2).default(0.2),
     GROQ_API_KEY: z.string().optional(),

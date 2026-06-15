@@ -140,7 +140,10 @@ export interface PlatformAiStatus {
   mode: 'env-managed';
   provider: 'off' | 'gateway' | 'groq';
   configured: boolean;
+  health: 'configured' | 'disabled' | 'missing_config';
   model: string | null;
+  timeoutMs: number;
+  maxRetries: number;
   dynamicConfigEnabled: boolean;
   keyStorage: 'render-env';
   keyMasked: 'configured' | 'missing';

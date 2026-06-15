@@ -1,7 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { PracticeQuestionType } from '@repo/database';
+import {
+  classifyAiProviderError,
+  createAiProviderHttpError,
+  normalizeAiMaxRetries,
+  normalizeAiTimeoutMs,
+  waitForAiRetry,
+} from './ai-provider-reliability';
 
 export type AiProviderMode = 'off' | 'gateway' | 'groq';
+export type AiProviderHealth = 'configured' | 'disabled' | 'missing_config';
 
 export interface AiGatewayRuntimeConfig {
   provider: AiProviderMode;
@@ -9,9 +17,11 @@ export interface AiGatewayRuntimeConfig {
   apiKey?: string;
   model?: string;
   timeoutMs: number;
+  maxRetries: number;
   maxOutputTokens: number;
   temperature: number;
   enabled: boolean;
+  health: AiProviderHealth;
 }
 
 export interface AiPracticeEvaluationRequest {
@@ -40,9 +50,12 @@ export class AiGatewayService {
     const endpointUrl = resolveEndpointUrl(provider, env);
     const apiKey = resolveApiKey(provider, env);
     const model = resolveModel(provider, env);
-    const timeoutMs = normalizeNumber(env.AI_TIMEOUT_MS, 15000);
+    const timeoutMs = normalizeAiTimeoutMs(env.AI_TIMEOUT_MS, 15000);
+    const maxRetries = normalizeAiMaxRetries(env.AI_MAX_RETRIES, 1);
     const maxOutputTokens = normalizeNumber(env.AI_MAX_OUTPUT_TOKENS, 512);
     const temperature = normalizeNumber(env.AI_TEMPERATURE, 0.2);
+    const enabled =
+      provider === 'gateway' ? Boolean(endpointUrl) : provider === 'groq' && Boolean(apiKey);
 
     return {
       provider,
@@ -50,10 +63,11 @@ export class AiGatewayService {
       apiKey,
       model,
       timeoutMs,
+      maxRetries,
       maxOutputTokens,
       temperature,
-      enabled:
-        provider === 'gateway' ? Boolean(endpointUrl) : provider === 'groq' && Boolean(apiKey),
+      enabled,
+      health: resolveHealth(provider, enabled),
     };
   }
 
@@ -99,11 +113,38 @@ export class AiGatewayService {
       return null;
     }
 
+    let lastFailure: unknown;
+    const attempts = config.maxRetries + 1;
+
+    for (let attempt = 1; attempt <= attempts; attempt += 1) {
+      try {
+        return await this.postJsonOnce(config, payload);
+      } catch (error) {
+        const failure = classifyAiProviderError(error);
+        lastFailure = error;
+
+        if (!failure.retryable || attempt >= attempts) {
+          return null;
+        }
+
+        await waitForAiRetry(attempt);
+      }
+    }
+
+    return lastFailure ?? null;
+  }
+
+  private async postJsonOnce(config: AiGatewayRuntimeConfig, payload: unknown): Promise<unknown> {
+    const endpointUrl = config.endpointUrl;
+    if (!endpointUrl) {
+      return null;
+    }
+
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), config.timeoutMs);
 
     try {
-      const response = await fetch(config.endpointUrl, {
+      const response = await fetch(endpointUrl, {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
@@ -114,12 +155,12 @@ export class AiGatewayService {
       });
 
       if (!response.ok) {
-        return null;
+        const providerPayload = await response.json().catch(() => null);
+        const providerMessage = readProviderErrorMessage(providerPayload);
+        throw createAiProviderHttpError(response.status, providerMessage);
       }
 
       return response.json().catch(() => null);
-    } catch {
-      return null;
     } finally {
       clearTimeout(timeout);
     }
@@ -130,6 +171,11 @@ function normalizeProvider(value: string | undefined): AiProviderMode {
   if (value === 'gateway') return 'gateway';
   if (value === 'groq') return 'groq';
   return 'off';
+}
+
+function resolveHealth(provider: AiProviderMode, enabled: boolean): AiProviderHealth {
+  if (provider === 'off') return 'disabled';
+  return enabled ? 'configured' : 'missing_config';
 }
 
 function resolveEndpointUrl(provider: AiProviderMode, env: NodeJS.ProcessEnv) {
@@ -165,6 +211,21 @@ function normalizeOptionalString(value: string | undefined) {
 function normalizeNumber(value: string | undefined, fallback: number) {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function readProviderErrorMessage(value: unknown): string | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return undefined;
+  }
+
+  const record = value as Record<string, unknown>;
+  const error = record.error;
+  if (error && typeof error === 'object' && !Array.isArray(error)) {
+    const message = (error as Record<string, unknown>).message;
+    return typeof message === 'string' ? message : undefined;
+  }
+
+  return typeof record.message === 'string' ? record.message : undefined;
 }
 
 function buildGroqPracticeEvaluationPayload(

@@ -295,6 +295,7 @@ Xem thêm [monitoring.md](monitoring.md).
 
 Ops references:
 
+- [ibm-x3650-m3-production-deploy.md](ibm-x3650-m3-production-deploy.md)
 - [data-retention.md](data-retention.md)
 - [performance-load.md](performance-load.md)
 - [security-compliance.md](security-compliance.md)

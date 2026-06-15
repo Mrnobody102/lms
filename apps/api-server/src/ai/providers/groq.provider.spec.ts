@@ -160,15 +160,83 @@ describe('GroqProvider', () => {
     ]);
   });
 
+  it('should retry transient Groq failures before returning generated content', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+        json: async () => ({ error: { message: 'temporarily unavailable' } }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          choices: [
+            {
+              message: {
+                content: '{"back":"xin chào","phonetics":"/həˈloʊ/","example":"Hello there."}',
+              },
+            },
+          ],
+        }),
+      });
+
+    vi.stubGlobal('fetch', fetchMock);
+    vi.stubEnv('AI_PROVIDER', 'groq');
+    vi.stubEnv('GROQ_API_KEY', 'groq-secret-key');
+    vi.stubEnv('AI_MAX_RETRIES', '1');
+
+    const provider = new GroqProvider();
+
+    await expect(provider.generateFlashcard({ front: 'hello' })).resolves.toEqual({
+      back: 'xin chào',
+      phonetics: '/həˈloʊ/',
+      example: 'Hello there.',
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('should classify invalid Groq JSON as a non-retryable provider failure', async () => {
+    const errorSpy = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          choices: [
+            {
+              message: {
+                content: 'not-json',
+              },
+            },
+          ],
+        }),
+      }),
+    );
+    vi.stubEnv('AI_PROVIDER', 'groq');
+    vi.stubEnv('GROQ_API_KEY', 'groq-secret-key');
+
+    const provider = new GroqProvider();
+
+    await expect(provider.generateFlashcard({ front: 'hello' })).rejects.toMatchObject({
+      category: 'invalid_response',
+      retryable: false,
+    });
+
+    errorSpy.mockRestore();
+  });
+
   it('should fail clearly when Groq is selected without an API key', async () => {
     const errorSpy = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
     vi.stubEnv('AI_PROVIDER', 'groq');
 
     const provider = new GroqProvider();
 
-    await expect(provider.generateFlashcard({ front: 'hello' })).rejects.toThrow(
-      'Groq provider is not configured',
-    );
+    await expect(provider.generateFlashcard({ front: 'hello' })).rejects.toMatchObject({
+      category: 'configuration',
+      message: 'Groq provider is not configured',
+      retryable: false,
+    });
 
     errorSpy.mockRestore();
   });
