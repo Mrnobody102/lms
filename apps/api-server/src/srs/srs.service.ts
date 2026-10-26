@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { Prisma, ReviewCardGrade, ReviewCardSource, type ReviewCard } from '@repo/database';
 import { PrismaService } from '../common/services/prisma.service';
+import { LearningAccessService } from '../common/services/learning-access.service';
 
 const MIN_EASE_FACTOR = 1.3;
 const FAILED_INTERVAL_MINUTES = 10;
@@ -82,7 +83,10 @@ interface ScheduleResult {
 export class SrsService {
   private readonly logger = new Logger(SrsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly learningAccess: LearningAccessService = new LearningAccessService(prisma),
+  ) {}
 
   scheduleNext(
     state: { reps: number; lapses: number; easeFactor: number; interval: number },
@@ -200,6 +204,12 @@ export class SrsService {
   ): Promise<QueueItem[]> {
     const limit = Math.min(Math.max(options.limit ?? 20, 1), 100);
     const customContentFilter = this.buildCustomContentFilter(options);
+    const accessWhere = await this.learningAccess.reviewCardWhere(
+      tenantId,
+      userId,
+      undefined,
+      options.courseId,
+    );
     const cards = await this.prisma.reviewCard.findMany({
       where: {
         tenantId,
@@ -207,7 +217,7 @@ export class SrsService {
         isSuspended: false,
         dueAt: { lte: new Date() },
         ...(options.skill ? { skillCodes: { has: options.skill } } : {}),
-        ...customContentFilter,
+        AND: [accessWhere, customContentFilter],
       },
       orderBy: { dueAt: 'asc' },
       take: limit,
@@ -270,51 +280,53 @@ export class SrsService {
     const practiceById = new Map(practiceQuestions.map((q) => [q.id, q]));
     const examById = new Map(examQuestions.map((q) => [q.id, q]));
 
-    return cards.map((card) => {
-      const source =
-        card.sourceType === ReviewCardSource.PRACTICE_QUESTION
-          ? practiceById.get(card.sourceId)
-          : examById.get(card.sourceId);
-      let question: QueueQuestionPayload | null = null;
+    return cards
+      .map((card) => {
+        const source =
+          card.sourceType === ReviewCardSource.PRACTICE_QUESTION
+            ? practiceById.get(card.sourceId)
+            : examById.get(card.sourceId);
+        let question: QueueQuestionPayload | null = null;
 
-      if (card.sourceType === ReviewCardSource.CUSTOM && card.customContent) {
-        const customContent = card.customContent as unknown as CustomCardContent;
-        question = {
-          id: card.sourceId,
-          prompt: customContent.front || '',
-          type: 'micro_card',
-          options: null,
-          correctAnswer: customContent.back || '',
-          explanation: customContent.example || customContent.back || '',
-          audioMediaAsset: null,
-          audioReplayLimit: null,
-          customContent,
+        if (card.sourceType === ReviewCardSource.CUSTOM && card.customContent) {
+          const customContent = card.customContent as unknown as CustomCardContent;
+          question = {
+            id: card.sourceId,
+            prompt: customContent.front || '',
+            type: 'micro_card',
+            options: null,
+            correctAnswer: customContent.back || '',
+            explanation: customContent.example || customContent.back || '',
+            audioMediaAsset: null,
+            audioReplayLimit: null,
+            customContent,
+          };
+        } else if (source) {
+          question = {
+            id: source.id,
+            prompt: source.prompt,
+            type: String(source.type),
+            options: source.options,
+            correctAnswer: source.correctAnswer,
+            explanation: source.explanation,
+            audioMediaAsset: source.audioMediaAsset
+              ? { id: source.audioMediaAsset.id, url: source.audioMediaAsset.url }
+              : null,
+            audioReplayLimit: source.audioReplayLimit ?? null,
+          };
+        }
+        return {
+          cardId: card.id,
+          sourceType: card.sourceType,
+          question,
+          skillCodes: card.skillCodes,
+          dueAt: card.dueAt,
+          reps: card.reps,
+          lapses: card.lapses,
+          easeFactor: card.easeFactor,
         };
-      } else if (source) {
-        question = {
-          id: source.id,
-          prompt: source.prompt,
-          type: String(source.type),
-          options: source.options,
-          correctAnswer: source.correctAnswer,
-          explanation: source.explanation,
-          audioMediaAsset: source.audioMediaAsset
-            ? { id: source.audioMediaAsset.id, url: source.audioMediaAsset.url }
-            : null,
-          audioReplayLimit: source.audioReplayLimit ?? null,
-        };
-      }
-      return {
-        cardId: card.id,
-        sourceType: card.sourceType,
-        question,
-        skillCodes: card.skillCodes,
-        dueAt: card.dueAt,
-        reps: card.reps,
-        lapses: card.lapses,
-        easeFactor: card.easeFactor,
-      };
-    });
+      })
+      .filter((card) => card.question !== null);
   }
 
   async submitReview(
@@ -324,6 +336,12 @@ export class SrsService {
     grade: ReviewCardGrade,
     durationMs?: number,
   ): Promise<ReviewCard> {
+    const accessWhere = await this.learningAccess.reviewCardWhere(tenantId, userId);
+    const allowed = await this.prisma.reviewCard.findFirst({
+      where: { ...accessWhere, AND: [{ id: cardId }] },
+      select: { id: true },
+    });
+    if (!allowed) throw new NotFoundException('Review card not found');
     return this.prisma.$transaction(async (tx) => {
       // Read inside the transaction so the schedule computation and the
       // subsequent update/log operate on the same card snapshot.
@@ -373,19 +391,20 @@ export class SrsService {
   }
 
   async getDueSummary(tenantId: string, userId: string): Promise<DueSummary> {
+    const accessWhere = await this.learningAccess.reviewCardWhere(tenantId, userId);
     const now = new Date();
     const endOfToday = new Date(now);
     endOfToday.setHours(23, 59, 59, 999);
 
     const [dueNow, dueToday, total] = await Promise.all([
       this.prisma.reviewCard.count({
-        where: { tenantId, userId, isSuspended: false, dueAt: { lte: now } },
+        where: { ...accessWhere, isSuspended: false, dueAt: { lte: now } },
       }),
       this.prisma.reviewCard.count({
-        where: { tenantId, userId, isSuspended: false, dueAt: { lte: endOfToday } },
+        where: { ...accessWhere, isSuspended: false, dueAt: { lte: endOfToday } },
       }),
       this.prisma.reviewCard.count({
-        where: { tenantId, userId, isSuspended: false },
+        where: { ...accessWhere, isSuspended: false },
       }),
     ]);
 
@@ -565,28 +584,17 @@ export class SrsService {
     category?: string;
     courseId?: string;
   }): Prisma.ReviewCardWhereInput {
-    if (options.deck?.trim()) {
-      return {
-        sourceType: ReviewCardSource.CUSTOM,
-        customContent: { path: ['deck'], equals: options.deck.trim() },
-      };
+    const filters: Prisma.ReviewCardWhereInput[] = [];
+    for (const key of ['deck', 'category'] as const) {
+      const value = options[key]?.trim();
+      if (value)
+        filters.push({
+          sourceType: ReviewCardSource.CUSTOM,
+          customContent: { path: [key], equals: value },
+        });
     }
-
-    if (options.category?.trim()) {
-      return {
-        sourceType: ReviewCardSource.CUSTOM,
-        customContent: { path: ['category'], equals: options.category.trim() },
-      };
-    }
-
-    if (options.courseId?.trim()) {
-      return {
-        sourceType: ReviewCardSource.CUSTOM,
-        customContent: { path: ['courseId'], equals: options.courseId.trim() },
-      };
-    }
-
-    return {};
+    // Course filtering applies to all source types through reviewCardWhere.
+    return filters.length ? { AND: filters } : {};
   }
 }
 

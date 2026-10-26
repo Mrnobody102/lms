@@ -839,25 +839,28 @@ model AiGeneratedQuestionDraft {
 }
 
 model PracticeExerciseSet {
-  id          String                        @id @default(uuid())
-  tenantId    String
-  tenant      Tenant                        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  courseId    String?
-  course      Course?                       @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
-  unitId      String?
-  unit        CourseUnit?                   @relation(fields: [unitId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
-  title       String
-  description String?
-  isPublished Boolean                       @default(false)
-  deletedAt   DateTime?
-  createdAt   DateTime                      @default(now())
-  updatedAt   DateTime                      @updatedAt
-  questions   PracticeExerciseSetQuestion[]
-  attempts    PracticeAttempt[]
-  discussions DiscussionThread[]
-  lessons     Lesson[]
+  id                 String                        @id @default(uuid())
+  tenantId           String
+  tenant             Tenant                        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  courseId           String?
+  course             Course?                       @relation(fields: [courseId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  unitId             String?
+  unit               CourseUnit?                   @relation(fields: [unitId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: Cascade)
+  title              String
+  description        String?
+  isPublished        Boolean                       @default(false)
+  adaptivePathItemId String?
+  adaptivePathItem   AdaptiveLearningPathItem?     @relation(fields: [adaptivePathItemId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  deletedAt          DateTime?
+  createdAt          DateTime                      @default(now())
+  updatedAt          DateTime                      @updatedAt
+  questions          PracticeExerciseSetQuestion[]
+  attempts           PracticeAttempt[]
+  discussions        DiscussionThread[]
+  lessons            Lesson[]
 
   @@unique([id, tenantId])
+  @@unique([adaptivePathItemId, tenantId])
   @@index([tenantId, courseId, isPublished, deletedAt])
   @@index([unitId])
 }
@@ -1774,7 +1777,9 @@ model AdaptiveLearningPathItem {
   reason          Json
   createdAt       DateTime                       @default(now())
   updatedAt       DateTime                       @updatedAt
+  exerciseSet     PracticeExerciseSet?
 
+  @@unique([id, tenantId])
   @@index([tenantId, userId, status, priority])
   @@index([tenantId, courseId, sourceSkillCode])
   @@index([sourceAttemptId])

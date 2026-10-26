@@ -337,6 +337,14 @@ export class DiscussionService {
         tenantId,
         deletedAt: null,
         ...(user.role === Role.STUDENT ? { isPublished: true } : {}),
+        ...(user.role === Role.STUDENT
+          ? {
+              OR: [
+                { adaptivePathItemId: null },
+                { adaptivePathItem: { tenantId, userId: user.id } },
+              ],
+            }
+          : {}),
       },
       select: { id: true, courseId: true },
     });

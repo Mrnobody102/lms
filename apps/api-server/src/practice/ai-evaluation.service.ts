@@ -23,15 +23,30 @@ export interface PracticeAiEvaluationInput {
   userId?: string;
 }
 
+/** Where the feedback came from: the AI provider, or the deterministic rule-based fallback. */
+export type PracticeAiFeedbackSource = 'ai' | 'fallback';
+
+export type PracticeAiFallbackReason =
+  | 'provider_disabled'
+  | 'governance_denied'
+  | 'provider_unavailable';
+
 export interface PracticeAiFeedback {
   status: 'AUTO_REVIEWED' | 'PENDING_REVIEW';
   mode: PracticeQuestionType;
   matched: boolean;
   transcript: string;
+  source: PracticeAiFeedbackSource;
+  fallbackReason?: PracticeAiFallbackReason;
   summary?: string;
   confidence?: number;
   provider?: string;
   model?: string;
+}
+
+interface GovernedGatewayResult {
+  feedback: AiPracticeEvaluationResponse | null;
+  fallbackReason?: PracticeAiFallbackReason;
 }
 
 @Injectable()
@@ -43,12 +58,17 @@ export class AiEvaluationService {
 
   async evaluatePracticeAnswer(input: PracticeAiEvaluationInput): Promise<PracticeAiFeedback> {
     const fallback = this.buildFallbackFeedback(input);
-    const gatewayFeedback = await this.requestGovernedGatewayFeedback(input);
+    const gateway = await this.requestGovernedGatewayFeedback(input);
 
-    if (!gatewayFeedback) {
-      return fallback;
+    if (!gateway.feedback) {
+      return {
+        ...fallback,
+        source: 'fallback',
+        fallbackReason: gateway.fallbackReason ?? 'provider_unavailable',
+      };
     }
 
+    const gatewayFeedback = gateway.feedback;
     const matched =
       typeof gatewayFeedback.matched === 'boolean' ? gatewayFeedback.matched : fallback.matched;
 
@@ -57,6 +77,7 @@ export class AiEvaluationService {
       mode: input.type,
       matched,
       transcript: gatewayFeedback.transcript ?? fallback.transcript,
+      source: 'ai',
       summary: gatewayFeedback.summary,
       confidence: gatewayFeedback.confidence,
       provider: gatewayFeedback.provider,
@@ -71,7 +92,9 @@ export class AiEvaluationService {
     );
   }
 
-  private buildFallbackFeedback(input: PracticeAiEvaluationInput): PracticeAiFeedback {
+  private buildFallbackFeedback(
+    input: PracticeAiEvaluationInput,
+  ): Omit<PracticeAiFeedback, 'source'> {
     return {
       status: this.canAutoReview(input.correctAnswer) ? 'AUTO_REVIEWED' : 'PENDING_REVIEW',
       mode: input.type,
@@ -100,14 +123,14 @@ export class AiEvaluationService {
 
   private async requestGovernedGatewayFeedback(
     input: PracticeAiEvaluationInput,
-  ): Promise<AiPracticeEvaluationResponse | null> {
+  ): Promise<GovernedGatewayResult> {
     const runtimeConfig = this.aiGateway.getRuntimeConfig();
     if (!runtimeConfig.enabled) {
-      return null;
+      return { feedback: null, fallbackReason: 'provider_disabled' };
     }
 
     if (!this.aiGovernance || !input.tenantId || !input.userId || !input.role) {
-      return this.requestGatewayFeedback(input);
+      return this.toGatewayResult(await this.requestGatewayFeedback(input));
     }
 
     const reservation = await this.aiGovernance
@@ -126,7 +149,7 @@ export class AiEvaluationService {
       .catch(() => null);
 
     if (!reservation) {
-      return null;
+      return { feedback: null, fallbackReason: 'governance_denied' };
     }
 
     try {
@@ -135,11 +158,15 @@ export class AiEvaluationService {
         reservation,
         feedback ? AuditStatus.SUCCESS : AuditStatus.FAILURE,
       );
-      return feedback;
+      return this.toGatewayResult(feedback);
     } catch (error) {
       await this.aiGovernance.recordResult(reservation, AuditStatus.FAILURE, error);
-      return null;
+      return { feedback: null, fallbackReason: 'provider_unavailable' };
     }
+  }
+
+  private toGatewayResult(feedback: AiPracticeEvaluationResponse | null): GovernedGatewayResult {
+    return feedback ? { feedback } : { feedback: null, fallbackReason: 'provider_unavailable' };
   }
 
   private matchesReference(answer: string, correctAnswer: unknown) {

@@ -195,6 +195,8 @@ export class StudentTodayService {
     const sortedTasks = tasks.sort((a, b) => b.priority - a.priority);
 
     return {
+      learnerId: user.id,
+      tenantId,
       primaryTask: sortedTasks[0],
       tasks: sortedTasks,
       courses,

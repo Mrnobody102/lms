@@ -4,6 +4,7 @@ import { AiGatewayService } from './ai-gateway.service';
 
 describe('AiGatewayService', () => {
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
     vi.unstubAllEnvs();
   });
@@ -23,6 +24,33 @@ describe('AiGatewayService', () => {
       enabled: false,
       health: 'disabled',
     });
+  });
+
+  it('keeps the timeout active while waiting for the provider response body', async () => {
+    vi.useFakeTimers();
+    vi.stubEnv('AI_PROVIDER', 'gateway');
+    vi.stubEnv('AI_ENDPOINT_URL', 'https://ai.example.com/evaluate');
+    vi.stubEnv('AI_TIMEOUT_MS', '1000');
+    vi.stubEnv('AI_MAX_RETRIES', '0');
+    let signal: AbortSignal | undefined;
+    vi.stubGlobal('fetch', async (_url: string, init: RequestInit) => {
+      signal = init.signal ?? undefined;
+      return {
+        ok: true,
+        json: () =>
+          new Promise((_resolve, reject) =>
+            signal?.addEventListener('abort', () => reject(new Error('body timeout'))),
+          ),
+      };
+    });
+    const request = new AiGatewayService().evaluatePracticeAnswer({
+      type: PracticeQuestionType.AI_EVALUATED_TEXT,
+      answer: 'ok',
+      correctAnswer: 'ok',
+    });
+    await vi.advanceTimersByTimeAsync(1001);
+    expect(signal?.aborted).toBe(true);
+    await expect(request).resolves.toBeNull();
   });
 
   it('should enable gateway runtime config when endpoint exists', () => {

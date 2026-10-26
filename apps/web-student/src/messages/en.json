@@ -956,7 +956,13 @@
       "percentageValue": "{value}% accuracy",
       "tryAgain": "Try again",
       "retry": "Retry",
-      "submit": "Submit answers"
+      "submit": "Submit answers",
+      "aiFallbackBadge": "Rule-based check",
+      "aiFallbackPending": "Response saved. It needs review because no reference answer is available for an automatic check.",
+      "aiFallbackDisabled": "AI grading is currently disabled. An automatic check uses the reference answer when one is available.",
+      "aiFallbackDenied": "AI grading is currently unavailable under your access or usage limits. An automatic check uses the reference answer when one is available.",
+      "aiFallbackUnavailable": "The AI tutor was temporarily unavailable. An automatic check uses the reference answer when one is available.",
+      "aiFallbackUnknown": "AI was not used. An automatic check uses the reference answer when one is available."
     },
     "exam": {
       "badge": "Exam",
@@ -1061,6 +1067,39 @@
       "connectionError": "Cannot connect to AI.",
       "close": "Close",
       "aiFeedbackTitle": "AI Feedback"
+    },
+    "adaptive": {
+      "retry": "Try again",
+      "starting": "Preparing your practice questions…",
+      "startError": "Could not start this practice. Try again or return to your dashboard.",
+      "actionError": "Could not update this step. Please try again.",
+      "backToDashboard": "Back to dashboard",
+      "title": "Adaptive next steps",
+      "desc": "Ordered from your due reviews, recent misses, and current mastery.",
+      "loadError": "Could not load adaptive steps right now.",
+      "empty": "No adaptive steps yet",
+      "emptyDesc": "Finish a practice set or review session and recommendations will appear here.",
+      "rankValue": "#{rank}",
+      "inProgressBadge": "In progress",
+      "dueForSkill": "{count} due review cards also target this skill.",
+      "skip": "Skip",
+      "explainer": "Order: due reviews first, then skills you recently missed, then skills under {threshold}% mastery.",
+      "step": {
+        "srsDueTitle": "Review {count} due cards",
+        "srsDueDetail": "{today} cards are due today. Most due: {skills}.",
+        "srsDueDetailNoSkills": "{today} cards are due today.",
+        "pathTitle": "Practice {skill} again",
+        "pathDetail": "You missed {incorrect} of {attempted} recent items. Mastery is {mastery}%.",
+        "pathDetailNoMastery": "You missed {incorrect} of {attempted} recent items.",
+        "pathDetailNoStats": "Similar questions are queued for this skill.",
+        "weakTitle": "Strengthen {skill}",
+        "weakDetail": "Mastery is {mastery}% after {attempts} attempts (target {threshold}%)."
+      },
+      "action": {
+        "reviewSrs": "Review now",
+        "practiceSimilar": "Practice",
+        "practiceWeak": "Practice"
+      }
     }
   },
   "Maintenance": {

@@ -7,6 +7,17 @@ import { useAuthStore } from '@/features/auth/auth.store';
 export function QueryProvider({ children }: { children: React.ReactNode }) {
   const checkAuth = useAuthStore((state) => state.checkAuth);
   const [mounted, setMounted] = useState(false);
+  const user = useAuthStore((state) => state.user);
+  const identity = `${user?.tenantId ?? 'guest'}:${user?.id ?? 'guest'}:${user?.role ?? 'guest'}`;
+  useEffect(() => {
+    setMounted(true);
+    void checkAuth();
+  }, [checkAuth]);
+  if (!mounted) return null;
+  return <SessionQueries key={identity}>{children}</SessionQueries>;
+}
+
+function SessionQueries({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -21,12 +32,13 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
       }),
   );
 
-  useEffect(() => {
-    setMounted(true);
-    void checkAuth();
-  }, [checkAuth]);
-
-  if (!mounted) return null;
+  useEffect(
+    () => () => {
+      void queryClient.cancelQueries();
+      queryClient.clear();
+    },
+    [queryClient],
+  );
 
   return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 }

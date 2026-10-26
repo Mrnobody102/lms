@@ -59,7 +59,9 @@ export default function ExamAttemptReviewPage() {
               <p className="text-sm font-semibold text-primary">{t('exam.attemptReview')}</p>
               <h1 className="mt-2 text-2xl font-bold tracking-tight">{attempt.exam.title}</h1>
               <div className="mt-4 flex flex-wrap gap-2 text-xs text-muted-foreground">
-                <span className="rounded-md border px-2 py-1">{attempt.exam.course.title}</span>
+                <span className="rounded-md border px-2 py-1">
+                  {attempt.exam.course?.title ?? t('exam.courseFallback')}
+                </span>
                 {attempt.exam.unit?.title && (
                   <span className="rounded-md border px-2 py-1">{attempt.exam.unit.title}</span>
                 )}

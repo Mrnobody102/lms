@@ -165,6 +165,20 @@ interface PaginatedData<T> {
 
 Student-facing practice chỉ đọc `PracticeQuestion` đã approved; draft pending/rejected không xuất hiện trong exercise set.
 
+#### AI evaluation fallback contract
+
+`aiFeedback` của câu AI-evaluated luôn có `source: "ai" | "fallback"`. Khi provider tắt, hết quota, hoặc lỗi, backend trả feedback rule-based (so với đáp án tham chiếu) kèm `fallbackReason: "provider_disabled" | "governance_denied" | "provider_unavailable"` để UI hiển thị trạng thái deterministic thay vì im lặng.
+
+#### Adaptive learning next steps
+
+- `GET /api/adaptive-learning/next-steps?courseId=&userId=&limit=`
+  - Role: `STUDENT` (tự động dùng user hiện tại, bỏ qua `userId`), `ADMIN`/`SUPER_ADMIN`/`INSTRUCTOR` (bắt buộc `userId`; instructor chỉ xem học viên trong course được phân công).
+  - Trả `{ learnerId, courseId, generatedAt, steps[], signals }`. Mỗi step có `kind` (`REVIEW_DUE` | `ADAPTIVE_PATH` | `WEAK_SKILL`), `rank`, `score`, `reasonCode`, `nextAction`, `href`, `signals`, `scoreBreakdown`.
+  - Thứ tự deterministic: SRS due cards trước (base 90), rồi adaptive path item theo priority + khoảng cách mastery + thẻ due cùng skill (base 50), rồi skill có mastery < 60% sau ≥ 3 lượt (base 40). Mỗi skill chỉ xuất hiện một lần.
+- `GET /api/adaptive-learning/path`, `GET /api/adaptive-learning/next`, `PATCH /api/adaptive-learning/path/:id/status` giữ nguyên; item trả thêm `recommendation` (reasonCode/summary/nextAction/signals).
+- `POST /api/adaptive-learning/path/:id/start`: chỉ học viên sở hữu path và còn quyền học khóa tương ứng được mở. Trả `{ exerciseSetId }`, tạo một bộ bài riêng từ đúng `questionIds`; gọi lại trả cùng bộ bài. Bộ bài này không xuất hiện trong catalog và học viên khác không được đọc/nộp bài. Nộp bài thành công cập nhật path thành `COMPLETED` trong cùng transaction.
+- Tín hiệu SRS được lọc theo quyền học hiện tại trước khi đếm/phân trang. Instructor không nhận thẻ cá nhân hoặc mastery toàn tenant của học viên.
+
 ### 5. SRS / Vocabulary
 
 #### Custom vocabulary cards

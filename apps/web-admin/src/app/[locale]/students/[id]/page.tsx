@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { AuthGuard } from '@/components/layout/auth-guard';
+import { LearnerAdaptivePanel } from '@/components/students/learner-adaptive-panel';
 import { Badge, Button } from '@/components/ui';
 import { useStudentDetail, useUpdateStudentStatus } from '@/hooks/use-admin-users';
 import { LoadingState, ErrorState } from '@repo/ui';
@@ -172,6 +173,9 @@ export default function StudentDetailPage() {
                     </div>
                   </div>
                 )}
+
+                {/* Adaptive recommendations */}
+                <LearnerAdaptivePanel userId={student.id} />
 
                 {/* Enrollments and Cohorts */}
                 <div className="grid gap-6 md:grid-cols-2">

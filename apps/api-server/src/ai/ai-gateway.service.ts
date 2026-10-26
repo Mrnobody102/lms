@@ -160,7 +160,7 @@ export class AiGatewayService {
         throw createAiProviderHttpError(response.status, providerMessage);
       }
 
-      return response.json().catch(() => null);
+      return await response.json().catch(() => null);
     } finally {
       clearTimeout(timeout);
     }

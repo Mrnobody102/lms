@@ -17,6 +17,8 @@ describe('AiEvaluationService', () => {
       mode: PracticeQuestionType.AI_EVALUATED_TEXT,
       matched: true,
       transcript: ' Ni Hao ',
+      source: 'fallback',
+      fallbackReason: 'provider_disabled',
     });
   });
 
@@ -34,6 +36,8 @@ describe('AiEvaluationService', () => {
       mode: PracticeQuestionType.AI_EVALUATED_AUDIO,
       matched: false,
       transcript: 'spoken transcript',
+      source: 'fallback',
+      fallbackReason: 'provider_disabled',
     });
   });
 
@@ -63,6 +67,7 @@ describe('AiEvaluationService', () => {
       mode: PracticeQuestionType.AI_EVALUATED_TEXT,
       matched: true,
       transcript: 'Gateway transcript',
+      source: 'ai',
       summary: 'Gateway summary',
       confidence: 0.91,
       provider: 'gateway',
@@ -95,9 +100,73 @@ describe('AiEvaluationService', () => {
       mode: PracticeQuestionType.AI_EVALUATED_TEXT,
       matched: true,
       transcript: 'Hello',
+      source: 'fallback',
+      fallbackReason: 'provider_disabled',
     });
 
     expect(aiGovernance.reserve).not.toHaveBeenCalled();
     expect(aiGateway.evaluatePracticeAnswer).not.toHaveBeenCalled();
+  });
+
+  it('should fall back deterministically when governance denies the request', async () => {
+    const aiGateway = {
+      evaluatePracticeAnswer: vi.fn(),
+      getRuntimeConfig: vi.fn().mockReturnValue({ enabled: true }),
+    };
+    const aiGovernance = {
+      reserve: vi.fn().mockRejectedValue(new Error('quota exceeded')),
+      recordResult: vi.fn(),
+    };
+    const service = new AiEvaluationService(aiGateway as never, aiGovernance as never);
+
+    await expect(
+      service.evaluatePracticeAnswer({
+        type: PracticeQuestionType.AI_EVALUATED_TEXT,
+        answer: 'Hello',
+        correctAnswer: 'hello',
+        role: 'STUDENT',
+        tenantId: 'tenant-1',
+        userId: 'user-1',
+      }),
+    ).resolves.toMatchObject({
+      status: 'AUTO_REVIEWED',
+      matched: true,
+      source: 'fallback',
+      fallbackReason: 'governance_denied',
+    });
+
+    expect(aiGateway.evaluatePracticeAnswer).not.toHaveBeenCalled();
+    expect(aiGovernance.recordResult).not.toHaveBeenCalled();
+  });
+
+  it('should record provider failures and mark the fallback as provider unavailable', async () => {
+    const aiGateway = {
+      evaluatePracticeAnswer: vi.fn().mockRejectedValue(new Error('timeout')),
+      getRuntimeConfig: vi.fn().mockReturnValue({ enabled: true }),
+    };
+    const reservation = { ledgerId: 'ledger-1' };
+    const aiGovernance = {
+      reserve: vi.fn().mockResolvedValue(reservation),
+      recordResult: vi.fn().mockResolvedValue(undefined),
+    };
+    const service = new AiEvaluationService(aiGateway as never, aiGovernance as never);
+
+    await expect(
+      service.evaluatePracticeAnswer({
+        type: PracticeQuestionType.AI_EVALUATED_AUDIO,
+        answer: 'spoken',
+        correctAnswer: null,
+        role: 'STUDENT',
+        tenantId: 'tenant-1',
+        userId: 'user-1',
+      }),
+    ).resolves.toMatchObject({
+      status: 'PENDING_REVIEW',
+      matched: false,
+      source: 'fallback',
+      fallbackReason: 'provider_unavailable',
+    });
+
+    expect(aiGovernance.recordResult).toHaveBeenCalledWith(reservation, 'FAILURE');
   });
 });

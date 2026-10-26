@@ -1222,7 +1222,49 @@
     "collapseSidebar": "Collapse sidebar",
     "addLesson": "Add lesson",
     "unassignedLessons": "Unassigned lessons",
-    "lessonNotFound": "Lesson not found"
+    "lessonNotFound": "Lesson not found",
+    "adaptive": {
+      "title": "Adaptive recommendations",
+      "desc": "Explainable next steps computed from due SRS cards, recent practice misses, and skill mastery.",
+      "loading": "Loading recommendations...",
+      "loadError": "Could not load adaptive recommendations.",
+      "empty": "No adaptive steps for this learner yet.",
+      "explainer": "Order: due reviews first, then recently missed skills, then skills under {threshold}% mastery. Hover a score to see how each signal contributed.",
+      "scoreValue": "Score {score}",
+      "rankValue": "#{rank}",
+      "summary": {
+        "dueNow": "Due now",
+        "weakSkills": "Weak skills",
+        "pendingPaths": "Pending path items",
+        "tracked": "Tracked skills"
+      },
+      "kind": {
+        "reviewDue": "SRS review",
+        "adaptivePath": "Adaptive path",
+        "weakSkill": "Weak skill"
+      },
+      "reason": {
+        "srsCardsDue": "Review cards are due",
+        "practiceMisses": "Missed recent practice items",
+        "lowMastery": "Mastery below target"
+      },
+      "status": {
+        "pending": "Pending",
+        "inProgress": "In progress",
+        "completed": "Completed",
+        "skipped": "Skipped"
+      },
+      "signals": {
+        "dueNow": "Due now {value}",
+        "dueToday": "Due today {value}",
+        "topSkills": "Most due: {value}",
+        "mastery": "Mastery {value}%",
+        "attempts": "{value} attempts",
+        "misses": "Missed {incorrect}/{attempted}",
+        "questions": "{value} queued questions",
+        "dueForSkill": "{value} due cards in skill"
+      }
+    }
   },
   "Common": {
     "search": "Search...",

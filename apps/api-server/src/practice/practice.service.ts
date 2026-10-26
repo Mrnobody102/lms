@@ -559,6 +559,7 @@ export class PracticeService {
   async listExerciseSets(tenantId: string, user: PracticeUser, query: PracticeListQuery) {
     const { page, limit, skip } = this.getPagination(query);
     const where: Prisma.PracticeExerciseSetWhereInput = {
+      adaptivePathItemId: null,
       tenantId,
       courseId: query.courseId,
       unitId: query.unitId,
@@ -632,6 +633,7 @@ export class PracticeService {
   async listRecommendations(tenantId: string, user: PracticeUser, query: PracticeListQuery) {
     const skills = this.parseSkillFilter(query.skill);
     const where: Prisma.PracticeExerciseSetWhereInput = {
+      adaptivePathItemId: null,
       tenantId,
       courseId: query.courseId,
       unitId: query.unitId,
@@ -764,8 +766,20 @@ export class PracticeService {
         tenantId,
         deletedAt: null,
         ...(user.role === Role.STUDENT ? { isPublished: true } : {}),
+        ...(user.role === Role.STUDENT
+          ? {
+              OR: [
+                { adaptivePathItemId: null },
+                { adaptivePathItem: { userId: user.id, tenantId } },
+              ],
+            }
+          : {}),
       },
-      include: this.exerciseSetInclude(user.role !== Role.STUDENT),
+      include: this.exerciseSetInclude(
+        user.role !== Role.STUDENT,
+        false,
+        user.role === Role.STUDENT,
+      ),
     });
 
     if (!exerciseSet) {
@@ -907,8 +921,9 @@ export class PracticeService {
         tenantId,
         isPublished: true,
         deletedAt: null,
+        OR: [{ adaptivePathItemId: null }, { adaptivePathItem: { userId: user.id, tenantId } }],
       },
-      include: this.exerciseSetInclude(true, true),
+      include: this.exerciseSetInclude(true, true, true),
     });
 
     if (!exerciseSet) {
@@ -975,31 +990,48 @@ export class PracticeService {
     );
     const score = results.filter((result) => result.isCorrect).length;
 
-    const attempt = await this.prisma.practiceAttempt.create({
-      data: {
-        tenantId,
-        userId: user.id,
-        courseId: exerciseSet.courseId,
-        exerciseSetId: exerciseSet.id,
-        score,
-        totalPoints: questions.length,
-        answers: {
-          create: results
-            .filter((result) => result.answer !== null)
-            .map((result) => ({
-              questionId: result.questionId,
-              answer: result.answer as Prisma.InputJsonValue,
-              isCorrect: result.isCorrect,
-              ...(result.aiFeedback
-                ? { aiFeedback: result.aiFeedback as unknown as Prisma.InputJsonValue }
-                : {}),
-            })),
+    const saveAttempt = (db: Pick<Prisma.TransactionClient, 'practiceAttempt'>) =>
+      db.practiceAttempt.create({
+        data: {
+          tenantId,
+          userId: user.id,
+          courseId: exerciseSet.courseId,
+          exerciseSetId: exerciseSet.id,
+          score,
+          totalPoints: questions.length,
+          answers: {
+            create: results
+              .filter((result) => result.answer !== null)
+              .map((result) => ({
+                questionId: result.questionId,
+                answer: result.answer as Prisma.InputJsonValue,
+                isCorrect: result.isCorrect,
+                ...(result.aiFeedback
+                  ? { aiFeedback: result.aiFeedback as unknown as Prisma.InputJsonValue }
+                  : {}),
+              })),
+          },
         },
-      },
-      include: {
-        answers: true,
-      },
-    });
+        include: {
+          answers: true,
+        },
+      });
+
+    const attempt = exerciseSet.adaptivePathItemId
+      ? await this.prisma.$transaction(async (tx) => {
+          const saved = await saveAttempt(tx);
+          await tx.adaptiveLearningPathItem.updateMany({
+            where: {
+              id: exerciseSet.adaptivePathItemId!,
+              tenantId,
+              userId: user.id,
+              status: { in: ['PENDING', 'IN_PROGRESS'] },
+            },
+            data: { status: 'COMPLETED' },
+          });
+          return saved;
+        })
+      : await saveAttempt(this.prisma);
 
     await this.skillMastery.applyAnswerEvents(
       tenantId,
@@ -1159,7 +1191,11 @@ export class PracticeService {
     return uniqueQuestionIds.map((id) => questions.find((question) => question.id === id)!);
   }
 
-  private exerciseSetInclude(includeCorrectAnswers: boolean, includeCourseAiSettings = false) {
+  private exerciseSetInclude(
+    includeCorrectAnswers: boolean,
+    includeCourseAiSettings = false,
+    studentVisibleOnly = false,
+  ) {
     return {
       course: {
         select: includeCourseAiSettings
@@ -1168,6 +1204,9 @@ export class PracticeService {
       },
       unit: { select: { id: true, title: true } },
       questions: {
+        ...(studentVisibleOnly
+          ? { where: { question: { deletedAt: null, reviewStatus: 'APPROVED' as const } } }
+          : {}),
         orderBy: { order: 'asc' as const },
         include: {
           question: {

@@ -1,18 +1,31 @@
 # Current Work
 
-Last updated: 2026-06-09
+Last updated: 2026-10-26
+
+## Review hardening — 2026-10-26
+
+- AI quota reservations serialize per tenant in PostgreSQL and write a pending ledger entry before provider work; completion updates that entry instead of charging twice.
+- Adaptive paths and SRS recheck current learning access. Instructor signals exclude personal cards and tenant-wide mastery.
+- Adaptive start/resume creates an owner-scoped practice set from the selected questions; submitting an attempt completes the path atomically.
+- Portal query caches and practice drafts are separated by user/tenant; dashboard SSR data carries its learner identity.
+- Fixed standalone practice/exam history rendering, combined SRS filters, adaptive retry/error UI, and UTC report windows.
+- Apply migration `20261026090000_adaptive_practice_sessions` before deploying the API. The full migration chain was verified on an isolated PostgreSQL test instance.
+- Database regressions: set `LMS_INTEGRATION_DATABASE_URL` to an isolated local database named `lms_test`, migrate it, then run `pnpm --filter api-server test -- src/learning-regressions.integration.spec.ts`.
+- Browser regressions: `pnpm --filter web-student exec playwright test e2e/adaptive-learning.spec.ts --project=chromium --workers=1`.
+- Verified: contract/lint/typecheck gate, full unit suite (301 API tests plus shared/UI/client tests), 5 PostgreSQL integration scenarios, full monorepo build, and 11 Chromium smoke/regression journeys against the production student build, including a 390px mobile layout. Prisma migration diff against the migrated test database reported no differences.
+- Browser smoke uses mocked API responses; PostgreSQL integration tests exercise the real services/database separately. Real-provider AI and staging deployment verification remain external checks.
 
 ## At A Glance
 
-| Item                                 | Status  | Progress            | Notes                                                                                                  |
-| ------------------------------------ | ------- | ------------------- | ------------------------------------------------------------------------------------------------------ |
-| Batch 15: production readiness       | Done    | `[##########] 100%` | Merged and pushed                                                                                      |
-| Docs cleanup                         | Done    | `[##########] 100%` | Active product docs reduced to 3 files                                                                 |
-| Mega Batch 16: production hardening  | Done    | `[##########] 100%` | Closed with SRS/custom-card polish and Super Portal ops list hardening                                 |
-| Mega Batch 17: ops + scale readiness | Done    | `[##########] 100%` | Code tracks closed with ops artifacts, hot-path API resilience, and validation evidence                |
-| Mega Batch 18: AI-native governance  | Active  | `[###-------] 30%`  | Batch 18A foundation implemented: tenant/user AI quota, ledger, audit, and Super Portal usage view     |
-| Product readiness                    | Active  | `[########--] 80%`  | App contracts and repo-side ops gates are strong; staging evidence remains an external deployment task |
-| Mobile Student App                   | Planned | `[----------] 0%`   | P11 planned; `apps/mobile-student` not scaffolded yet                                                  |
+| Item                                 | Status | Progress            | Notes                                                                                                  |
+| ------------------------------------ | ------ | ------------------- | ------------------------------------------------------------------------------------------------------ |
+| Batch 15: production readiness       | Done   | `[##########] 100%` | Merged and pushed                                                                                      |
+| Docs cleanup                         | Done   | `[##########] 100%` | Active product docs reduced to 3 files                                                                 |
+| Mega Batch 16: production hardening  | Done   | `[##########] 100%` | Closed with SRS/custom-card polish and Super Portal ops list hardening                                 |
+| Mega Batch 17: ops + scale readiness | Done   | `[##########] 100%` | Code tracks closed with ops artifacts, hot-path API resilience, and validation evidence                |
+| Mega Batch 18: AI-native governance  | Done   | `[##########] 100%` | Quota/ledger/audit, provider reliability, explainable adaptive sequencing with learner and admin UI    |
+| Product readiness                    | Active | `[########--] 80%`  | App contracts and repo-side ops gates are strong; staging evidence remains an external deployment task |
+| Mega Batch 19: Mobile Student App    | Next   | `[----------] 0%`   | P11 planned; `apps/mobile-student` not scaffolded yet                                                  |
 
 ## Previous Ship
 
@@ -72,17 +85,34 @@ Manual Redis outage check on 2026-06-09:
 
 ## Active Mega Batch
 
+Mega Batch 19 theme: Mobile Student App MVP and native learning loop (see `PLAN.md` P11).
+
+Batch 19 has not started. Before scaffolding `apps/mobile-student`, confirm the shared client foundation in `@repo/api-client` can take a mobile adapter (explicit base URL, bearer/session token from native secure storage, tenant resolver) without breaking the browser cookie/CSRF flow.
+
+| Status | Work                 | Output                                                                                  |
+| ------ | -------------------- | --------------------------------------------------------------------------------------- |
+| Next   | Client foundation    | `@repo/api-client` adapter seam for mobile auth/tenant; browser behavior unchanged      |
+| Next   | Expo scaffold        | `apps/mobile-student` with login, tenant selection, and dashboard/today                 |
+| Next   | Native learning loop | Course/lesson, SRS review, practice/exam, and adaptive next steps on the same contracts |
+| Next   | Mobile release ops   | Mobile smoke in CI, app config, update policy, observability baseline                   |
+
+## Closed Mega Batch 18
+
 Mega Batch 18 theme: AI-native governance and adaptive learning.
 
-Batch 18 should make AI behavior operationally safe and product-useful before expanding more AI-native learning features. The batch should prioritize quota enforcement, auditability, provider fallback/retry behavior, prompt/version governance, and adaptive learning signals that can be explained to admins and learners.
+Batch 18 made AI behavior operationally safe and product-useful: quota enforcement, auditability, provider retry/fallback behavior, prompt/version governance, and adaptive learning signals that admins and learners can read.
 
-| Status | Work                         | Output                                                                                  |
-| ------ | ---------------------------- | --------------------------------------------------------------------------------------- |
-| Done   | AI governance foundation     | Tenant feature flag, provider readiness, user daily quota, subscription quota, ledger   |
-| Done   | AI audit and prompt lineage  | Prompt/version metadata, generation draft audit actions, quota/provider failure audit   |
-| Done   | Platform AI usage visibility | Super Portal API and AI settings usage table with quota/configuration state             |
-| Next   | Provider reliability         | Retry/fallback policy, timeout budgets, health signals, and deterministic failure modes |
-| Next   | Adaptive learning signals    | Explainable mastery inputs and recommendations grounded in learner activity             |
+| Status   | Work                         | Output                                                                                                   |
+| -------- | ---------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Done     | AI governance foundation     | Tenant feature flag, provider readiness, user daily quota, subscription quota, ledger                    |
+| Done     | AI audit and prompt lineage  | Prompt/version metadata, generation draft audit actions, quota/provider failure audit                    |
+| Done     | Platform AI usage visibility | Super Portal API and AI settings usage table with quota/configuration state                              |
+| Done     | Provider reliability         | Error classification, retry with `AI_MAX_RETRIES`, timeout budget, health signal shown in Super Portal   |
+| Done     | Deterministic AI fallback    | Practice AI feedback carries `source` and `fallbackReason`; learner UI shows a rule-based check badge    |
+| Done     | Adaptive sequencing          | `GET /adaptive-learning/next-steps` ranks SRS due, path items, and weak skills with score breakdowns     |
+| Done     | Learner adaptive UI          | Student dashboard section with ranked steps, explanations, start/skip actions, both locales              |
+| Done     | Admin adaptive UI            | Student detail panel with signal summary, ranked steps, reason labels, and score breakdown tooltip       |
+| External | AI provider evidence         | Run a real provider on staging to confirm quota, ledger, retry, fallback, and Super Portal health signal |
 
 Done means:
 
@@ -92,17 +122,35 @@ Done means:
 - Admin and learner UI text is synced in `vi.json` and `en.json`.
 - `pnpm lint`, `pnpm run typecheck`, focused tests, and relevant builds pass.
 
-Batch 18A validation:
+Sequencing rules (see `apps/api-server/src/adaptive-learning/adaptive-sequencing.ts`):
+
+| Step kind       | Base | Extra signals                                                                                  | Reason code                  |
+| --------------- | ---- | ---------------------------------------------------------------------------------------------- | ---------------------------- |
+| `REVIEW_DUE`    | 90   | +0.5 per due card (max 20)                                                                     | `srs_cards_due`              |
+| `ADAPTIVE_PATH` | 50   | +priority (max 30), +mastery gap (max 20), +2 per due card in skill (max 5), +5 if in progress | `weak_skill_practice_misses` |
+| `WEAK_SKILL`    | 40   | +gap below 60% mastery (max 30), +2 per due card in skill (max 5); needs 3+ attempts           | `low_skill_mastery`          |
+
+One step per skill, at most 3 weak-skill steps, default 6 steps, deterministic tie-breaks.
+
+Batch 18 closeout validation (2026-09-15, all green):
 
 ```bash
 pnpm --filter api-server exec tsc --noEmit
-pnpm --filter api-server test -- src/ai/ai-governance.service.spec.ts src/practice/ai-evaluation.service.spec.ts src/practice/ai-question-generation.service.spec.ts src/admin/admin-platform.service.spec.ts
-pnpm --filter super-portal typecheck
-NEXT_PUBLIC_API_URL=http://127.0.0.1:4000 pnpm --filter super-portal build
+pnpm --filter api-server test -- src/adaptive-learning src/practice/ai-evaluation.service.spec.ts src/practice/practice.service.spec.ts src/ai/ai-gateway.service.spec.ts
+pnpm --filter web-student exec tsc --noEmit
+pnpm --filter web-admin exec tsc --noEmit
+pnpm run check:contracts
 pnpm lint
 pnpm run typecheck
-pnpm run test
+TZ=UTC pnpm --filter api-server test
+NEXT_PUBLIC_API_URL=http://127.0.0.1:4000 pnpm --filter web-student build
+NEXT_PUBLIC_API_URL=http://127.0.0.1:4000 pnpm --filter web-admin build
 ```
+
+Notes:
+
+- `admin-reports.service.spec.ts` (`getActivityTrend`) is timezone-sensitive and fails on UTC+7 machines but passes with `TZ=UTC` (CI default). It predates Batch 18 and is unrelated to it.
+- On a corporate proxy, `prisma generate` needs the OS certificate store: `NODE_OPTIONS=--use-system-ca pnpm --filter @repo/database build`.
 
 ## Closed Mega Batch 17
 
@@ -150,7 +198,7 @@ pnpm run build
 | ----- | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | 16    | Production contracts + workflow readiness     | Tenant/security regressions are hard to reintroduce; critical admin/student flows are bounded and smoke-tested   |
 | 17    | Operations, release + scale readiness         | Operators can diagnose issues; release gates, data integrity, list scale, and reporting volume are controlled    |
-| 18    | AI-native governance + adaptive learning      | Role-aware AI has quota, audit, prompt/version governance, provider reliability, and adaptive learning signals   |
+| 18    | AI-native governance + adaptive learning      | Done: role-aware AI has quota, audit, prompt/version governance, provider reliability, and adaptive sequencing   |
 | 19    | Mobile Student App MVP + native learning loop | Expo app scaffold, mobile auth adapter, dashboard/course/SRS/practice loop, offline-lite foundation              |
 | 20    | High-scale platform architecture              | HA DB/cache/storage, queue partitioning, CDN/media delivery, and canary/load evidence for 100k+ to million users |
 

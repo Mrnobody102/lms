@@ -48,7 +48,7 @@ export default function ExamsPage() {
     () =>
       selectedCourseId === 'all'
         ? attempts
-        : attempts.filter((attempt) => attempt.exam.course.id === selectedCourseId),
+        : attempts.filter((attempt) => attempt.exam.course?.id === selectedCourseId),
     [attempts, selectedCourseId],
   );
   const hasActiveAttempt = useMemo(
@@ -281,7 +281,7 @@ export default function ExamsPage() {
                               </div>
                               <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
                                 <span className="rounded-md border px-2 py-1">
-                                  {attempt.exam.course.title}
+                                  {attempt.exam.course?.title ?? t('exam.courseFallback')}
                                 </span>
                                 {attempt.exam.unit?.title && (
                                   <span className="rounded-md border px-2 py-1">
@@ -494,7 +494,9 @@ function AttemptRow({
           </span>
         </div>
         <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-          <span className="rounded-md border px-2 py-1">{attempt.exam.course.title}</span>
+          <span className="rounded-md border px-2 py-1">
+            {attempt.exam.course?.title ?? t('exam.courseFallback')}
+          </span>
           {attempt.exam.unit?.title ? (
             <span className="rounded-md border px-2 py-1">{attempt.exam.unit.title}</span>
           ) : null}

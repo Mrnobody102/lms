@@ -20,6 +20,7 @@ import type {
   TodayTaskType,
 } from '../../lib/student-api';
 import { Link } from '../../navigation';
+import { AdaptiveNextSteps } from './adaptive-next-steps';
 
 type StudentTranslator = ReturnType<typeof useTranslations>;
 
@@ -96,6 +97,8 @@ export default function LearningDashboard({ data }: { data: StudentTodayResponse
                 ))}
               </div>
             </section>
+
+            <AdaptiveNextSteps />
 
             <section className="rounded-md border bg-card p-5">
               <div className="mb-4 flex items-start gap-3">

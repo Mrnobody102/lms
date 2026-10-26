@@ -26,7 +26,7 @@ export interface PracticeExerciseSetSummary {
   title: string;
   description?: string | null;
   isPublished: boolean;
-  course?: { id: string; title: string };
+  course?: { id: string; title: string } | null;
   unit?: { id: string; title: string } | null;
   _count?: { questions: number; attempts: number };
 }
@@ -92,7 +92,7 @@ export interface PracticeAttemptSummary {
   exerciseSet: {
     id: string;
     title: string;
-    course: { id: string; title: string };
+    course: { id: string; title: string } | null;
     unit?: { id: string; title: string } | null;
   };
 }

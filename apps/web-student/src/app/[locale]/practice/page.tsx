@@ -490,7 +490,9 @@ function PracticeAttemptRow({
           </span>
         </div>
         <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-          <span className="rounded-md border px-2 py-1">{attempt.exerciseSet.course.title}</span>
+          <span className="rounded-md border px-2 py-1">
+            {attempt.exerciseSet.course?.title ?? t('practice.courseFallback')}
+          </span>
           {attempt.exerciseSet.unit?.title ? (
             <span className="rounded-md border px-2 py-1">{attempt.exerciseSet.unit.title}</span>
           ) : null}

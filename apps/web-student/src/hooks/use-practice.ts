@@ -74,6 +74,9 @@ export function useSubmitPracticeAttempt(id: string) {
     mutationFn: (answers: Array<{ questionId: string; answer: unknown }>) =>
       practiceApi.submitAttempt(id, answers),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adaptive-next-steps'] });
+      queryClient.invalidateQueries({ queryKey: ['practice-recommendations'] });
+      queryClient.invalidateQueries({ queryKey: ['srs'] });
       queryClient.invalidateQueries({ queryKey: ['practice-exercise-sets'] });
       queryClient.invalidateQueries({ queryKey: ['practice-exercise-set', id] });
       queryClient.invalidateQueries({ queryKey: ['practice-attempts'] });

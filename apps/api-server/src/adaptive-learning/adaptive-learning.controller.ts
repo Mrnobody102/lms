@@ -5,11 +5,12 @@ import {
   Param,
   ParseUUIDPipe,
   Patch,
+  Post,
   Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Role } from '@repo/database';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -18,6 +19,7 @@ import { AuthenticatedRequest } from '../common/interfaces/authenticated-request
 import { getScopedTenantId } from '../common/utils/tenant-request.util';
 import { AdaptiveLearningService } from './adaptive-learning.service';
 import { AdaptiveLearningQueryDto } from './dto/adaptive-learning-query.dto';
+import { AdaptiveNextStepsQueryDto } from './dto/adaptive-next-steps-query.dto';
 import { UpdateAdaptivePathStatusDto } from './dto/update-adaptive-path-status.dto';
 
 @ApiTags('adaptive-learning')
@@ -41,6 +43,15 @@ export class AdaptiveLearningController {
     return this.adaptiveLearningService.getNext(getScopedTenantId(req), req.user, courseId);
   }
 
+  @Get('next-steps')
+  @Roles(Role.STUDENT, Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
+  @ApiOperation({
+    summary: 'Get sequenced, explainable next steps across SRS due cards and weak skills',
+  })
+  getNextSteps(@Query() query: AdaptiveNextStepsQueryDto, @Request() req: AuthenticatedRequest) {
+    return this.adaptiveLearningService.getNextSteps(getScopedTenantId(req), req.user, query);
+  }
+
   @Patch('path/:id/status')
   @Roles(Role.STUDENT, Role.ADMIN, Role.SUPER_ADMIN, Role.INSTRUCTOR)
   @ApiOperation({ summary: 'Update adaptive path item status' })
@@ -55,5 +66,17 @@ export class AdaptiveLearningController {
       id,
       dto.status,
     );
+  }
+
+  @Post('path/:id/start')
+  @Roles(Role.STUDENT)
+  @ApiOperation({ summary: 'Start or resume learner-specific adaptive practice' })
+  @ApiResponse({ status: 201, description: 'Owner-scoped practice exercise set ID' })
+  @ApiResponse({
+    status: 404,
+    description: 'Path not found or learner no longer has course access',
+  })
+  startPractice(@Param('id', ParseUUIDPipe) id: string, @Request() req: AuthenticatedRequest) {
+    return this.adaptiveLearningService.startPractice(getScopedTenantId(req), req.user, id);
   }
 }

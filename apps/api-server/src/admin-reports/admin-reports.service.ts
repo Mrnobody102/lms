@@ -629,7 +629,7 @@ export class AdminReportsService {
 
         for (let i = 0; i < days; i++) {
           const d = new Date(startDate);
-          d.setDate(d.getDate() + i);
+          d.setUTCDate(d.getUTCDate() + i);
           const dateStr = d.toISOString().split('T')[0];
           trendMap.set(dateStr, { date: dateStr, opened: 0, completed: 0 });
         }
@@ -711,7 +711,7 @@ export class AdminReportsService {
 
         for (let i = 0; i < days; i++) {
           const d = new Date(startDate);
-          d.setDate(d.getDate() + i);
+          d.setUTCDate(d.getUTCDate() + i);
           const dateStr = d.toISOString().split('T')[0];
           trendMap.set(dateStr, { date: dateStr });
         }
@@ -1025,8 +1025,8 @@ export class AdminReportsService {
   private getTrendWindow(days?: number): { startDate: Date; days: number } {
     const windowDays = Math.min(Math.max(days ?? DEFAULT_TREND_DAYS, 1), MAX_TREND_DAYS);
     const startDate = new Date();
-    startDate.setDate(startDate.getDate() - (windowDays - 1));
-    startDate.setHours(0, 0, 0, 0);
+    startDate.setUTCDate(startDate.getUTCDate() - (windowDays - 1));
+    startDate.setUTCHours(0, 0, 0, 0);
 
     return { startDate, days: windowDays };
   }

@@ -36,7 +36,7 @@ export interface ExamSummary {
   durationMinutes: number;
   passingScore?: number | null;
   isPublished: boolean;
-  course?: { id: string; title: string };
+  course?: { id: string; title: string } | null;
   unit?: { id: string; title: string } | null;
   _count?: { sections: number; attempts: number };
 }
@@ -95,7 +95,7 @@ export interface ExamAttemptSummary extends ExamAttempt {
     title: string;
     durationMinutes: number;
     passingScore?: number | null;
-    course: { id: string; title: string };
+    course: { id: string; title: string } | null;
     unit?: { id: string; title: string } | null;
   };
 }

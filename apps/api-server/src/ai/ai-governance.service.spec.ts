@@ -9,6 +9,8 @@ import { AiGovernanceService } from './ai-governance.service';
 function createService() {
   const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
   const prisma = {
+    $queryRaw: vi.fn().mockResolvedValue([{ id: 'tenant-1' }]),
+    $transaction: vi.fn(),
     aiUsageQuota: {
       create: vi.fn().mockResolvedValue({
         requestsUsed: 0,
@@ -35,8 +37,12 @@ function createService() {
     usageLedger: {
       aggregate: vi.fn().mockResolvedValue({ _sum: { quantity: BigInt(0) } }),
       create: vi.fn().mockResolvedValue({ id: 'ledger-1' }),
+      update: vi.fn().mockResolvedValue({ id: 'ledger-1' }),
     },
   };
+  prisma.$transaction.mockImplementation((callback: (tx: unknown) => Promise<unknown>) =>
+    callback(prisma),
+  );
   const aiGateway = {
     getRuntimeConfig: vi.fn().mockReturnValue({
       provider: 'groq',
@@ -80,11 +86,9 @@ describe('AiGovernanceService', () => {
     expect(prisma.aiUsageQuota.create).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ requestLimit: 50 }) }),
     );
-    expect(prisma.usageLedger.create).toHaveBeenCalledWith(
+    expect(prisma.usageLedger.update).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          tenantId: 'tenant-1',
-          sourceType: AI_FEATURE_KEYS.tutorExplain,
           metadata: expect.objectContaining({
             quotaConfigured: false,
             status: AuditStatus.SUCCESS,
@@ -170,7 +174,7 @@ describe('AiGovernanceService', () => {
       }),
     ).rejects.toThrow('provider down');
 
-    expect(prisma.usageLedger.create).toHaveBeenCalledWith(
+    expect(prisma.usageLedger.update).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           metadata: expect.objectContaining({

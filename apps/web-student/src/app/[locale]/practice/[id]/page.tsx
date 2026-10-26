@@ -27,12 +27,23 @@ import { ProgressStatus } from '@/lib/progress-api';
 import { Link } from '@/navigation';
 
 export default function PracticeAttemptPage() {
-  const t = useTranslations('Student');
-  const { isAuthenticated, isInitialized } = useAuthStore();
   const params = useParams();
-  const searchParams = useSearchParams();
   const idParam = params.id;
   const exerciseSetId = (Array.isArray(idParam) ? idParam[0] : idParam) ?? '';
+  const user = useAuthStore((state) => state.user);
+  return (
+    <PracticeAttemptSession
+      key={`${user?.tenantId}:${user?.id}:${exerciseSetId}`}
+      exerciseSetId={exerciseSetId}
+    />
+  );
+}
+
+function PracticeAttemptSession({ exerciseSetId }: { exerciseSetId: string }) {
+  const t = useTranslations('Student');
+  const { isAuthenticated, isInitialized, user } = useAuthStore();
+  const searchParams = useSearchParams();
+  const draftKey = user ? `practice_draft_${user.tenantId}_${user.id}_${exerciseSetId}` : null;
   const returnLessonId = searchParams.get('returnLessonId');
   const returnLessonHref = getReturnLessonHref(returnLessonId);
   const currentHref = withReturnLessonId(`/practice/${exerciseSetId}`, returnLessonId);
@@ -78,32 +89,41 @@ export default function PracticeAttemptPage() {
 
   // Load draft from localStorage
   useEffect(() => {
-    if (!exerciseSetId || isAnswersLoaded || result) return;
+    if (!draftKey || isAnswersLoaded || result) return;
     try {
-      const saved = localStorage.getItem(`practice_draft_${exerciseSetId}`);
+      const saved = localStorage.getItem(draftKey);
       if (saved) {
-        setAnswers(JSON.parse(saved));
+        const parsed: unknown = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          setAnswers(
+            Object.fromEntries(
+              Object.entries(parsed).filter(
+                (entry): entry is [string, string] => typeof entry[1] === 'string',
+              ),
+            ),
+          );
+        }
       }
     } catch {
       // ignore
     } finally {
       setIsAnswersLoaded(true);
     }
-  }, [exerciseSetId, isAnswersLoaded, result]);
+  }, [draftKey, isAnswersLoaded, result]);
 
   // Save draft to localStorage
   useEffect(() => {
-    if (!isAnswersLoaded || result) return;
+    if (!draftKey || !isAnswersLoaded || result) return;
     try {
       if (Object.keys(answers).length > 0) {
-        localStorage.setItem(`practice_draft_${exerciseSetId}`, JSON.stringify(answers));
+        localStorage.setItem(draftKey, JSON.stringify(answers));
       } else {
-        localStorage.removeItem(`practice_draft_${exerciseSetId}`);
+        if (draftKey) localStorage.removeItem(draftKey);
       }
     } catch {
       // ignore
     }
-  }, [answers, exerciseSetId, isAnswersLoaded, result]);
+  }, [answers, draftKey, isAnswersLoaded, result]);
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -123,7 +143,7 @@ export default function PracticeAttemptPage() {
         onSuccess: (data) => {
           setResult(data);
           try {
-            localStorage.removeItem(`practice_draft_${exerciseSetId}`);
+            if (draftKey) localStorage.removeItem(draftKey);
           } catch {
             // ignore
           }
@@ -149,7 +169,7 @@ export default function PracticeAttemptPage() {
 
   const resetAttempt = () => {
     try {
-      localStorage.removeItem(`practice_draft_${exerciseSetId}`);
+      if (draftKey) localStorage.removeItem(draftKey);
     } catch {
       // ignore
     }

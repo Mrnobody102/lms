@@ -1222,7 +1222,49 @@
     "collapseSidebar": "Thu gọn thanh bên",
     "addLesson": "Thêm bài học",
     "unassignedLessons": "Bài học chưa xếp unit",
-    "lessonNotFound": "Không tìm thấy bài học"
+    "lessonNotFound": "Không tìm thấy bài học",
+    "adaptive": {
+      "title": "Gợi ý học thích ứng",
+      "desc": "Các bước tiếp theo có giải thích, tính từ thẻ SRS đến hạn, câu sai gần đây và mức thành thạo kỹ năng.",
+      "loading": "Đang tải gợi ý...",
+      "loadError": "Không tải được gợi ý học thích ứng.",
+      "empty": "Học viên này chưa có gợi ý thích ứng.",
+      "explainer": "Thứ tự: thẻ ôn đến hạn trước, rồi kỹ năng vừa sai nhiều, sau đó kỹ năng dưới {threshold}% thành thạo. Di chuột vào điểm để xem đóng góp của từng tín hiệu.",
+      "scoreValue": "Điểm {score}",
+      "rankValue": "#{rank}",
+      "summary": {
+        "dueNow": "Đến hạn",
+        "weakSkills": "Kỹ năng yếu",
+        "pendingPaths": "Lộ trình chờ",
+        "tracked": "Kỹ năng theo dõi"
+      },
+      "kind": {
+        "reviewDue": "Ôn SRS",
+        "adaptivePath": "Lộ trình thích ứng",
+        "weakSkill": "Kỹ năng yếu"
+      },
+      "reason": {
+        "srsCardsDue": "Có thẻ ôn đến hạn",
+        "practiceMisses": "Sai nhiều câu luyện tập gần đây",
+        "lowMastery": "Thành thạo dưới mục tiêu"
+      },
+      "status": {
+        "pending": "Chờ",
+        "inProgress": "Đang làm",
+        "completed": "Hoàn thành",
+        "skipped": "Đã bỏ qua"
+      },
+      "signals": {
+        "dueNow": "Đến hạn {value}",
+        "dueToday": "Hôm nay {value}",
+        "topSkills": "Nhiều nhất: {value}",
+        "mastery": "Thành thạo {value}%",
+        "attempts": "{value} lượt làm",
+        "misses": "Sai {incorrect}/{attempted}",
+        "questions": "{value} câu đã xếp",
+        "dueForSkill": "{value} thẻ đến hạn trong kỹ năng"
+      }
+    }
   },
   "Common": {
     "search": "Tìm kiếm...",

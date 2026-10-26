@@ -44,6 +44,7 @@ export function useSubmitReview() {
       durationMs?: number;
     }) => srsApi.submitReview(cardId, grade, durationMs),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adaptive-next-steps'] });
       // Refresh the due/summary counters and stats so dashboards reflect the
       // graded card immediately. Prefix keys cover every params variant.
       queryClient.invalidateQueries({ queryKey: [...srsKeys.all, 'summary'] });

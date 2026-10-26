@@ -1,28 +1,28 @@
 # Kế Hoạch Triển Khai LMS Platform
 
-Cập nhật lần cuối: 2026-06-04 (production-scale batch planning)
+Cập nhật lần cuối: 2026-09-15 (Mega Batch 18 closeout)
 
 Tracker ngắn cho task/batch hiện tại: [CURRENT-WORK.md](CURRENT-WORK.md).
 
 ## Tóm Tắt Nhanh
 
-| Mảng                        | Tiến độ            | Trạng thái ngắn                                                                        |
-| --------------------------- | ------------------ | -------------------------------------------------------------------------------------- |
-| Foundation / CI / release   | `[########--] 85%` | App-level gates tốt; đã có edge/env artifacts, còn thiếu staging deploy evidence       |
-| Tenant isolation / security | `[#######---] 70%` | Đã thêm deny tests; cần mở rộng tiếp theo domain                                       |
-| Student learning core       | `[#######---] 70%` | Dashboard, SRS, practice, exam đã có MVP; cần controlled progression và mock exam mode |
-| Admin operations            | `[#######---] 65%` | Đã chuẩn hóa một phần shared UI states                                                 |
-| Super Portal operations     | `[######----] 55%` | Ops pages dùng shared states; cần real health, alerts, deploy evidence                 |
-| Production operations       | `[######----] 55%` | Docker/Caddy/monitoring/runbooks có nền; còn thiếu staging/live restore/load evidence  |
-| AI-native roadmap           | `[####------] 40%` | MVP tutor/roleplay có nền, cần governance/quota                                        |
-| Mobile student app          | `[----------] 0%`  | Đã có plan P11; chưa scaffold `apps/mobile-student`                                    |
+| Mảng                        | Tiến độ            | Trạng thái ngắn                                                                                         |
+| --------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------- |
+| Foundation / CI / release   | `[########--] 85%` | App-level gates tốt; đã có edge/env artifacts, còn thiếu staging deploy evidence                        |
+| Tenant isolation / security | `[#######---] 70%` | Đã thêm deny tests; cần mở rộng tiếp theo domain                                                        |
+| Student learning core       | `[#######---] 70%` | Dashboard, SRS, practice, exam đã có MVP; cần controlled progression và mock exam mode                  |
+| Admin operations            | `[#######---] 65%` | Đã chuẩn hóa một phần shared UI states                                                                  |
+| Super Portal operations     | `[######----] 55%` | Ops pages dùng shared states; cần real health, alerts, deploy evidence                                  |
+| Production operations       | `[######----] 55%` | Docker/Caddy/monitoring/runbooks có nền; còn thiếu staging/live restore/load evidence                   |
+| AI-native roadmap           | `[########--] 80%` | Governance/quota/audit, provider reliability, adaptive sequencing đã có; cần evidence với provider thật |
+| Mobile student app          | `[----------] 0%`  | Đã có plan P11; chưa scaffold `apps/mobile-student`                                                     |
 
-Hiện tại ưu tiên **Mega Batch 17**:
+Mega Batch 17 và 18 đã đóng phần code trong repo. Hiện tại ưu tiên **Mega Batch 19** (Mobile Student App MVP, xem P11) và các việc external còn nợ:
 
-1. Chạy staging evidence cho production artifacts: Caddy domains/TLS, real `.env.production`, `JWT_RESET_SECRET` thật, staging smoke thật.
-2. Hoàn thiện observability vận hành: generic alert webhook thật, request-id/log correlation, operator runbooks.
-3. Thực hiện backup/restore/rollback drill cho PostgreSQL, object storage và Redis/queue stance trước production.
-4. Kiểm tra scale paths bằng load baseline, bounded/cursor lists, reporting query volume, index review, background job throughput.
+1. Staging evidence cho production artifacts: Caddy domains/TLS, real `.env.production`, `JWT_RESET_SECRET` thật, restore drill, load baseline.
+2. Chạy AI provider thật trên staging để lấy evidence cho quota/ledger/retry/fallback và health signal trên Super Portal.
+3. Scaffold `apps/mobile-student` (Expo), mobile auth adapter trong `@repo/api-client`, tenant selection không hardcode.
+4. Mobile learning loop: dashboard/today, course/lesson, SRS review, practice/exam dùng chung contract hiện có (kể cả `/adaptive-learning/next-steps`).
 5. Giữ CI contract gate, API readiness smoke, portal smoke và package build dependencies xanh.
 
 ## Nguyên Tắc Chia Batch
@@ -307,10 +307,11 @@ Trạng thái: backend MVP, admin management UI và student attempt UI đã có.
 - Student practice skill filter hỗ trợ chọn nhiều skill bằng CSV URL (`?skill=VOCABULARY,GRAMMAR`) và backend dùng `hasSome`.
 - Nhóm Luyện tập có secondary tab strip cho Practice / Vocabulary / Review / Roleplay; Vocabulary dùng custom SRS cards.
 - Listening audio prompt: admin gắn audio từ media pipeline, student nghe bằng player có replay limit trong attempt/review/SRS.
+- Adaptive sequencing đa tín hiệu qua `GET /adaptive-learning/next-steps`: SRS due cards, adaptive path item (câu sai gần đây) và skill mastery thấp được xếp hạng deterministic, mỗi bước có `reasonCode`, `signals`, `scoreBreakdown`. Học viên thấy trên dashboard (kèm skip/start path item), admin/instructor thấy trên trang chi tiết học viên.
 
 Còn cần:
 
-- Nâng cao adaptive sequencing dựa trên nhiều skill yếu và SRS due.
+- Đo accept/skip rate của gợi ý và tinh chỉnh trọng số sequencing theo dữ liệu thật.
 
 Không nên nhét lâu dài vào `Lesson.quiz`; cần tách domain practice.
 

@@ -14,16 +14,20 @@ export function StudentHomeClient({
   guest: ReactNode;
   initialData: StudentTodayResponse | null;
 }) {
-  const { isAuthenticated, isInitialized } = useAuthStore();
+  const { isAuthenticated, isInitialized, user } = useAuthStore();
+  const matchingInitialData =
+    initialData?.learnerId === user?.id && initialData?.tenantId === user?.tenantId
+      ? initialData
+      : null;
   const { data, isError, isLoading } = useQuery({
-    queryKey: ['student', 'today'],
+    queryKey: ['student', 'today', user?.tenantId, user?.id],
     queryFn: studentApi.getToday,
-    enabled: !initialData && isInitialized && isAuthenticated,
+    enabled: !matchingInitialData && isInitialized && isAuthenticated,
     staleTime: 60 * 1000,
   });
 
-  if (initialData !== null && (!isInitialized || isAuthenticated)) {
-    return <LearningDashboard data={initialData} />;
+  if (matchingInitialData !== null && isInitialized && isAuthenticated) {
+    return <LearningDashboard data={matchingInitialData} />;
   }
 
   if (isInitialized && isAuthenticated) {

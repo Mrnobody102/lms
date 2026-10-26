@@ -1369,6 +1369,7 @@ export class CourseService {
       }),
       this.prisma.practiceExerciseSet.findMany({
         where: {
+          adaptivePathItemId: null,
           tenantId,
           courseId,
           deletedAt: null,
@@ -1560,6 +1561,7 @@ export class CourseService {
       }),
       this.prisma.practiceExerciseSet.findMany({
         where: {
+          adaptivePathItemId: null,
           tenantId,
           id: { in: this.uniqueIds(idsByType.get(CourseActivityType.PRACTICE) ?? []) },
           deletedAt: null,

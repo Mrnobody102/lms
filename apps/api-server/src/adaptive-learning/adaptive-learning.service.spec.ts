@@ -13,7 +13,10 @@ describe('AdaptiveLearningService', () => {
         findMany: vi.fn().mockResolvedValue([{ id: 'q3' }, { id: 'q4' }, { id: 'q5' }]),
       },
     };
-    const service = new AdaptiveLearningService(prisma as never, {} as never);
+    const service = new AdaptiveLearningService(
+      prisma as never,
+      { courseWhere: vi.fn().mockReturnValue({ tenantId: 'tenant-1' }) } as never,
+    );
 
     const result = await service.createRecommendationsFromPracticeAttempt({
       tenantId: 'tenant-1',
@@ -79,7 +82,10 @@ describe('AdaptiveLearningService', () => {
         ]),
       },
     };
-    const service = new AdaptiveLearningService(prisma as never, {} as never);
+    const service = new AdaptiveLearningService(
+      prisma as never,
+      { courseWhere: vi.fn().mockReturnValue({ tenantId: 'tenant-1' }) } as never,
+    );
 
     const result = await service.listPath('tenant-1', { id: 'user-1', role: Role.STUDENT }, {});
 

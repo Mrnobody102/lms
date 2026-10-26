@@ -956,7 +956,13 @@
       "percentageValue": "Độ chính xác {value}%",
       "tryAgain": "Làm lại",
       "retry": "Thử lại",
-      "submit": "Nộp bài"
+      "submit": "Nộp bài",
+      "aiFallbackBadge": "Chấm theo quy tắc",
+      "aiFallbackPending": "Đã lưu câu trả lời. Bài cần được xem xét vì chưa có đáp án tham chiếu để kiểm tra tự động.",
+      "aiFallbackDisabled": "Chấm bằng AI hiện đang tắt. Hệ thống kiểm tra tự động theo đáp án tham chiếu nếu có.",
+      "aiFallbackDenied": "Chấm bằng AI hiện chưa khả dụng theo quyền truy cập hoặc hạn mức sử dụng. Hệ thống kiểm tra tự động theo đáp án tham chiếu nếu có.",
+      "aiFallbackUnavailable": "AI tạm thời không phản hồi. Hệ thống kiểm tra tự động theo đáp án tham chiếu nếu có.",
+      "aiFallbackUnknown": "Bài không dùng AI. Hệ thống kiểm tra tự động theo đáp án tham chiếu nếu có."
     },
     "exam": {
       "badge": "Kiểm tra",
@@ -1061,6 +1067,39 @@
       "connectionError": "Không thể kết nối AI.",
       "close": "Đóng",
       "aiFeedbackTitle": "Phân tích từ AI"
+    },
+    "adaptive": {
+      "retry": "Thử lại",
+      "starting": "Đang chuẩn bị câu hỏi luyện tập…",
+      "startError": "Chưa mở được bài luyện. Hãy thử lại hoặc quay về bảng học tập.",
+      "actionError": "Chưa cập nhật được bước học này. Vui lòng thử lại.",
+      "backToDashboard": "Về bảng học tập",
+      "title": "Bước học tiếp theo",
+      "desc": "Sắp xếp theo thẻ ôn đến hạn, câu hay sai gần đây và mức thành thạo hiện tại.",
+      "loadError": "Chưa tải được gợi ý học thích ứng.",
+      "empty": "Chưa có gợi ý nào",
+      "emptyDesc": "Hoàn thành một bài luyện tập hoặc phiên ôn tập, gợi ý sẽ xuất hiện ở đây.",
+      "rankValue": "#{rank}",
+      "inProgressBadge": "Đang làm",
+      "dueForSkill": "{count} thẻ ôn đến hạn cũng thuộc kỹ năng này.",
+      "skip": "Bỏ qua",
+      "explainer": "Thứ tự: thẻ ôn đến hạn trước, rồi kỹ năng vừa sai nhiều, sau đó kỹ năng dưới {threshold}% thành thạo.",
+      "step": {
+        "srsDueTitle": "Ôn {count} thẻ đến hạn",
+        "srsDueDetail": "{today} thẻ đến hạn hôm nay. Nhiều nhất: {skills}.",
+        "srsDueDetailNoSkills": "{today} thẻ đến hạn hôm nay.",
+        "pathTitle": "Luyện lại {skill}",
+        "pathDetail": "Bạn sai {incorrect}/{attempted} câu gần đây. Thành thạo hiện tại {mastery}%.",
+        "pathDetailNoMastery": "Bạn sai {incorrect}/{attempted} câu gần đây.",
+        "pathDetailNoStats": "Đã xếp sẵn các câu tương tự cho kỹ năng này.",
+        "weakTitle": "Củng cố {skill}",
+        "weakDetail": "Thành thạo {mastery}% sau {attempts} lượt làm (mục tiêu {threshold}%)."
+      },
+      "action": {
+        "reviewSrs": "Ôn ngay",
+        "practiceSimilar": "Luyện tập",
+        "practiceWeak": "Luyện tập"
+      }
     }
   },
   "Maintenance": {

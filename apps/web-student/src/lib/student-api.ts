@@ -49,6 +49,8 @@ export interface TodayFeedbackItem {
 }
 
 export interface StudentTodayResponse {
+  learnerId: string;
+  tenantId: string;
   primaryTask: TodayTask;
   tasks: TodayTask[];
   courses: TodayCourseSummary[];

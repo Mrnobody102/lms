@@ -29,6 +29,7 @@ export interface AiGovernanceRunInput {
 }
 
 export interface AiGovernanceReservation extends AiGovernanceRunInput {
+  ledgerId: string;
   startedAt: Date;
   provider: string;
   model: string | null;
@@ -38,6 +39,15 @@ export interface AiGovernanceReservation extends AiGovernanceRunInput {
 interface TenantFeatureSettings {
   featureFlags?: Record<string, unknown>;
   features?: Record<string, unknown>;
+}
+
+class AiQuotaExceededException extends HttpException {
+  constructor(
+    readonly reason: string,
+    readonly details: Record<string, unknown>,
+  ) {
+    super('AI quota exhausted', HttpStatus.TOO_MANY_REQUESTS);
+  }
 }
 
 @Injectable()
@@ -91,17 +101,56 @@ export class AiGovernanceService {
       throw new ServiceUnavailableException('AI provider is not configured');
     }
 
-    await this.ensureUserQuotaAvailable(input);
-    const quotaConfigured = await this.ensureTenantQuota(input);
-    await this.incrementUserQuota(input);
-
-    return {
-      ...input,
-      startedAt: new Date(),
-      provider: provider.provider,
-      model: provider.model,
-      quotaConfigured,
-    };
+    return this.prisma
+      .$transaction(async (tx) => {
+        // Serialize reservations across processes, including different users in
+        // the same tenant. Never hold this lock while calling an AI provider.
+        await tx.$queryRaw`SELECT "id" FROM "Tenant" WHERE "id" = ${input.tenantId} FOR UPDATE`;
+        await this.ensureUserQuotaAvailable(input, tx);
+        const quotaConfigured = await this.ensureTenantQuota(input, tx);
+        await tx.aiUsageQuota.update({
+          where: { tenantId_userId: { tenantId: input.tenantId, userId: input.userId } },
+          data: { requestsUsed: { increment: 1 } },
+        });
+        const startedAt = new Date();
+        const ledger = await tx.usageLedger.create({
+          data: {
+            tenantId: input.tenantId,
+            type: UsageLedgerType.AI_REQUEST,
+            quantity: BigInt(1),
+            unit: REQUEST_UNIT,
+            sourceType: input.feature,
+            sourceId: input.sourceId,
+            description: `AI request: ${input.feature}`,
+            occurredAt: startedAt,
+            metadata: {
+              ...toInputJsonObject(input.metadata),
+              status: 'PENDING',
+              userId: input.userId,
+              role: input.role,
+              provider: provider.provider,
+              model: provider.model ?? 'unknown',
+              promptVersion: input.promptVersion,
+              quotaConfigured,
+            },
+          },
+          select: { id: true },
+        });
+        return {
+          ...input,
+          ledgerId: ledger.id,
+          startedAt,
+          provider: provider.provider,
+          model: provider.model,
+          quotaConfigured,
+        };
+      })
+      .catch(async (error: unknown) => {
+        if (error instanceof AiQuotaExceededException) {
+          await this.auditQuotaDenied(input, error.reason, error.details);
+        }
+        throw error;
+      });
   }
 
   private async ensureTenantAiEnabled(input: AiGovernanceRunInput): Promise<void> {
@@ -115,12 +164,15 @@ export class AiGovernanceService {
     }
   }
 
-  private async ensureUserQuotaAvailable(input: AiGovernanceRunInput): Promise<void> {
+  private async ensureUserQuotaAvailable(
+    input: AiGovernanceRunInput,
+    tx: Prisma.TransactionClient,
+  ): Promise<void> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const nextReset = new Date(today.getTime() + 24 * 60 * 60 * 1000);
 
-    let quota = await this.prisma.aiUsageQuota.findUnique({
+    let quota = await tx.aiUsageQuota.findUnique({
       where: {
         tenantId_userId: {
           tenantId: input.tenantId,
@@ -130,7 +182,7 @@ export class AiGovernanceService {
     });
 
     if (!quota) {
-      quota = await this.prisma.aiUsageQuota.create({
+      quota = await tx.aiUsageQuota.create({
         data: {
           tenantId: input.tenantId,
           userId: input.userId,
@@ -141,7 +193,7 @@ export class AiGovernanceService {
     }
 
     if (quota.resetAt <= new Date()) {
-      quota = await this.prisma.aiUsageQuota.update({
+      quota = await tx.aiUsageQuota.update({
         where: { tenantId_userId: { tenantId: input.tenantId, userId: input.userId } },
         data: {
           requestsUsed: 0,
@@ -151,24 +203,19 @@ export class AiGovernanceService {
     }
 
     if (quota.requestsUsed >= quota.requestLimit) {
-      await this.auditQuotaDenied(input, 'user_daily_quota_exhausted', {
+      throw new AiQuotaExceededException('user_daily_quota_exhausted', {
         requestsUsed: quota.requestsUsed,
         requestLimit: quota.requestLimit,
         resetAt: quota.resetAt.toISOString(),
       });
-      throw new HttpException('AI user quota exhausted', HttpStatus.TOO_MANY_REQUESTS);
     }
   }
 
-  private async incrementUserQuota(input: AiGovernanceRunInput): Promise<void> {
-    await this.prisma.aiUsageQuota.update({
-      where: { tenantId_userId: { tenantId: input.tenantId, userId: input.userId } },
-      data: { requestsUsed: { increment: 1 } },
-    });
-  }
-
-  private async ensureTenantQuota(input: AiGovernanceRunInput): Promise<boolean> {
-    const subscription = await this.prisma.tenantSubscription.findFirst({
+  private async ensureTenantQuota(
+    input: AiGovernanceRunInput,
+    tx: Prisma.TransactionClient,
+  ): Promise<boolean> {
+    const subscription = await tx.tenantSubscription.findFirst({
       where: {
         tenantId: input.tenantId,
         status: { in: [SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING] },
@@ -191,7 +238,7 @@ export class AiGovernanceService {
     const periodStart =
       subscription.currentPeriodStart ?? subscription.startsAt ?? subscription.createdAt;
     const periodEnd = subscription.currentPeriodEnd ?? subscription.endsAt ?? undefined;
-    const aggregate = await this.prisma.usageLedger.aggregate({
+    const aggregate = await tx.usageLedger.aggregate({
       where: {
         tenantId: input.tenantId,
         type: UsageLedgerType.AI_REQUEST,
@@ -205,13 +252,12 @@ export class AiGovernanceService {
     const used = Number(aggregate._sum.quantity ?? 0);
 
     if (used >= subscription.aiRequestQuota) {
-      await this.auditQuotaDenied(input, 'tenant_period_quota_exhausted', {
+      throw new AiQuotaExceededException('tenant_period_quota_exhausted', {
         used,
         requestLimit: subscription.aiRequestQuota,
         periodStart: periodStart.toISOString(),
         periodEnd: periodEnd?.toISOString() ?? null,
       });
-      throw new HttpException('AI tenant quota exhausted', HttpStatus.TOO_MANY_REQUESTS);
     }
 
     return true;
@@ -242,15 +288,9 @@ export class AiGovernanceService {
       }
     }
 
-    await this.prisma.usageLedger.create({
+    await this.prisma.usageLedger.update({
+      where: { id_tenantId: { id: reservation.ledgerId, tenantId: reservation.tenantId } },
       data: {
-        tenantId: reservation.tenantId,
-        type: UsageLedgerType.AI_REQUEST,
-        quantity: BigInt(1),
-        unit: REQUEST_UNIT,
-        sourceType: reservation.feature,
-        sourceId: reservation.sourceId,
-        description: `AI request: ${reservation.feature}`,
         metadata,
       },
     });

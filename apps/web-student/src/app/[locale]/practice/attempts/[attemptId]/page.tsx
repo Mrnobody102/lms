@@ -67,7 +67,7 @@ export default function PracticeAttemptReviewPage() {
               )}
               <div className="mt-4 flex flex-wrap gap-2 text-xs text-muted-foreground">
                 <span className="rounded-md border px-2 py-1">
-                  {attempt.exerciseSet.course.title}
+                  {attempt.exerciseSet.course?.title ?? t('practice.courseFallback')}
                 </span>
                 {attempt.exerciseSet.unit?.title && (
                   <span className="rounded-md border px-2 py-1">

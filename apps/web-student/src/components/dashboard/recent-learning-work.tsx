@@ -129,7 +129,7 @@ function RecentPracticeAttempt({
         <div className="min-w-0">
           <h4 className="line-clamp-1 text-sm font-semibold">{attempt.exerciseSet.title}</h4>
           <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
-            {attempt.exerciseSet.course.title}
+            {attempt.exerciseSet.course?.title ?? t('practice.courseFallback')}
           </p>
         </div>
         <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
@@ -198,7 +198,7 @@ function RecentExamAttempts({
                   <div className="min-w-0">
                     <h4 className="line-clamp-1 text-sm font-semibold">{attempt.exam.title}</h4>
                     <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
-                      {attempt.exam.course.title}
+                      {attempt.exam.course?.title ?? t('exam.courseFallback')}
                     </p>
                   </div>
                   <span

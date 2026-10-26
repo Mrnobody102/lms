@@ -7,6 +7,7 @@ const NOW = new Date('2026-05-19T12:00:00.000Z');
 
 function makePrisma(overrides: Record<string, unknown> = {}) {
   const reviewCard = {
+    findFirst: vi.fn().mockResolvedValue({ id: 'card-1' }),
     upsert: vi.fn(),
     findMany: vi.fn().mockResolvedValue([]),
     findUnique: vi.fn(),
@@ -23,6 +24,7 @@ function makePrisma(overrides: Record<string, unknown> = {}) {
   const practiceQuestion = { findMany: vi.fn().mockResolvedValue([]) };
   const examQuestion = { findMany: vi.fn().mockResolvedValue([]) };
   return {
+    $queryRaw: vi.fn().mockResolvedValue([{ id: 'card-1' }, { id: 'card-2' }]),
     reviewCard,
     reviewLog,
     practiceQuestion,
@@ -267,7 +269,7 @@ describe('SrsService.getQueue', () => {
 
     const queue = await service.getQueue('tenant-1', 'user-1');
 
-    expect(queue[0].question).toBeNull();
+    expect(queue).toHaveLength(0);
   });
 
   it('filters custom review cards by deck and returns card metadata', async () => {
@@ -305,8 +307,16 @@ describe('SrsService.getQueue', () => {
     expect(prisma.reviewCard.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
-          sourceType: ReviewCardSource.CUSTOM,
-          customContent: { path: ['deck'], equals: 'HSK 1 radicals' },
+          AND: expect.arrayContaining([
+            {
+              AND: [
+                {
+                  sourceType: ReviewCardSource.CUSTOM,
+                  customContent: { path: ['deck'], equals: 'HSK 1 radicals' },
+                },
+              ],
+            },
+          ]),
         }),
       }),
     );

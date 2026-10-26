@@ -1,8 +1,26 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { AdaptiveLearningPathItemStatus, Prisma, QuestionReviewStatus, Role } from '@repo/database';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import {
+  AdaptiveLearningPathItemStatus,
+  EnrollmentStatus,
+  Prisma,
+  QuestionReviewStatus,
+  Role,
+} from '@repo/database';
 import { LearningAccessService } from '../common/services/learning-access.service';
 import { PrismaService } from '../common/services/prisma.service';
+import {
+  ADAPTIVE_SEQUENCING,
+  buildAdaptiveNextSteps,
+  countDueSkills,
+  isWeakMastery,
+} from './adaptive-sequencing';
 import { AdaptiveLearningQueryDto } from './dto/adaptive-learning-query.dto';
+import { AdaptiveNextStepsQueryDto } from './dto/adaptive-next-steps-query.dto';
 
 interface PracticeAttemptSignal {
   questionId: string;
@@ -21,6 +39,8 @@ interface SkillStats {
 }
 
 const MIN_SIMILAR_QUESTIONS = 2;
+const MAX_PATH_ITEMS_FOR_SEQUENCING = 50;
+const MAX_DUE_CARDS_FOR_SEQUENCING = 200;
 
 @Injectable()
 export class AdaptiveLearningService {
@@ -107,10 +127,7 @@ export class AdaptiveLearningService {
   }
 
   async listPath(tenantId: string, user: AdaptiveLearner, query: AdaptiveLearningQueryDto) {
-    const targetUserId = user.role === Role.STUDENT ? user.id : query.userId;
-    if (!targetUserId) {
-      throw new ForbiddenException('userId is required for admin adaptive path lookup');
-    }
+    const targetUserId = this.resolveTargetUserId(user, query.userId);
 
     if (query.courseId) {
       await this.learningAccess.ensureCourseAccess(query.courseId, tenantId, user);
@@ -123,7 +140,7 @@ export class AdaptiveLearningService {
       status: query.status,
     };
 
-    if (user.role === Role.INSTRUCTOR) {
+    if (user.role === Role.INSTRUCTOR || user.role === Role.STUDENT) {
       where.course = this.learningAccess.courseWhere(tenantId, user, query.courseId);
     }
 
@@ -139,6 +156,9 @@ export class AdaptiveLearningService {
         id: { in: questionIds },
         reviewStatus: QuestionReviewStatus.APPROVED,
         deletedAt: null,
+        ...(user.role === Role.STUDENT || user.role === Role.INSTRUCTOR
+          ? { course: this.learningAccess.courseWhere(tenantId, user, query.courseId) }
+          : {}),
       },
       select: {
         id: true,
@@ -171,6 +191,112 @@ export class AdaptiveLearningService {
     return path[0] ?? null;
   }
 
+  /**
+   * Sequence the learner's next steps across SRS due cards, pending adaptive
+   * path items, and low-mastery skills. The result is deterministic and every
+   * step explains its own ranking through `signals` and `scoreBreakdown`.
+   */
+  async getNextSteps(tenantId: string, user: AdaptiveLearner, query: AdaptiveNextStepsQueryDto) {
+    const targetUserId = this.resolveTargetUserId(user, query.userId);
+
+    if (query.courseId) {
+      await this.learningAccess.ensureCourseAccess(query.courseId, tenantId, user);
+    }
+
+    if (user.role === Role.INSTRUCTOR) {
+      await this.ensureInstructorCanViewLearner(tenantId, user, targetUserId, query.courseId);
+    }
+
+    const now = new Date();
+    const endOfToday = new Date(now);
+    endOfToday.setHours(23, 59, 59, 999);
+
+    const pathWhere: Prisma.AdaptiveLearningPathItemWhereInput = {
+      tenantId,
+      userId: targetUserId,
+      courseId: query.courseId,
+      status: {
+        in: [AdaptiveLearningPathItemStatus.PENDING, AdaptiveLearningPathItemStatus.IN_PROGRESS],
+      },
+    };
+
+    if (user.role === Role.INSTRUCTOR || user.role === Role.STUDENT) {
+      pathWhere.course = this.learningAccess.courseWhere(tenantId, user, query.courseId);
+    }
+
+    const cardAccess = await this.learningAccess.reviewCardWhere(
+      tenantId,
+      targetUserId,
+      user,
+      query.courseId,
+    );
+    const dueCardWhere: Prisma.ReviewCardWhereInput = {
+      ...cardAccess,
+      isSuspended: false,
+      dueAt: { lte: now },
+    };
+
+    const [pathItems, masteries, dueNow, dueToday, dueCards] = await Promise.all([
+      this.prisma.adaptiveLearningPathItem.findMany({
+        where: pathWhere,
+        select: {
+          id: true,
+          courseId: true,
+          sourceSkillCode: true,
+          questionIds: true,
+          status: true,
+          priority: true,
+          reason: true,
+        },
+        orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
+        take: MAX_PATH_ITEMS_FOR_SEQUENCING,
+      }),
+      // Mastery is tenant-wide and cannot be separated by course. Instructors
+      // receive scoped path/SRS signals, never a learner's global mastery.
+      user.role === Role.INSTRUCTOR
+        ? Promise.resolve([])
+        : this.prisma.skillMastery.findMany({
+            where: { tenantId, userId: targetUserId },
+            select: { skillCode: true, mastery: true, attempts: true },
+            orderBy: [{ mastery: 'asc' }, { skillCode: 'asc' }],
+          }),
+      this.prisma.reviewCard.count({ where: dueCardWhere }),
+      this.prisma.reviewCard.count({
+        where: { ...cardAccess, isSuspended: false, dueAt: { lte: endOfToday } },
+      }),
+      this.prisma.reviewCard.findMany({
+        where: dueCardWhere,
+        select: { skillCodes: true },
+        orderBy: { dueAt: 'asc' },
+        take: MAX_DUE_CARDS_FOR_SEQUENCING,
+      }),
+    ]);
+
+    const steps = buildAdaptiveNextSteps({
+      pathItems,
+      masteries,
+      dueNow,
+      dueToday,
+      dueSkillCounts: countDueSkills(dueCards),
+      limit: query.limit,
+    });
+
+    return {
+      learnerId: targetUserId,
+      courseId: query.courseId ?? null,
+      generatedAt: now,
+      steps,
+      signals: {
+        dueNow,
+        dueToday,
+        pendingPathItems: pathItems.length,
+        trackedSkillCount: masteries.length,
+        weakSkillCount: masteries.filter(isWeakMastery).length,
+        weakMasteryThreshold: Math.round(ADAPTIVE_SEQUENCING.weakMasteryThreshold * 100),
+      },
+    };
+  }
+
   async updateStatus(
     tenantId: string,
     user: AdaptiveLearner,
@@ -178,7 +304,7 @@ export class AdaptiveLearningService {
     status: AdaptiveLearningPathItemStatus,
   ) {
     const where: Prisma.AdaptiveLearningPathItemWhereInput = { id: itemId, tenantId };
-    if (user.role === Role.INSTRUCTOR) {
+    if (user.role === Role.INSTRUCTOR || user.role === Role.STUDENT) {
       where.course = this.learningAccess.courseWhere(tenantId, user);
     }
 
@@ -196,9 +322,94 @@ export class AdaptiveLearningService {
     }
 
     return this.prisma.adaptiveLearningPathItem.update({
-      where: { id: item.id },
+      where: { id: item.id, tenantId },
       data: { status },
     });
+  }
+
+  async startPractice(tenantId: string, user: AdaptiveLearner, itemId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "AdaptiveLearningPathItem" WHERE "id" = ${itemId} AND "tenantId" = ${tenantId} AND "userId" = ${user.id} FOR UPDATE`;
+      const item = await tx.adaptiveLearningPathItem.findFirst({
+        where: {
+          id: itemId,
+          tenantId,
+          userId: user.id,
+          course: this.learningAccess.courseWhere(tenantId, user),
+        },
+      });
+      if (!item) throw new NotFoundException('Adaptive learning path item not found');
+      if (item.status === AdaptiveLearningPathItemStatus.SKIPPED) {
+        throw new BadRequestException('This adaptive practice was skipped');
+      }
+      const questions = await tx.practiceQuestion.findMany({
+        where: {
+          tenantId,
+          courseId: item.courseId,
+          id: { in: item.questionIds },
+          deletedAt: null,
+          reviewStatus: QuestionReviewStatus.APPROVED,
+        },
+        select: { id: true },
+      });
+      if (questions.length !== item.questionIds.length || questions.length === 0) {
+        throw new BadRequestException('Some adaptive practice questions are no longer available');
+      }
+      // A unique relation makes start/resume idempotent, including two browser tabs.
+      const exerciseSet = await tx.practiceExerciseSet.upsert({
+        where: { adaptivePathItemId_tenantId: { adaptivePathItemId: item.id, tenantId } },
+        create: {
+          tenantId,
+          courseId: item.courseId,
+          adaptivePathItemId: item.id,
+          title: item.sourceSkillCode,
+          isPublished: true,
+          questions: {
+            create: item.questionIds.map((questionId, order) => ({ questionId, order })),
+          },
+        },
+        update: {},
+        select: { id: true },
+      });
+      await tx.adaptiveLearningPathItem.updateMany({
+        where: {
+          id: item.id,
+          tenantId,
+          userId: user.id,
+          status: AdaptiveLearningPathItemStatus.PENDING,
+        },
+        data: { status: AdaptiveLearningPathItemStatus.IN_PROGRESS },
+      });
+      return { exerciseSetId: exerciseSet.id };
+    });
+  }
+
+  private resolveTargetUserId(user: AdaptiveLearner, requestedUserId?: string) {
+    const targetUserId = user.role === Role.STUDENT ? user.id : requestedUserId;
+    if (!targetUserId) {
+      throw new ForbiddenException('userId is required for admin adaptive path lookup');
+    }
+    return targetUserId;
+  }
+
+  private async ensureInstructorCanViewLearner(
+    tenantId: string,
+    instructor: AdaptiveLearner,
+    learnerId: string,
+    courseId?: string,
+  ) {
+    const sharedEnrollments = await this.prisma.courseEnrollment.count({
+      where: {
+        tenantId,
+        userId: learnerId,
+        status: EnrollmentStatus.ACTIVE,
+        course: this.learningAccess.courseWhere(tenantId, instructor, courseId),
+      },
+    });
+
+    if (sharedEnrollments === 0) {
+      throw new ForbiddenException('Instructors can only view learners in assigned courses');
+    }
   }
 
   private findWeakSkills(results: PracticeAttemptSignal[]) {
